@@ -1,0 +1,23 @@
+name: Copy ProfileBuilder.html to index.html
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  copy-html:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Copy ProfileBuilder.html to index.html
+        run: |
+          cp SolarSimulator/ProfileBuilder.html index.html
+      - name: Commit and push index.html
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add index.html
+          git commit -m "Update index.html from ProfileBuilder.html" || echo "No changes to commit"
+          git push
