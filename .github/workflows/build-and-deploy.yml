@@ -15,14 +15,6 @@ jobs:
       - name: Copy ProfileBuilder.html to index.html
         run: cp ProfileBuilder.html index.html
 
-      - name: Commit and push index.html to main
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add index.html
-          git commit -m "Update index.html from ProfileBuilder.html" || echo "No changes to commit"
-          git push origin main
-
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
