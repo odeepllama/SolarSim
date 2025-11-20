@@ -1,5 +1,2 @@
 # Ignore VS Code workspace files
 Workspace_202511.code-workspace
-
-# Ignore environment files
-.env
