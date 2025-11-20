@@ -2147,6 +2147,29 @@ def handle_command(command_str):
             else:
                 print(f"[SERIAL CMD] Error: Unknown jump command. Use 'jump nextstep' or 'jump step <n>'.")
 
+        elif command == "rotation":
+            # Explicit rotation on/off control replacing legacy 'toggle rotation'
+            if len(parts) == 2:
+                action = parts[1]
+                if action in ("on", "enable", "true", "1"):
+                    if not ROTATION_ENABLED:
+                        ROTATION_ENABLED = True
+                        print("[SERIAL CMD] Rotation cycle set to: True")
+                    else:
+                        print("[SERIAL CMD] Rotation cycle already ON")
+                elif action in ("off", "disable", "false", "0"):
+                    if ROTATION_ENABLED:
+                        ROTATION_ENABLED = False
+                        print("[SERIAL CMD] Rotation cycle set to: False")
+                    else:
+                        print("[SERIAL CMD] Rotation cycle already OFF")
+                elif action == "status":
+                    print(f"[SERIAL CMD] Rotation Enabled: {ROTATION_ENABLED}")
+                else:
+                    print("[SERIAL CMD] Usage: rotation on|off|status")
+            else:
+                print("[SERIAL CMD] Usage: rotation on|off|status")
+        
         elif command == "toggle" and len(parts) == 2:
             target = parts[1]
             if target == "dualsun":
@@ -2155,9 +2178,6 @@ def handle_command(command_str):
             elif target == "program":
                 PROGRAM_ENABLED = not PROGRAM_ENABLED
                 print(f"[SERIAL CMD] Program execution set to: {PROGRAM_ENABLED}")
-            elif target == "rotation":
-                ROTATION_ENABLED = not ROTATION_ENABLED
-                print(f"[SERIAL CMD] Rotation cycle set to: {ROTATION_ENABLED}")
             elif target == "servo2":
                 SERVO2_STANDALONE_ENABLED = not SERVO2_STANDALONE_ENABLED
                 print(f"[SERIAL CMD] Servo 2 standalone trigger set to: {SERVO2_STANDALONE_ENABLED}")
@@ -2666,10 +2686,10 @@ def handle_command(command_str):
 
         elif command == "help" and len(parts) > 1 and parts[1] == "all":
             print("--- Command Summary ---")
-            print("Set: time <hhmm>, date <yyyymmdd>, intensity <0.0-1.0>, latitude <degrees>, speed <scale>, suncolor <natural|blue|custom> [r g b], rotationinterval <minutes>, images_per_rotation <num>, degrees_per_image <float>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>")
-            print("Toggle: dualsun, program, rotation, restartafterload, servo2, servo3, 1to1ratio")
-            print("Program/Manual: jump nextstep, jump step <n>, listprofiles, loadprofile <profilename>, saveprofile <profilename> [note], profiledelete <profilename>, savelog <yyyymmdd>, status, trigger servo2, trigger servo3, trigger rotation")
-            print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help")
+            print("Set: autoload, cameralightingpanels, date, degrees_per_image, imageatnight, images_per_rotation, intensity, latitude, rot_inc_deg, rot_speed, rot_step_intv, rot_stills_intv, rot_trig_hold, rotationatnight, rotationcameraservo, rotationinterval, rotationmode, solarmode, speed, starttime, suncolor, time, servo2interval, servo3interval")
+            print("Toggle: dualsun, program, restartafterload, servo2, servo3, 1to1ratio")
+            print("Program/Manual: jump nextstep, jump step, listprofiles, loadprofile, profiledelete, saveprofile, savelog, status, trigger servo2, trigger servo3, trigger rotation")
+            print("Utility: fillpanel, light camera, light rotation, reset, restart, help")
             print("-----------------------")
 
         else:
