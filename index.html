@@ -8987,17 +8987,27 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     const newVal = cmd;
     input.value = newVal;
     bumpUsage(cmd);
-    // Place caret: if command ends with placeholder token, select it for overwrite; else move to end.
-    const placeholderMatch = cmd.match(/<[^>]+>$/);
-    if(placeholderMatch){
-      const ph = placeholderMatch[0];
-      const start = newVal.lastIndexOf(ph);
-      if(start>=0){
-        // Select placeholder text so typing overwrites it
-        input.setSelectionRange(start, start+ph.length);
+    // Place caret: if command ends with placeholder token(s), select them for overwrite
+    // Special case: RGB commands have three placeholders that should be selected together
+    if(/(?:cameralightrgb|rotationlightrgb|fillpanel)\s+<r>\s+<g>\s+<b>/.test(cmd)){
+      const start = cmd.indexOf('<r>');
+      if(start >= 0){
+        // Select all three RGB placeholders: "<r> <g> <b>"
+        const end = cmd.indexOf('<b>') + 3;
+        input.setSelectionRange(start, end);
       }
     } else {
-      input.setSelectionRange(newVal.length, newVal.length);
+      const placeholderMatch = cmd.match(/<[^>]+>$/);
+      if(placeholderMatch){
+        const ph = placeholderMatch[0];
+        const start = newVal.lastIndexOf(ph);
+        if(start>=0){
+          // Select placeholder text so typing overwrites it
+          input.setSelectionRange(start, start+ph.length);
+        }
+      } else {
+        input.setSelectionRange(newVal.length, newVal.length);
+      }
     }
     lastInput = input.value;
     hidePanel();
