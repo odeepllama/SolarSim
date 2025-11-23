@@ -17,6 +17,12 @@
  /*  Rotation & Imaging section: force 3-column grid layout */
  .group-grid.rotation-imaging { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
  .group-grid.rotation-imaging .field { flex: none; max-width: none; min-width: 160px; }
+ /* Imaging Illumination section: force 3-column grid layout */
+ .group-grid.imaging-illumination { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+ .group-grid.imaging-illumination .field { flex: none; max-width: none; min-width: 160px; }
+ /* Imaging Servo Operation & Timing section: force 5-column grid layout */
+ .group-grid.imaging-servo-timing { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 14px; }
+ .group-grid.imaging-servo-timing .field { flex: none; max-width: none; min-width: 160px; }
  /* Program Control section: force 4-column grid layout *****/
  .group-grid.program-control { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
  .group-grid.program-control .field { flex: none; max-width: none; }
@@ -423,12 +429,10 @@ select:not(#filename_tag):not(#filename_preview) {
 /* CUSTOM (purple accent) */
 .mon-kv.sun-custom { background:#2d0f3d; border-color:#4a1763; }
 .mon-kv.sun-custom span { color:#d7a6ff; }
-/* Solar Mode tile color overrides (BASIC stays green via kv-active; SIMPLE amber; ADVANCED red) */
-.mon-kv.solar-mode.mode-simple { background:#c58112 !important; border-color:#e6a54a !important; }
-.mon-kv.solar-mode.mode-advanced { background:#b32828 !important; border-color:#d94b4b !important; }
-/* When Solar Mode is active, use an outline lighter than the interior and matching the mode hue (amber/red), not green */
-.mon-kv.solar-mode.mode-simple.kv-active { border-color:#e6a54a !important; box-shadow:0 0 0 1px #f0b86a, 0 0 0 3px rgba(240,184,106,0.35), 0 2px 6px -1px rgba(0,0,0,0.55); }
-.mon-kv.solar-mode.mode-advanced.kv-active { border-color:#d94b4b !important; box-shadow:0 0 0 1px #f36f6f, 0 0 0 3px rgba(243,111,111,0.35), 0 2px 6px -1px rgba(0,0,0,0.55); }
+/* Solar Mode tile color overrides (BASIC stays green via kv-active; SCIENTIFIC red) */
+.mon-kv.solar-mode.mode-scientific { background:#b32828 !important; border-color:#d94b4b !important; }
+/* When Solar Mode is active, use an outline lighter than the interior and matching the mode hue (red), not green */
+.mon-kv.solar-mode.mode-scientific.kv-active { border-color:#d94b4b !important; box-shadow:0 0 0 1px #f36f6f, 0 0 0 3px rgba(243,111,111,0.35), 0 2px 6px -1px rgba(0,0,0,0.55); }
 /* Tile popover */
 #tilePopover { position:absolute; z-index:99999; background:#ffffff !important; color:#111; border:1px solid #c9d1dc; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.2); min-width:260px; max-width:420px; padding:8px; display:none; }
 #tilePopover h4 { margin:4px 6px 8px; font-size:.9rem; font-weight:700; color:#111; }
@@ -1274,14 +1278,15 @@ if (history && history.scrollRestoration) {
 // Field Metadata
 // -----------------------------
 const ORDERED_KEYS = [
- 'START_TIME_HHMM','TIME_SCALE','INTENSITY_SCALE','SIMULATION_DATE','LATITUDE','SOLAR_MODE','SUN_COLOR_MODE','DUAL_SUN_ENABLED','ROTATION_ENABLED','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC','ROTATION_CAMERA_SERVO','STILLS_IMAGING_INTERVAL_SEC','CAMERA_TRIGGER_HOLD_MS','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','IMAGE_AT_NIGHT','ROTATION_AT_NIGHT','CUSTOM_SUN_R','CUSTOM_SUN_G','CUSTOM_SUN_B'
+ 'START_TIME_HHMM','TIME_SCALE','INTENSITY_SCALE','SOLAR_MODE','SUN_COLOR_MODE','CUSTOM_SUN_R','CUSTOM_SUN_G','CUSTOM_SUN_B','STILLS_IMAGING_INTERVAL_SEC','SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC','IMAGE_AT_NIGHT','ROTATION_ENABLED','ROTATION_CAMERA_SERVO','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','ROTATION_AT_NIGHT','CAMERA_TRIGGER_HOLD_MS','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','CAMERA_LIGHTING_PANELS','CAMERA_LIGHT_R','CAMERA_LIGHT_G','CAMERA_LIGHT_B','ROTATION_LIGHT_R','ROTATION_LIGHT_G','ROTATION_LIGHT_B','DUAL_SUN_ENABLED','SIMULATION_DATE','LATITUDE'
 ];
 
 const FIELD_GROUPS = [
  { name: 'Time & Date', keys: ['START_TIME_HHMM','TIME_SCALE','INTENSITY_SCALE','SIMULATION_DATE','LATITUDE'] },
  { name: 'Solar Mode & Sun Color', keys: ['SOLAR_MODE','SUN_COLOR_MODE','DUAL_SUN_ENABLED','CUSTOM_SUN_R','CUSTOM_SUN_G','CUSTOM_SUN_B'] },
- { name: 'Servo Operation & Timing', keys: ['SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC'] },
- { name: 'Rotation & Imaging', keys: ['ROTATION_ENABLED','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','ROTATION_CAMERA_SERVO','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','STILLS_IMAGING_INTERVAL_SEC','CAMERA_TRIGGER_HOLD_MS','IMAGE_AT_NIGHT','ROTATION_AT_NIGHT'] },
+ { name: 'Imaging Illumination', keys: ['CAMERA_LIGHTING_PANELS','_SPACER_1','_SPACER_2','CAMERA_LIGHT_R','CAMERA_LIGHT_G','CAMERA_LIGHT_B','ROTATION_LIGHT_R','ROTATION_LIGHT_G','ROTATION_LIGHT_B'], collapsible: true },
+ { name: 'Imaging Servo Operation & Timing', keys: ['SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC','IMAGE_AT_NIGHT'] },
+ { name: 'Rotation & Imaging', keys: ['ROTATION_ENABLED','ROTATION_AT_NIGHT','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','ROTATION_CAMERA_SERVO','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','STILLS_IMAGING_INTERVAL_SEC','CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
 ];
 
 const FIELDS = {
@@ -1290,7 +1295,7 @@ const FIELDS = {
  INTENSITY_SCALE: { label:'Intensity Scale', tooltip:'Global light intensity multiplier. CAUTION: High intensity values (>0.8) in DUAL SUN mode can cause over-current issues.', type:'number', step:'0.1', min:0, default:1.0 },
  SIMULATION_DATE: { label:'Simulation Date (YYYYMMDD)', tooltip:'Date used for sun path / future calc.', type:'text', default:'20250520', validate:v=>/^20\d{6}$/.test(v) },
  LATITUDE: { label:'Latitude', tooltip:'Observer latitude (-90 to 90).', type:'number', step:'0.1', min:-90, max:90, default:0 },
- SOLAR_MODE: { label:'Solar Mode', tooltip:'BASIC constant; SIMPLE midday peak; SCIENTIFIC future.', type:'select', options:['BASIC','SIMPLE','SCIENTIFIC'], default:'BASIC' },
+ SOLAR_MODE: { label:'Solar Mode', tooltip:'BASIC constant; SCIENTIFIC astronomical calc.', type:'select', options:['BASIC','SCIENTIFIC'], default:'BASIC' },
  SUN_COLOR_MODE: { label:'Sun Color Mode', tooltip:'BLUE fixed; CUSTOM uses RGB; NATURAL future.', type:'select', options:['BLUE','NATURAL','CUSTOM'], default:'BLUE' },
  DUAL_SUN_ENABLED: { label:'Dual Sun Enabled', tooltip:'Enable mirrored secondary sun.', type:'checkbox', default:false },
  ROTATION_ENABLED: { label:'Rotation Enabled', tooltip:'Master switch for rotation system. (Default OFF)', type:'checkbox', default:false },
@@ -1310,6 +1315,13 @@ const FIELDS = {
  ROTATION_STEP_INTERVAL_MS: { label:'Rotation Step Interval (ms)', tooltip:'Delay between successive motor steps.', type:'number', min:1, default:90 },
  IMAGE_AT_NIGHT: { label:'Image at Night', tooltip:'Allow image capture during night.', type:'checkbox', default:false },
  ROTATION_AT_NIGHT: { label:'Rotate at Night', tooltip:'Allow rotation cycles during night.', type:'checkbox', default:false },
+ CAMERA_LIGHT_R: { label:'Camera Light Red', tooltip:'Red component for camera lighting (0-255).', type:'number', min:0, max:255, default:30 },
+ CAMERA_LIGHT_G: { label:'Camera Light Green', tooltip:'Green component for camera lighting (0-255).', type:'number', min:0, max:255, default:30 },
+ CAMERA_LIGHT_B: { label:'Camera Light Blue', tooltip:'Blue component for camera lighting (0-255).', type:'number', min:0, max:255, default:30 },
+ CAMERA_LIGHTING_PANELS: { label:'Camera Lighting Panels', tooltip:'Which panels to illuminate for camera.', type:'select', options:['ALL','MIDDLE5','MIDDLE3','OUTER2','OUTER4'], default:'ALL' },
+ ROTATION_LIGHT_R: { label:'Rotation Light Red', tooltip:'Red component for rotation lighting (0-255).', type:'number', min:0, max:255, default:30 },
+ ROTATION_LIGHT_G: { label:'Rotation Light Green', tooltip:'Green component for rotation lighting (0-255).', type:'number', min:0, max:255, default:30 },
+ ROTATION_LIGHT_B: { label:'Rotation Light Blue', tooltip:'Blue component for rotation lighting (0-255).', type:'number', min:0, max:255, default:30 },
  CUSTOM_SUN_R: { label:'Custom Sun Red', tooltip:'Custom red channel (0-255).', type:'number', min:0, max:255, default:255 },
  CUSTOM_SUN_G: { label:'Custom Sun Green', tooltip:'Custom green channel (0-255).', type:'number', min:0, max:255, default:255 },
  CUSTOM_SUN_B: { label:'Custom Sun Blue', tooltip:'Custom blue channel (0-255).', type:'number', min:0, max:255, default:0 },
@@ -1321,7 +1333,8 @@ const FIELDS = {
 // Keys to highlight (commonly changed)
 const HIGHLIGHT_KEYS = new Set([
   'START_TIME_HHMM','INTENSITY_SCALE','SOLAR_MODE','SUN_COLOR_MODE',
-  'ROTATION_CYCLE_INTERVAL_MINUTES','IMAGES_PER_ROTATION','SERVO2_INTERVAL_SEC','SERVO3_INTERVAL_SEC'
+  'ROTATION_CYCLE_INTERVAL_MINUTES','IMAGES_PER_ROTATION','SERVO2_INTERVAL_SEC','SERVO3_INTERVAL_SEC',
+  'CAMERA_LIGHTING_PANELS','CAMERA_TRIGGER_HOLD_MS','TIME_SCALE'
 ]);
 
 // -----------------------------
@@ -1345,6 +1358,14 @@ function recomputeDegreesPerImage(){
 // Form Generation
 // -----------------------------
 function createInput(key){
+  // Handle spacer fields (invisible placeholder divs for grid layout)
+  if(key.startsWith('_SPACER_')){
+    const spacer = document.createElement('div');
+    spacer.className = 'field';
+    spacer.style.visibility = 'hidden';
+    return spacer;
+  }
+  
   const meta = FIELDS[key];
   const wrap = document.createElement('div');
   wrap.className = 'field';
@@ -1424,18 +1445,32 @@ function buildForm(){
     const fs = document.createElement('fieldset');
     const legend = document.createElement('legend'); 
     
-    // Special handling for "Rotation & Imaging" section - make it collapsible
-    if (group.name === 'Rotation & Imaging') {
+    // Check if this is a collapsible section
+    if (group.collapsible) {
+      // Make section collapsible with toggle
       legend.style.cursor = 'pointer';
       legend.style.userSelect = 'none';
+      
+      // Create unique ID for this collapsible section
+      const sectionId = group.name.replace(/\s+/g, '') + 'Content';
+      const storageKey = group.name.replace(/\s+/g, '') + 'Expanded';
+      
       legend.innerHTML = '▶ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
       
       const grid = document.createElement('div'); 
-      grid.className = 'group-grid rotation-imaging';
-      grid.id = 'rotationImagingContent';
+      grid.className = 'group-grid';
+      // Add special class for multi-column grid layouts
+      if (group.name === 'Rotation & Imaging') {
+        grid.className = 'group-grid rotation-imaging';
+      } else if (group.name === 'Imaging Illumination') {
+        grid.className = 'group-grid imaging-illumination';
+      } else if (group.name === 'Imaging Servo Operation & Timing') {
+        grid.className = 'group-grid imaging-servo-timing';
+      }
+      grid.id = sectionId;
       
       // Load collapsed state from localStorage (default: collapsed)
-      const isExpanded = localStorage.getItem('rotationImagingExpanded') === 'true';
+      const isExpanded = localStorage.getItem(storageKey) === 'true';
       if (isExpanded) {
         legend.innerHTML = '▼ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
         grid.style.display = 'grid';
@@ -1449,11 +1484,11 @@ function buildForm(){
         if (isCurrentlyExpanded) {
           grid.style.display = 'none';
           legend.innerHTML = '▶ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
-          localStorage.setItem('rotationImagingExpanded', 'false');
+          localStorage.setItem(storageKey, 'false');
         } else {
           grid.style.display = 'grid';
           legend.innerHTML = '▼ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
-          localStorage.setItem('rotationImagingExpanded', 'true');
+          localStorage.setItem(storageKey, 'true');
         }
       });
       
@@ -1461,7 +1496,7 @@ function buildForm(){
       fs.appendChild(legend);
       fs.appendChild(grid);
     } else {
-      // Regular sections (no special handling)
+      // Regular sections (no collapsible behavior)
       legend.textContent = group.name;
       const grid = document.createElement('div'); grid.className='group-grid';
       group.keys.forEach(k=>{ grid.appendChild(createInput(k)); });
