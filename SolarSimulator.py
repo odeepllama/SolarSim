@@ -2469,6 +2469,8 @@ def handle_command(command_str):
             print(f"  Rotation Speed Preset: \x1b[1m{ROTATION_SPEED_PRESET}\x1b[0m ({ROTATION_SPEED_PRESET_TABLE[ROTATION_SPEED_PRESET]}s/360deg)")
             print(f"  Rotation Imaging Mode: \x1b[1m{ROTATION_CAPTURE_MODE}\x1b[0m")
             print(f"  Camera Lighting Panels: \x1b[1m{CAMERA_LIGHTING_PANELS}\x1b[0m")
+            print(f"  Camera Light RGB: \x1b[1m({CAMERA_LIGHT_R}, {CAMERA_LIGHT_G}, {CAMERA_LIGHT_B})\x1b[0m")
+            print(f"  Rotation Light RGB: \x1b[1m({ROTATION_LIGHT_R}, {ROTATION_LIGHT_G}, {ROTATION_LIGHT_B})\x1b[0m")
             print(f"  1:1 Servo-to-sample rotation ratio: \x1b[1m{SERVO_1TO1_RATIO}\x1b[0m")
             print(f"  Rotation Trigger Hold: \x1b[1m{CAMERA_TRIGGER_HOLD_MS} ms\x1b[0m")
             print("-----------------------")
