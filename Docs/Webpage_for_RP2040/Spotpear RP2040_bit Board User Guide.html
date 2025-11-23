@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<!-- saved from url=(0051)https://spotpear.com/index/study/detail/id/943.html -->
+<html lang="en" style="font-size: 99.375px;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <!-- <meta name="viewport" content="width=1920px, user-scalable=no"> -->
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0, user-scalable=no">-->
+    <title>Raspberry Pi RP2040:bit Board User Guide</title>
+    <meta name="keywords" content="Raspberry Pi PICO RP2040 RP2040:bit BBC Micro:bit Tutorial  Information  Program  Code  User Guide Spotpear">
+    <meta name="description" content="Raspberry Pi Pico RP2040 bit board Size &amp; Port high Compatible BBC micro bit">
+
+    <link rel="shortcut icon" href="./Spotpear RP2040_bit Board User Guide_files/spotpear-logo-2.png">
+    <link rel="bookmark" href="./Spotpear RP2040_bit Board User Guide_files/spotpear-logo-2.png">
+
+    <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans+SC:100,300,400,500,700,900"> -->
+    <link rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/reset.css">
+    <link rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/iconfont.css">
+    <link rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/layui.css">
+    <link rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/swiper.css">
+    <link rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/animate.min.css">
+    <link rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/common.css">
+    
+<script async="" src="./Spotpear RP2040_bit Board User Guide_files/js"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-CJKW0XKGBE');
+</script>
+    <script type="text/javascript" src="./Spotpear RP2040_bit Board User Guide_files/vue@2.js"></script>
+
+<link rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/other.css">
+<script id="LA_CODELESS" src="./Spotpear RP2040_bit Board User Guide_files/js-sdk-event.min.js" data-la-ev="K0qS1Mf3niJRHxnS" crossorigin="anonymous" charset="UTF-8"></script><link id="layuicss-layer" rel="stylesheet" href="./Spotpear RP2040_bit Board User Guide_files/layer.css" media="all"></head>
+
+
+
+<body>
+
+    <div class="container">
+
+        <div class="header_con">
+            <div class="header_div">
+                <div class="welcome user_link fl">
+
+                </div>
+                <div class="fr">
+                    <div class="login_info fl">
+                        <a href="https://spotpear.com/index/forum/index.html">Forum</a>
+                        <span style="margin: 10px;">|</span>
+                    </div>
+                    
+                                        <div class="login_btn fl">
+                                                <a href="https://spotpear.com/index/auth/login.html?next=/index/study/detail/id/943.html">Sign in</a>
+                                                <span>|</span>
+                                                <a href="https://spotpear.com/index/auth/login.html?type=register&amp;next=/index/study/detail/id/943.html">Register</a>
+                                            </div>
+                                        <div class="user_link fl">
+                        <span>|</span>
+                                                <a href="https://spotpear.com/index/auth/login.html?next=/index/study/detail/id/943.html" onclick="return is_login_link(this)">Account</a>
+                                                <span>|</span>
+                                                <a href="https://spotpear.com/index/auth/login.html?next=/index/study/detail/id/943.html" onclick="return is_login_link(this)">My Orders</a>
+                                                <div class="cart_nav_box">
+                            <a href="https://spotpear.com/index/pay/cart.html" class="cart_nav_link">Cart(<em class="cart-num">0</em>)</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="header" style="display:flex">
+
+            <div class="header_body">
+
+                <div class="left">
+
+                    <a href="https://spotpear.com/">
+
+                        <img src="./Spotpear RP2040_bit Board User Guide_files/spotpear-logo-2.png" alt="">
+
+                        <span>Spotpear</span>
+
+                    </a>
+
+                </div>
+
+                <div class="right">
+
+                    <ul class="father">
+
+                        <!-- class='active' -->
+
+                        
+                        <li>
+
+                            <a href="https://spotpear.com/index/product/new.html">NEW</a>
+
+                            <ul class="child">
+
+                                
+                            </ul>
+
+                        </li>
+
+                        
+                        <li>
+
+                            <a href="https://spotpear.com/index/product/index.html">PRODUCTS</a>
+
+                            <ul class="child">
+
+                                
+                            </ul>
+
+                        </li>
+
+                        
+                        <li class="active">
+
+                            <a href="https://spotpear.com/index/study/index.html">ARTICLES</a>
+
+                            <ul class="child">
+
+                                
+                            </ul>
+
+                        </li>
+
+                        
+                        <li>
+
+                            <a href="https://spotpear.com/index/about_us/index.html">ABOUT US</a>
+
+                            <ul class="child">
+
+                                
+                            </ul>
+
+                        </li>
+
+                        
+                        <li>
+
+                            <a href="https://spotpear.com/index/contact/index.html">CONTACT US</a>
+
+                            <ul class="child">
+
+                                
+                            </ul>
+
+                        </li>
+
+                        
+                        <li>
+
+                            <a href="https://spotpear.com/index/pay/index.html">SHOP</a>
+
+                            <ul class="child">
+
+                                
+                            </ul>
+
+                        </li>
+
+                                            </ul>
+	<style>
+	.search .sele{
+		border-radius: 0;
+  border: none;
+  border: 0;
+  outline: none;
+	}
+	</style>
+
+                    <form action="https://spotpear.com/index/search/index.html">
+					
+
+                        <div class="search">
+							<select class="sele" name="lx">
+								<option value="0">PRODUCTS</option>
+								<option value="1">ARTICLES</option>
+                                <option value="2">FORUM</option>
+							</select>
+
+      
+
+                            <input type="text" id="top_search" required="" name="keywords" value="" placeholder="">
+								
+							 <div class="search_btn" id="top_search_img">
+                            
+                                <img src="./Spotpear RP2040_bit Board User Guide_files/search1.png" alt="">
+                            
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                    <div class="mobile_nav">
+
+                        <img class="slideDown" src="./Spotpear RP2040_bit Board User Guide_files/nav.png" alt="">
+
+                        <img class="close" src="./Spotpear RP2040_bit Board User Guide_files/nav_close.png" alt="">
+
+                    </div>
+
+                </div>
+
+                <div class="mobile_banner_nav">
+
+                    <div class="mobile_banner_nav_shadow">
+
+                        <ul>
+
+                            
+                            <li>
+
+                                <a href="https://spotpear.com/index/product/new.html">NEW</a>
+
+                                <ul class="child">
+
+                                    
+                                </ul>
+
+                            </li>
+
+                            
+                            <li>
+
+                                <a href="https://spotpear.com/index/product/index.html">PRODUCTS</a>
+
+                                <ul class="child">
+
+                                    
+                                </ul>
+
+                            </li>
+
+                            
+                            <li class="active">
+
+                                <a href="https://spotpear.com/index/study/index.html">ARTICLES</a>
+
+                                <ul class="child">
+
+                                    
+                                </ul>
+
+                            </li>
+
+                            
+                            <li>
+
+                                <a href="https://spotpear.com/index/about_us/index.html">ABOUT US</a>
+
+                                <ul class="child">
+
+                                    
+                                </ul>
+
+                            </li>
+
+                            
+                            <li>
+
+                                <a href="https://spotpear.com/index/contact/index.html">CONTACT US</a>
+
+                                <ul class="child">
+
+                                    
+                                </ul>
+
+                            </li>
+
+                            
+                            <li>
+
+                                <a href="https://spotpear.com/index/pay/index.html">SHOP</a>
+
+                                <ul class="child">
+
+                                    
+                                </ul>
+
+                            </li>
+
+                            
+                        </ul>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="fixed_right">
+
+            <ul>
+
+                <li class="service" attr-show="qq_list">
+
+                    <a href="javasrcipt:;"><span class="iconfont icon-kefu"></span></a>
+
+                </li>
+
+                <li class="service" attr-show="phone_list">
+
+                    <a href="javasrcipt:;"><span class="iconfont icon-dianhua"></span></a>
+
+                </li>
+
+                <li class="service" attr-show="email_list">
+
+                    <a href="javasrcipt:;"><span class="iconfont icon-666666"></span></a>
+
+                </li>
+
+                <li class="service" attr-show="wx_list">
+
+                    <a href="javasrcipt:;"><span class="iconfont icon-weixin"></span></a>
+
+                </li>
+
+                <li class="qr_code">
+
+                    <a href="javascript:;"><span class="iconfont icon-erweima"></span></a>
+
+                    <div id="qr_code_box" style="display: none;">
+
+                        <img src="./Spotpear RP2040_bit Board User Guide_files/spotpear-web-erweima-09.jpg" alt="">
+
+                    </div>
+
+                </li>
+                <li class="service-gwc">
+                    <a href="https://spotpear.com/index/pay/cart.html"><span class="iconfont icon-gouwuche"></span><span class="icon-text" style="margin-top: -10px; margin-left: 5px;">(<em class="cart-num">0</em>)</span> </a>
+                </li>
+                <li class="service-user">
+                                            <a href="https://spotpear.com/index/auth/login.html?next=/index/study/detail/id/943.html"><span class="iconfont icon-user"></span><span class="icon-text">Account</span></a>
+                                        </li>
+                <li class="service-forum">
+                    <a href="https://spotpear.com/index/forum/index.html"><span class="iconfont icon-luntan"></span><span class="icon-text"><b>Forum</b></span></a>
+                </li>
+                <li class="go_top"><a href="https://spotpear.com/index/study/detail/id/943.html#"><span class="iconfont icon-top"></span></a></li>
+
+            </ul>
+
+            <div class="fiexed_text">
+
+                <!-- QQ客服最多放12个 -->
+
+                <ul class="qq_list">
+
+                    
+                    <li><a href="javascript:;"><span class="iconfont icon-kefu"></span>sales/support</a>
+
+                        <p>Google Chat:  zj734465502@gmail.com</p>
+
+                    </li>
+
+                    
+                </ul>
+
+                <!-- 电话最多放6个 -->
+
+                <ul class="phone_list">
+
+                    
+                    <li><a href="javascript:;"><span class="iconfont icon-dianhua"></span>sales</a>
+
+                        <p>+86-0755-88291180</p>
+
+                    </li>
+
+                    
+                </ul>
+
+                <!-- 邮箱最多放6个 -->
+
+                <ul class="email_list">
+
+                    
+                    <li><a target="_blank" href="mailto:sales@spotpear.com"><span class="iconfont icon-666666"></span>sales01</a>
+
+                        <p>sales@spotpear.com</p>
+
+                    </li>
+
+                    
+                    <li><a target="_blank" href="mailto:dragon_manager@163.com"><span class="iconfont icon-666666"></span>sales02</a>
+
+                        <p>dragon_manager@163.com</p>
+
+                    </li>
+
+                    
+                    <li><a target="_blank" href="mailto:tech-support@spotpear.com"><span class="iconfont icon-666666"></span>support</a>
+
+                        <p>tech-support@spotpear.com</p>
+
+                    </li>
+
+                    
+                    <li><a target="_blank" href="mailto:zhoujie@spotpear.com"><span class="iconfont icon-666666"></span>CEO-Complaints</a>
+
+                        <p>zhoujie@spotpear.com</p>
+
+                    </li>
+
+                    
+                </ul>
+
+                <!-- 微信最多放6个 -->
+
+                <ul class="wx_list">
+
+                    
+                    <li><a href="javascript:;"><span class="iconfont icon-weixin"></span>sales/support</a>
+
+                        <p>WhatsApp:13246739196</p>
+
+                    </li>
+
+                    
+                </ul>
+
+            </div>
+
+        </div>
+<style>
+.detail_right_text div {
+    float: left;
+    font-size: 14px;
+}
+
+.detail_right_text .yc {
+    width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail_right_text .red {
+    color: red;
+}
+    /* 基础样式 */
+.article-directory {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.article-directory ul {
+  padding-left: 20px; /* 或使用margin，根据个人偏好调整 */
+}
+
+.article-directory a {
+  text-decoration: none;
+  color: #333; /* 文本颜色 */
+  display: block;
+  padding: 5px 0; /* 上下内边距，形成点击区域 */
+  transition: color 0.3s ease; /* 颜色过渡效果 */
+}
+
+/* 鼠标悬停效果 */
+.article-directory a:hover {
+  color: #007BFF; /* 鼠标悬停文本颜色 */
+}
+
+/* 当前选中项的样式 */
+.article-directory a.active {
+  font-weight: bold;
+  color: #007BFF; /* 或其他突出颜色 */
+}
+
+/* 可选：为不同级别的目录添加不同的样式 */
+.article-directory li ul a {
+  /* 在这里自定义二级及更深层次链接的样式，例如字体大小、颜色等 */
+}    
+.tag {
+        display:inline;
+		padding:5px;
+		font:14px/28px 'microsoft yahei';
+		background-color:#E8E8E8;
+		color:#666;
+		border-radius:4px;
+        line-height: 35px;
+		transition-duration:0.2s;
+    }
+    .stag {
+        /* display:block;
+		height:28px;
+		padding:0 10px;
+		float:left;
+		margin-right:6px;
+		margin-top:3px;
+		font:14px/28px 'microsoft yahei';
+		background-color:#E8E8E8;
+		color:#666;
+		border-radius:4px;
+		transition-duration:0.2s; */
+
+
+        padding: 3px 5px 3px 5px;
+        margin: 2px;
+        font: 14px/28px 'microsoft yahei';
+        background-color: #E8E8E8;
+        color: #666;
+        border-radius: 5px;
+        transition-duration: 0.2s;
+    }
+    .tag_label {
+		font:14px/28px 'microsoft yahei';
+		color:#666;
+    }
+</style>
+<div class="index_body">
+    <div class="study_body">
+        <div class="study_detail_content">
+            
+            <div class="product_detail_nav">
+
+                <ul>
+                    <li><a target="_blank" href="https://spotpear.com/">HOME</a></li>
+                    <li>&gt;</li>
+                    <li><a target="_blank" href="https://spotpear.com/index/study/index.html">ARTICLES</a></li>
+                                        <li>&gt;</li>
+                    <li><a target="_blank" href="https://spotpear.com/wiki-category/Raspberry-Pi.html">Raspberry Pi</a></li>
+                                        <li>&gt;</li>
+                    <li><a target="_blank" href="https://spotpear.com/wiki-category/Raspberry-Pi-Hat.html">Raspberry Pi HATs</a></li>
+                                        <li>&gt;</li>
+                    <li><a target="_blank" href="https://spotpear.com/wiki-category/Raspberry%20Pi-Hat-Pico-RP2040.html">Raspberry Pi Pico</a></li>
+                                    </ul>
+
+            </div>
+
+            <div class="study_detail_title">
+                <h1>Raspberry Pi RP2040:bit Board User Guide</h1>
+            </div>
+            
+            <div class="study_detail_bottom">
+                <div class="study_detail_left">
+                    <div class="detail_left_nav">
+                        <ul>
+                                                        <li attr-id="1" class="active"><a href="javascript:;">User guide</a></li>
+                                                        <li attr-id="3"><a href="javascript:;">FAQ</a></li>
+                                                        <li><a href="https://spotpear.com/index/forum/questions/product_id/1185.html" style="color: red;">Ask a Question</a></li>
+
+                                                        
+                        </ul>
+                    </div>
+                    
+                    <div attr-id="1" class="detail_left_content rich_text">
+                        <h2 style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;, Tahoma, &quot;Arial sans-serif&quot;; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 5px; padding: 0px 10px; font-size: 22px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); line-height: 45px; text-shadow: none; background-color: rgba(247, 247, 247, 0.4);"><span class="mw-headline" id=".E4.BA.A7.E5.93.81.E6.A6.82.E8.BF.B0" style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 8px 12px; color: rgb(54, 165, 232); margin-left: -10px; text-shadow: none; border-left: 10px solid rgb(54, 165, 232) !important;">一. Enter the download mode</span></h2><p style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); font-size: 14px; line-height: 1.8;"><font color="#333333" face="微软雅黑" style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word;"><span style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; font-size: 16px;">Firmware download</span></font></p><p style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); font-size: 14px; line-height: 1.8;"><a href="https://cdn.static.spotpear.com/uploads/download/diver/rp2040-bit-board/rp2-pico-20221201-unstable-v1.19.1-724-gfb7d21153.uf2" target="_blank" style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 0px; padding: 0px; font-size: 16px; color: rgb(57, 132, 198); text-decoration-line: underline; background-color: rgb(255, 255, 255);">RP2040-bit-Board.uf2</a><font face="微软雅黑" style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word;"><br style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word;"></font></p><p style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); font-size: 14px; line-height: 1.8;"><span style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; font-size: 16px;">RP2040 method of downloading firmware library in windows: After connecting the computer, press the BOOT button and the RESET button at the same time, first release the RESET button and then release the BOOT button, and a removable disk will appear on the computer, so copy the firmware library into it.</span><br style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word;"></p><h2 style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;, Tahoma, &quot;Arial sans-serif&quot;; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 5px; padding: 0px 10px; font-size: 22px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); line-height: 45px; text-shadow: none; background-color: rgba(247, 247, 247, 0.4);"><span class="mw-headline" id=".E4.BA.A7.E5.93.81.E6.A6.82.E8.BF.B0" style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 8px 12px; color: rgb(54, 165, 232); margin-left: -10px; text-shadow: none; border-left: 10px solid rgb(54, 165, 232) !important;">二. LED and key program and phenomenon</span></h2><p style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); font-size: 14px; line-height: 1.8;"><span style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; font-size: 16px;">Program download</span></p><p style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); font-size: 14px; line-height: 1.8;"><a href="https://cdn.static.spotpear.com/uploads/download/diver/rp2040-bit-board/RP2040-bit-Board.py" target="_blank" style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 0px; padding: 0px; font-size: 16px; color: rgb(57, 132, 198); text-decoration-line: underline; background-color: rgb(255, 255, 255);">RP2040-bit-Board.py</a><span style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; font-size: 16px;"><br style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word;"></span></p><p style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); line-height: 1.8;"><font color="#333333" face="微软雅黑"><span style="font-size: 16px;">working procedure</span></font></p><p style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); line-height: 1.8;"><font color="#333333" face="微软雅黑"><span style="font-size: 16px;">1. The 1.led lights up one by one.</span></font></p><p style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); line-height: 1.8;"><font color="#333333" face="微软雅黑"><span style="font-size: 16px;">2. When the key A is pressed, the first horizontal row on the top will light up.</span></font></p><p style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; margin: 7.5px 16px; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); line-height: 1.8;"><font color="#333333" face="微软雅黑"><span style="font-size: 16px;">3. When the key B is pressed, a vertical row near the key B lights&nbsp;</span></font></p><h2 style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;, Tahoma, &quot;Arial sans-serif&quot;; line-height: 45px; color: rgb(51, 51, 51); margin: 5px; font-size: 22px; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px 10px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-shadow: none; background-color: rgba(247, 247, 247, 0.4);"><span class="mw-headline" id=".E4.BA.A7.E5.93.81.E6.A6.82.E8.BF.B0" style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 8px 12px; color: rgb(54, 165, 232); margin-left: -10px; text-shadow: none; border-left: 10px solid rgb(54, 165, 232) !important;">RP2040:bit Board Pins</span></h2><p style="margin: 7.5px 16px; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); line-height: 1.8;"><font color="#333333" face="微软雅黑"><span style="font-size: 16px;">The RP2040:bit Board&nbsp;has 25 external connections on the edge connector of the board, which are referred to as ‘pins’. The edge connector is the gold area on the right side of board as shown the figure below.</span></font><br></p><p style="margin: 7.5px 16px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); font-size: 14px; line-height: 1.8;"><img src="./Spotpear RP2040_bit Board User Guide_files/rp2040-bit-board.jpg" style="color: rgb(0, 0, 0); font-size: medium;"><br></p><table style="box-sizing: inherit; background-color: rgb(255, 255, 255); min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; display: block; overflow-x: auto; color: rgb(51, 51, 51); font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-size: 16px;"><thead style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;"><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;"><th style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">Pin</th><th style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">Description</th></tr></thead><tbody style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;"><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">0</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">KEYA</td></tr><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; background-color: rgb(248, 248, 248);"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">1</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">KEYB</td></tr><tr><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="font-weight: 700;">10</span><br></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">GPIO that is conventionally used for the serial clock (SCK) signal of the 3-wire Serial Peripheral Interface (SPI) bus.<br></td></tr><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">11</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">GPIO that is conventionally used for the Master Out Slave In (MOSI) signal of the SPI bus.</td></tr><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; background-color: rgb(248, 248, 248);"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">12</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">GPIO that is conventionally used for the Master In Slave Out (MISO) signal of the SPI bus.</td></tr><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">13</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">CSn</td></tr><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; background-color: rgb(248, 248, 248);"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">17</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">These pins are wired to the 3V supply, like the large ‘3V’ pad.</td></tr><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">18,19</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><p>Implement the clock signal (SCL) and data line (SDA) of the I2C bus communication protocol. With I2C,</p><p>several devices can be connected on the same bus and send/read messages to and from the CPU.</p><p>Internally, the accelerometer and the compass are connected to i2c.</p></td></tr><tr style="box-sizing: inherit; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; background-color: rgb(248, 248, 248);"><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);"><span style="box-sizing: inherit; min-height: 0px; min-width: 0px; font-weight: bolder; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased;">29</span></td><td style="box-sizing: inherit; padding: 6px 13px; min-height: 0px; min-width: 0px; -webkit-tap-highlight-color: transparent; text-size-adjust: none; -webkit-font-smoothing: antialiased; border: 1px solid rgb(51, 51, 51);">ADC3</td></tr></tbody></table><p style="margin: 7.5px 16px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); color: rgb(51, 51, 51); font-size: 14px; line-height: 1.8;"><br></p><h2 style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;, Tahoma, &quot;Arial sans-serif&quot;; line-height: 45px; color: rgb(51, 51, 51); margin: 5px; font-size: 22px; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px 10px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-shadow: none; background-color: rgba(247, 247, 247, 0.4);"><span class="mw-headline" id=".E4.BA.A7.E5.93.81.E6.A6.82.E8.BF.B0" style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 8px 12px; color: rgb(54, 165, 232); margin-left: -10px; text-shadow: none; border-left: 10px solid rgb(54, 165, 232) !important;">RP2040:bit Board Back view</span></h2><p style="margin: 7.5px 16px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); font-size: 14px; line-height: 1.8;"><a href="https://cdn.static.spotpear.com/uploads/picture/learn/raspberry-pi/rpi-pico/rp2040-bit-board/Pico%20GPIO%20Pins.jpg" target="_blank" style=""><u style="color: rgb(57, 132, 198);">Pico GPIO Pins</u></a><span style="font-size: 16px; color: rgb(51, 51, 51);"></span><br></p><h2 style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;, Tahoma, &quot;Arial sans-serif&quot;; line-height: 45px; color: rgb(51, 51, 51); margin: 5px; font-size: 22px; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px 10px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-shadow: none; background-color: rgba(247, 247, 247, 0.4);"><span class="mw-headline" id=".E4.BA.A7.E5.93.81.E6.A6.82.E8.BF.B0" style="font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 8px 12px; color: rgb(54, 165, 232); margin-left: -10px; text-shadow: none; border-left: 10px solid rgb(54, 165, 232) !important;">Schematic diagram</span></h2><p style="margin: 7.5px 16px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); font-size: 14px; line-height: 1.8;"><a href="https://cdn.static.spotpear.com/uploads/picture/learn/raspberry-pi/rpi-pico/rp2040-bit-board/RP2040-bit-Board.pdf" target="_blank" style=""><u style="color: rgb(57, 132, 198);">RP2040-bit-Board</u></a><span style="font-size: 16px; color: rgb(51, 51, 51);"></span><br></p>                    </div>
+
+                    <div attr-id="2" class="detail_left_content rich_text" style="display: none;">
+                                            </div>
+                    
+                    <div attr-id="3" class="detail_left_content rich_text" style="display: none;">
+                        <h3 style="color: rgb(0, 0, 0); font-family: &quot;Microsoft YaHei&quot;;">To：</h3><p style="margin-bottom: 0px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-indent: 40px; color: rgb(51, 51, 51); font-size: 20px;"></p><p style="margin-bottom: 0px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-indent: 40px; color: rgb(51, 51, 51); font-size: 20px;"></p><p style="margin-top: 15px; margin-bottom: 15px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-indent: 40px; color: rgb(51, 51, 51); font-size: 20px;"><span style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; font-size: 14px;">Dear Customers, There may be a lag of several hours before we could process your order, depending on the time difference between your location and ours. Sincerely hoping your understanding!</span></p><h2 style="font-family: 微软雅黑; color: rgb(51, 51, 51); margin: 0px; font-size: 20px; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0);">Email(support)</h2><p style="margin-top: 15px; margin-bottom: 15px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-indent: 40px; color: rgb(51, 51, 51); font-size: 20px;"><span style="overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; font-size: 14px;"></span></p><p style="margin-right: 30px; margin-bottom: 0px; font-family: 微软雅黑; overflow-wrap: break-word; scroll-behavior: smooth; word-break: break-word; padding: 0px; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); font-size: 20px; color: rgb(51, 51, 51);">services04@spotpear.cn</p>                    </div>
+
+                    <div attr-id="4" class="detail_left_content rich_text" style="display: none;">
+                                            </div>
+
+                    <div style="padding: 0 10px; padding-bottom: 10px;">
+                                                        <span class="tag_label">TAG：</span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1037.html">Core3566004000</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1142.html">STM32 1.54inch OLED</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1175.html">Raspberry Pi 5 8mp Camera</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1222.html">Workstation electronic Nameplate</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1210.html">Raspberry Pi MIPI</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1216.html">Raspberry Pi 5 D</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/wiki/14-inch-Dual-LCD-Computer-PC-Monitor-Display-Secondary-Screen-TypeC-HDMI-Windows-MacOS.html">14 inch Dual LCD Computer PC Monitor Display Double Secondary Screen Type C Mini HDMI 1080P For Windows/MacOS</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1210.html">Raspberry Pi 5</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1233.html">RP2040 LoRa-HF</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1167.html">WiFi6 Development Board</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1119.html">ESP32 C3 MINI TV</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/wiki/Raspberry-Pi-8-inch-DSI-MIPI-LCD-TouchScreen-Display-800x1280-Luckfox-Lyra-RK3506-Luckfox-Omni3576-ESP32-P4.html">Raspberry Pi 8 inch DSI MIPI LCD TouchScreen Display 8inch 800x1280 For Luckfox Lyra RK3506/ESP32-P4/Luckfox Omni3576</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/wiki/Raspberry-Pi-8.8-inch-LCD-DSI-MIPI-480x1920-Display-Capacitive-Touchscreen.html">Raspberry Pi 8.8 inch DSI MIPI Display LCD Capacitive TouchScreen 480x1920</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1879.html">xiaozhi AI Character Personality Configuration Tutorial</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/wiki/NVIDIA-Jetson-TX2-NX-RAM-4GB-eMMC-16GB-1.33TFLOPS.html">1.33TFLOPS RAM-4G eMMC-16 High Performance AI at the Edge</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/wiki/Solar-Charge-D-User-Guide.html">Power</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1122.html">Milk-V Duo</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/wiki/Raspberry-Pi-5-PCIe-WIFI7-Google-TPU-BE200-AX210-AX200-WIFI6E.html">MPW7 Raspberry Pi 5 PCIe to WIFI7 Adapter Board HAT Pi5 For Google TPU BE200 AX210 AI</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/index/study/detail/id/1038.html">Milk-V Duo Wiki</a></span>
+                                                                <span class="stag"><a href="https://spotpear.com/wiki/ESP32-S3-1.75-inch-AMOLED-Display-Capacitive-TouchScreen-QSPI-GPS-N16R8.html">ESP32 S3 Development Board 1.75 inch AMOLED Display TouchScreen SD slot 6-axis sensor Xiaozhi AI Deepseek</a></span>
+                                                        </div>
+                </div>
+                <div class="mobile_line"></div>
+ 
+                               <div class="study_detail_right">
+                    <div class="study_detail_right_box" style="display: flex;border: #d9d9d9 1.5px solid;">
+                        <div class="study_detail_right_product_img" style="flex: 1;">
+                            <a href="https://spotpear.com/index/product/detail/id/1185.html" target="_blank">
+                                <img src="./Spotpear RP2040_bit Board User Guide_files/rp2040-bit-board-01-250.jpg" width="140" height="140" alt="">
+                            </a>
+                        </div>
+                        <div class="study_detail_right_product_desc" style="flex: 1;">
+                            <a href="https://spotpear.com/index/product/detail/id/1185.html" target="_blank">
+                                <div style="display: flex; flex-direction: column; justify-content: center; height: 140px;">
+                                    <div class="detail_right_text">
+                                        <div>Price：</div>
+                                        <div class="red yc">$8/12.89</div>
+                                    </div>
+                    
+                                                                        <div class="detail_right_text">
+                                        <div>Model：</div>
+                                        <div class="yc">RP2040:bit-Board</div>
+                                    </div>
+                                                                        <div class="detail_right_text">
+                                        <div>Brand：</div>
+                                        <div class="yc">Spotpear</div>
+                                    </div>
+                                                                        <div class="detail_right_text">
+                                        <div>SKU：</div>
+                                        <div class="yc">0101576</div>
+                                    </div>
+                                                                    </div>
+                            </a>
+                        </div>                   
+                    
+                    </div>
+
+                    <div class="study_detail_right_text_box">
+                        <div class="detail_right_text">
+                            <a href="https://spotpear.com/index/product/detail/id/1185.html" target="_blank">
+    
+                                <h3 style="margin: 5px 0;width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    Raspberry Pi Pico RP2040 bit board Size &amp; Port high Compatible BBC micro bit                                </h3>
+                            </a>
+                        </div>
+
+                                                <div class="detail_right_text">
+                            <span>TAG：</span>
+                            <span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1360.html">ESP32 C3 MINI TV</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1491.html">Raspberry Pi 5 PCIe to SSD</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/Sipeed-LCD-TFT.html">sipeed display screen 1.14 1.3 2.4 2.8 4.3 5 7inch LCD</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/SIM7600G-H-MiniPCIe-SIMCom-4G-LTE-Cat-4-GNSS.html">SIM7600G H Mini PCIe SIMCom 4G LTE Cat-4 Global GNSS</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1435.html">Raspberry Pi 0.85inch LCD</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1493.html">Raspberry Pi 5 Active Cooler</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/Seeed-Studio-XIAO-RP2040-Tiny-SuperMini-Raspberry-Pi-Pico.html">XIAO RP2040 Tiny SuperMini Arduino MicroPython/CircuitPython SeeedStudio Raspberry-Pi-Pico</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1454.html">NVIDIA Jetson</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/Sipeed-Lichee-Tang-Nano-20K-FPGA-GW2AR-18-QN88-GOAI-Gowin-HDMI-RISCV-Linux-Retro-Game-Open-Source.html">Sipeed Lichee Tang Nano 20K FPGA RISCV Retro-Game Linux GW2AR-18 GOAI Gowin</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/SIMCOM-3G-4G-5G-GNSS-Sub-6G-LTE-FDD-TDD-WCDMA-HSPA+-PCIe-USB3.1-GPIO-NSA-SA-SIM8202G-M2.html">SIM8202G M2 3G 4G 5G GNSS Sub-6G PCIe USB3.1 GPIO M.2 LTE-A NSA SA DFOTA VoLTE SIMCOM</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/Car-Electronic-Eye-Motorcycle-Motorcycle-Bike.html">Devil's Eye Electronic Eye Headlight‌ DIY Display Screen For ​​Toy /Doll /Robot /Car /Motorcycle /Bike</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/Luckfox-Pico-Ultra-Speaker-B-2030-8%CE%A9-2W-Sound-Buzzer.html">Speaker Buzzer Luckfox-Pico-Ultra</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/Raspberry-Pi-4.3-inch-LCD-DSI-MIPI-800x480-Display-Capacitive-Touchscreen-Case.html">Raspberry Pi 4.3 inch DSI LCD With case Display MIPI 800x480Capacitive TouchScreen</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1400.html">ESP32-C6</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/SpeedyBee-F405-V3-Stack-STM32F405-ESC-BLS-60A-FC-Flight-Controller-Driver-Board-DJI-RC-FPV-Fixed-Wing-Airplane-Drone-Quadcopter.html">SpeedyBee F405 V3 BLS 60A FC ESC Stack Flight Controller DJI FPV Drone</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/3.5inch-LCD-Computer-CPU-GPU-RAM-Monitor-PC-USB-TypeC-Secondary-Display-Screen.html">USB Type-C</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/shop/Phone-USB-IR-Infrared-Thermal-Imaging-Camera-B-Thermal-45-USB-Camera-C.html">USB IR Infrared Thermal Imaging Camera C 45°/88° 160x120 For Phone/PC High Temp Warning/Take Photo /Recording video</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1457.html">Metal Case</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1376.html">UPS HAT D</a></span>
+                                                                <span class="tag"><a href="https://spotpear.com/index/product/detail/id/1418.html">Raspberry Pi 5 Active Cooler</a></span>
+                                                            </span>
+                        </div>
+                                            </div>
+                </div>
+                
+                               
+                    
+                
+               
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+<div class="footer">
+    <div class="footer_body">
+        <div class="footer_body_left">
+            <ul>
+                                <li>
+                    <a href="https://spotpear.com/index/product/new.html">NEW</a>
+                </li>
+                                <li>
+                    <a href="https://spotpear.com/index/product/index.html">PRODUCTS</a>
+                </li>
+                                <li class="active">
+                    <a href="https://spotpear.com/index/study/index.html">ARTICLES</a>
+                </li>
+                                <li>
+                    <a href="https://spotpear.com/index/about_us/index.html">ABOUT US</a>
+                </li>
+                                <li>
+                    <a href="https://spotpear.com/index/contact/index.html">CONTACT US</a>
+                </li>
+                                <li>
+                    <a href="https://spotpear.com/index/pay/index.html">SHOP</a>
+                </li>
+                            </ul>
+            <div class="beian">©Copyright 2015 Berlinger Haus | All Rights Reserved</div>
+        </div>
+        <div class="footer_body_right">
+            <div class="row">Address：Rm401, building 4, Enlai industrial city, Nankang Road, Danzhutou community, Nanwan street, Longgang District, Shenzhen</div>
+            <!-- <div class="row">Phone：</div> -->
+            <div class="row">Email：tech-support@spotpear.com        (Only tech support .Order see 'CONTACT US' at our web )</div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="./Spotpear RP2040_bit Board User Guide_files/jquery.min.js"></script>
+<script type="text/javascript" src="./Spotpear RP2040_bit Board User Guide_files/axios.min.js"></script>
+<script type="text/javascript" src="./Spotpear RP2040_bit Board User Guide_files/fun.js"></script>
+<script type="text/javascript" src="./Spotpear RP2040_bit Board User Guide_files/index.js"></script>
+<script charset="UTF-8" id="LA_COLLECT" src="./Spotpear RP2040_bit Board User Guide_files/js-sdk-pro.min.js"></script>
+
+
+<script src="./Spotpear RP2040_bit Board User Guide_files/jquery.min.js"></script>
+<script src="./Spotpear RP2040_bit Board User Guide_files/layui.js"></script>
+<script src="./Spotpear RP2040_bit Board User Guide_files/index.js"></script>
+
+</body></html>
