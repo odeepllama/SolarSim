@@ -1306,7 +1306,7 @@ const FIELDS = {
  SERVO3_STANDALONE_ENABLED: { label:'Servo3 Enabled', tooltip:'Run servo3 periodic motion independently.', type:'checkbox', default:false },
  SERVO3_INTERVAL_SEC: { label:'Servo3 Interval (sec)', tooltip:'Seconds between servo3 standalone actions.', type:'number', min:1, default:120 },
  ROTATION_CAMERA_SERVO: { label:'Rotation Camera Servo', tooltip:'Which servo index triggers camera rotation.', type:'select', options:[2,3], default:2 },
- STILLS_IMAGING_INTERVAL_SEC: { label:'Stills Imaging Interval (sec)', tooltip:'Seconds between still images (STILLS mode).', type:'number', step:'0.1', min:0.01, default:13.5 },
+ STILLS_IMAGING_INTERVAL_SEC: { label:'Stills Imaging Interval (sec)', tooltip:'Auto-calculated from rotation speed and images per rotation.', type:'derived' },
  CAMERA_TRIGGER_HOLD_MS: { label:'Camera Trigger Hold (ms)', tooltip:'Duration to hold camera trigger line.', type:'number', min:1, default:1000 },
  ROTATION_SPEED_PRESET: { label:'Rotation Speed Preset', tooltip:'Preset speeds for rotation stepping.', type:'select', options:['slow','medium','fast'], default:'fast' },
  IMAGES_PER_ROTATION: { label:'Images per Rotation', tooltip:'Number of capture angles per 360° pass.', type:'number', min:2, max:360, default:4 },
@@ -2120,6 +2120,12 @@ function populateFormFromDeviceConfig(){
   if(cfg.CUSTOM_SUN_R !== undefined) state.CUSTOM_SUN_R = cfg.CUSTOM_SUN_R;
   if(cfg.CUSTOM_SUN_G !== undefined) state.CUSTOM_SUN_G = cfg.CUSTOM_SUN_G;
   if(cfg.CUSTOM_SUN_B !== undefined) state.CUSTOM_SUN_B = cfg.CUSTOM_SUN_B;
+  if(cfg.CAMERA_LIGHT_R !== undefined) state.CAMERA_LIGHT_R = cfg.CAMERA_LIGHT_R;
+  if(cfg.CAMERA_LIGHT_G !== undefined) state.CAMERA_LIGHT_G = cfg.CAMERA_LIGHT_G;
+  if(cfg.CAMERA_LIGHT_B !== undefined) state.CAMERA_LIGHT_B = cfg.CAMERA_LIGHT_B;
+  if(cfg.ROTATION_LIGHT_R !== undefined) state.ROTATION_LIGHT_R = cfg.ROTATION_LIGHT_R;
+  if(cfg.ROTATION_LIGHT_G !== undefined) state.ROTATION_LIGHT_G = cfg.ROTATION_LIGHT_G;
+  if(cfg.ROTATION_LIGHT_B !== undefined) state.ROTATION_LIGHT_B = cfg.ROTATION_LIGHT_B;
   if(cfg.ROTATION_ENABLED !== undefined) state.ROTATION_ENABLED = cfg.ROTATION_ENABLED;
   if(cfg.PROGRAM_ENABLED !== undefined) state.PROGRAM_ENABLED = cfg.PROGRAM_ENABLED;
   if(cfg.PROGRAM_REPEATS !== undefined) state.PROGRAM_REPEATS = cfg.PROGRAM_REPEATS;
@@ -2177,6 +2183,24 @@ function populateFormFromDeviceConfig(){
   
   const customSunBField = document.getElementById('CUSTOM_SUN_B');
   if(customSunBField && state.CUSTOM_SUN_B !== undefined) customSunBField.value = state.CUSTOM_SUN_B;
+  
+  const cameraLightRField = document.getElementById('CAMERA_LIGHT_R');
+  if(cameraLightRField && state.CAMERA_LIGHT_R !== undefined) cameraLightRField.value = state.CAMERA_LIGHT_R;
+  
+  const cameraLightGField = document.getElementById('CAMERA_LIGHT_G');
+  if(cameraLightGField && state.CAMERA_LIGHT_G !== undefined) cameraLightGField.value = state.CAMERA_LIGHT_G;
+  
+  const cameraLightBField = document.getElementById('CAMERA_LIGHT_B');
+  if(cameraLightBField && state.CAMERA_LIGHT_B !== undefined) cameraLightBField.value = state.CAMERA_LIGHT_B;
+  
+  const rotationLightRField = document.getElementById('ROTATION_LIGHT_R');
+  if(rotationLightRField && state.ROTATION_LIGHT_R !== undefined) rotationLightRField.value = state.ROTATION_LIGHT_R;
+  
+  const rotationLightGField = document.getElementById('ROTATION_LIGHT_G');
+  if(rotationLightGField && state.ROTATION_LIGHT_G !== undefined) rotationLightGField.value = state.ROTATION_LIGHT_G;
+  
+  const rotationLightBField = document.getElementById('ROTATION_LIGHT_B');
+  if(rotationLightBField && state.ROTATION_LIGHT_B !== undefined) rotationLightBField.value = state.ROTATION_LIGHT_B;
   
   const rotationCheckbox = document.getElementById('ROTATION_ENABLED');
   if(rotationCheckbox && state.ROTATION_ENABLED !== undefined) rotationCheckbox.checked = state.ROTATION_ENABLED;
@@ -9710,6 +9734,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const reSunColorCustomStatus=/sun\s*color[^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
   const reSunColorCustomCmd=/>?\s*set\s+suncolor\s+custom\s+(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})/i;
   const reSunColorCustomSerial=/\[serial\s*cmd\][^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
+  const reCameraLightRGB = /camera\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
+  const reRotationLightRGB = /rotation\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
   const reSolarMode=/solar\s*mode\s*[:=]\s*([A-Z_]+)/i;
   const reProgramEnabled=/program\s*enabled\s*[:=]\s*(true|false)/i;
   const reRotationEnabled=/rotation\s*enabled\s*[:=]\s*(true|false)/i;
@@ -10071,6 +10097,24 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       window.__deviceConfig.CUSTOM_SUN_G = parseInt(mCustomSunRGB[2], 10);
       window.__deviceConfig.CUSTOM_SUN_B = parseInt(mCustomSunRGB[3], 10);
       if(window.__loadingFromDevice) console.log('[PARSER] Found CUSTOM_SUN_RGB:', window.__deviceConfig.CUSTOM_SUN_R, window.__deviceConfig.CUSTOM_SUN_G, window.__deviceConfig.CUSTOM_SUN_B);
+    }
+
+    // Parse camera light RGB values from status output: "Camera Light RGB: (30, 30, 30)"
+    const mCameraLightRGB = trimmedLine.match(reCameraLightRGB);
+    if(mCameraLightRGB){
+      window.__deviceConfig.CAMERA_LIGHT_R = parseInt(mCameraLightRGB[1], 10);
+      window.__deviceConfig.CAMERA_LIGHT_G = parseInt(mCameraLightRGB[2], 10);
+      window.__deviceConfig.CAMERA_LIGHT_B = parseInt(mCameraLightRGB[3], 10);
+      if(window.__loadingFromDevice) console.log('[PARSER] Found CAMERA_LIGHT_RGB:', window.__deviceConfig.CAMERA_LIGHT_R, window.__deviceConfig.CAMERA_LIGHT_G, window.__deviceConfig.CAMERA_LIGHT_B);
+    }
+
+    // Parse rotation light RGB values from status output: "Rotation Light RGB: (30, 30, 30)"
+    const mRotationLightRGB = trimmedLine.match(reRotationLightRGB);
+    if(mRotationLightRGB){
+      window.__deviceConfig.ROTATION_LIGHT_R = parseInt(mRotationLightRGB[1], 10);
+      window.__deviceConfig.ROTATION_LIGHT_G = parseInt(mRotationLightRGB[2], 10);
+      window.__deviceConfig.ROTATION_LIGHT_B = parseInt(mRotationLightRGB[3], 10);
+      if(window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_LIGHT_RGB:', window.__deviceConfig.ROTATION_LIGHT_R, window.__deviceConfig.ROTATION_LIGHT_G, window.__deviceConfig.ROTATION_LIGHT_B);
     }
 
     // Parse program enabled
