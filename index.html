@@ -48,7 +48,7 @@
  .inline { display:flex; align-items:center; gap:.35rem; }
  .small-note { font-size:.65rem; opacity:.7; }
  .error { color:#b00; font-size:.65rem; font-weight:600; }
- .derived { background:#f0f4f8; }
+ input.derived { background:#f0f4f8 !important; cursor:not-allowed; }
  .program-steps-table { width:100%; border-collapse: collapse; margin-top:1rem; }
  .program-steps-table th, .program-steps-table td { border:1px solid #000; padding:7px 9px; font-size:0.9rem; }
  .program-steps-table th { background:#c6c4c4; font-size:1.1rem; font-weight:600; }
@@ -101,10 +101,13 @@
  }
  /* Custom large tooltip for autoloadStatusBadge */
  #autoloadStatusBadge {
-   min-width: 155px !important;
-   padding-left: 10px !important;
-   padding-right: 10px !important;
-   position: relative;
+  min-width: 201px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  position: relative;
+  position: relative;
  }
  #autoloadStatusBadge::before {
    content: attr(data-tooltip);
@@ -441,6 +444,7 @@ select:not(#filename_tag):not(#filename_preview) {
 #tilePopover input[type="text"],
 #tilePopover input[type="number"] { border:1px solid #c9d1dc; border-radius:6px; padding:4px 6px; font-size:.9rem; min-width:80px; }
 #tilePopover .btn { border:1px solid #c0c7d1; background:#f5f7fa; color:#111; border-radius:14px; padding:4px 10px; font-size:.8rem; cursor:pointer; }
+#tilePopover .btn.hotvar { background:#d6e8ff; border-color:#5a92dd; }
 #tilePopover .btn.primary { background:#2a69e6; border-color:#1f56bf; color:#fff; }
 #tilePopover .btn:disabled { opacity:.5; cursor:not-allowed; }
 #tilePopover .btn-row { display:flex; gap:6px; flex-wrap:wrap; padding:0 6px 6px; }
@@ -478,6 +482,7 @@ select:not(#filename_tag):not(#filename_preview) {
 .mini-sect-title { font-size: calc(.6rem + 4pt); font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:#111; opacity:.7; margin:-0.8em 0 3px 0; }
 .monitor-divider { height:1px; background:#d2dae1; margin:8px 0 10px; }
 #monitorCmdInput { font-size:1.25rem; padding:10px 14px; font-weight:500; text-align:left; }
+#monitorSendBtn, #monitorExportLogBtn { font-size:1rem; padding:10px 14px; font-weight:500; }
 /* Autocomplete styles */
 /* Autocomplete panel (enlarged) */
 /* Enlarged dropdown font for accessibility */
@@ -736,8 +741,8 @@ select:not(#filename_tag):not(#filename_preview) {
       <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
       <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
   <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" style="flex:1;" />
-        <button id="monitorSendBtn" type="button" class="secondary" disabled style="font-size:.8rem;">Send</button>
-        <button id="monitorExportLogBtn" type="button" class="secondary" style="font-size:.75rem;">Export Command Log</button>
+        <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
+        <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
       </div>
     </div>
   </div>
@@ -1413,7 +1418,20 @@ function createInput(key){
   } else if(meta.type==='text'){
     input = document.createElement('input'); input.type='text'; input.value = meta.default;
   } else if(meta.type==='derived'){
-    input = document.createElement('input'); input.type='text'; input.readOnly=true; input.classList.add('derived'); input.value = state[key]||'';
+    input = document.createElement('input'); input.type='text'; input.readOnly=true; input.classList.add('derived');
+    // Calculate derived value
+    if(key === 'DEGREES_PER_IMAGE'){
+      const n = parseInt(state.IMAGES_PER_ROTATION||0,10);
+      input.value = n > 0 ? (360/n).toFixed(2) : '0.00';
+    } else if(key === 'STILLS_IMAGING_INTERVAL_SEC'){
+      const preset = state.ROTATION_SPEED_PRESET || 'fast';
+      const n = parseInt(state.IMAGES_PER_ROTATION||0,10);
+      const presetTable = {slow:150, medium:75, fast:40};
+      const totalSec = presetTable[preset] || 40;
+      input.value = n > 0 ? (totalSec/n).toFixed(2) : '0.00';
+    } else {
+      input.value = state[key]||'';
+    }
   } else {
     input = document.createElement('input'); input.type='text';
   }
@@ -2126,6 +2144,12 @@ function populateFormFromDeviceConfig(){
   if(cfg.ROTATION_LIGHT_R !== undefined) state.ROTATION_LIGHT_R = cfg.ROTATION_LIGHT_R;
   if(cfg.ROTATION_LIGHT_G !== undefined) state.ROTATION_LIGHT_G = cfg.ROTATION_LIGHT_G;
   if(cfg.ROTATION_LIGHT_B !== undefined) state.ROTATION_LIGHT_B = cfg.ROTATION_LIGHT_B;
+  if(cfg.IMAGES_PER_ROTATION !== undefined) state.IMAGES_PER_ROTATION = cfg.IMAGES_PER_ROTATION;
+  if(cfg.ROTATION_CYCLE_INTERVAL_MINUTES !== undefined) state.ROTATION_CYCLE_INTERVAL_MINUTES = cfg.ROTATION_CYCLE_INTERVAL_MINUTES;
+  if(cfg.ROTATION_CAMERA_SERVO !== undefined) state.ROTATION_CAMERA_SERVO = cfg.ROTATION_CAMERA_SERVO;
+  if(cfg.ROTATION_CAPTURE_MODE !== undefined) state.ROTATION_CAPTURE_MODE = cfg.ROTATION_CAPTURE_MODE;
+  if(cfg.CAMERA_LIGHTING_PANELS !== undefined) state.CAMERA_LIGHTING_PANELS = cfg.CAMERA_LIGHTING_PANELS;
+  if(cfg.CAMERA_TRIGGER_HOLD_MS !== undefined) state.CAMERA_TRIGGER_HOLD_MS = cfg.CAMERA_TRIGGER_HOLD_MS;
   if(cfg.ROTATION_ENABLED !== undefined) state.ROTATION_ENABLED = cfg.ROTATION_ENABLED;
   if(cfg.PROGRAM_ENABLED !== undefined) state.PROGRAM_ENABLED = cfg.PROGRAM_ENABLED;
   if(cfg.PROGRAM_REPEATS !== undefined) state.PROGRAM_REPEATS = cfg.PROGRAM_REPEATS;
@@ -2201,6 +2225,24 @@ function populateFormFromDeviceConfig(){
   
   const rotationLightBField = document.getElementById('ROTATION_LIGHT_B');
   if(rotationLightBField && state.ROTATION_LIGHT_B !== undefined) rotationLightBField.value = state.ROTATION_LIGHT_B;
+  
+  const imagesPerRotField = document.getElementById('IMAGES_PER_ROTATION');
+  if(imagesPerRotField && state.IMAGES_PER_ROTATION !== undefined) imagesPerRotField.value = state.IMAGES_PER_ROTATION;
+  
+  const rotCycleIntervalField = document.getElementById('ROTATION_CYCLE_INTERVAL_MINUTES');
+  if(rotCycleIntervalField && state.ROTATION_CYCLE_INTERVAL_MINUTES !== undefined) rotCycleIntervalField.value = state.ROTATION_CYCLE_INTERVAL_MINUTES;
+  
+  const rotCamServoField = document.getElementById('ROTATION_CAMERA_SERVO');
+  if(rotCamServoField && state.ROTATION_CAMERA_SERVO !== undefined) rotCamServoField.value = state.ROTATION_CAMERA_SERVO;
+  
+  const rotCaptureModeField = document.getElementById('ROTATION_CAPTURE_MODE');
+  if(rotCaptureModeField && state.ROTATION_CAPTURE_MODE !== undefined) rotCaptureModeField.value = state.ROTATION_CAPTURE_MODE;
+  
+  const camLightPanelsField = document.getElementById('CAMERA_LIGHTING_PANELS');
+  if(camLightPanelsField && state.CAMERA_LIGHTING_PANELS !== undefined) camLightPanelsField.value = state.CAMERA_LIGHTING_PANELS;
+  
+  const camTriggerHoldField = document.getElementById('CAMERA_TRIGGER_HOLD_MS');
+  if(camTriggerHoldField && state.CAMERA_TRIGGER_HOLD_MS !== undefined) camTriggerHoldField.value = state.CAMERA_TRIGGER_HOLD_MS;
   
   const rotationCheckbox = document.getElementById('ROTATION_ENABLED');
   if(rotationCheckbox && state.ROTATION_ENABLED !== undefined) rotationCheckbox.checked = state.ROTATION_ENABLED;
@@ -9736,6 +9778,12 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const reSunColorCustomSerial=/\[serial\s*cmd\][^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
   const reCameraLightRGB = /camera\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
   const reRotationLightRGB = /rotation\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
+  const reImagesPerRotation = /images\s*per\s*rotation\s*[:=]\s*(\d+)/i;
+  const reRotationInterval = /rotation\s*interval\s*[:=]\s*(\d+)\s*sim\s*min/i;
+  const reRotationCameraServo = /rotation\s*imaging\s*servo\s*[:=]\s*(\d+)/i;
+  const reRotationCaptureMode = /rotation\s*imaging\s*mode\s*[:=]\s*(stills|video)/i;
+  const reCameraLightingPanels = /camera\s*lighting\s*panels\s*[:=]\s*(all|middle5|middle3|outer2|outer4)/i;
+  const reRotationTriggerHold = /rotation\s*trigger\s*hold\s*[:=]\s*(\d+)\s*ms/i;
   const reSolarMode=/solar\s*mode\s*[:=]\s*([A-Z_]+)/i;
   const reProgramEnabled=/program\s*enabled\s*[:=]\s*(true|false)/i;
   const reRotationEnabled=/rotation\s*enabled\s*[:=]\s*(true|false)/i;
@@ -10167,6 +10215,48 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     if(mRotNight){
       window.__deviceConfig.ROTATION_AT_NIGHT = mRotNight[1].toLowerCase() === 'true';
       if(window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_AT_NIGHT:', window.__deviceConfig.ROTATION_AT_NIGHT);
+    }
+
+    // Parse images per rotation
+    const mImagesPerRot = trimmedLine.match(reImagesPerRotation);
+    if(mImagesPerRot){
+      window.__deviceConfig.IMAGES_PER_ROTATION = parseInt(mImagesPerRot[1], 10);
+      if(window.__loadingFromDevice) console.log('[PARSER] Found IMAGES_PER_ROTATION:', window.__deviceConfig.IMAGES_PER_ROTATION);
+    }
+
+    // Parse rotation cycle interval
+    const mRotInterval = trimmedLine.match(reRotationInterval);
+    if(mRotInterval){
+      window.__deviceConfig.ROTATION_CYCLE_INTERVAL_MINUTES = parseInt(mRotInterval[1], 10);
+      if(window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_CYCLE_INTERVAL_MINUTES:', window.__deviceConfig.ROTATION_CYCLE_INTERVAL_MINUTES);
+    }
+
+    // Parse rotation camera servo
+    const mRotCamServo = trimmedLine.match(reRotationCameraServo);
+    if(mRotCamServo){
+      window.__deviceConfig.ROTATION_CAMERA_SERVO = parseInt(mRotCamServo[1], 10);
+      if(window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_CAMERA_SERVO:', window.__deviceConfig.ROTATION_CAMERA_SERVO);
+    }
+
+    // Parse rotation capture mode
+    const mRotCaptureMode = trimmedLine.match(reRotationCaptureMode);
+    if(mRotCaptureMode){
+      window.__deviceConfig.ROTATION_CAPTURE_MODE = mRotCaptureMode[1].toUpperCase();
+      if(window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_CAPTURE_MODE:', window.__deviceConfig.ROTATION_CAPTURE_MODE);
+    }
+
+    // Parse camera lighting panels
+    const mCamLightPanels = trimmedLine.match(reCameraLightingPanels);
+    if(mCamLightPanels){
+      window.__deviceConfig.CAMERA_LIGHTING_PANELS = mCamLightPanels[1].toUpperCase();
+      if(window.__loadingFromDevice) console.log('[PARSER] Found CAMERA_LIGHTING_PANELS:', window.__deviceConfig.CAMERA_LIGHTING_PANELS);
+    }
+
+    // Parse camera trigger hold ms
+    const mRotTriggerHold = trimmedLine.match(reRotationTriggerHold);
+    if(mRotTriggerHold){
+      window.__deviceConfig.CAMERA_TRIGGER_HOLD_MS = parseInt(mRotTriggerHold[1], 10);
+      if(window.__loadingFromDevice) console.log('[PARSER] Found CAMERA_TRIGGER_HOLD_MS:', window.__deviceConfig.CAMERA_TRIGGER_HOLD_MS);
     }
     
     // Parse program repeats
@@ -11356,7 +11446,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     const btns=document.createElement('div'); btns.className='btn-row';
     const bRise=document.createElement('button'); bRise.className='btn'; bRise.textContent='Sunrise'; bRise.disabled=!canSend();
     const bNoon=document.createElement('button'); bNoon.className='btn'; bNoon.textContent='Noon'; bNoon.disabled=!canSend();
-    const bNow=document.createElement('button'); bNow.className='btn'; bNow.textContent='Now'; bNow.disabled=!canSend();
+    const bNow=document.createElement('button'); bNow.className='btn hotvar'; bNow.textContent='Now'; bNow.disabled=!canSend();
   btns.appendChild(bRise); btns.appendChild(bNoon); btns.appendChild(bNow); el.appendChild(btns);
     // Custom HHMM with Apply
     const {row,input,get} = hhmmRow(); el.appendChild(row);
@@ -11372,7 +11462,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     const h=document.createElement('h4'); h.textContent='Set Speed'; el.appendChild(h);
     const btns=document.createElement('div'); btns.className='btn-row';
     ['-300x','-60x','-1x','Hold','1x','60x','300x'].forEach(label=>{
-      const b=document.createElement('button'); b.className='btn'; b.textContent=label.toUpperCase(); b.disabled=!canSend();
+      const b=document.createElement('button'); b.className=(label==='1x'?'btn hotvar':'btn'); b.textContent=label.toUpperCase(); b.disabled=!canSend();
       b.addEventListener('click',()=>{ 
         if(label === 'Hold'){
           sendSilent('set speed 0'); 
@@ -11397,17 +11487,17 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   }
   function buildIntensity(el){
     const h=document.createElement('h4'); h.textContent='Set Intensity'; el.appendChild(h);
-    const btns=document.createElement('div'); btns.className='btn-row'; ['0.1','0.25','0.5','0.75','1.0'].forEach(v=>{ const b=document.createElement('button'); b.className='btn'; b.textContent=v; b.disabled=!canSend(); b.addEventListener('click',()=>{ sendSilent('set intensity '+v); hide(); }); btns.appendChild(b); }); el.appendChild(btns);
+    const btns=document.createElement('div'); btns.className='btn-row'; ['0.1','0.25','0.5','0.75','1.0'].forEach(v=>{ const b=document.createElement('button'); b.className=(v==='1.0'?'btn hotvar':'btn'); b.textContent=v; b.disabled=!canSend(); b.addEventListener('click',()=>{ sendSilent('set intensity '+v); hide(); }); btns.appendChild(b); }); el.appendChild(btns);
     const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Custom:'; const num=document.createElement('input'); num.type='number'; num.step='0.1'; num.min='0'; num.max='3'; num.placeholder='e.g., 0.8'; row.appendChild(lab); row.appendChild(num); el.appendChild(row);
     const apply=document.createElement('button'); apply.className='btn primary'; apply.textContent='Apply'; apply.disabled=!canSend(); el.appendChild(apply);
     const validateFmt=()=>{ const v=parseFloat(num.value); return isNaN(v)? null : v; };
     wireEnterApply(num, apply, validateFmt);
     apply.addEventListener('click',()=>{ const v=validateFmt(); if(v!=null){ sendSilent('set intensity '+v); hide(); } });
   }
-  function buildSolarMode(el){ const h=document.createElement('h4'); h.textContent='Solar Mode'; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; [{t:'BASIC',v:'basic'},{t:'SIMPLE',v:'simple'},{t:'SCIENTIFIC',v:'scientific'}].forEach(o=>{ const b=document.createElement('button'); b.className='btn'; b.textContent=o.t; b.disabled=!canSend(); b.addEventListener('click',()=>{ sendSilent('set solarmode '+o.v); hide(); }); btns.appendChild(b); }); el.appendChild(btns); }
-  function buildSunColor(el){ const h=document.createElement('h4'); h.textContent='Sun Color'; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; const bNat=document.createElement('button'); bNat.className='btn'; bNat.textContent='NATURAL'; bNat.disabled=!canSend(); const bBlue=document.createElement('button'); bBlue.className='btn'; bBlue.textContent='BLUE'; bBlue.disabled=!canSend(); btns.appendChild(bNat); btns.appendChild(bBlue); el.appendChild(btns); const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Custom RGB:'; const r=document.createElement('input'); r.type='number'; r.min='0'; r.max='255'; r.placeholder='R'; const g=document.createElement('input'); g.type='number'; g.min='0'; g.max='255'; g.placeholder='G'; const b=document.createElement('input'); b.type='number'; b.min='0'; b.max='255'; b.placeholder='B'; row.appendChild(lab); row.appendChild(r); row.appendChild(g); row.appendChild(b); el.appendChild(row); const apply=document.createElement('button'); apply.className='btn primary'; apply.textContent='Apply'; apply.disabled=!canSend(); el.appendChild(apply); bNat.addEventListener('click',()=>{ sendSilent('set suncolor natural'); hide(); }); bBlue.addEventListener('click',()=>{ sendSilent('set suncolor blue'); hide(); }); const validateFmt=()=>{ const rv=parseInt(r.value,10), gv=parseInt(g.value,10), bv=parseInt(b.value,10); if([rv,gv,bv].some(x=>isNaN(x)||x<0||x>255)) return null; return [rv,gv,bv]; }; [r,g,b].forEach(inp=> wireEnterApply(inp, apply, ()=> validateFmt())); apply.addEventListener('click',()=>{ const vals=validateFmt(); if(vals){ const [rv,gv,bv]=vals; sendSilent(`set suncolor custom ${rv} ${gv} ${bv}`); hide(); } }); }
+  function buildSolarMode(el){ const h=document.createElement('h4'); h.textContent='Solar Mode'; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; [{t:'BASIC',v:'basic'},{t:'SCIENTIFIC',v:'scientific'}].forEach(o=>{ const b=document.createElement('button'); b.className=(o.t==='BASIC'?'btn hotvar':'btn'); b.textContent=o.t; b.disabled=!canSend(); b.addEventListener('click',()=>{ sendSilent('set solarmode '+o.v); hide(); }); btns.appendChild(b); }); el.appendChild(btns); }
+  function buildSunColor(el){ const h=document.createElement('h4'); h.textContent='Sun Color'; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; const bNat=document.createElement('button'); bNat.className='btn'; bNat.textContent='NATURAL'; bNat.disabled=!canSend(); const bBlue=document.createElement('button'); bBlue.className='btn hotvar'; bBlue.textContent='BLUE'; bBlue.disabled=!canSend(); btns.appendChild(bNat); btns.appendChild(bBlue); el.appendChild(btns); const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Custom RGB:'; const r=document.createElement('input'); r.type='number'; r.min='0'; r.max='255'; r.placeholder='R'; const g=document.createElement('input'); g.type='number'; g.min='0'; g.max='255'; g.placeholder='G'; const b=document.createElement('input'); b.type='number'; b.min='0'; b.max='255'; b.placeholder='B'; row.appendChild(lab); row.appendChild(r); row.appendChild(g); row.appendChild(b); el.appendChild(row); const apply=document.createElement('button'); apply.className='btn primary'; apply.textContent='Apply'; apply.disabled=!canSend(); el.appendChild(apply); bNat.addEventListener('click',()=>{ sendSilent('set suncolor natural'); hide(); }); bBlue.addEventListener('click',()=>{ sendSilent('set suncolor blue'); hide(); }); const validateFmt=()=>{ const rv=parseInt(r.value,10), gv=parseInt(g.value,10), bv=parseInt(b.value,10); if([rv,gv,bv].some(x=>isNaN(x)||x<0||x>255)) return null; return [rv,gv,bv]; }; [r,g,b].forEach(inp=> wireEnterApply(inp, apply, ()=> validateFmt())); apply.addEventListener('click',()=>{ const vals=validateFmt(); if(vals){ const [rv,gv,bv]=vals; sendSilent(`set suncolor custom ${rv} ${gv} ${bv}`); hide(); } }); }
   function readTileText(key){ try{ if(window.kvCache&&kvCache.get){ const box=kvCache.get(key); if(!box) return null; const span=box.querySelector('span'); return span? span.textContent.trim():null; } }catch(_){ } return null; }
-  function buildOnOff(el, title, key, toggleCmd){ const h=document.createElement('h4'); h.textContent=title; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; const bOn=document.createElement('button'); bOn.className='btn'; bOn.textContent='Turn ON'; bOn.disabled=!canSend(); const bOff=document.createElement('button'); bOff.className='btn'; bOff.textContent='Turn OFF'; bOff.disabled=!canSend(); btns.appendChild(bOn); btns.appendChild(bOff); el.appendChild(btns); function isOn(){ const t=readTileText(key); return t? /\bON\b/i.test(t) : null; }
+  function buildOnOff(el, title, key, toggleCmd){ const h=document.createElement('h4'); h.textContent=title; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; const bOn=document.createElement('button'); bOn.className=(title==='Program'?'btn hotvar':'btn'); bOn.textContent='Turn ON'; bOn.disabled=!canSend(); const bOff=document.createElement('button'); bOff.className=(title==='Dual Sun'||title==='Rotation Imaging'?'btn hotvar':'btn'); bOff.textContent='Turn OFF'; bOff.disabled=!canSend(); btns.appendChild(bOn); btns.appendChild(bOff); el.appendChild(btns); function isOn(){ const t=readTileText(key); return t? /\bON\b/i.test(t) : null; }
     bOn.addEventListener('click',()=>{ const cur=isOn(); if(cur===false){
         sendSilent(toggleCmd);
       } hide(); });
