@@ -8622,6 +8622,9 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const ALT_CYCLE_PREFIX = [
     { re: /^\s*set\s+suncolor\b/i, options: ['mode','custom'] },
   ];
+  
+  // Commands that should allow digit input without triggering numbered autocomplete selection
+  const DIGIT_INPUT_COMMANDS = /^\s*(set\s+(time|starttime|date|speed|intensity|latitude|images_per_rotation|degrees_per_image|rotationinterval|servo[23]interval|rot_\w+|cameralightrgb|rotationlightrgb)|jump\s+step|savelog|fillpanel)\b/i;
 
   // Command catalog (primary phrases + parameterized templates)
   // Placeholders are included for guidance and stripped automatically on send if left intact
@@ -8633,6 +8636,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     'set intensity <value>',
     'set imageatnight <on|off>',
     'set cameralightingpanels <group>',
+    'set cameralightrgb <r> <g> <b>',
+    'set rotationlightrgb <r> <g> <b>',
     'set rotationatnight <on|off>',
     'set rotationinterval <minutes>',
     'set rotationcameraservo <2|3>',
@@ -8671,11 +8676,13 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     'listprofiles',
     'loadprofile <name>',
     'saveprofile <name> [note]',
+    'profiledelete <name>',
     'savelog <yyyymmdd>',
     'fillpanel <r> <g> <b> [sec]',
     'light camera <on|off>',
     'light rotation <on|off>',
     'restart',
+    'reset',
   // 'help', // Removed from autocomplete suggestions
     'help all'
   ];
@@ -8739,7 +8746,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       const validSetCommands = new Set([
         'speed', 'time', 'starttime', 'intensity', 'timescale',
         'imageatnight', 'rotationatnight', 'rotationinterval',
-        'cameralightingpanels', 'rotationcameraservo', 'rotationmode',
+        'cameralightingpanels', 'cameralightrgb', 'rotationlightrgb',
+        'rotationcameraservo', 'rotationmode',
         'rot_speed', 'rot_inc_deg', 'rot_step_intv', 'rot_stills_intv',
         'rot_trig_hold', 'images_per_rotation', 'degrees_per_image',
         'servo2interval', 'servo3interval', 'latitude', 'date',
@@ -9044,9 +9052,9 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         // Check if user is typing parameter values (not selecting command templates)
         const cursorPos = input.selectionStart || 0;
         const textBeforeCursor = input.value.slice(0, cursorPos);
-          // Special case: if command is "set time", "set speed", or "set intensity" and cursor is after the space, always allow number/letter key
-          if(/^set time [\da-z]*$/i.test(textBeforeCursor) || /^set speed \d*\.?\d*$/.test(textBeforeCursor) || /^set intensity \d*\.?\d*$/.test(textBeforeCursor)){
-            // Let the number/letter key through for normal typing
+          // Special case: commands that accept numeric values should allow digit typing (not trigger autocomplete selection)
+          if(DIGIT_INPUT_COMMANDS.test(textBeforeCursor)){
+            // Let the number key through for normal typing
             return;
           }
         // If there's a space followed by non-placeholder text, user is typing parameters - allow normal typing
