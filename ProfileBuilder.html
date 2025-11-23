@@ -11061,7 +11061,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   // Expose a very small API surface for later Step3 upgrades
   ns.__sunArc = ns.__sunArc || {};
 
-  // Load plant image
+  // Load plant images (daytime and nighttime)
   const plantImage = new Image();
   plantImage.src = 'planty.svg';
   let plantImageLoaded = false;
@@ -11072,6 +11072,18 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   plantImage.onerror = function() {
     console.warn('[Sun Arc] Failed to load planty.svg');
     plantImageLoaded = false; // Explicitly set to false on error
+  };
+
+  const plantImageNight = new Image();
+  plantImageNight.src = 'planty_b&w.svg';
+  let plantImageNightLoaded = false;
+  plantImageNight.onload = function() {
+    plantImageNightLoaded = true;
+    if(wrapper.style.display !== 'none') draw(); // Redraw when image loads
+  };
+  plantImageNight.onerror = function() {
+    console.warn('[Sun Arc] Failed to load planty_b&w.svg');
+    plantImageNightLoaded = false; // Explicitly set to false on error
   };
 
   function parseHHMM(str){
@@ -11242,10 +11254,11 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
 
     if(!data || !data.visible){
       // Night or unknown: match canvas height to the log window so the "Night" text sits at the log's vertical midpoint
+      // Add extra padding for "Night time!" text below the plant image
       let nightH = 20;
       try{
         const logEl = document.getElementById('monitorLog');
-        if(logEl && logEl.clientHeight){ nightH = Math.max(20, logEl.clientHeight); }
+        if(logEl && logEl.clientHeight){ nightH = Math.max(20, logEl.clientHeight + 60); }
       }catch(_){ }
       if(canvas.height !== nightH){ canvas.height = nightH; }
       const h=canvas.height; ctx.clearRect(0,0,w,h);
@@ -11349,10 +11362,40 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     const w=canvas.width, h=canvas.height; ctx.save();
     const isNight = (text||'') === 'Night';
     
-    ctx.fillStyle = isNight ? '#000' : '#777';
-    ctx.font = isNight ? 'bold 16px system-ui, sans-serif' : '12px system-ui, sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(text||'—', w/2, h/2);
+    if(isNight && plantImageNightLoaded){
+      // Draw nighttime plant image with same positioning as daytime plant
+      // During night, canvas height is different (matches log height), so we need to calculate
+      // the geometry as if the daytime arc were drawn with this height
+      const padTop = 18, padSide = 36, padBottom = 4;
+      const Rc = Math.max(6, (w - padSide*2)/2);
+      
+      // Calculate center position accounting for actual canvas height
+      const centerX = w/2;
+      const centerY = Math.min(h - padBottom, padTop + Rc);
+      
+      // Plant dimensions (same as daytime)
+      const plantHeight = Rc * 0.72;
+      const plantWidth = (plantImageNight.width / plantImageNight.height) * plantHeight;
+      
+      // Position: centered horizontally, bottom at baseline (same as daytime)
+      const plantX = centerX - plantWidth / 2;
+      const plantY = centerY - plantHeight - 20;
+      
+      ctx.drawImage(plantImageNight, plantX, plantY, plantWidth, plantHeight);
+      
+      // Add "Night time!" text below the image
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 19.2px system-ui, sans-serif'; // 20% bigger than original 16px
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Night time!', w/2, plantY + plantHeight + 5);
+    } else {
+      // Fallback to text for non-night states or if image failed to load
+      ctx.fillStyle = isNight ? '#000' : '#777';
+      ctx.font = isNight ? 'bold 16px system-ui, sans-serif' : '12px system-ui, sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(text||'—', w/2, h/2);
+    }
     ctx.restore();
   }
 
