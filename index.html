@@ -2117,6 +2117,9 @@ function populateFormFromDeviceConfig(){
   if(cfg.DUAL_SUN_ENABLED !== undefined) state.DUAL_SUN_ENABLED = cfg.DUAL_SUN_ENABLED;
   if(cfg.DUAL_SUN_GAP_DEGREES !== undefined) state.DUAL_SUN_GAP_DEGREES = cfg.DUAL_SUN_GAP_DEGREES;
   if(cfg.DUAL_SUN_OFFSET_MINUTES !== undefined) state.DUAL_SUN_OFFSET_MINUTES = cfg.DUAL_SUN_OFFSET_MINUTES;
+  if(cfg.CUSTOM_SUN_R !== undefined) state.CUSTOM_SUN_R = cfg.CUSTOM_SUN_R;
+  if(cfg.CUSTOM_SUN_G !== undefined) state.CUSTOM_SUN_G = cfg.CUSTOM_SUN_G;
+  if(cfg.CUSTOM_SUN_B !== undefined) state.CUSTOM_SUN_B = cfg.CUSTOM_SUN_B;
   if(cfg.ROTATION_ENABLED !== undefined) state.ROTATION_ENABLED = cfg.ROTATION_ENABLED;
   if(cfg.PROGRAM_ENABLED !== undefined) state.PROGRAM_ENABLED = cfg.PROGRAM_ENABLED;
   if(cfg.PROGRAM_REPEATS !== undefined) state.PROGRAM_REPEATS = cfg.PROGRAM_REPEATS;
@@ -2165,6 +2168,15 @@ function populateFormFromDeviceConfig(){
   
   const dualSunOffsetField = document.getElementById('DUAL_SUN_OFFSET_MINUTES');
   if(dualSunOffsetField && state.DUAL_SUN_OFFSET_MINUTES !== undefined) dualSunOffsetField.value = state.DUAL_SUN_OFFSET_MINUTES;
+  
+  const customSunRField = document.getElementById('CUSTOM_SUN_R');
+  if(customSunRField && state.CUSTOM_SUN_R !== undefined) customSunRField.value = state.CUSTOM_SUN_R;
+  
+  const customSunGField = document.getElementById('CUSTOM_SUN_G');
+  if(customSunGField && state.CUSTOM_SUN_G !== undefined) customSunGField.value = state.CUSTOM_SUN_G;
+  
+  const customSunBField = document.getElementById('CUSTOM_SUN_B');
+  if(customSunBField && state.CUSTOM_SUN_B !== undefined) customSunBField.value = state.CUSTOM_SUN_B;
   
   const rotationCheckbox = document.getElementById('ROTATION_ENABLED');
   if(rotationCheckbox && state.ROTATION_ENABLED !== undefined) rotationCheckbox.checked = state.ROTATION_ENABLED;
@@ -10050,6 +10062,15 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     if(mDualDevice || mDualCmdDevice){
       window.__deviceConfig.DUAL_SUN_ENABLED = (mDualDevice?.[1] || mDualCmdDevice?.[1] || '').toLowerCase() === 'true';
       if(window.__loadingFromDevice) console.log('[PARSER] Found DUAL_SUN_ENABLED:', window.__deviceConfig.DUAL_SUN_ENABLED);
+    }
+
+    // Parse custom sun RGB values from status output: "Custom Sun RGB: (255, 255, 0)"
+    const mCustomSunRGB = trimmedLine.match(/custom\s*sun\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i);
+    if(mCustomSunRGB){
+      window.__deviceConfig.CUSTOM_SUN_R = parseInt(mCustomSunRGB[1], 10);
+      window.__deviceConfig.CUSTOM_SUN_G = parseInt(mCustomSunRGB[2], 10);
+      window.__deviceConfig.CUSTOM_SUN_B = parseInt(mCustomSunRGB[3], 10);
+      if(window.__loadingFromDevice) console.log('[PARSER] Found CUSTOM_SUN_RGB:', window.__deviceConfig.CUSTOM_SUN_R, window.__deviceConfig.CUSTOM_SUN_G, window.__deviceConfig.CUSTOM_SUN_B);
     }
 
     // Parse program enabled
