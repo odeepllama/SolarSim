@@ -2594,7 +2594,7 @@ def handle_command(command_str):
             print("Set: time <hhmm>, date <yyyymmdd>, intensity <0.0-1.0>, latitude <degrees>, speed <scale>, suncolor <natural|blue|custom> [r g b], rotationinterval <minutes>, images_per_rotation <num>, degrees_per_image <float>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>")
             print("Toggle: dualsun, program, rotation, restartafterload, servo2, servo3, 1to1ratio")
             print("Program/Manual: jump nextstep, jump step <n>, listprofiles, loadprofile <profilename>, saveprofile <profilename> [note], profiledelete <profilename>, savelog <yyyymmdd>, status, trigger servo2, trigger servo3, trigger rotation")
-            print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help")
+            print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help all")
             print("-----------------------")
 
         else:
