@@ -9518,7 +9518,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
 
   const state = { port:null, reader:null, writer:null, lineBuf:'', active:false, rate:1000,
     connStartTs:0,
-    stats:{ jsonLines:0, textLines:0 }, scrollLock:false
+    stats:{ jsonLines:0, textLines:0 }, scrollLock:false,
+    statusOutputAllowed: false // Only allow status output for explicit user requests
   };
   // Expose serial state to window for program lock UI
   window.__serialState = state;
@@ -9526,6 +9527,14 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Suppress most lines during a silent status window (auto tile population),
     // unless temporarily disabled for manual Show Status
     const nowTs = performance.now();
+    // Detect status output (from status command)
+    const isStatusOutput = typeof msg === 'string' && (msg.includes('System Status') || msg.includes('-- Simulation & Time --') || msg.includes('Sim Time:') || msg.includes('Program Repeats:') || msg.includes('Program Steps:'));
+    if(isStatusOutput && !state.statusOutputAllowed){
+      return; // Block status output unless explicitly allowed
+    }
+    if(isStatusOutput && state.statusOutputAllowed){
+      state.statusOutputAllowed = false; // Reset after showing
+    }
     if(cls === 'update'){
       // Explicit update entries bypass suppression so users see concise changes
     } else if(state.__suppressDisabledUntil && nowTs < state.__suppressDisabledUntil){
@@ -9552,6 +9561,10 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       }
     }
     if(!logBox) return; const atBottom = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 4;
+      // Utility to allow status output for next log
+      window.allowStatusOutput = function(){
+        state.statusOutputAllowed = true;
+      };
     const d=document.createElement('div');
     let extraCls = '';
     let displayMsg = msg;
@@ -10867,50 +10880,61 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Print command list directly from HTML instead of sending serial command
     const allCommands = [
       {group: 'Set Parameters', commands: [
-        'set autoload <on|off>       - Enable/disable auto-load at startup',
-        'set cameralightingpanels <group> - ALL, MIDDLE5, MIDDLE3, OUTER2, OUTER4',
-        'set date <yyyymmdd>         - Set simulation date for SCIENTIFIC mode',
-        'set degrees_per_image <deg> - Set degrees between images (will recalc images/rotation)',
-        'set imageatnight <on|off>   - Enable/disable servo2 imaging at night',
-        'set images_per_rotation <n> - Set number of images per 360° rotation (2-360)',
-        'set intensity <val>         - Set global sun intensity scale (e.g., 0.5, 1.0)',
-        'set latitude <deg>          - Set latitude for SCIENTIFIC mode (-90 to 90)',
-        'set rot_inc_deg <deg>       - Set rotation increment (float, >0)',
-        'set rot_speed <preset>      - Set rotation speed preset (slow, medium, fast)',
-        'set rot_step_intv <ms>      - Set rotation step interval (int, >0)',
-        'set rot_stills_intv <sec>   - Set STILLS imaging interval (float, >0)',
-        'set rot_trig_hold <ms>      - Set camera trigger hold (int, >0)',
-        'set rotationatnight <on|off> - Enable/disable rotation imaging at night',
-        'set rotationcameraservo <n> - Set rotation camera servo (2 or 3)',
-        'set rotationinterval <min>  - Set minutes between rotation cycles',
-        'set rotationmode <m>        - Set rotation capture mode (stills or video)',
-        'set solarmode <mode>        - Set solar mode (basic, simple, scientific)',
-        'set servo2interval <s>      - Set seconds between servo 2 triggers',
-        'set servo3interval <s>      - Set seconds between servo 3 triggers',
-        'set speed <value>           - Set simulation speed (e.g., 1, 60, 0 for HOLD)',
-        'set starttime <hhmm>        - Set simulation start time anchor',
-        'set suncolor <mode>         - Set sun color (natural, blue, or custom r g b)',
-        'set time <hhmm|noon|now>    - Set simulation time (e.g., 930, 1400, noon, now)'
+        'set autoload <on|off>             - Enable/disable auto-load at startup',
+        'set cameralightingpanels <group>  - ALL, MIDDLE5, MIDDLE3, OUTER2, OUTER4',
+        'set cameralightrgb <r> <g> <b>    - Set camera lighting RGB color (0-255)',
+        'set date <yyyymmdd>               - Set simulation date for SCIENTIFIC mode',
+        'set degrees_per_image <deg>       - Set degrees between images (will recalc images/rotation)',
+        'set imageatnight <on|off>         - Enable/disable servo2 imaging at night',
+        'set images_per_rotation <n>       - Set number of images per 360° rotation (2-360)',
+        'set intensity <val>               - Set global sun intensity scale (e.g., 0.5, 1.0)',
+        'set latitude <deg>                - Set latitude for SCIENTIFIC mode (-90 to 90)',
+        'set rot_inc_deg <deg>             - Set rotation increment (float, >0)',
+        'set rot_speed <preset>            - Set rotation speed preset (slow, medium, fast)',
+        'set rot_step_intv <ms>            - Set rotation step interval (int, >0)',
+        'set rot_stills_intv <sec>         - Set STILLS imaging interval (float, >0)',
+        'set rot_trig_hold <ms>            - Set camera trigger hold (int, >0)',
+        'set rotationatnight <on|off>      - Enable/disable rotation imaging at night',
+        'set rotationcameraservo <n>       - Set rotation camera servo (2 or 3)',
+        'set rotationinterval <min>        - Set minutes between rotation cycles',
+        'set rotationlightrgb <r> <g> <b>  - Set rotation lighting RGB color (0-255)',
+        'set rotationmode <m>              - Set rotation capture mode (stills or video)',
+        'set solarmode <mode>              - Set solar mode (basic, simple, scientific)',
+        'set servo2interval <s>            - Set seconds between servo 2 triggers',
+        'set servo3interval <s>            - Set seconds between servo 3 triggers',
+        'set speed <value>                 - Set simulation speed (e.g., 1, 60, 0 for HOLD)',
+        'set starttime <hhmm>              - Set simulation start time anchor',
+        'set suncolor <mode>               - Set sun color (natural, blue, or custom r g b)',
+        'set time <hhmm|noon|now>          - Set simulation time (e.g., 930, 1400, noon, now)'
       ]},
       {group: 'Toggle Features', commands: [
-        'toggle dualsun              - Toggle dual sun mode on/off',
-        'toggle program              - Toggle timed program on/off',
-        'toggle restartafterload     - Toggle auto-restart after loading profile',
-        'toggle rotation             - Toggle 360 rotation cycle on/off',
-        'toggle servo2               - Toggle standalone servo 2 triggering',
-        'toggle servo3               - Toggle standalone servo 3 triggering',
-        'toggle 1to1ratio            - Toggle servo-to-table 1:1 angle ratio (default 3:4)'
+        'toggle dualsun                    - Toggle dual sun mode on/off',
+        'toggle program                    - Toggle timed program on/off',
+        'toggle restartafterload           - Toggle auto-restart after loading profile',
+        'toggle rotation                   - Toggle 360 rotation cycle on/off',
+        'toggle servo2                     - Toggle standalone servo 2 triggering',
+        'toggle servo3                     - Toggle standalone servo 3 triggering',
+        'toggle 1to1ratio                  - Toggle servo-to-table 1:1 angle ratio (default 3:4)'
       ]},
       {group: 'Program & Manual Actions', commands: [
-        'jump nextstep               - Advance program to next step',
-        'jump step <n>               - Advance program to specific step',
-        'listprofiles                - List available profile files',
-        'loadprofile <name>          - Load settings from profile file',
-        'saveprofile <name> <notes>  - Save settings to profile file',
-        'savelog <yyyymmdd>          - Append settings to date-stamped log',
-        'status                      - Display current settings',
-        'trigger <servo>             - Manually trigger photo (e.g., trigger servo2)',
-        'trigger rotation            - Manually trigger 360° rotation cycle'
+        'jump nextstep                     - Advance program to next step',
+        'jump step <n>                     - Advance program to specific step',
+        'listprofiles                      - List available profile files',
+        'loadprofile <name>                - Load settings from profile file',
+        'program status                    - Display current program execution status',
+        'saveprofile <name> <notes>        - Save settings to profile file',
+        'savelog <yyyymmdd>                - Append settings to date-stamped log',
+        'status                            - Display current settings',
+        'trigger <servo>                   - Manually trigger photo (e.g., trigger servo2)',
+        'trigger rotation                  - Manually trigger 360° rotation cycle'
+      ]},
+      {group: 'Utility Commands', commands: [
+        'fillpanel <r> <g> <b> [sec]       - Fill panel with RGB color for specified seconds',
+        'help all                          - Display this command summary',
+        'light camera <on|off>             - Turn camera lighting on or off',
+        'light rotation <on|off>           - Turn rotation lighting on or off',
+        'reset                             - Perform hard reset of RP2040 board',
+        'restart                           - Restart simulation logic'
       ]}
     ];
 
@@ -10955,8 +10979,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     requestAnimationFrame(poll);
   });
   function postSendSelect(){ if(cmdInput){ cmdInput.focus(); cmdInput.select(); }}
-  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
-  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
+  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
+  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
   exportLogBtn && exportLogBtn.addEventListener('click', exportCommandLog);
   // Silent status trigger (used by auto refresh and initial connect)
   function sendStatusSilent(){
@@ -10974,6 +10998,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Ensure visible output is not suppressed
     state.__silentStatusUntil = 0;
     state.__suppressDisabledUntil = performance.now() + 2400;
+    window.allowStatusOutput(); // Allow status output for this request
     // Briefly pause auto refresh to avoid overlapping a silent window
     try{
       if(state.__stopPeriodicStatus) state.__stopPeriodicStatus();
