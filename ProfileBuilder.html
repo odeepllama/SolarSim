@@ -484,8 +484,21 @@ select:not(#filename_tag):not(#filename_preview) {
 .pill.amber { background:#c58112; color:#fff; }
 .mini-sect-title { font-size: calc(.6rem + 4pt); font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:#111; opacity:.7; margin:-0.8em 0 3px 0; }
 .monitor-divider { height:1px; background:#d2dae1; margin:8px 0 10px; }
-#monitorCmdInput { font-size:1.25rem; padding:10px 14px; font-weight:500; text-align:left; }
-#monitorSendBtn, #monitorExportLogBtn { font-size:1rem; padding:10px 14px; font-weight:500; }
+#monitorCmdInput {
+  font-size:1.1rem;
+  padding:8px 12px;
+  font-weight:500;
+  text-align:left;
+  border-radius:4px;
+  border:1px solid #2d6cdf;
+  background:#ffffff;
+}
+#monitorSendBtn, #monitorExportLogBtn {
+  font-size:0.9rem;
+  padding:8px 12px;
+  font-weight:500;
+  border-radius:4px;
+}
 /* Autocomplete styles */
 /* Autocomplete panel (enlarged) */
 /* Enlarged dropdown font for accessibility */
@@ -743,7 +756,7 @@ select:not(#filename_tag):not(#filename_preview) {
       <div id="monitorLog" aria-label="Monitor log" role="log"></div>
       <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
       <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-  <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" style="flex:1;" />
+        <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" style="flex:1;" />
         <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
         <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
       </div>
@@ -1396,7 +1409,14 @@ function createInput(key){
   let input;
   if(meta.type==='select'){
     input = document.createElement('select');
-    meta.options.forEach(o=>{ const opt=document.createElement('option'); opt.value=o; opt.textContent=o; input.appendChild(opt); });
+    meta.options.forEach(o=>{
+      const opt=document.createElement('option');
+      opt.value=o;
+      // Display ROTATION_SPEED_PRESET choices in uppercase for consistency
+      if(key==='ROTATION_SPEED_PRESET') opt.textContent=String(o).toUpperCase();
+      else opt.textContent=o;
+      input.appendChild(opt);
+    });
     if(meta.allowCustom){
       const opt=document.createElement('option'); opt.value='custom'; opt.textContent='custom'; input.appendChild(opt);
     }
