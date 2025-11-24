@@ -9518,7 +9518,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
 
   const state = { port:null, reader:null, writer:null, lineBuf:'', active:false, rate:1000,
     connStartTs:0,
-    stats:{ jsonLines:0, textLines:0 }, scrollLock:false
+    stats:{ jsonLines:0, textLines:0 }, scrollLock:false,
+    statusOutputAllowed: false // Only allow status output for explicit user requests
   };
   // Expose serial state to window for program lock UI
   window.__serialState = state;
@@ -9526,6 +9527,14 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Suppress most lines during a silent status window (auto tile population),
     // unless temporarily disabled for manual Show Status
     const nowTs = performance.now();
+    // Detect status output (from status command)
+    const isStatusOutput = typeof msg === 'string' && (msg.includes('System Status') || msg.includes('-- Simulation & Time --') || msg.includes('Sim Time:') || msg.includes('Program Repeats:') || msg.includes('Program Steps:'));
+    if(isStatusOutput && !state.statusOutputAllowed){
+      return; // Block status output unless explicitly allowed
+    }
+    if(isStatusOutput && state.statusOutputAllowed){
+      state.statusOutputAllowed = false; // Reset after showing
+    }
     if(cls === 'update'){
       // Explicit update entries bypass suppression so users see concise changes
     } else if(state.__suppressDisabledUntil && nowTs < state.__suppressDisabledUntil){
@@ -9552,6 +9561,10 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       }
     }
     if(!logBox) return; const atBottom = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 4;
+      // Utility to allow status output for next log
+      window.allowStatusOutput = function(){
+        state.statusOutputAllowed = true;
+      };
     const d=document.createElement('div');
     let extraCls = '';
     let displayMsg = msg;
@@ -10955,8 +10968,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     requestAnimationFrame(poll);
   });
   function postSendSelect(){ if(cmdInput){ cmdInput.focus(); cmdInput.select(); }}
-  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
-  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
+  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
+  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
   exportLogBtn && exportLogBtn.addEventListener('click', exportCommandLog);
   // Silent status trigger (used by auto refresh and initial connect)
   function sendStatusSilent(){
@@ -10974,6 +10987,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Ensure visible output is not suppressed
     state.__silentStatusUntil = 0;
     state.__suppressDisabledUntil = performance.now() + 2400;
+    window.allowStatusOutput(); // Allow status output for this request
     // Briefly pause auto refresh to avoid overlapping a silent window
     try{
       if(state.__stopPeriodicStatus) state.__stopPeriodicStatus();
