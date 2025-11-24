@@ -101,12 +101,15 @@
  }
  /* Custom large tooltip for autoloadStatusBadge */
  #autoloadStatusBadge {
-  min-width: 201px !important;
+  min-width: 120px !important;
   padding-left: 10px !important;
   padding-right: 10px !important;
   padding-top: 12px !important;
   padding-bottom: 12px !important;
-  position: relative;
+  text-align: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   position: relative;
  }
  #autoloadStatusBadge::before {
@@ -1101,6 +1104,7 @@ select:not(#filename_tag):not(#filename_preview) {
   <button id="loadFromDeviceBtn" type="button" class="secondary" disabled title="Load or delete a profile from the connected device">Load / Delete from Device</button>
   <button id="resetLoadConfirmBtn" type="button" class="secondary" style="display:none;" title="Show the Load from Device warning again even if you chose 'Don't show this again'">Reset load confirm</button>
   <button id="resetUploadConfirmBtn" type="button" class="secondary" title="Show the Upload confirmation dialog again even if you chose 'Don't ask me again'">Reset upload confirm</button>
+  <div style="width:100%;"></div><!-- Force new row -->
   <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
     <input type="checkbox" id="loadDefaultOnStartupCheckbox" style="cursor:pointer;">
     <span>Load default on startup</span>
@@ -3547,11 +3551,12 @@ function generateProfileText(){
   if(note) lines.push(`NOTE = ${JSON.stringify(note)}`);
   ORDERED_KEYS.forEach(k=>{
     const v = state[k];
-    if(k==='DEGREES_PER_IMAGE'){ lines.push(`${k} = ${state.DEGREES_PER_IMAGE}`); return; }
     const meta = FIELDS[k];
     if(!meta) return;
+    // Skip derived fields - they're calculated from other values
+    if(meta.type === 'derived') return;
     if(meta.type==='checkbox') lines.push(`${k} = ${v ? 'True':'False'}`);
-    else if(['SOLAR_MODE','SUN_COLOR_MODE','ROTATION_CAPTURE_MODE','ROTATION_SPEED_PRESET'].includes(k)){
+    else if(['SOLAR_MODE','SUN_COLOR_MODE','ROTATION_CAPTURE_MODE','ROTATION_SPEED_PRESET','CAMERA_LIGHTING_PANELS'].includes(k)){
       // Strip any pre-existing quotes to avoid doubling, then quote once
       let sv = String(v).trim();
       sv = sv.replace(/^['"]+|['"]+$/g,'');
@@ -3637,6 +3642,11 @@ function computeFormDeviceDiff() {
   Object.keys(FIELDS).forEach(key => {
     // Skip PROGRAM_STEPS - it's not an editable form field, it's managed via the UI
     if (key === 'PROGRAM_STEPS') {
+      return;
+    }
+
+    // Skip derived fields - they're calculated values, not configurable settings
+    if (FIELDS[key].type === 'derived') {
       return;
     }
 
@@ -3993,6 +4003,9 @@ function buildComparisonData(currentState, currentSteps, profileObj) {
   };
 
   rotationFields.forEach(key => {
+    // Skip derived fields in comparison
+    if (FIELDS[key]?.type === 'derived') return;
+    
     const currentVal = currentState[key] ?? FIELDS[key]?.default ?? '';
     const profileVal = profileObj[key] ?? FIELDS[key]?.default ?? '';
     const differs = compareValues(key, currentVal, profileVal);
@@ -4040,6 +4053,9 @@ function buildComparisonData(currentState, currentSteps, profileObj) {
     };
 
     otherKeys.forEach(key => {
+      // Skip derived fields in comparison
+      if (FIELDS[key]?.type === 'derived') return;
+      
       const currentVal = currentState[key] ?? FIELDS[key]?.default ?? '';
       const profileVal = profileObj[key] ?? FIELDS[key]?.default ?? '';
       const differs = compareValues(key, currentVal, profileVal);
@@ -6905,7 +6921,7 @@ function downloadProfile(){
       if(hashIdx !== -1) rawVal = rawVal.slice(0, hashIdx).trim();
       rawVal = rawVal.trim();
       // Remove surrounding single/double quotes for known string enums and normalize to uppercase
-      if(['SOLAR_MODE','SUN_COLOR_MODE','ROTATION_CAPTURE_MODE','ROTATION_SPEED_PRESET'].includes(m[1])){
+      if(['SOLAR_MODE','SUN_COLOR_MODE','ROTATION_CAPTURE_MODE','ROTATION_SPEED_PRESET','CAMERA_LIGHTING_PANELS'].includes(m[1])){
         rawVal = rawVal.replace(/^['"]+|['"]+$/g,'').toUpperCase();
       }
       obj[m[1]] = rawVal;
