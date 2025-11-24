@@ -8,7 +8,7 @@
  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
  body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 0 1rem 3rem; background:#abbea6; color:#111; font-size: 16px; }
  h1 { font-size: 1.8rem; margin: 1rem 0 .5rem; background:#fff; border-radius:8px; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
- h2 { font-size: 1.4rem; margin-top: 2rem; background:#ffffff; border-radius:8px; padding:1rem; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+ h2 { font-size: 1.4rem; margin-top: 2rem; background:#ffffff; border-radius:8px; padding:1rem; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; }
  fieldset { border:1px solid #ccd; border-radius:6px; margin:1rem 0; padding:.75rem 1rem; background:#fff; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
  legend { font-weight:600; font-size: 1.1rem; padding:4px 12px; background:#dcdcdc; border-radius:4px; }
  label { display:block; font-size:0.9rem; font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:4px; }
@@ -1163,7 +1163,7 @@ select:not(#filename_tag):not(#filename_preview) {
 <div id="formContainer"></div>
 <div id="programSection" style="display:none;">
  <h2 id="programTimelineTitle">Program Step Timeline</h2>
- <div style="font-size:0.96rem; color:#666; margin:4px 0 8px 0; font-style:italic;">💡 Drag segment boundaries or entire segments to adjust timing when not running</div>
+ <div style="font-size:0.96rem; color:#666; margin:4px 0 8px 0; font-style:italic;">💡 Drag segment boundaries or entire segments to adjust timing when not running on device</div>
  <div id="timelineContainer" style="margin:6px 0 10px;"></div>
  <h2 id="programEditingTitle">Program Step Editing</h2>
  <div class="toolbar">
@@ -1335,7 +1335,7 @@ const FIELDS = {
  CUSTOM_SUN_G: { label:'Custom Sun Green', tooltip:'Custom green channel (0-255).', type:'number', min:0, max:255, default:255 },
  CUSTOM_SUN_B: { label:'Custom Sun Blue', tooltip:'Custom blue channel (0-255).', type:'number', min:0, max:255, default:0 },
  PROGRAM_ENABLED: { label:'Program Enabled', tooltip:'Enable scripted program steps block.', type:'checkbox', default:true },
- PROGRAM_REPEATS: { label:'Program Repeats (-1=∞)', tooltip:'How many passes; -1 loops forever.', type:'number', default:-1, showIf: s=>s.PROGRAM_ENABLED },
+ PROGRAM_REPEATS: { label:'Program Repeats (-1 = ∞)', tooltip:'How many passes; -1 loops forever.', type:'number', default:-1, showIf: s=>s.PROGRAM_ENABLED },
  PROGRAM_STEPS: { label:'Program Steps', tooltip:'Table of scheduled simulation actions.', type:'special', showIf: s=>s.PROGRAM_ENABLED }
 };
 
@@ -11644,7 +11644,7 @@ window.__generateNavControlsHtml = function(){
   // Step navigation: show when device is connected and we have program steps
   const shouldShowStepNav = (isDeviceConnected && totalSteps > 0);
   const stepNavHtml = shouldShowStepNav ?
-    `<span class="playhead-step-nav" style="margin-left:12px;">
+    `<span class="playhead-step-nav" style="margin-left:12px; display:inline-flex; align-items:center;">
       <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
         onclick="window.__scrollToPrevStep()"
         title="Jump device to previous step (sends 'jump step' command)"
@@ -11659,7 +11659,7 @@ window.__generateNavControlsHtml = function(){
   // Day navigation: show when device is connected AND program has multiple days
   const shouldShowDayNav = (maxDay > 1 && isDeviceConnected);
   const dayNavHtml = shouldShowDayNav ?
-    `<span class="playhead-day-nav" style="margin-left:24px;">
+    `<span class="playhead-day-nav" style="margin-left:24px; display:inline-flex; align-items:center;">
       <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
         onclick="window.__scrollToPrevDay()"
         title="Jump device to previous day (sends 'jump step' command)"
