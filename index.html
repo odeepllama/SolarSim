@@ -484,8 +484,21 @@ select:not(#filename_tag):not(#filename_preview) {
 .pill.amber { background:#c58112; color:#fff; }
 .mini-sect-title { font-size: calc(.6rem + 4pt); font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:#111; opacity:.7; margin:-0.8em 0 3px 0; }
 .monitor-divider { height:1px; background:#d2dae1; margin:8px 0 10px; }
-#monitorCmdInput { font-size:1.25rem; padding:10px 14px; font-weight:500; text-align:left; }
-#monitorSendBtn, #monitorExportLogBtn { font-size:1rem; padding:10px 14px; font-weight:500; }
+#monitorCmdInput {
+  font-size:1.1rem;
+  padding:8px 12px;
+  font-weight:500;
+  text-align:left;
+  border-radius:4px;
+  border:1px solid #2d6cdf;
+  background:#ffffff;
+}
+#monitorSendBtn, #monitorExportLogBtn {
+  font-size:0.9rem;
+  padding:8px 12px;
+  font-weight:500;
+  border-radius:4px;
+}
 /* Autocomplete styles */
 /* Autocomplete panel (enlarged) */
 /* Enlarged dropdown font for accessibility */
@@ -743,7 +756,7 @@ select:not(#filename_tag):not(#filename_preview) {
       <div id="monitorLog" aria-label="Monitor log" role="log"></div>
       <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
       <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-  <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" style="flex:1;" />
+        <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" style="flex:1;" />
         <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
         <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
       </div>
@@ -899,22 +912,39 @@ select:not(#filename_tag):not(#filename_preview) {
     <h4>Program Steps</h4>
     <p>Define a sequence of timed sun position and light intensity changes. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button></p>
     <div class="help-detail" style="display:none;">
-      <p>Drag the <span style="user-select:none;">⠿</span> handle to reorder rows. Each step controls:</p>
+      <p>Program steps allow you to automate sun simulation and device actions over time. Each row in the table represents a step with specific parameters:</p>
       <ul>
-        <li><code>sim_time_hhmm</code>: Target time (HHMM, 24h)</li>
-        <li><code>transition</code>: RUN (time advances) or JUMP (instant, no duration)</li>
-        <li><code>speed</code>: Time scale (negative = reverse, 0 = hold). Leave empty to keep current.</li>
-        <li><code>intensity_scale</code>: Light multiplier 0.0–3.0 for this step. Leave empty to use global setting.</li>
-        <li><code>dual_sun</code>: Toggle mirrored sun for this segment</li>
-        <li><code>hold_minutes</code>: Real-time pause duration</li>
-        <li><code>repeat</code>: Run this step N additional times before moving to the next</li>
+        <li><code>sim_time_hhmm</code>: Target simulation time (HHMM, 24-hour format)</li>
+        <li><code>transition</code>: <strong>RUN</strong> (advance time) or <strong>JUMP</strong> (instant move, no duration)</li>
+        <li><code>speed</code>: Time scale (negative = reverse, 0 = hold). Leave empty to keep current speed.</li>
+        <li><code>intensity_scale</code>: Light multiplier (0.0–3.0) for this step. Leave empty to use global setting.</li>
+        <li><code>dual_sun</code>: Enable mirrored sun for this segment</li>
+        <li><code>hold_minutes</code>: Real-time pause duration (only applies if speed=0)</li>
+        <li><code>repeat</code>: Repeat this step N additional times before moving to the next</li>
       </ul>
+      <p><strong>Step and Day Navigation:</strong></p>
+      <ul>
+        <li>Use the <strong>Step</strong> navigation buttons to move between individual steps in the timeline.</li>
+        <li>Use the <strong>Day</strong> navigation buttons to jump between days when your program spans multiple simulated days.</li>
+        <li>Navigation controls are located above the timeline and allow quick review and editing of specific segments.</li>
+        <li>Dragging the <span style="user-select:none;">⠿</span> handle reorders steps; you can also drag day boundaries to adjust timing.</li>
+      </ul>
+      <p>Validation ensures correct formats and prevents unsafe device actions. Errors are shown inline and must be resolved before exporting or uploading.</p>
     </div>
 
     <h4>Timeline Visualization</h4>
     <p>Visual preview of your program sequence with color-coded steps. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button></p>
     <div class="help-detail" style="display:none;">
-      <p><strong>Color Legend:</strong> Blue ≤1x, Green ≤2x, Yellow ≤6x, Orange 7x+. <strong>Saturation:</strong> Pale = low intensity, vibrant = high intensity. <strong>Markers:</strong> ⚡ (JUMP), hatched (HOLD), ↺ (day wrap). <strong>Summary:</strong> Shows net simulated span + estimated real runtime. If timeline looks wrong, check that steps are in chronological order and transitions are valid.</p>
+      <p>The timeline provides a graphical overview of your program steps, showing how simulated time and device actions progress:</p>
+      <ul>
+        <li><strong>Color Legend:</strong> Blue ≤1x, Green ≤2x, Yellow ≤6x, Orange 7x+. Saturation indicates intensity (pale = low, vibrant = high).</li>
+        <li><strong>Markers:</strong> ⚡ (JUMP transitions), hatched bars (HOLD segments), ↺ (day wrap/new day).</li>
+        <li><strong>Step Navigation:</strong> Use navigation buttons to move the playhead between steps and days for focused editing and review.</li>
+        <li><strong>Drag to Edit:</strong> Drag segment boundaries or entire segments to adjust timing and order when not running on device.</li>
+        <li><strong>Summary:</strong> Timeline shows total simulated span and estimated real runtime for your program.</li>
+        <li>If the timeline looks incorrect, check that steps are in chronological order and transitions are valid.</li>
+      </ul>
+      <p>Timeline navigation and editing tools help you quickly visualize and refine complex step sequences for accurate device simulation.</p>
     </div>
 
     <h4>Workflow</h4>
@@ -1396,7 +1426,14 @@ function createInput(key){
   let input;
   if(meta.type==='select'){
     input = document.createElement('select');
-    meta.options.forEach(o=>{ const opt=document.createElement('option'); opt.value=o; opt.textContent=o; input.appendChild(opt); });
+    meta.options.forEach(o=>{
+      const opt=document.createElement('option');
+      opt.value=o;
+      // Display ROTATION_SPEED_PRESET choices in uppercase for consistency
+      if(key==='ROTATION_SPEED_PRESET') opt.textContent=String(o).toUpperCase();
+      else opt.textContent=o;
+      input.appendChild(opt);
+    });
     if(meta.allowCustom){
       const opt=document.createElement('option'); opt.value='custom'; opt.textContent='custom'; input.appendChild(opt);
     }
@@ -8008,7 +8045,25 @@ if (loadingRegimesToggle && loadingRegimesContent) {
 
 // Toggle function for inline help details
 function toggleHelpDetail(button) {
-  const detail = button.nextElementSibling;
+  // Try next siblings first
+  let detail = button.nextElementSibling;
+  while (detail && !detail.classList.contains('help-detail')) {
+    detail = detail.nextElementSibling;
+  }
+  // If not found, search parent children
+  if (!detail || !detail.classList.contains('help-detail')) {
+    const parent = button.parentElement;
+    if (parent) {
+      detail = Array.from(parent.children).find(el => el.classList && el.classList.contains('help-detail'));
+    }
+  }
+  // If still not found, search the entire document for the nearest help-detail after the button
+  if (!detail || !detail.classList.contains('help-detail')) {
+    const allDetails = Array.from(document.querySelectorAll('.help-detail'));
+    const btnIndex = allDetails.findIndex(el => el === button);
+    // Find the first help-detail after the button in DOM order
+    detail = allDetails.find(el => el.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_PRECEDING);
+  }
   if (detail && detail.classList.contains('help-detail')) {
     const isVisible = detail.style.display !== 'none';
     detail.style.display = isVisible ? 'none' : 'block';
