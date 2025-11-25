@@ -12,5 +12,10 @@ Also need to share .stl / .3mf / .step files
 
 Notes:
 
+Could use a "Simple Mode"
+Check profile examples
+(Disbale button when not "Running on Device")
+
+
 Hit disconnect to edit from current loaded program/profile
 Load from device (active profile) to fill profile text window
