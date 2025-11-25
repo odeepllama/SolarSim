@@ -10,3 +10,7 @@ Resources needed (cameras, servos, soldering iron, cables, connectors, LED matri
 
 Also need to share .stl / .3mf / .step files
 
+Notes:
+
+Hit disconnect to edit from current loaded program/profile
+Load from device (active profile) to fill profile text window
