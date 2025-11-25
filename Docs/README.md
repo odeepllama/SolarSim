@@ -4,6 +4,8 @@
 
 Resources needed (cameras, servos, soldering iron, cables, connectors, LED matrix panels)
 
+(Bluetooth cell phone trigger?)
+
 [Link to Video Walkthrough] (comign soon!)
 
 Also need to share .stl / .3mf / .step files
