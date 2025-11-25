@@ -1772,6 +1772,19 @@ def handle_command(command_str):
                 except (ValueError, IndexError):
                     print("[SERIAL CMD] Error: cameralightrgb requires 3 integer values (0-255)")
                 return
+            elif param == "rotationlightrgb" and len(parts) >= 5:
+                try:
+                    global ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B
+                    r = int(parts[2])
+                    g = int(parts[3])
+                    b = int(parts[4])
+                    ROTATION_LIGHT_R = clamp(r)
+                    ROTATION_LIGHT_G = clamp(g)
+                    ROTATION_LIGHT_B = clamp(b)
+                    print(f"[SERIAL CMD] Rotation light RGB set to ({ROTATION_LIGHT_R}, {ROTATION_LIGHT_G}, {ROTATION_LIGHT_B})")
+                except (ValueError, IndexError):
+                    print("[SERIAL CMD] Error: rotationlightrgb requires 3 integer values (0-255)")
+                return
             if param == "speed":
                 new_speed = float(value)
                 now_ms = ticks_ms()
