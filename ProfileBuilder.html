@@ -734,8 +734,8 @@ select:not(#filename_tag):not(#filename_preview) {
   <button id="monitorConnectBtn" type="button" class="secondary" title="Open serial device">Connect</button>
   <button id="monitorRefreshBtn" type="button" class="secondary" title="Refresh page">Refresh</button>
   <button id="monitorDisconnectBtn" type="button" class="secondary" disabled title="Close serial connection">Disconnect</button>
-  <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button>
-  <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" disabled title="Send 'help all' to device">Show All Commands</button>
+  <!-- <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button> -->
+  <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title="Send 'help all' to device">Show All Commands</button>
   <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title="Show status output in log">Show Status</button>
 </div>
 <div id="monitorPanel" aria-hidden="true">
@@ -8684,7 +8684,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
 // === Autocomplete (IME-style) for Serial Command Entry ===
 (function(){
   // Configuration
-  const DEBOUNCE_MS = 150;
+  const DEBOUNCE_MS = 50; // Reduced for faster autocomplete response
   const MAX_VISIBLE = 8;
   const MRU_KEY = 'solarSimCmdMRU_v1';
   const HISTORY_KEY = 'solarSimCmdHistory_v1';
@@ -8952,6 +8952,41 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   function hidePanel(){ if(panel){ panel.style.display='none'; highlightIdx=-1; currentItems=[]; } }
   function isPlaceholderFragment(token){ return /<[^>]+>/.test(token); }
 
+  // Find longest common prefix at the current token position
+  function findCommonPrefix(items, userTokens){
+    if(!items.length) return '';
+    const tokenCount = userTokens.length;
+    if(tokenCount === 0) return '';
+    
+    // Get all command tokens at the position we're currently typing
+    const currentTokenIdx = tokenCount - 1;
+    const currentUserToken = userTokens[currentTokenIdx] || '';
+    
+    // Extract the token at this position from all matching commands
+    const candidateTokens = items.map(cmd => {
+      const parts = cmd.split(/\s+/);
+      return parts[currentTokenIdx] || '';
+    }).filter(t => t && !isPlaceholderFragment(t)); // Exclude placeholders
+    
+    if(candidateTokens.length === 0) return currentUserToken;
+    
+    // Find common prefix among these tokens
+    let commonPrefix = candidateTokens[0];
+    for(let i = 1; i < candidateTokens.length; i++){
+      const token = candidateTokens[i];
+      let j = 0;
+      while(j < commonPrefix.length && j < token.length && 
+            commonPrefix[j].toLowerCase() === token[j].toLowerCase()){
+        j++;
+      }
+      commonPrefix = commonPrefix.slice(0, j);
+      if(commonPrefix.length === 0) break;
+    }
+    
+    // Only return if it's longer than what user has typed
+    return commonPrefix.length > currentUserToken.length ? commonPrefix : currentUserToken;
+  }
+
   function rankAndFilter(prefixTokens){
     const raw = prefixTokens.join(' ').trim();
     const tokens = raw.split(/\s+/).filter(Boolean);
@@ -9096,33 +9131,68 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     debounceTimer = setTimeout(()=> updateSuggestions(input), DEBOUNCE_MS);
   }
 
-  function updateSuggestions(input){
+  function updateSuggestions(input, autoCompleteCommon = false){
     const raw = input.value;
     if(!raw.trim()){ hidePanel(); lastInput = raw; return; }
     // If value unchanged and panel visible, skip recompute
-    if(raw === lastInput && panel && panel.style.display!=='none') return;
+    if(raw === lastInput && panel && panel.style.display!=='none' && !autoCompleteCommon) return;
     lastInput = raw;
-
-    // Check if user is typing parameter values (not placeholder patterns)
-    // If there's text after a space that doesn't look like a placeholder, hide autocomplete
-    const cursorPos = input.selectionStart || input.value.length;
-    const textBeforeCursor = input.value.slice(0, cursorPos);
-    const hasStartedParameters = /\s+[^\s<>]+$/.test(textBeforeCursor);
-    if(hasStartedParameters){
-      hidePanel();
-      return;
-    }
 
     const tokens = raw.split(/\s+/); // keep possibly empty last token for prefix
     const scored = rankAndFilter(tokens);
+
+    // Only hide autocomplete if we have NO matches and user is typing parameter values
+    // This prevents hiding when user is still typing the command itself
+    if(scored.length === 0){
+      const cursorPos = input.selectionStart || input.value.length;
+      const textBeforeCursor = input.value.slice(0, cursorPos);
+      const hasStartedParameters = /\s+[^\s<>]+$/.test(textBeforeCursor);
+      if(hasStartedParameters){
+        hidePanel();
+        return;
+      }
+    }
+    
+    // Auto-complete common prefix if requested or if there are multiple matches
+    if((autoCompleteCommon || scored.length > 1) && scored.length > 0){
+      const commonPrefix = findCommonPrefix(scored, tokens);
+      const lastToken = tokens[tokens.length - 1] || '';
+      
+      if(commonPrefix && commonPrefix.length > lastToken.length && autoCompleteCommon){
+        // Replace the last token with the common prefix
+        const beforeLastToken = tokens.slice(0, -1).join(' ');
+        const newValue = beforeLastToken ? beforeLastToken + ' ' + commonPrefix : commonPrefix;
+        input.value = newValue;
+        lastInput = newValue;
+        // Re-filter with new value
+        const newTokens = newValue.split(/\s+/);
+        const newScored = rankAndFilter(newTokens);
+        render(newScored.slice(0,200), input);
+        return;
+      }
+    }
+    
     render(scored.slice(0,200), input); // Hard cap list length; panel scroll shows only first 8
   }
 
   function onKey(e){
     const input = e.target;
     if(input !== getCmdInput()) return;
-    // Tab: cycle alternatives either within a placeholder <a|b|c> or after known prefixes (e.g., set suncolor)
+    // Tab: complete common prefix when panel is open, or cycle alternatives within placeholders
     if(e.key==='Tab'){
+      // If autocomplete panel is open, try to complete common prefix first
+      if(panel && panel.style.display!=='none' && currentItems.length > 0){
+        const tokens = input.value.split(/\s+/);
+        const commonPrefix = findCommonPrefix(currentItems, tokens);
+        const lastToken = tokens[tokens.length - 1] || '';
+        
+        if(commonPrefix && commonPrefix.length > lastToken.length){
+          e.preventDefault();
+          updateSuggestions(input, true);
+          return;
+        }
+      }
+      // Otherwise try placeholder cycling
       if(handleTabCycle(input, !!e.shiftKey)){ e.preventDefault(); return; }
     }
     if(panel && panel.style.display!=='none'){
@@ -9130,21 +9200,27 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if(e.key==='ArrowUp'){ e.preventDefault(); moveHighlight(-1); return; }
       if(e.key==='Escape'){ hidePanel(); return; }
       if(/^[1-9]$/.test(e.key)){
-        // Check if user is typing parameter values (not selecting command templates)
+        // When autocomplete panel is open with suggestions, digits 1-9 select from the list
+        // UNLESS we're typing numeric parameter values for a completed command
         const cursorPos = input.selectionStart || 0;
         const textBeforeCursor = input.value.slice(0, cursorPos);
-          // Special case: commands that accept numeric values should allow digit typing (not trigger autocomplete selection)
-          if(DIGIT_INPUT_COMMANDS.test(textBeforeCursor)){
-            // Let the number key through for normal typing
+        
+        // Only allow digit typing (not selection) if we're in a command that requires numeric input
+        // AND the command part is already complete (has placeholder or matches known pattern)
+        if(DIGIT_INPUT_COMMANDS.test(textBeforeCursor)){
+          // Check if we're past the command part and typing parameter values
+          const tokens = textBeforeCursor.trim().split(/\s+/);
+          // If we have 3+ tokens (e.g., "set speed 1"), we're typing values - allow digit
+          // If we only have 1-2 tokens (e.g., "set rot"), we're still typing command - use for selection
+          if(tokens.length >= 3 || /<[^>]+>/.test(input.value)){
+            // User is typing parameter values - let the number through
             return;
           }
-        // If there's a space followed by non-placeholder text, user is typing parameters - allow normal typing
-        const hasStartedParameters = /\s+[^\s<>]+$/.test(textBeforeCursor);
-        if(!hasStartedParameters){
-          const n = parseInt(e.key,10)-1;
-          if(n<currentItems.length){ e.preventDefault(); accept(n); return; }
         }
-        // Otherwise, let the number key through for normal typing
+        
+        // Otherwise, use digit to select from autocomplete list
+        const n = parseInt(e.key,10)-1;
+        if(n<currentItems.length){ e.preventDefault(); accept(n); return; }
       }
       if(e.key==='Enter'){
         // If panel open and a suggestion highlighted differing from full line, accept first
@@ -9257,9 +9333,57 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     return false;
   }
 
+  let lastInputLength = 0; // Track input length to detect deletion vs typing
+  let lastInputValue = ''; // Track the actual value to detect what changed
+  
   document.addEventListener('input', e=>{
     const input = getCmdInput();
-    if(!input || e.target!==input) return; schedule(input); });
+    if(!input || e.target!==input) return;
+    
+    const currentLength = input.value.length;
+    const currentValue = input.value;
+    const isDeleting = currentLength < lastInputLength;
+    
+    // Detect if user is typing at the end (normal forward typing)
+    const isTypingAtEnd = currentLength > lastInputLength && 
+                          currentValue.startsWith(lastInputValue);
+    
+    lastInputLength = currentLength;
+    lastInputValue = currentValue;
+    
+    // Cancel any pending debounce
+    if(debounceTimer) clearTimeout(debounceTimer);
+    
+    // Only auto-complete when:
+    // 1. User is typing forward at the end of input
+    // 2. NOT deleting
+    // 3. There are multiple matches with a common prefix longer than what's typed
+    // 4. Don't auto-complete very short commands like "set" (3 chars or less)
+    debounceTimer = setTimeout(() => {
+      const tokens = input.value.split(/\s+/);
+      const scored = rankAndFilter(tokens);
+      
+      // Only attempt auto-completion if typing forward AND there are 2+ matches
+      // This prevents auto-completing when user clears input or types a different command
+      if(scored.length >= 2 && isTypingAtEnd && !isDeleting){
+        // Check if there's actually a meaningful common prefix before auto-completing
+        const commonPrefix = findCommonPrefix(scored, tokens);
+        const lastToken = tokens[tokens.length - 1] || '';
+        
+        // Don't auto-complete very short tokens (like "set" which is only 3 chars)
+        // Only auto-complete if the common prefix is genuinely helpful (extends current token)
+        // AND the current token is at least 4 characters OR we're on the 2nd+ token
+        if(commonPrefix && commonPrefix.length > lastToken.length && 
+           (lastToken.length >= 4 || tokens.length >= 2)){
+          updateSuggestions(input, true);
+          return;
+        }
+      }
+      
+      // Otherwise just show suggestions without forcing completion
+      updateSuggestions(input, false);
+    }, DEBOUNCE_MS);
+  });
   document.addEventListener('keydown', onKey);
   window.addEventListener('resize', ()=>{ const input=getCmdInput(); if(panel && panel.style.display!=='none' && input) positionPanel(input); });
   document.addEventListener('click', e=>{
@@ -9654,7 +9778,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   function setConnected(c){
     badge(c?'CONNECTED':'DISCONNECTED', c?'green':'red');
     const loadFromDeviceBtn = document.getElementById('loadFromDeviceBtn');
-    [startBtn, stopBtn, rateSelect, helpBtn, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b=>{ if(b) b.disabled = !c; });
+    [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b=>{ if(b) b.disabled = !c; }); // helpBtn removed from disabling logic
     // When connected: disable Connect button, enable Disconnect button
     // When disconnected: enable Connect button, disable Disconnect button
     if(connectBtn) connectBtn.disabled = c;
