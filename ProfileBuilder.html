@@ -12314,6 +12314,8 @@ window.__scrollToPrevDay = async function(){
     console.log('[Day Nav] Sending command: jump step', stepNumber);
     // Mark that we manually set the day - this prevents auto-detection from overriding
     window.__playheadCurrentDay = targetDay;
+    // Sync the wrap count to match the target day so auto-detection doesn't override
+    window.__dayWrapCount = targetDay - 1;
     window.__playheadManuallySet = true;
     // Suppress verbose status output for 2 seconds after jump command
     state.__navSuppressionActive = true;
@@ -12332,6 +12334,8 @@ window.__scrollToPrevDay = async function(){
     // Device not connected or no steps found - just update the view
     console.log('[Day Nav] Device not connected or no steps, updating view only');
     window.__playheadCurrentDay = targetDay;
+    // Sync the wrap count to match the target day
+    window.__dayWrapCount = targetDay - 1;
     window.__playheadManuallySet = true;
     if(typeof renderTimelineStrip === 'function'){
       try { renderTimelineStrip(); } catch(e){ }
@@ -12493,6 +12497,8 @@ window.__scrollToNextDay = async function(){
     console.log('[Day Nav] Sending command: jump step', stepNumber);
     // Mark that we manually set the day - this prevents auto-detection from overriding
     window.__playheadCurrentDay = targetDay;
+    // Sync the wrap count to match the target day so auto-detection doesn't override
+    window.__dayWrapCount = targetDay - 1;
     window.__playheadManuallySet = true;
     // Suppress verbose status output for 2 seconds after jump command
     state.__navSuppressionActive = true;
@@ -12511,6 +12517,8 @@ window.__scrollToNextDay = async function(){
     // Device not connected or no steps found - just update the view
     console.log('[Day Nav] Device not connected or no steps, updating view only');
     window.__playheadCurrentDay = targetDay;
+    // Sync the wrap count to match the target day
+    window.__dayWrapCount = targetDay - 1;
     window.__playheadManuallySet = true;
     if(typeof renderTimelineStrip === 'function'){
       try { renderTimelineStrip(); } catch(e){ }
@@ -12622,10 +12630,9 @@ function clearHoldState(){
       if(currentSimTime !== lastSimTime){
         console.log('[DEBUG] Time changed from', lastSimTime, 'to', currentSimTime, '- UNLOCKING');
         window.__playheadDayLocked = false;
-        // Clear manual flag when unlocking to allow auto-detection to work
-        // (Manual flag is only needed during the locked period)
-        window.__playheadManuallySet = false;
-        console.log('[DEBUG] Cleared manual flag to enable auto-detection');
+        // Don't clear manual flag here - let it clear naturally when auto-detection takes over
+        // (Manual flag prevents auto-detection from overriding user's explicit day selection)
+        console.log('[DEBUG] Unlocked but keeping manual flag if set');
         // Continue to do day detection below
       } else {
         console.log('[DEBUG] Time unchanged, staying locked on Day', window.__playheadCurrentDay);
@@ -12635,13 +12642,14 @@ function clearHoldState(){
     }
 
     // STEP COUNTER APPROACH: Day is determined by step counter managed by jump nextstep handler
-    // All the complex time-based detection below is DISABLED
-    /*
-    // OLD APPROACH: Build step-to-day map and use exact time matching
-    // This is more robust than inferring from time ranges
+    // All the complex time-based detection below is NOW ENABLED
+    
+    // PRIMARY APPROACH: Use current step index to determine day
+    // Build step-to-day map from multi-day analysis
     let stepToDayMap = new Map();
+    let dayData = null;
     if(typeof analyzeMultiDayProgram === 'function' && typeof programSteps !== 'undefined' && Array.isArray(programSteps) && programSteps.length > 0){
-      const dayData = analyzeMultiDayProgram();
+      dayData = analyzeMultiDayProgram();
       if(dayData && dayData.days){
         dayData.days.forEach(day => {
           if(day.steps){
@@ -12653,19 +12661,60 @@ function clearHoldState(){
       }
     }
 
-    // Match current time to a step and get its day
-    if(stepToDayMap.size > 0 && programSteps && programSteps.length > 0){
-      for(let i = 0; i < programSteps.length; i++){
-        const step = programSteps[i];
-        const stepMinutes = typeof parseHHMM === 'function' ? parseHHMM(step.sim_time_hhmm) : null;
-        if(stepMinutes === currentSimMinutes){
-          const dayForThisStep = stepToDayMap.get(i);
-          if(dayForThisStep && dayForThisStep !== window.__playheadCurrentDay){
-            console.log('[Step Match] Current time', currentSimTime, 'matches step', i, 'which is on Day', dayForThisStep);
-            window.__playheadCurrentDay = dayForThisStep;
-            break;
-          }
+    // APPROACH 1: Use current step index to determine day (works when step index is tracked)
+    let foundDayFromStepIndex = false;
+    if(stepToDayMap.size > 0 && typeof window.__currentStepIndex === 'number' && window.__currentStepIndex > 0){
+      const currentStepArrayIndex = window.__currentStepIndex - 1; // Convert 1-based to 0-based
+      const dayForCurrentStep = stepToDayMap.get(currentStepArrayIndex);
+      if(dayForCurrentStep && dayForCurrentStep !== window.__playheadCurrentDay){
+        console.log('[Step Index Match] Current step index', window.__currentStepIndex, '(array index', currentStepArrayIndex, ') is on Day', dayForCurrentStep);
+        window.__playheadCurrentDay = dayForCurrentStep;
+        foundDayFromStepIndex = true;
+      } else if(dayForCurrentStep){
+        foundDayFromStepIndex = true; // Already on correct day
+      }
+    }
+
+    // APPROACH 2: Fallback - determine day by detecting midnight crossings (23:59 -> 00:xx)
+    // This handles cases where step index isn't being tracked (e.g., during fast playback)
+    // Skip if user manually navigated to a specific day
+    if(!foundDayFromStepIndex && !window.__playheadManuallySet && dayData && dayData.days && dayData.days.length > 1){
+      // Initialize tracking variables if needed
+      if(window.__lastSimMinutesForDayDetection === undefined){
+        window.__lastSimMinutesForDayDetection = currentSimMinutes;
+        window.__dayWrapCount = 0;
+      }
+
+      if(currentSimMinutes !== null && window.__lastSimMinutesForDayDetection !== null){
+        const lastMin = window.__lastSimMinutesForDayDetection;
+        const currMin = currentSimMinutes;
+        
+        // Detect midnight crossing FORWARD: time wraps from late evening (>= 23:00) to early morning (< 06:00)
+        const LATE_EVENING = 23 * 60; // 23:00 = 1380 minutes
+        const EARLY_MORNING = 6 * 60; // 06:00 = 360 minutes
+        
+        // Forward midnight crossing: went from late evening to early morning
+        if(lastMin >= LATE_EVENING && currMin < EARLY_MORNING){
+          window.__dayWrapCount = (window.__dayWrapCount || 0) + 1;
         }
+        // Backward midnight crossing: went from early morning to late evening (reverse playback)
+        else if(lastMin < EARLY_MORNING && currMin >= LATE_EVENING){
+          window.__dayWrapCount = Math.max(0, (window.__dayWrapCount || 0) - 1);
+        }
+
+        // Calculate current day: 1 + number of forward wraps
+        const detectedDay = 1 + (window.__dayWrapCount || 0);
+        
+        // Cap at the maximum number of days in the program
+        const maxDay = dayData.days.length;
+        const clampedDay = Math.min(detectedDay, maxDay);
+
+        if(clampedDay !== window.__playheadCurrentDay){
+          window.__playheadCurrentDay = clampedDay;
+        }
+
+        // Update last sim time for next comparison
+        window.__lastSimMinutesForDayDetection = currentSimMinutes;
       }
     }
 
@@ -12737,9 +12786,11 @@ function clearHoldState(){
                 }
               } else {
                 // nextDayFirstTime == minTime means both days start at the same clock time
-                // This is ambiguous - 06:00 could be Day 1 or Day 2
-                // Skip auto-detection for this day and let it fall through
-                // (We'll handle this with manual override from nav buttons)
+                // Current time belongs to THIS day if it's strictly before the next day's start
+                // (This handles multi-day programs where each day starts at the same time)
+                if(currentSimMinutes >= minTime && currentSimMinutes < nextDayFirstTime){
+                  foundDay = day.dayNumber;
+                }
               }
             } else {
               // Last day - need to check if time actually belongs here
@@ -12813,8 +12864,8 @@ function clearHoldState(){
         }
       }
     }
-    */
-    // END OF DISABLED OLD APPROACH
+    
+    // END OF DAY DETECTION LOGIC
 
     // Only re-render timeline if sim time has changed (updates once per minute)
     if(currentSimTime !== lastSimTime){
