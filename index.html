@@ -12424,8 +12424,45 @@ window.__scrollToNextStep = async function(){
     return;
   }
 
-  const targetStepIndex = window.__currentStepIndex + 1;
-  console.log('[Step Nav] Target step index:', targetStepIndex);
+  // Get current sim time to find the next step after it
+  let currentSimMinutes = null;
+  if(window.kvCache && window.kvCache.get){
+    const simTimeValue = window.kvCache.get('sim');
+    if(simTimeValue){
+      const valueEl = simTimeValue.querySelector('span');
+      if(valueEl){
+        const simTimeStr = valueEl.textContent.trim();
+        if(simTimeStr && simTimeStr.includes(':')){
+          const parts = simTimeStr.split(':');
+          const h = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          if(!isNaN(h) && !isNaN(m)){
+            currentSimMinutes = h * 60 + m;
+          }
+        }
+      }
+    }
+  }
+
+  // Find the next step after current time (search forward)
+  // IMPORTANT: Only search within the current day's steps to avoid jumping to wrong day
+  let nextStepIndex = window.__currentStepIndex + 1;
+  if(currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function'){
+    const currentDay = window.__playheadCurrentDay || 1;
+    // Search for first step with time > current time AND on the same day
+    for(let i = 0; i < programSteps.length; i++){
+      const stepDay = __getDayForStep(i);
+      const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
+      // Only consider steps on the current day
+      if(stepDay === currentDay && stepMinutes > currentSimMinutes){
+        nextStepIndex = i + 1; // Convert to 1-based index
+        break;
+      }
+    }
+  }
+
+  const targetStepIndex = nextStepIndex;
+  console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
 
   // Check if device is connected
   const serialState = window.__serialState || null;
@@ -12662,8 +12699,9 @@ function clearHoldState(){
     }
 
     // APPROACH 1: Use current step index to determine day (works when step index is tracked)
+    // Skip if user manually navigated to a specific day
     let foundDayFromStepIndex = false;
-    if(stepToDayMap.size > 0 && typeof window.__currentStepIndex === 'number' && window.__currentStepIndex > 0){
+    if(!window.__playheadManuallySet && stepToDayMap.size > 0 && typeof window.__currentStepIndex === 'number' && window.__currentStepIndex > 0){
       const currentStepArrayIndex = window.__currentStepIndex - 1; // Convert 1-based to 0-based
       const dayForCurrentStep = stepToDayMap.get(currentStepArrayIndex);
       if(dayForCurrentStep && dayForCurrentStep !== window.__playheadCurrentDay){
@@ -12679,10 +12717,12 @@ function clearHoldState(){
     // This handles cases where step index isn't being tracked (e.g., during fast playback)
     // Skip if user manually navigated to a specific day
     if(!foundDayFromStepIndex && !window.__playheadManuallySet && dayData && dayData.days && dayData.days.length > 1){
-      // Initialize tracking variables if needed
+      // Initialize tracking variables if needed (but preserve wrap count if already set by manual navigation)
       if(window.__lastSimMinutesForDayDetection === undefined){
         window.__lastSimMinutesForDayDetection = currentSimMinutes;
-        window.__dayWrapCount = 0;
+        if(window.__dayWrapCount === undefined){
+          window.__dayWrapCount = 0;
+        }
       }
 
       if(currentSimMinutes !== null && window.__lastSimMinutesForDayDetection !== null){
