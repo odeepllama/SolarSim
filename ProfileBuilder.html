@@ -12323,7 +12323,7 @@ window.__scrollToPrevDay = async function(){
     await __sendDeviceCommand(`jump step ${stepNumber}`);
     // Clear navigation suppression flag after command completes
     setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
-    // Update the UI to reflect the new day
+    // Update  the UI to reflect the new day
     if(typeof renderTimelineStrip === 'function'){
       try { renderTimelineStrip(); } catch(e){ }
     }
