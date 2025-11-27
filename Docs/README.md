@@ -22,10 +22,6 @@ Load from device (active profile) to fill profile text window
 
 Immediate concerns:
 
-Speed remaining at 2X after midnight on Day 2
-Playhead repeats on the same day! (Day is not incremementing with program run)
+Device seems to power off - check command logs
+Still some issues jump between steps and days - need a review/refresh of this area of the code (get sonnet's understanding and then rationalization/simplification/implementation)
 
-Next step button always regresses to step 1 instead of knowing where it is. (Might need new tokens to address this!)
-
-Jumo next step on Day 2 goes to Day 1!
-   "       "          3 goes to Day 1!

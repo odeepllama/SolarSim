@@ -2152,6 +2152,12 @@ function populateFormFromDeviceConfig(){
         });
       });
       renderProgramSteps();
+      
+      // Update the profile text preview to show the program steps
+      // This ensures the textarea is populated even when not explicitly loading from device
+      if(typeof updatePreview === 'function'){
+        updatePreview();
+      }
     }
     
     __populatingForm = false;
