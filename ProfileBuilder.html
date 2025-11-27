@@ -10148,7 +10148,39 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       const minutes = simTimeHHMM % 100;
       const simTimeStr = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
 
-      console.log('[JUMP] Program jumped to step', stepNum, 'at SimTime:', simTimeStr);
+      console.log('[JUMP] ===== JUMP DETECTED =====');
+      console.log('[JUMP] Step:', stepNum, 'Time:', simTimeStr);
+      console.log('[JUMP] Current day BEFORE update:', window.__playheadCurrentDay);
+
+      // Set manual flag FIRST to prevent automatic day detection from overriding
+      window.__playheadManuallySet = true;
+      console.log('[JUMP] Manual flag set to TRUE');
+
+      // Update step tracking and day
+      window.__currentStepIndex = stepNum;
+      
+      // Determine which day this step is on
+      const programIndex = stepNum - 1; // Convert to programSteps array index
+      console.log('[JUMP] Program index (0-based):', programIndex);
+      
+      if(programIndex >= 0 && typeof __getDayForStep === 'function'){
+        const dayForStep = __getDayForStep(programIndex);
+        console.log('[JUMP] __getDayForStep returned:', dayForStep);
+        console.log('[JUMP] Setting playhead day to:', dayForStep);
+        window.__playheadCurrentDay = dayForStep;
+        
+        // Update wrap count to match the day
+        window.__dayWrapCount = dayForStep - 1;
+        console.log('[JUMP] Set wrap count to:', window.__dayWrapCount);
+        
+        // Update last sim minutes to prevent false midnight crossing detection
+        window.__lastSimMinutesForDayDetection = hours * 60 + minutes;
+        console.log('[JUMP] Set last sim minutes to:', window.__lastSimMinutesForDayDetection);
+      } else {
+        console.log('[JUMP] WARNING: Could not determine day for step', stepNum);
+      }
+      
+      console.log('[JUMP] Current day AFTER update:', window.__playheadCurrentDay);
 
       // Update the sim time display to show the jump position
       setKV('sim', 'SimTime', simTimeStr);
@@ -10157,6 +10189,14 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if (typeof renderTimelineStrip === 'function') {
         try { renderTimelineStrip(); } catch(e) { console.error('[JUMP] Timeline update error:', e); }
       }
+      
+      console.log('[JUMP] ===== JUMP COMPLETE =====');
+      
+      // Clear manual flag after 2 seconds to allow auto-detection to resume
+      setTimeout(() => {
+        window.__playheadManuallySet = false;
+        console.log('[JUMP] Cleared manual flag, auto-detection resumed');
+      }, 2000);
     }
 
     // Detect HOLD step entry from [PROGRAM] messages
@@ -12354,13 +12394,61 @@ window.__scrollToPrevStep = async function(){
   console.log('[Step Nav] scrollToPrevStep called');
   console.log('[Step Nav] Current step index:', window.__currentStepIndex);
 
-  if(window.__currentStepIndex <= 0) {
-    console.log('[Step Nav] Already at step 0 (before program starts), returning');
+  // Get current sim time to check if we can go backwards
+  let currentSimMinutes = null;
+  if(window.kvCache && window.kvCache.get){
+    const simTimeValue = window.kvCache.get('sim');
+    if(simTimeValue){
+      const valueEl = simTimeValue.querySelector('span');
+      if(valueEl){
+        const simTimeStr = valueEl.textContent.trim();
+        if(simTimeStr && simTimeStr.includes(':')){
+          const parts = simTimeStr.split(':');
+          const h = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          if(!isNaN(h) && !isNaN(m)){
+            currentSimMinutes = h * 60 + m;
+          }
+        }
+      }
+    }
+  }
+
+  // Check if there are any previous steps available
+  if(typeof programSteps === 'undefined' || !programSteps || programSteps.length === 0){
+    console.log('[Step Nav] No program steps defined');
     return;
   }
 
-  const targetStepIndex = window.__currentStepIndex - 1;
-  console.log('[Step Nav] Target step index:', targetStepIndex);
+  // Find the previous step before current time (search backward)
+  // IMPORTANT: Only search within the current day's steps to avoid jumping to wrong day
+  let prevStepIndex = window.__currentStepIndex - 1;
+  if(currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function'){
+    const currentDay = window.__playheadCurrentDay || 1;
+    // Search backward for last step with time < current time AND on the same day
+    for(let i = programSteps.length - 1; i >= 0; i--){
+      const stepDay = __getDayForStep(i);
+      const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
+      // Only consider steps on the current day
+      if(stepDay === currentDay && stepMinutes < currentSimMinutes){
+        prevStepIndex = i + 1; // Convert to 1-based index
+        break;
+      }
+    }
+  }
+
+  const targetStepIndex = prevStepIndex;
+  console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
+
+  // Validate that the target step is on the current day
+  const currentDay = window.__playheadCurrentDay || 1;
+  if(targetStepIndex > 0 && typeof __getDayForStep === 'function'){
+    const targetDay = __getDayForStep(targetStepIndex - 1); // Convert to 0-based index
+    if(targetDay !== currentDay){
+      console.log('[Step Nav] Target step is on day', targetDay, 'but current day is', currentDay, '- aborting to prevent day jump');
+      return;
+    }
+  }
 
   // Check if device is connected
   const serialState = window.__serialState || null;
