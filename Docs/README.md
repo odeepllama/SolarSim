@@ -18,10 +18,11 @@ Check profile examples
 
 
 Hit disconnect to edit from current loaded program/profile
-Load from device (active profile) to fill profile text window
 
 Immediate concerns:
 
 Device seems to power off - check command logs
 Still some issues jump between steps and days - need a review/refresh of this area of the code (get sonnet's understanding and then rationalization/simplification/implementation)
+
+Background colour to identify device (if 2 or more are connected)
 
