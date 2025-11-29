@@ -22,7 +22,7 @@ serial_command_buffer = ""
 # I. CORE SIMULATION PARAMETERS
 # ======================================================
 # --- Time Configuration ---
-START_TIME_HHMM = 500          # start time - no leading zero!!! (600 is sunrise time, so 500 is used for visual distinction)
+START_TIME_HHMM = 500          # 500 used to be distinct from normal sunrise time
 SIMULATION_DATE = 20250520     # Date in YYYYMMDD format (May 20, 2025)
 TIME_SCALE = 1                 # Time scaling factor (0 (HOLD), 1, 6, 60, or 600X)
 CUSTOM_TIME_SCALE = 1.2        # Custom time scale factor (1.2 = 1.2X, etc.)
