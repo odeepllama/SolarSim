@@ -26,3 +26,4 @@ Still some issues jump between steps and days - need a review/refresh of this ar
 
 Background colour to identify device (if 2 or more are connected)
 
+Make Program control 5 columns wide and thus shrink down the Pogram enabled and Program repeats entries
