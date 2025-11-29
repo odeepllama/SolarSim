@@ -21,9 +21,10 @@ Hit disconnect to edit from current loaded program/profile
 
 Immediate concerns:
 
-Device seems to power off - check command logs
 Still some issues jump between steps and days - need a review/refresh of this area of the code (get sonnet's understanding and then rationalization/simplification/implementation)
 
 Background colour to identify device (if 2 or more are connected)
 
 Make Program control 5 columns wide and thus shrink down the Pogram enabled and Program repeats entries
+
+Stripped down version for the first time user
