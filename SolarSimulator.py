@@ -22,7 +22,7 @@ serial_command_buffer = ""
 # I. CORE SIMULATION PARAMETERS
 # ======================================================
 # --- Time Configuration ---
-START_TIME_HHMM = 500         # 630 start time - no leading zero!!!
+START_TIME_HHMM = 500          # start time - no leading zero!!! (600 is sunrise time, so 500 is used for visual distinction)
 SIMULATION_DATE = 20250520     # Date in YYYYMMDD format (May 20, 2025)
 TIME_SCALE = 1                 # Time scaling factor (0 (HOLD), 1, 6, 60, or 600X)
 CUSTOM_TIME_SCALE = 1.2        # Custom time scale factor (1.2 = 1.2X, etc.)
@@ -81,7 +81,7 @@ CAMERA_LIGHT_R = 30                # Red component (0-255) for camera lighting
 CAMERA_LIGHT_G = 30                # Green component (0-255) for camera lighting
 CAMERA_LIGHT_B = 30                # Blue component (0-255) for camera lighting
 CAMERA_LIGHT_HOLD_MS = 1000        # Duration to hold camera lighting (ms)
-CAMERA_LIGHTING_PANELS = "ALL"   # Options: "ALL", "MIDDLE5", "MIDDLE3", "OUTER2", "OUTER4"
+CAMERA_LIGHTING_PANELS = "ALL"     # Options: "ALL", "MIDDLE5", "MIDDLE3", "OUTER2", "OUTER4"
 
 # Rotation imaging lighting
 ROTATION_LIGHTING_ENABLED = True   # Set to True to enable lighting during rotation
@@ -94,8 +94,8 @@ ROTATION_LIGHT_B = 30              # Blue component (0-255) for rotation lightin
 # III. ROTATION SYSTEM CONFIGURATION
 # ======================================================
 # --- Rotation Cycle Parameters ---
-ROTATION_CYCLE_INTERVAL_MINUTES = 3  # How often to perform imaging cycle (sim time)
-ROTATION_ENABLED = False              # Flag to enable/disable rotation cycle (default OFF; profile can enable)
+ROTATION_CYCLE_INTERVAL_MINUTES = 3    # How often to perform imaging cycle (sim time)
+ROTATION_ENABLED = False               # Flag to enable/disable rotation cycle (default OFF; profile can enable)
 ROTATION_CAMERA_ENABLED = True         # Flag to enable/disable camera triggering during rotation
 SERVO_1TO1_RATIO = False               # Default: 3:4 ratio
 ROTATION_CAMERA_SERVO = 2              # Set to 2 or 3 to select which servo triggers during rotation imaging
