@@ -10157,36 +10157,43 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       console.log('[JUMP] ===== JUMP DETECTED =====');
       console.log('[JUMP] Step:', stepNum, 'Time:', simTimeStr);
       console.log('[JUMP] Current day BEFORE update:', window.__playheadCurrentDay);
+      console.log('[JUMP] Manual flag BEFORE:', window.__playheadManuallySet);
 
-      // Set manual flag FIRST to prevent automatic day detection from overriding
-      window.__playheadManuallySet = true;
-      console.log('[JUMP] Manual flag set to TRUE');
-
-      // Update step tracking and day
+      // Update step tracking
       window.__currentStepIndex = stepNum;
       
-      // Determine which day this step is on
-      const programIndex = stepNum - 1; // Convert to programSteps array index
-      console.log('[JUMP] Program index (0-based):', programIndex);
-      
-      if(programIndex >= 0 && typeof __getDayForStep === 'function'){
-        const dayForStep = __getDayForStep(programIndex);
-        console.log('[JUMP] __getDayForStep returned:', dayForStep);
-        console.log('[JUMP] Setting playhead day to:', dayForStep);
-        window.__playheadCurrentDay = dayForStep;
+      // Only recalculate day if NOT manually set (i.e., this is an automatic jump, not user-initiated)
+      // If __playheadManuallySet is true, the day was already set by the navigation function
+      if(!window.__playheadManuallySet){
+        // Determine which day this step is on
+        const programIndex = stepNum - 1; // Convert to programSteps array index
+        console.log('[JUMP] Program index (0-based):', programIndex);
         
-        // Update wrap count to match the day
-        window.__dayWrapCount = dayForStep - 1;
-        console.log('[JUMP] Set wrap count to:', window.__dayWrapCount);
-        
-        // Update last sim minutes to prevent false midnight crossing detection
-        window.__lastSimMinutesForDayDetection = hours * 60 + minutes;
-        console.log('[JUMP] Set last sim minutes to:', window.__lastSimMinutesForDayDetection);
+        if(programIndex >= 0 && typeof __getDayForStep === 'function'){
+          const dayForStep = __getDayForStep(programIndex);
+          console.log('[JUMP] __getDayForStep returned:', dayForStep);
+          console.log('[JUMP] Setting playhead day to:', dayForStep);
+          window.__playheadCurrentDay = dayForStep;
+          
+          // Update wrap count to match the day
+          window.__dayWrapCount = dayForStep - 1;
+          console.log('[JUMP] Set wrap count to:', window.__dayWrapCount);
+        } else {
+          console.log('[JUMP] WARNING: Could not determine day for step', stepNum);
+        }
       } else {
-        console.log('[JUMP] WARNING: Could not determine day for step', stepNum);
+        console.log('[JUMP] Skipping day recalculation - day was manually set to:', window.__playheadCurrentDay);
       }
       
+      // Update last sim minutes to prevent false midnight crossing detection
+      window.__lastSimMinutesForDayDetection = hours * 60 + minutes;
+      console.log('[JUMP] Set last sim minutes to:', window.__lastSimMinutesForDayDetection);
+      
       console.log('[JUMP] Current day AFTER update:', window.__playheadCurrentDay);
+
+      // Set manual flag to prevent automatic day detection from overriding
+      __setPlayheadManualFlag();
+      console.log('[JUMP] Manual flag set to TRUE');
 
       // Update the sim time display to show the jump position
       setKV('sim', 'SimTime', simTimeStr);
@@ -10197,12 +10204,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       }
       
       console.log('[JUMP] ===== JUMP COMPLETE =====');
-      
-      // Clear manual flag after 2 seconds to allow auto-detection to resume
-      setTimeout(() => {
-        window.__playheadManuallySet = false;
-        console.log('[JUMP] Cleared manual flag, auto-detection resumed');
-      }, 2000);
     }
 
     // Detect HOLD step entry from [PROGRAM] messages
@@ -12157,7 +12158,24 @@ window.__generateNavControlsHtml = function(){
 window.__playheadCurrentDay = 1; // Start at Day 1
 window.__maxProgramDays = 1; // Track total number of days in program
 window.__playheadManuallySet = false; // Track if user manually navigated to a specific day
+window.__playheadManualTimeout = null; // Timeout ID for clearing manual flag
 window.__currentStepIndex = 0; // Track which step we're currently on (0 = before program starts)
+
+// Helper function to set playhead manual flag with proper timeout management
+function __setPlayheadManualFlag(){
+  // Clear any existing timeout to prevent premature clearing
+  if(window.__playheadManualTimeout){
+    clearTimeout(window.__playheadManualTimeout);
+    window.__playheadManualTimeout = null;
+  }
+  window.__playheadManuallySet = true;
+  // Schedule clearing the flag after 2 seconds
+  window.__playheadManualTimeout = setTimeout(() => {
+    window.__playheadManuallySet = false;
+    window.__playheadManualTimeout = null;
+    console.log('[Playhead] Cleared manual flag, auto-detection resumed');
+  }, 2000);
+}
 
 // Helper function to send command to device
 async function __sendDeviceCommand(cmd){
@@ -12362,7 +12380,7 @@ window.__scrollToPrevDay = async function(){
     window.__playheadCurrentDay = targetDay;
     // Sync the wrap count to match the target day so auto-detection doesn't override
     window.__dayWrapCount = targetDay - 1;
-    window.__playheadManuallySet = true;
+    __setPlayheadManualFlag();
     // Suppress verbose status output for 2 seconds after jump command
     state.__navSuppressionActive = true;
     state.__silentStatusUntil = performance.now() + 2000;
@@ -12382,7 +12400,7 @@ window.__scrollToPrevDay = async function(){
     window.__playheadCurrentDay = targetDay;
     // Sync the wrap count to match the target day
     window.__dayWrapCount = targetDay - 1;
-    window.__playheadManuallySet = true;
+    __setPlayheadManualFlag();
     if(typeof renderTimelineStrip === 'function'){
       try { renderTimelineStrip(); } catch(e){ }
     }
@@ -12474,12 +12492,15 @@ window.__scrollToPrevStep = async function(){
       const dayForStep = __getDayForStep(programIndex);
       console.log('[Step Nav] Step', targetStepIndex, 'is on day', dayForStep);
       window.__playheadCurrentDay = dayForStep;
+      // Sync wrap count to match the day so day navigation works correctly
+      window.__dayWrapCount = dayForStep - 1;
     } else if(targetStepIndex === 0){
       // Step 0 is before program starts, default to day 1
       window.__playheadCurrentDay = 1;
+      window.__dayWrapCount = 0;
     }
 
-    window.__playheadManuallySet = true;
+    __setPlayheadManualFlag();
 
     // Suppress verbose status output for 2 seconds after jump command
     state.__navSuppressionActive = true;
@@ -12576,9 +12597,11 @@ window.__scrollToNextStep = async function(){
       const dayForStep = __getDayForStep(programIndex);
       console.log('[Step Nav] Step', targetStepIndex, 'is on day', dayForStep);
       window.__playheadCurrentDay = dayForStep;
+      // Sync wrap count to match the day so day navigation works correctly
+      window.__dayWrapCount = dayForStep - 1;
     }
 
-    window.__playheadManuallySet = true;
+    __setPlayheadManualFlag();
 
     // Suppress verbose status output for 2 seconds after jump command
     state.__navSuppressionActive = true;
@@ -12630,7 +12653,7 @@ window.__scrollToNextDay = async function(){
     window.__playheadCurrentDay = targetDay;
     // Sync the wrap count to match the target day so auto-detection doesn't override
     window.__dayWrapCount = targetDay - 1;
-    window.__playheadManuallySet = true;
+    __setPlayheadManualFlag();
     // Suppress verbose status output for 2 seconds after jump command
     state.__navSuppressionActive = true;
     state.__silentStatusUntil = performance.now() + 2000;
@@ -12650,7 +12673,7 @@ window.__scrollToNextDay = async function(){
     window.__playheadCurrentDay = targetDay;
     // Sync the wrap count to match the target day
     window.__dayWrapCount = targetDay - 1;
-    window.__playheadManuallySet = true;
+    __setPlayheadManualFlag();
     if(typeof renderTimelineStrip === 'function'){
       try { renderTimelineStrip(); } catch(e){ }
     }
@@ -12853,7 +12876,8 @@ function clearHoldState(){
     }
 
     // Fallback: Detect midnight crossing for times that don't match exact steps
-    if(lastSimMinutes !== null && currentSimMinutes !== null && currentSimTime !== lastSimTime){
+    // Skip if user manually navigated to a specific day
+    if(!window.__playheadManuallySet && lastSimMinutes !== null && currentSimMinutes !== null && currentSimTime !== lastSimTime){
       if(currentSimMinutes < lastSimMinutes){
         const delta = lastSimMinutes - currentSimMinutes;
         if(delta > 360){
@@ -12862,6 +12886,14 @@ function clearHoldState(){
           console.log('[Midnight Crossing] Time jumped from', lastSimTime, 'to', currentSimTime, '- advancing to Day', window.__playheadCurrentDay);
         }
       }
+    }
+
+    // Skip time-based day detection if user manually navigated to a specific day
+    if(window.__playheadManuallySet){
+      // Still update lastSimTime/lastSimMinutes for next iteration
+      lastSimTime = currentSimTime;
+      lastSimMinutes = currentSimMinutes;
+      return;
     }
 
     try {
