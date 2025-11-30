@@ -1569,10 +1569,20 @@ function buildForm(){
   const programFs = document.createElement('fieldset');
   const legend = document.createElement('legend'); legend.textContent='Program Control'; programFs.appendChild(legend);
   const grid = document.createElement('div');
-  // Use 4-column grid layout with only first two columns in use
+  // Use 5-column grid layout for Program Control
   grid.className='group-grid program-control';
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = '1fr 1fr 1fr 1fr 1fr';
+  // Move Program Enabled and Program Repeats to columns 1 and 2
   grid.appendChild(createInput('PROGRAM_ENABLED'));
   grid.appendChild(createInput('PROGRAM_REPEATS'));
+  // Add empty columns for spacing (columns 3, 4, 5)
+  for (let i = 0; i < 3; i++) {
+    const spacer = document.createElement('div');
+    spacer.className = 'field';
+    spacer.style.visibility = 'hidden';
+    grid.appendChild(spacer);
+  }
   programFs.appendChild(grid);
   container.appendChild(programFs);
   refreshConditionalVisibility();
