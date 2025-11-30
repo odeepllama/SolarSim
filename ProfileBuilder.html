@@ -12173,18 +12173,14 @@ window.__currentStepIndex = 0; // Track which step we're currently on (0 = befor
 
 // Helper function to set playhead manual flag with proper timeout management
 function __setPlayheadManualFlag(){
-  // Clear any existing timeout to prevent premature clearing
+  // Manual navigation should persist until next explicit navigation or profile load
   if(window.__playheadManualTimeout){
     clearTimeout(window.__playheadManualTimeout);
     window.__playheadManualTimeout = null;
   }
   window.__playheadManuallySet = true;
-  // Schedule clearing the flag after 2 seconds
-  window.__playheadManualTimeout = setTimeout(() => {
-    window.__playheadManuallySet = false;
-    window.__playheadManualTimeout = null;
-    console.log('[Playhead] Cleared manual flag, auto-detection resumed');
-  }, 2000);
+  // Do NOT auto-clear after 2 seconds; only clear on explicit navigation or profile load
+  console.log('[Playhead] Manual navigation set, auto-detection paused');
 }
 
 // Helper function to send command to device
@@ -12454,19 +12450,35 @@ window.__scrollToPrevStep = async function(){
     return;
   }
 
-  // Find the previous step before current time (search backward)
-  // IMPORTANT: Only search within the current day's steps to avoid jumping to wrong day
+  // Enhanced logic: If at first step of a day, jump to last step of previous day
   let prevStepIndex = window.__currentStepIndex - 1;
-  if(currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function'){
+  if (currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function') {
     const currentDay = window.__playheadCurrentDay || 1;
-    // Search backward for last step with time < current time AND on the same day
-    for(let i = programSteps.length - 1; i >= 0; i--){
-      const stepDay = __getDayForStep(i);
-      const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
-      // Only consider steps on the current day
-      if(stepDay === currentDay && stepMinutes < currentSimMinutes){
-        prevStepIndex = i + 1; // Convert to 1-based index
-        break;
+    // Find all step indices for current day
+    let currentDayStepIndices = [];
+    for (let i = 0; i < programSteps.length; i++) {
+      if (__getDayForStep(i) === currentDay) currentDayStepIndices.push(i);
+    }
+    // If at first step of the day, jump to last step of previous day
+    if (currentDayStepIndices.length && window.__currentStepIndex - 1 === currentDayStepIndices[0]) {
+      // Find all step indices for previous day
+      const prevDay = currentDay - 1;
+      let prevDayStepIndices = [];
+      for (let i = 0; i < programSteps.length; i++) {
+        if (__getDayForStep(i) === prevDay) prevDayStepIndices.push(i);
+      }
+      if (prevDayStepIndices.length) {
+        prevStepIndex = prevDayStepIndices[prevDayStepIndices.length - 1] + 1; // 1-based index
+      }
+    } else {
+      // Otherwise, search backward for last step with time < current time AND on the same day
+      for (let i = programSteps.length - 1; i >= 0; i--) {
+        const stepDay = __getDayForStep(i);
+        const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
+        if (stepDay === currentDay && stepMinutes < currentSimMinutes) {
+          prevStepIndex = i + 1; // 1-based index
+          break;
+        }
       }
     }
   }
@@ -12474,15 +12486,7 @@ window.__scrollToPrevStep = async function(){
   const targetStepIndex = prevStepIndex;
   console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
 
-  // Validate that the target step is on the current day
-  const currentDay = window.__playheadCurrentDay || 1;
-  if(targetStepIndex > 0 && typeof __getDayForStep === 'function'){
-    const targetDay = __getDayForStep(targetStepIndex - 1); // Convert to 0-based index
-    if(targetDay !== currentDay){
-      console.log('[Step Nav] Target step is on day', targetDay, 'but current day is', currentDay, '- aborting to prevent day jump');
-      return;
-    }
-  }
+  // Allow jump to previous day's final step (no abort)
 
   // Check if device is connected
   const serialState = window.__serialState || null;
