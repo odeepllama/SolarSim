@@ -2604,7 +2604,7 @@ def handle_command(command_str):
 
         elif command == "help" and len(parts) > 1 and parts[1] == "all":
             print("--- Command Summary ---")
-            print("Set: time <hhmm>, date <yyyymmdd>, intensity <0.0-1.0>, latitude <degrees>, speed <scale>, suncolor <natural|blue|custom> [r g b], rotationinterval <minutes>, images_per_rotation <num>, degrees_per_image <float>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>")
+            print("Set: time <hhmm>, autoload <on|off|true|false|1|0>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>, date <yyyymmdd>, degrees_per_image <float>, images_per_rotation <num>, imageatnight <true|false|on|off|1|0>, intensity <0.0-1.0>, latitude <degrees>, programenabled <on|off>, programrepeats <n>, rotationatnight <true|false|on|off|1|0>, rotationcameraservo <2|3>, rotationinterval <minutes>, rotationlightrgb <r> <g> <b>, rotationmode <stills|video>, rot_inc_deg <float>, rot_speed <slow|medium|fast>, rot_step_intv <int>, rot_stills_intv <float>, rot_trig_hold <int>, savelog <yyyymmdd>, servo2interval <seconds>, servo3interval <seconds>, solarmode <basic|scientific>, speed <scale>, starttime <hhmm>, suncolor <natural|blue|custom> [r g b]")
             print("Toggle: dualsun, program, rotation, restartafterload, servo2, servo3, 1to1ratio")
             print("Program/Manual: jump nextstep, jump step <n>, listprofiles, loadprofile <profilename>, saveprofile <profilename> [note], profiledelete <profilename>, savelog <yyyymmdd>, status, trigger servo2, trigger servo3, trigger rotation")
             print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help all")
