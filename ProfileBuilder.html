@@ -1731,9 +1731,17 @@ function validateField(key){
 
 function validateProgramSteps(){
   errorState.programErrors = [];
-  const hhmmRe = /^([0-1]?\d|2[0-3])[0-5]\d$/;
   programSteps.forEach((s,i)=>{
-    if(!s.sim_time_hhmm || !hhmmRe.test(String(s.sim_time_hhmm))) errorState.programErrors.push(`Step ${i+1}: bad sim_time_hhmm`);
+    // Validate sim_time_hhmm: must be integer 0-2359 with minutes portion < 60
+    // Accepts any format: 1 (00:01), 100 (01:00), 600 (06:00), 2359 (23:59)
+    if(s.sim_time_hhmm === undefined || s.sim_time_hhmm === null || s.sim_time_hhmm === '') {
+      errorState.programErrors.push(`Step ${i+1}: bad sim_time_hhmm`);
+    } else {
+      const val = parseInt(String(s.sim_time_hhmm), 10);
+      if(isNaN(val) || val < 0 || val > 2359 || (val % 100) >= 60) {
+        errorState.programErrors.push(`Step ${i+1}: bad sim_time_hhmm`);
+      }
+    }
   // Negative speed now allowed (reverse time). Only validate HOLD semantics.
     if(s.speed===0 && (s.hold_minutes===undefined || s.hold_minutes==='')) {
       // Only require hold_minutes if there is NOT a subsequent step with a valid sim_time_hhmm
@@ -1741,8 +1749,11 @@ function validateProgramSteps(){
       let nextStepHasTime = false;
       if(hasNextStep) {
         const nextStep = programSteps[i+1];
-        const hhmmRe = /^([0-1]?\d|2[0-3])[0-5]\d$/;
-        nextStepHasTime = nextStep.sim_time_hhmm && hhmmRe.test(String(nextStep.sim_time_hhmm));
+        // Check if next step has valid sim_time_hhmm (integer 0-2359 with minutes < 60)
+        if(nextStep.sim_time_hhmm !== undefined && nextStep.sim_time_hhmm !== null && nextStep.sim_time_hhmm !== '') {
+          const nextVal = parseInt(String(nextStep.sim_time_hhmm), 10);
+          nextStepHasTime = !isNaN(nextVal) && nextVal >= 0 && nextVal <= 2359 && (nextVal % 100) < 60;
+        }
       }
       if(!hasNextStep || !nextStepHasTime) {
         errorState.programErrors.push(`Step ${i+1}: hold_minutes required when speed=0`);
@@ -2427,7 +2438,9 @@ function renderProgramSteps(){
   const dayCell = mkCell(dayNum !== undefined ? dayNum : '');
   dayCell.classList.add('day-number-cell');
   tr.appendChild(dayCell);
-  const simCell = mkCell(`<input data-f='sim_time_hhmm' value='${step.sim_time_hhmm||''}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
+  // Format time with 4-digit padding for display (1 -> 0001, 600 -> 0600)
+  const simTimeDisplay = step.sim_time_hhmm != null ? String(step.sim_time_hhmm).padStart(4, '0') : '';
+  const simCell = mkCell(`<input data-f='sim_time_hhmm' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
     // Speed cell with color coding
     const spd = step.speed != null ? step.speed : 1;
     const speedBg = spd <= 1 ? '#4DA6FF' : spd <= 1.5 ? '#A8D5BA' : spd <= 2 ? '#90be6d' : spd <= 2.5 ? '#A8C968' : spd <= 3.5 ? '#E5D55E' : spd <= 6 ? '#f9c74f' : '#f9844a';
@@ -2682,7 +2695,12 @@ function attachProgramTableListeners(){
         }
       }
 
-      // Valid time - proceed normally
+      // Valid time - format with 4-digit padding for display
+      const parsedInt = parseInt(newTimeStr, 10);
+      if(!isNaN(parsedInt) && parsedInt >= 0 && parsedInt <= 2359 && (parsedInt % 100) < 60){
+        // Update display with 4-digit format
+        e.target.value = String(parsedInt).padStart(4, '0');
+      }
       renderProgramSteps();
       updatePreview(true);
     }
@@ -2788,7 +2806,8 @@ function attachProgramTableListeners(){
             const nextRowSelector = `#programStepsTable tbody tr[data-step-index='${row + 1}'] input[data-f='sim_time_hhmm']`;
             const nextInput = document.querySelector(nextRowSelector);
             if(nextInput){
-              nextInput.value = nextStep.sim_time_hhmm;
+              // Format with 4-digit padding for display
+              nextInput.value = String(nextStep.sim_time_hhmm).padStart(4, '0');
               console.log(`[hold_minutes] ✓ Updated DOM for step ${row + 2} time to ${nextStep.sim_time_hhmm}`);
             }
           }
@@ -2808,7 +2827,10 @@ function attachProgramTableListeners(){
       }
     } else if(field==='sim_time_hhmm'){
       const newTimeStr = e.target.value.trim();
-      programSteps[row][field] = newTimeStr;
+      // Parse to integer to remove leading zeros (0001 -> 1, 0600 -> 600)
+      // Store as integer for firmware compatibility
+      const parsedInt = parseInt(newTimeStr, 10);
+      programSteps[row][field] = isNaN(parsedInt) ? newTimeStr : parsedInt;
       const inputElem = e.target;
 
       // Auto-update next step's time if this is a HOLD step (same logic as hold_minutes)
@@ -2830,7 +2852,8 @@ function attachProgramTableListeners(){
               const nextRowSelector = `#programStepsTable tbody tr[data-step-index='${row + 1}'] input[data-f='sim_time_hhmm']`;
               const nextInput = document.querySelector(nextRowSelector);
               if(nextInput){
-                nextInput.value = nextStep.sim_time_hhmm;
+                // Format with 4-digit padding for display
+                nextInput.value = String(nextStep.sim_time_hhmm).padStart(4, '0');
               }
             } else {
               console.log(`[Table Edit] ✗ hold_minutes is not a number: ${currentStep.hold_minutes}`);
