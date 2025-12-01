@@ -31,4 +31,10 @@ Stripped down version for the first time user
 
 To do:
 
-The playhead navigation buttons (prev and next) for both step and day are basically working, but there's a issue whereby I cannot get back to the previous stap if it is on the rpeviousl day. For example, I cannto get the playhead to jump to Day 1 from Day 2 using the Prev Step button. However, the next step button can take the playhead correctly from Day 1 to Day 2. Please carefully look into this issue and see fi you can propose an efficient solution that doesn't break anything.
+How can I use the reset command and auto-reconnect of the Github hosted Profilebuilder page to support the user in uploading a new profile to the device. 
+
+I also need help in making clear and useful documentation as well as with
+
+1) making a numbered/coloured theme for identifying multipl econnected devices/tabs
+
+2) Providng a stripped down interface which removes the log/profiel windows as well as hides features that are less important.
