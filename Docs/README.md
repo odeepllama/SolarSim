@@ -38,3 +38,25 @@ I also need help in making clear and useful documentation as well as with
 1) making a numbered/coloured theme for identifying multipl econnected devices/tabs
 
 2) Providng a stripped down interface which removes the log/profiel windows as well as hides features that are less important.
+
+How about a numbered animated metaphor for a novice user on a first run through. Next task is highlighted and animated to draw the user's attention. Bubble (pop-over can guide the user as to stes, what they do and in what order they shoudl be performed.
+
+Visual tunign can be done as a final step.
+
+Can hide/collapse both the log and profile text window in order to reduce visual complexity make thigns look simpler.
+
+Bring at least one RP2040 home and also find a USB-C to microadapter or two - Elegoo has this
+
+Change the Connect button text to Connect to Device
+
+Get the laser cutter up and running!
+
+Monitor/Interact button is not needed any more.
+Hide the log window behind a toggle
+Keep the command entry dialog
+Have a sidebar to show all commands (in order)
+Clicking the command will send it? (maybe not!)
+
+Add explanatory text to the right of the section titles
+
+Change the REset Upload Confirm button to a checkbox to match the LOAD DEFAULT ON STARTUP.
