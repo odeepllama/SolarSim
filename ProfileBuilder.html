@@ -756,7 +756,7 @@ select:not(#filename_tag):not(#filename_preview) {
       <div id="monitorLog" aria-label="Monitor log" role="log"></div>
       <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
       <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-        <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" style="flex:1;" />
+        <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" autocomplete="off" style="flex:1;" />
         <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
         <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
       </div>
@@ -9249,10 +9249,19 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         if(DIGIT_INPUT_COMMANDS.test(textBeforeCursor)){
           // Check if we're past the command part and typing parameter values
           const tokens = textBeforeCursor.trim().split(/\s+/);
-          // If we have 3+ tokens (e.g., "set speed 1"), we're typing values - allow digit
-          // If we only have 1-2 tokens (e.g., "set rot"), we're still typing command - use for selection
-          if(tokens.length >= 3 || /<[^>]+>/.test(input.value)){
-            // User is typing parameter values - let the number through
+          // If we have 2+ tokens (command is complete: e.g., "set speed"), we're ready to type values
+          // OR if placeholders are visible (e.g., "set speed <value>")
+          if(tokens.length >= 2 || /<[^>]+>/.test(input.value)){
+            // User is ready to type parameter values - let the number through and hide panel
+            hidePanel();
+            // Ensure there's a space before the cursor if needed (e.g., "set time" -> "set time ")
+            if(cursorPos > 0 && input.value[cursorPos - 1] !== ' '){
+              e.preventDefault();
+              const beforeCursor = input.value.slice(0, cursorPos);
+              const afterCursor = input.value.slice(cursorPos);
+              input.value = beforeCursor + ' ' + e.key + afterCursor;
+              input.setSelectionRange(cursorPos + 2, cursorPos + 2);
+            }
             return;
           }
         }
@@ -9692,12 +9701,17 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     const nowTs = performance.now();
     // Detect status output (from status command)
     const isStatusOutput = typeof msg === 'string' && (msg.includes('System Status') || msg.includes('-- Simulation & Time --') || msg.includes('Sim Time:') || msg.includes('Program Repeats:') || msg.includes('Program Steps:'));
-    if(isStatusOutput && !state.statusOutputAllowed){
-      return; // Block status output unless explicitly allowed
+    
+    // ONLY allow status output when explicitly requested by user
+    if(isStatusOutput){
+      if(state.statusOutputAllowed){
+        state.statusOutputAllowed = false; // Reset after showing first line
+        // Continue to show this status output
+      } else {
+        return; // Block all status output unless user explicitly requested it
+      }
     }
-    if(isStatusOutput && state.statusOutputAllowed){
-      state.statusOutputAllowed = false; // Reset after showing
-    }
+    
     if(cls === 'update'){
       // Explicit update entries bypass suppression so users see concise changes
     } else if(state.__suppressDisabledUntil && nowTs < state.__suppressDisabledUntil){
@@ -11061,16 +11075,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   // When user requests full command list, temporarily disable scroll lock,
   // then re-enable after the output settles so user can see new content
   helpBtn && helpBtn.addEventListener('click', ()=> {
-    // Temporarily disable scroll lock to allow viewing new output
-    state.scrollLock = false;
-    if(scrollLockBtn){
-      scrollLockBtn.textContent = 'Scroll Lock: Off';
-      scrollLockBtn.classList.remove('scroll-lock-on');
-    }
-
-    // Enable bulk display mode for smooth scrolling
-    state.__bulkDisplayMode = true;
-
     // Disable output suppression so commands are visible
     state.__silentStatusUntil = 0;
     state.__suppressDisabledUntil = performance.now() + 2400;
@@ -11080,6 +11084,9 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if(state.__stopPeriodicStatus) state.__stopPeriodicStatus();
       setTimeout(()=>{ if(state.autoRefreshEnabled && state.__startPeriodicStatus) state.__startPeriodicStatus(); }, 2500);
     }catch(_){ }
+
+    // Enable bulk display mode for smooth scrolling effect
+    state.__bulkDisplayMode = true;
 
     // Print command list directly from HTML instead of sending serial command
     const allCommands = [
@@ -11156,9 +11163,9 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     log('', 'system');
     log('-----------------------', 'system');
 
-    // After commands are displayed, wait for scroll to settle then disable bulk mode and re-enable scroll lock
+    // Wait for output to settle, then disable bulk mode and scroll to bottom
     const IDLE_MS = 350, MAX_WAIT_MS = 4000;
-    let lastCount = logBox.children.length;
+    let lastCount = logBox ? logBox.children.length : 0;
     let startTs = performance.now();
     let lastChangeTs = startTs;
 
@@ -11170,12 +11177,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if((now - lastChangeTs) >= IDLE_MS || (now - startTs) >= MAX_WAIT_MS) {
         // Disable bulk display mode to return to normal scrolling
         state.__bulkDisplayMode = false;
-        // Re-activate scroll lock after output settles
-        state.scrollLock = true;
-        if(scrollLockBtn) {
-          scrollLockBtn.textContent = 'Scroll Lock: On';
-          scrollLockBtn.classList.add('scroll-lock-on');
-        }
+        // Scroll to bottom to ensure all commands are visible
+        if(logBox) logBox.scrollTop = logBox.scrollHeight;
         return;
       }
       requestAnimationFrame(poll);
@@ -11183,8 +11186,29 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     requestAnimationFrame(poll);
   });
   function postSendSelect(){ if(cmdInput){ cmdInput.focus(); cmdInput.select(); }}
-  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
-  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
+  function handleManualStatus(){
+    if(!logBox) return;
+    state.__bulkDisplayMode = true;
+    const IDLE_MS = 350, MAX_WAIT_MS = 4000;
+    let lastCount = logBox.children.length;
+    let startTs = performance.now();
+    let lastChangeTs = startTs;
+    const poll = () => {
+      if(!logBox) return;
+      const cur = logBox.children.length;
+      if(cur !== lastCount) { lastCount = cur; lastChangeTs = performance.now(); }
+      const now = performance.now();
+      if((now - lastChangeTs) >= IDLE_MS || (now - startTs) >= MAX_WAIT_MS) {
+        state.__bulkDisplayMode = false;
+        if(logBox) logBox.scrollTop = logBox.scrollHeight;
+        return;
+      }
+      requestAnimationFrame(poll);
+    };
+    requestAnimationFrame(poll);
+  }
+  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status'){ window.allowStatusOutput(); handleManualStatus(); } sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
+  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status'){ window.allowStatusOutput(); handleManualStatus(); } sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
   exportLogBtn && exportLogBtn.addEventListener('click', exportCommandLog);
   // Silent status trigger (used by auto refresh and initial connect)
   function sendStatusSilent(){
@@ -11197,7 +11221,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   }
   // Manual visible status is provided by Show Status button; no separate refresh icon button
 
-  // Visible status output with auto scroll-lock (similar logic to help all)
+  // Visible status output with smooth scrolling
   showStatusBtn && showStatusBtn.addEventListener('click', ()=>{
     // Ensure visible output is not suppressed
     state.__silentStatusUntil = 0;
@@ -11212,26 +11236,30 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Enable bulk display mode for smooth scrolling
     state.__bulkDisplayMode = true;
 
-    // Temporarily disable scroll lock to allow viewing new output
-    state.scrollLock = false;
-    if(scrollLockBtn){
-      scrollLockBtn.textContent = 'Scroll Lock: Off';
-      scrollLockBtn.classList.remove('scroll-lock-on');
-    }
-
     sendLine('status');
+    
+    // Wait for output to settle, then disable bulk mode and scroll to bottom
     if(!logBox) return;
-    const IDLE_MS=350, MAX_WAIT_MS=4000; let lastCount=logBox.children.length; let startTs=performance.now(); let lastChangeTs=startTs;
-    const poll=()=>{
-      if(!logBox) return; const cur=logBox.children.length; if(cur!==lastCount){ lastCount=cur; lastChangeTs=performance.now(); }
-      const now=performance.now(); if((now-lastChangeTs)>=IDLE_MS || (now-startTs)>=MAX_WAIT_MS){
+    const IDLE_MS = 350, MAX_WAIT_MS = 4000;
+    let lastCount = logBox.children.length;
+    let startTs = performance.now();
+    let lastChangeTs = startTs;
+
+    const poll = () => {
+      if(!logBox) return;
+      const cur = logBox.children.length;
+      if(cur !== lastCount) { lastCount = cur; lastChangeTs = performance.now(); }
+      const now = performance.now();
+      if((now - lastChangeTs) >= IDLE_MS || (now - startTs) >= MAX_WAIT_MS) {
         // Disable bulk display mode to return to normal scrolling
         state.__bulkDisplayMode = false;
-        // Re-activate scroll lock after output settles
-        state.scrollLock=true; if(scrollLockBtn){ scrollLockBtn.textContent='Scroll Lock: On'; scrollLockBtn.classList.add('scroll-lock-on'); }
-        return; }
+        // Scroll to bottom to show all status output
+        if(logBox) logBox.scrollTop = logBox.scrollHeight;
+        return;
+      }
       requestAnimationFrame(poll);
-    }; requestAnimationFrame(poll);
+    };
+    requestAnimationFrame(poll);
   });
 
   // Auto-reconnect previously granted serial port on secure origins (https or localhost)

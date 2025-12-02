@@ -2,6 +2,8 @@
 
 [Link to Bill Of Materials (BOM)](https://docs.google.com/spreadsheets/d/1aQhFblNy1jl5k1DLb-90Tq7NmfreDscm0g0mmVD8wfg/edit?usp=sharing)
 
+[Link to micropython firmware for the Raspberry Pi Pico (RP2040)] (https://micropython.org/download/RPI_PICO/)
+
 Resources needed (cameras, servos, soldering iron, cables, connectors, LED matrix panels)
 
 (Bluetooth cell phone trigger?)
@@ -41,7 +43,7 @@ I also need help in making clear and useful documentation as well as with
 
 How about a numbered animated metaphor for a novice user on a first run through. Next task is highlighted and animated to draw the user's attention. Bubble (pop-over can guide the user as to stes, what they do and in what order they shoudl be performed.
 
-Visual tunign can be done as a final step.
+Visual tuning can be done as a final step.
 
 Can hide/collapse both the log and profile text window in order to reduce visual complexity make thigns look simpler.
 
