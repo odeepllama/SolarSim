@@ -12,6 +12,8 @@ Resources needed (cameras, servos, soldering iron, cables, connectors, LED matri
 
 Also need to share .stl / .3mf / .step files
 
+Smaller parts for the edges to allow easier transport!
+
 Notes:
 
 Could use a "Simple Mode"
