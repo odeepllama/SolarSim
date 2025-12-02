@@ -11882,6 +11882,16 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   });
   grid.addEventListener('dblclick', (e)=>{ const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if(!box) return; const k=keyFromBox(box); if(!k) return; clearTimeout(clickTimer); e.stopPropagation(); hide(); // Confirm for toggle-capable tiles
     const toggleMap={ program:'toggle program', dualSun:'toggle dualsun', rotation:'toggle rotation' };
+    // Handle solarMode toggle specially - switch between BASIC and SCIENTIFIC
+    if(k === 'solarMode'){
+      showConfirm(box, `Are you sure you want to toggle ${box.querySelector('b')?.textContent||''}?`, ()=>{
+        // Get current mode from the tile's displayed value
+        const currentMode = box.querySelector('span')?.textContent?.trim();
+        const newMode = currentMode === 'BASIC' ? 'scientific' : 'basic';
+        sendSilent('set solarmode ' + newMode);
+      });
+      return;
+    }
     const cmd = toggleMap[k]; if(!cmd) return; showConfirm(box, `Are you sure you want to toggle ${box.querySelector('b')?.textContent||''}?`, ()=>{ sendSilent(cmd); });
   });
   grid.__tilePopoverDelegated = true; })();
@@ -11890,7 +11900,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   let confirmOutside=null;
   function showConfirm(tileEl, msg, onYes){ const txt=confirmEl.querySelector('.txt'); const yes=confirmEl.querySelector('.yes'); const no=confirmEl.querySelector('.no'); txt.textContent = msg; const r=tileEl.getBoundingClientRect(); confirmEl.style.left = Math.round(r.left + window.scrollX) + 'px'; confirmEl.style.top = Math.round(r.bottom + window.scrollY + 6) + 'px'; confirmEl.style.display='block'; const cleanup=()=>{ confirmEl.style.display='none'; yes.onclick=null; no.onclick=null; if(confirmOutside){ document.removeEventListener('mousedown', confirmOutside); confirmOutside=null; } }; yes.onclick=()=>{ try{ onYes && onYes(); }finally{ cleanup(); } }; no.onclick=cleanup; confirmOutside=(e)=>{ if(!confirmEl.contains(e.target)) cleanup(); }; document.addEventListener('mousedown', confirmOutside); }
   // Tooltips for discoverability
-  function applyTooltips(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return; const editOnly = ['sim','speed','intensity','sunColor','solarMode','servo2Int']; const toggleKeys=['program','rotation','dualSun']; for(const [k, box] of (window.kvCache?.entries?.()||[])){ if(!box) continue; if(toggleKeys.includes(k)) box.title='Click to edit; Double-click to toggle'; else if(editOnly.includes(k)) box.title='Click to edit'; }
+  function applyTooltips(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return; const editOnly = ['sim','speed','intensity','sunColor','servo2Int']; const toggleKeys=['program','rotation','dualSun','solarMode']; for(const [k, box] of (window.kvCache?.entries?.()||[])){ if(!box) continue; if(toggleKeys.includes(k)) box.title='Click to edit; Double-click to toggle'; else if(editOnly.includes(k)) box.title='Click to edit'; }
     // Fallback by scanning labels
     grid.querySelectorAll('.mon-kv').forEach(box=>{ if(box.title) return; const key=keyFromBox(box); if(!key) return; if(toggleKeys.includes(key)) box.title='Click to edit; Double-click to toggle'; else box.title='Click to edit'; });
   }
