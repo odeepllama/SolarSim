@@ -737,11 +737,6 @@ select:not(#filename_tag):not(#filename_preview) {
   <!-- <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button> -->
   <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title="Send 'help all' to device">Show All Commands</button>
   <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title="Show status output in log">Show Status</button>
-  <div id="bgColorChooser" style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-    <div class="bg-swatch" data-color="#abbea6" style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Green (Default)"></div>
-    <div class="bg-swatch" data-color="#a6b0be" style="background:#a6b0be; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Blue"></div>
-    <div class="bg-swatch" data-color="#bea6a6" style="background:#bea6a6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Red"></div>
-  </div>
 </div>
 <div id="monitorPanel" aria-hidden="true">
   <div id="monitorControls"></div>
@@ -13139,114 +13134,6 @@ function clearHoldState(){
   // Check for sim time updates every second
   // (will only re-render when time actually changes, which is once per minute)
   setInterval(updatePlayhead, 1000);
-})();
-
-// Background Color Chooser Logic
-// Color logic backed by sessionStorage so each tab keeps its own theme after reload
-(function(){
-  const swatches = document.querySelectorAll('.bg-swatch');
-  const BG_COLOR_KEY = 'profileBuilderBgColor';
-  const DEFAULT_BG_COLOR = '#abbea6';
-  let currentColor = sessionStorage.getItem(BG_COLOR_KEY) || DEFAULT_BG_COLOR;
-
-  function applyColor(color, options = {}){
-    const themeColor = (color || DEFAULT_BG_COLOR);
-    currentColor = themeColor;
-    document.body.style.backgroundColor = themeColor;
-    // Update active state visual
-    swatches.forEach(s => {
-      const isActive = s.dataset.color === themeColor;
-      if(isActive){
-        s.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px #333';
-        s.style.zIndex = '10';
-        s.style.transform = 'scale(1.1)';
-      } else {
-        s.style.boxShadow = '0 2px 4px rgba(0,0,0,0.25)';
-        s.style.zIndex = '1';
-        s.style.transform = 'scale(1)';
-      }
-      s.style.transition = 'all 0.2s ease';
-    });
-    if(options.persist){
-      try{
-        sessionStorage.setItem(BG_COLOR_KEY, themeColor);
-      }catch(e){
-        console.warn('Failed to store background color', e);
-      }
-    }
-  }
-
-  if(currentColor){
-    applyColor(currentColor);
-  } else {
-    applyColor(DEFAULT_BG_COLOR);
-  }
-
-  swatches.forEach(s => {
-    s.addEventListener('click', function(){
-      const color = this.dataset.color;
-      applyColor(color, { persist: true });
-    });
-    s.addEventListener('mouseenter', function(){
-      if(this.dataset.color !== currentColor){
-        this.style.transform = 'scale(1.1)';
-      }
-    });
-    s.addEventListener('mouseleave', function(){
-      if(this.dataset.color !== currentColor){
-        this.style.transform = 'scale(1)';
-      }
-    });
-  });
-
-})();
-
-// Device Identity Logic (Top Center Badge)
-(function(){
-  // Create badge
-  const b = document.createElement('div');
-  b.id = 'deviceIdentityBadge';
-  b.style.cssText = 'position:fixed; top:0; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); color:#fff; padding:4px 20px 6px; border-radius:0 0 8px 8px; font-size:1.1rem; font-weight:600; cursor:pointer; z-index:2000; transition:all 0.2s ease; backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.1); border-top:none; user-select:none; box-shadow:0 2px 8px rgba(0,0,0,0.2);';
-  b.title = 'Click to rename device identifier';
-  
-  const span = document.createElement('span');
-  span.id = 'deviceIdText';
-  b.appendChild(span);
-  document.body.appendChild(b);
-  
-  // Load saved ID from SESSION storage (unique per tab)
-  // Default to 'Device 1' if not set for this session
-  const savedId = sessionStorage.getItem('profileBuilderDeviceId') || 'Device 1';
-  span.textContent = savedId;
-  // Update page title to include device ID for tab distinction
-  document.title = savedId + " - " + document.title;
-
-  b.addEventListener('click', function(){
-    const newId = prompt("Enter Device Name/Number (e.g. Device 1):", span.textContent);
-    if(newId && newId.trim() !== ""){
-      // Remove old ID from title if present
-      const currentTitle = document.title;
-      const oldId = span.textContent;
-      if(currentTitle.startsWith(oldId + " - ")){
-        document.title = currentTitle.substring((oldId + " - ").length);
-      }
-      
-      span.textContent = newId;
-      sessionStorage.setItem('profileBuilderDeviceId', newId);
-      
-      // Add new ID to title
-      document.title = newId + " - " + document.title;
-    }
-  });
-  
-  b.addEventListener('mouseenter', function(){
-    this.style.paddingTop = '10px'; // Pop down slightly
-    this.style.background = 'rgba(0,0,0,0.8)';
-  });
-  b.addEventListener('mouseleave', function(){
-    this.style.paddingTop = '4px';
-    this.style.background = 'rgba(0,0,0,0.6)';
-  });
 })();
 </script>
 </body>
