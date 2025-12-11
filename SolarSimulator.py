@@ -2752,6 +2752,8 @@ def run_simulation():
     button_a_long_press_detected = False
     button_b_press_start = 0
     button_b_long_press_detected = False
+    both_buttons_press_start = 0
+    both_buttons_long_press_detected = False
 
     # Main loop
     while True:
@@ -2882,6 +2884,38 @@ def run_simulation():
 
         # Check for Button A press (jump to solar noon)
         button_a_state = not button_a.value()  # Pulled up, so LOW means pressed
+        button_b_state = not button_b.value()  # Pulled up, so LOW means pressed
+        
+        # Check for both buttons pressed together (AUTO_LOAD toggle)
+        both_buttons_pressed = button_a_state and button_b_state
+        
+        # Track start of both-button press for long press detection
+        if both_buttons_pressed and not (button_a_pressed_last and button_b_pressed_last):
+            both_buttons_press_start = now_ms
+            both_buttons_long_press_detected = False
+        
+        # Check for both-button long press (held for over 1 second)
+        if both_buttons_pressed and button_a_pressed_last and button_b_pressed_last:
+            if not both_buttons_long_press_detected and ticks_diff(now_ms, both_buttons_press_start) >= 1000:
+                # Toggle AUTO_LOAD_LATEST_PROFILE
+                global AUTO_LOAD_LATEST_PROFILE
+                AUTO_LOAD_LATEST_PROFILE = not AUTO_LOAD_LATEST_PROFILE
+                
+                # Persist to file
+                try:
+                    with open('autoload.cfg', 'w') as f:
+                        f.write('1' if AUTO_LOAD_LATEST_PROFILE else '0')
+                except:
+                    pass  # Silent fail - indicator still shows current state
+                
+                both_buttons_long_press_detected = True
+                # Block individual button long press actions
+                button_a_long_press_detected = True
+                button_b_long_press_detected = True
+        
+        # Reset both-button detection when either button is released
+        if not both_buttons_pressed:
+            both_buttons_long_press_detected = False
 
         # Track start of button press for long press detection
         if button_a_state and not button_a_pressed_last:
@@ -2934,9 +2968,7 @@ def run_simulation():
 
         button_a_pressed_last = button_a_state
             
-        # Check for Button B press
-        button_b_state = not button_b.value()  # Pulled up, so LOW means pressed
-
+        # Check for Button B press (button_b_state already read above for dual-button detection)
         # Track start of button B press for long press detection
         if button_b_state and not button_b_pressed_last:
             button_b_press_start = now_ms
