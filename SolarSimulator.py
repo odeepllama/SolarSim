@@ -2908,6 +2908,9 @@ def run_simulation():
                 except:
                     pass  # Silent fail - indicator still shows current state
                 
+                # Send parseable status for HTML interface
+                print(f"[SERIAL CMD] Auto-load latest profile set to: {AUTO_LOAD_LATEST_PROFILE} (persisted)")
+                
                 both_buttons_long_press_detected = True
                 # Block individual button long press actions
                 button_a_long_press_detected = True
