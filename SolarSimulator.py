@@ -775,8 +775,8 @@ def update_speed_indicator(speed_scale):
 
 def update_mode_indicator(mode):
     """Update column 4 of matrix display to indicate simulation mode (BASIC, SCIENTIFIC)."""
-    # Clear the penultimate column (column 4) EXCEPT the top pixel used for the HOLD indicator
-    for r in range(1, 5):  # Start from row 1 instead of 0
+    # Clear the penultimate column (column 4) EXCEPT the top pixel used for the autoload indicator
+    for r in range(1, 5):  # Start from row 1 instead of 0 to preserve autoload indicator
         matrix_buffer[r][4] = 0
 
     # Determine number of LEDs to light based on mode
@@ -805,6 +805,17 @@ def update_hold_indicator(now_ms, is_hold_mode):
     # In HOLD mode, blink the top-left pixel at 1Hz (500ms on, 500ms off)
     blink_cycle = (now_ms // 1000) % 2  # 0 or 1
     matrix_buffer[0][0] = blink_cycle
+
+def update_autoload_indicator():
+    """Update the top-right pixel (column 4, row 0) to indicate AUTO_LOAD_LATEST_PROFILE status.
+    Illuminated when AUTO_LOAD_LATEST_PROFILE is False."""
+    global matrix_buffer
+    
+    # Top pixel in column 4 (mode indicator column)
+    if AUTO_LOAD_LATEST_PROFILE:
+        matrix_buffer[0][4] = 0  # Off when auto-load is enabled
+    else:
+        matrix_buffer[0][4] = 1  # On when auto-load is disabled
 
 # --- Rotation Cycle State Machine ---
 def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
@@ -2847,7 +2858,8 @@ def run_simulation():
             # Always ensure indicators are properly displayed
             update_speed_indicator(TIME_SCALE)
             update_mode_indicator(SOLAR_MODE)
-            update_hold_indicator(now_ms, TIME_SCALE == 0)  # Add this line
+            update_hold_indicator(now_ms, TIME_SCALE == 0)
+            update_autoload_indicator()  # Show AUTO_LOAD status
             
             last_update_time_ms = now_ms
         
