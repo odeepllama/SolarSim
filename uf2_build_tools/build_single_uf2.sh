@@ -87,10 +87,10 @@ fi
 # Build command
 if [ -z "$OUTPUT_FILE" ]; then
     echo -e "${GREEN}Building combined UF2...${NC}"
-    python3 "$SCRIPT_DIR/uf2_combiner_proper.py" "$PYTHON_FILE"
+    python3 "$SCRIPT_DIR/uf2_builder.py" "$PYTHON_FILE"
 else
     echo -e "${GREEN}Building combined UF2: $OUTPUT_FILE${NC}"
-    python3 "$SCRIPT_DIR/uf2_combiner_proper.py" "$PYTHON_FILE" -o "$OUTPUT_FILE"
+    python3 "$SCRIPT_DIR/uf2_builder.py" "$PYTHON_FILE" -o "$OUTPUT_FILE"
 fi
 
 # Check if build succeeded

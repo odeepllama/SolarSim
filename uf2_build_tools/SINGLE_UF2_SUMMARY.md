@@ -21,7 +21,7 @@ This file contains:
 ### First Time Setup
 
 ```bash
-cd build_tools
+cd uf2_build_tools
 pip install littlefs-python
 ```
 
@@ -46,7 +46,7 @@ For each RP2040:bit:
 ### Update Your Code
 
 1. Edit `SolarSimulator.py`
-2. Rebuild: `python3 uf2_combiner_proper.py ../SolarSimulator.py`
+2. Rebuild: `python3 uf2_builder.py ../SolarSimulator.py`
 3. Flash new UF2 to all devices
 
 That's it!
@@ -57,10 +57,9 @@ That's it!
 SolarSimulator/
 ├── SolarSimulator.py              ← Your code
 ├── SolarSimulator_FULL.uf2        ← ⭐ FLASH THIS FILE! ⭐
-└── build_tools/
-    ├── uf2_combiner_proper.py     ← The builder
+└── uf2_build_tools/
+    ├── uf2_builder.py             ← The builder
     ├── QUICKSTART_SINGLE_UF2.md   ← Full guide
-    ├── README.md                  ← Overview
     └── .firmware_cache/           ← Downloaded firmware (cached)
 ```
 
@@ -152,10 +151,10 @@ pip install littlefs-python
 
 ### Build fails: "Python file not found"
 
-Make sure you're running from `build_tools/` directory:
+Make sure you're running from `uf2_build_tools/` directory:
 ```bash
-cd build_tools
-python3 uf2_combiner_proper.py ../SolarSimulator.py
+cd uf2_build_tools
+python3 uf2_builder.py ../SolarSimulator.py
 ```
 
 ### Want to verify UF2 contents?
@@ -168,7 +167,7 @@ You can't easily view it without tools, but trust that it's there!
 
 ## Next Steps
 
-1. ✅ Build your UF2: `python3 uf2_combiner_proper.py ../SolarSimulator.py`
+1. ✅ Build your UF2: `python3 uf2_builder.py ../SolarSimulator.py`
 2. ✅ Test on one device first
 3. ✅ Once confirmed working, flash all devices!
 
