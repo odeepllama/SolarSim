@@ -17,6 +17,7 @@ import urllib.request
 import ssl
 import tempfile
 from pathlib import Path
+from datetime import datetime
 
 try:
     import littlefs
@@ -282,7 +283,9 @@ Your code will be in /main.py in a proper littlefs filesystem.
     if args.output:
         output_path = args.output
     else:
-        output_name = python_file.stem + '_combined.uf2'
+        # Generate filename with timestamp: SolarSimulator_202412121530.uf2
+        timestamp = datetime.now().strftime('%Y%m%d%H%M')
+        output_name = f"{python_file.stem}_{timestamp}.uf2"
         output_path = python_file.parent / output_name
     
     # Build combined UF2
