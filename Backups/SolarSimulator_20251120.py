@@ -22,7 +22,7 @@ serial_command_buffer = ""
 # I. CORE SIMULATION PARAMETERS
 # ======================================================
 # --- Time Configuration ---
-START_TIME_HHMM = 500          # 500 used to be distinct from normal sunrise time
+START_TIME_HHMM = 500         # 630 start time - no leading zero!!!
 SIMULATION_DATE = 20250520     # Date in YYYYMMDD format (May 20, 2025)
 TIME_SCALE = 1                 # Time scaling factor (0 (HOLD), 1, 6, 60, or 600X)
 CUSTOM_TIME_SCALE = 1.2        # Custom time scale factor (1.2 = 1.2X, etc.)
@@ -42,7 +42,7 @@ PROGRAM_REPEATS = -1                   # -1 for indefinite repeats, 0 or 1 for s
 STOP_SIMULATION_AFTER_PROGRAM = False  # When True, terminates simulation after program completes
 
 # --- Solar Simulation Mode ---
-SOLAR_MODE = "BASIC"               # Choose from "BASIC" or "SCIENTIFIC"
+SOLAR_MODE = "BASIC"               # Choose from "BASIC", "SIMPLE", or "SCIENTIFIC"
 SUN_COLOR_MODE = "BLUE"            # Choose from "NATURAL", "BLUE", or "CUSTOM"
 DUAL_SUN_ENABLED = False           # Set to True to enable a mirrored second sun
 RED_SHIFT_FACTOR = 0.4             # Red-shift factor for sunrise/sunset (not applied to BASIC mode)
@@ -81,7 +81,7 @@ CAMERA_LIGHT_R = 30                # Red component (0-255) for camera lighting
 CAMERA_LIGHT_G = 30                # Green component (0-255) for camera lighting
 CAMERA_LIGHT_B = 30                # Blue component (0-255) for camera lighting
 CAMERA_LIGHT_HOLD_MS = 1000        # Duration to hold camera lighting (ms)
-CAMERA_LIGHTING_PANELS = "ALL"     # Options: "ALL", "MIDDLE5", "MIDDLE3", "OUTER2", "OUTER4"
+CAMERA_LIGHTING_PANELS = "ALL"   # Options: "ALL", "MIDDLE5", "MIDDLE3", "OUTER2", "OUTER4"
 
 # Rotation imaging lighting
 ROTATION_LIGHTING_ENABLED = True   # Set to True to enable lighting during rotation
@@ -94,8 +94,8 @@ ROTATION_LIGHT_B = 30              # Blue component (0-255) for rotation lightin
 # III. ROTATION SYSTEM CONFIGURATION
 # ======================================================
 # --- Rotation Cycle Parameters ---
-ROTATION_CYCLE_INTERVAL_MINUTES = 3    # How often to perform imaging cycle (sim time)
-ROTATION_ENABLED = False               # Flag to enable/disable rotation cycle (default OFF; profile can enable)
+ROTATION_CYCLE_INTERVAL_MINUTES = 3  # How often to perform imaging cycle (sim time)
+ROTATION_ENABLED = False              # Flag to enable/disable rotation cycle (default OFF; profile can enable)
 ROTATION_CAMERA_ENABLED = True         # Flag to enable/disable camera triggering during rotation
 SERVO_1TO1_RATIO = False               # Default: 3:4 ratio
 ROTATION_CAMERA_SERVO = 2              # Set to 2 or 3 to select which servo triggers during rotation imaging
@@ -774,16 +774,18 @@ def update_speed_indicator(speed_scale):
         matrix_buffer[1][0] = 1
 
 def update_mode_indicator(mode):
-    """Update column 4 of matrix display to indicate simulation mode (BASIC, SCIENTIFIC)."""
-    # Clear the penultimate column (column 4) EXCEPT the top pixel used for the autoload indicator
-    for r in range(1, 5):  # Start from row 1 instead of 0 to preserve autoload indicator
+    """Update column 4 of matrix display to indicate simulation mode (BASIC, SIMPLE, SCIENTIFIC)."""
+    # Clear the penultimate column (column 4) EXCEPT the top pixel used for the HOLD indicator
+    for r in range(1, 5):  # Start from row 1 instead of 0
         matrix_buffer[r][4] = 0
 
     # Determine number of LEDs to light based on mode
     if mode == "BASIC":
         num_leds = 1
-    elif mode == "SCIENTIFIC":
+    elif mode == "SIMPLE":
         num_leds = 2
+    elif mode == "SCIENTIFIC":
+        num_leds = 3
     else:
         num_leds = 0  # Default/error case
         
@@ -792,6 +794,8 @@ def update_mode_indicator(mode):
         matrix_buffer[4][4] = 1  # Bottom-most LED
     if num_leds >= 2:
         matrix_buffer[3][4] = 1  # Second LED from bottom
+    if num_leds >= 3:
+        matrix_buffer[2][4] = 1  # Third LED from bottom
 
 def update_hold_indicator(now_ms, is_hold_mode):
     """Update the top-left pixel to blink when in HOLD mode."""
@@ -805,17 +809,6 @@ def update_hold_indicator(now_ms, is_hold_mode):
     # In HOLD mode, blink the top-left pixel at 1Hz (500ms on, 500ms off)
     blink_cycle = (now_ms // 1000) % 2  # 0 or 1
     matrix_buffer[0][0] = blink_cycle
-
-def update_autoload_indicator():
-    """Update the top-right pixel (column 4, row 0) to indicate AUTO_LOAD_LATEST_PROFILE status.
-    Illuminated when AUTO_LOAD_LATEST_PROFILE is False."""
-    global matrix_buffer
-    
-    # Top pixel in column 4 (mode indicator column)
-    if AUTO_LOAD_LATEST_PROFILE:
-        matrix_buffer[0][4] = 0  # Off when auto-load is enabled
-    else:
-        matrix_buffer[0][4] = 1  # On when auto-load is disabled
 
 # --- Rotation Cycle State Machine ---
 def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
@@ -1242,6 +1235,11 @@ def init_solar_day():
         
         print(f"SCIENTIFIC model: Date: {SIMULATION_DATE}, Day: {day_of_year}")
         print(f"Sun size varies based on elevation angle")
+    elif SOLAR_MODE == "SIMPLE":
+        # Simple model with fixed sunrise/sunset times but variable sun size
+        SUNRISE_TIME = 6 * 60  # 6:00 AM in minutes
+        SUNSET_TIME = 18 * 60  # 6:00 PM in minutes
+        print(f"SIMPLE model: Fixed sunrise/sunset times, variable sun size")
     else:  # BASIC
         # Basic model with fixed sunrise/sunset times and fixed sun size
         SUNRISE_TIME = 6 * 60  # 6:00 AM in minutes
@@ -1433,9 +1431,11 @@ def get_sun_position(minute_of_day):
     
     if SOLAR_MODE == "SCIENTIFIC":
         return get_scientific_sun_position(minute_of_day)
-    else:
-        # Default to BASIC
+    elif SOLAR_MODE == "BASIC":
         return get_basic_sun_position(minute_of_day)
+    else:
+        # Default to SIMPLE
+        return get_simplified_sun_position(minute_of_day)
 
 def get_scientific_sun_position(minute_of_day):
     """Calculate scientifically accurate sun position and intensity."""
@@ -1515,7 +1515,86 @@ def get_scientific_sun_position(minute_of_day):
         # Keep the calculated b value unchanged for intensity simulation
     return x, y, size, r, g, b
 
+def get_simplified_sun_position(minute_of_day):
+    """Calculate sun position using the simplified model."""
+    # Default values for nighttime
+    x, y = -10, 4  # Off-screen
+    size = 0
+    r, g, b = 0, 0, 0
+    
+    # Check if it's daytime
+    if SUNRISE_TIME <= minute_of_day <= SUNSET_TIME:
+        # Calculate position in day cycle (0.0 to 1.0)
+        day_position = (minute_of_day - SUNRISE_TIME) / DAY_LENGTH
+        
+        # Symmetrical path from 0.5 to 54.5 to ensure symmetrical rendering at edges
+        x = 0.5 + day_position * 54
+        
+        # Calculate sun size based on time of day
+        # Use square sizes that work well with the 8-pixel height: 2, 4, 6, 8
+        if day_position < 0.25:  # Sunrise to mid-morning
+            # Size increases from 2 to 6
+            size_factor = day_position / 0.25  # 0.0 to 1.0
+            size = 2 + 4 * size_factor
+        elif day_position > 0.75:  # Mid-afternoon to sunset
+            # Size decreases from 6 to 2
+            size_factor = (day_position - 0.75) / 0.25  # 0.0 to 1.0
+            size = 6 - 4 * size_factor
+        else:  # Mid-morning to mid-afternoon
+            # Size is consistently larger (6-8) during midday
+            mid_factor = 2 * abs(day_position - 0.5)  # 0.0 at noon to 0.5 at edges
+            size = 8 - 2 * mid_factor
+        
+        # Ensure size is an even number (2, 4, 6, 8) for perfect centering
+        size = round(size / 2) * 2
+        
+        # Calculate vertical center position
+        y = (8 - size) // 2 + size // 2
+        
+        # Calculate sun color based on position
+        if day_position < 0.25:  # Sunrise to mid-morning
+            sunrise_factor = day_position / 0.25  # 0.0 to 1.0
+            r = 255
+            g = int(100 + 155 * sunrise_factor * (1 - RED_SHIFT_FACTOR * (1 - sunrise_factor)))
+            b = int(50 + 205 * sunrise_factor * (1 - RED_SHIFT_FACTOR * (1 - sunrise_factor)))
 
+        elif day_position > 0.75:  # Mid-afternoon to sunset
+            sunset_factor = (day_position - 0.75) / 0.25  # 0.0 to 1.0
+            r = 255
+            g = int(255 - 155 * sunset_factor * (1 - RED_SHIFT_FACTOR * (1 - sunset_factor)))
+            b = int(255 - 205 * sunset_factor * (1 - RED_SHIFT_FACTOR * (1 - sunset_factor)))
+        else:  # Mid-morning to mid-afternoon
+            r = 255
+            g = 255
+            b = 255
+            
+        # Scale brightness based on solar position in the sky
+        noon_position = 0.5
+        relative_elevation =  1.0 - 4 * (day_position - noon_position) * (day_position - noon_position)
+       
+        # Apply atmospheric effects (intensity drops more quickly at low angles)    
+        if relative_elevation < 0.5:
+            relative_elevation = relative_elevation * (0.5 + 0.7 * relative_elevation)
+        
+        brightness_factor = 0.3 + 0.7 * relative_elevation
+        brightness_factor *= INTENSITY_SCALE  # Apply global intensity scaling
+        
+        r = clamp(int(r * brightness_factor), 0, MAX_BRIGHTNESS)
+        g = clamp(int(g * brightness_factor), 0, MAX_BRIGHTNESS)
+        b = clamp(int(b * brightness_factor), 0, MAX_BRIGHTNESS)
+    if SUN_COLOR_MODE == "CUSTOM":
+        if SOLAR_MODE == "BASIC":
+            r, g, b = CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+        else:
+            r = clamp(int(CUSTOM_SUN_R * brightness_factor), 0, MAX_BRIGHTNESS)
+            g = clamp(int(CUSTOM_SUN_G * brightness_factor), 0, MAX_BRIGHTNESS)
+            b = clamp(int(CUSTOM_SUN_B * brightness_factor), 0, MAX_BRIGHTNESS)        
+    # Override with blue-only if that mode is selected
+    if SUN_COLOR_MODE == "BLUE":
+        r = 0
+        g = 0
+        # Keep the calculated b value unchanged for intensity simulation
+    return x, y, size, r, g, b
 
 def get_basic_sun_position(minute_of_day):
     """Calculate sun position using the basic model with constant 8x8 square."""
@@ -1770,32 +1849,6 @@ def handle_command(command_str):
                 else:
                     print(f"[SERIAL CMD] Error: cameralightingpanels must be one of {allowed}")
                 return
-            elif param == "cameralightrgb" and len(parts) >= 5:
-                try:
-                    global CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B
-                    r = int(parts[2])
-                    g = int(parts[3])
-                    b = int(parts[4])
-                    CAMERA_LIGHT_R = clamp(r)
-                    CAMERA_LIGHT_G = clamp(g)
-                    CAMERA_LIGHT_B = clamp(b)
-                    print(f"[SERIAL CMD] Camera light RGB set to ({CAMERA_LIGHT_R}, {CAMERA_LIGHT_G}, {CAMERA_LIGHT_B})")
-                except (ValueError, IndexError):
-                    print("[SERIAL CMD] Error: cameralightrgb requires 3 integer values (0-255)")
-                return
-            elif param == "rotationlightrgb" and len(parts) >= 5:
-                try:
-                    global ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B
-                    r = int(parts[2])
-                    g = int(parts[3])
-                    b = int(parts[4])
-                    ROTATION_LIGHT_R = clamp(r)
-                    ROTATION_LIGHT_G = clamp(g)
-                    ROTATION_LIGHT_B = clamp(b)
-                    print(f"[SERIAL CMD] Rotation light RGB set to ({ROTATION_LIGHT_R}, {ROTATION_LIGHT_G}, {ROTATION_LIGHT_B})")
-                except (ValueError, IndexError):
-                    print("[SERIAL CMD] Error: rotationlightrgb requires 3 integer values (0-255)")
-                return
             if param == "speed":
                 new_speed = float(value)
                 now_ms = ticks_ms()
@@ -1978,13 +2031,13 @@ def handle_command(command_str):
                     print(f"[SERIAL CMD] Error: Invalid latitude value '{value}'. Must be a number.")
 
             elif param == "solarmode":
-                if value in ("basic", "scientific"):
+                if value in ("basic", "simple", "scientific"):
                     SOLAR_MODE = value.upper()
                     print(f"[SERIAL CMD] Solar mode set to {SOLAR_MODE}")
                     init_solar_day() # Recalculate and print new settings
                     update_mode_indicator(SOLAR_MODE) # Update matrix display
                 else:
-                    print("[SERIAL CMD] Error: Invalid solar mode. Use 'basic' or 'scientific'.")
+                    print("[SERIAL CMD] Error: Invalid solar mode. Use 'basic', 'simple', or 'scientific'.")
 
             # --- Rotation Imaging Parameter Short Names ---
             elif param == "rot_stills_intv":
@@ -2094,6 +2147,29 @@ def handle_command(command_str):
             else:
                 print(f"[SERIAL CMD] Error: Unknown jump command. Use 'jump nextstep' or 'jump step <n>'.")
 
+        elif command == "rotation":
+            # Explicit rotation on/off control replacing legacy 'toggle rotation'
+            if len(parts) == 2:
+                action = parts[1]
+                if action in ("on", "enable", "true", "1"):
+                    if not ROTATION_ENABLED:
+                        ROTATION_ENABLED = True
+                        print("[SERIAL CMD] Rotation cycle set to: True")
+                    else:
+                        print("[SERIAL CMD] Rotation cycle already ON")
+                elif action in ("off", "disable", "false", "0"):
+                    if ROTATION_ENABLED:
+                        ROTATION_ENABLED = False
+                        print("[SERIAL CMD] Rotation cycle set to: False")
+                    else:
+                        print("[SERIAL CMD] Rotation cycle already OFF")
+                elif action == "status":
+                    print(f"[SERIAL CMD] Rotation Enabled: {ROTATION_ENABLED}")
+                else:
+                    print("[SERIAL CMD] Usage: rotation on|off|status")
+            else:
+                print("[SERIAL CMD] Usage: rotation on|off|status")
+        
         elif command == "toggle" and len(parts) == 2:
             target = parts[1]
             if target == "dualsun":
@@ -2102,9 +2178,6 @@ def handle_command(command_str):
             elif target == "program":
                 PROGRAM_ENABLED = not PROGRAM_ENABLED
                 print(f"[SERIAL CMD] Program execution set to: {PROGRAM_ENABLED}")
-            elif target == "rotation":
-                ROTATION_ENABLED = not ROTATION_ENABLED
-                print(f"[SERIAL CMD] Rotation cycle set to: {ROTATION_ENABLED}")
             elif target == "servo2":
                 SERVO2_STANDALONE_ENABLED = not SERVO2_STANDALONE_ENABLED
                 print(f"[SERIAL CMD] Servo 2 standalone trigger set to: {SERVO2_STANDALONE_ENABLED}")
@@ -2493,8 +2566,6 @@ def handle_command(command_str):
             print(f"  Rotation Speed Preset: \x1b[1m{ROTATION_SPEED_PRESET}\x1b[0m ({ROTATION_SPEED_PRESET_TABLE[ROTATION_SPEED_PRESET]}s/360deg)")
             print(f"  Rotation Imaging Mode: \x1b[1m{ROTATION_CAPTURE_MODE}\x1b[0m")
             print(f"  Camera Lighting Panels: \x1b[1m{CAMERA_LIGHTING_PANELS}\x1b[0m")
-            print(f"  Camera Light RGB: \x1b[1m({CAMERA_LIGHT_R}, {CAMERA_LIGHT_G}, {CAMERA_LIGHT_B})\x1b[0m")
-            print(f"  Rotation Light RGB: \x1b[1m({ROTATION_LIGHT_R}, {ROTATION_LIGHT_G}, {ROTATION_LIGHT_B})\x1b[0m")
             print(f"  1:1 Servo-to-sample rotation ratio: \x1b[1m{SERVO_1TO1_RATIO}\x1b[0m")
             print(f"  Rotation Trigger Hold: \x1b[1m{CAMERA_TRIGGER_HOLD_MS} ms\x1b[0m")
             print("-----------------------")
@@ -2615,10 +2686,10 @@ def handle_command(command_str):
 
         elif command == "help" and len(parts) > 1 and parts[1] == "all":
             print("--- Command Summary ---")
-            print("Set: time <hhmm>, autoload <on|off|true|false|1|0>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>, date <yyyymmdd>, degrees_per_image <float>, images_per_rotation <num>, imageatnight <true|false|on|off|1|0>, intensity <0.0-1.0>, latitude <degrees>, programenabled <on|off>, programrepeats <n>, rotationatnight <true|false|on|off|1|0>, rotationcameraservo <2|3>, rotationinterval <minutes>, rotationlightrgb <r> <g> <b>, rotationmode <stills|video>, rot_inc_deg <float>, rot_speed <slow|medium|fast>, rot_step_intv <int>, rot_stills_intv <float>, rot_trig_hold <int>, savelog <yyyymmdd>, servo2interval <seconds>, servo3interval <seconds>, solarmode <basic|scientific>, speed <scale>, starttime <hhmm>, suncolor <natural|blue|custom> [r g b]")
-            print("Toggle: dualsun, program, rotation, restartafterload, servo2, servo3, 1to1ratio")
-            print("Program/Manual: jump nextstep, jump step <n>, listprofiles, loadprofile <profilename>, saveprofile <profilename> [note], profiledelete <profilename>, savelog <yyyymmdd>, status, trigger servo2, trigger servo3, trigger rotation")
-            print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help all")
+            print("Set: autoload, cameralightingpanels, date, degrees_per_image, imageatnight, images_per_rotation, intensity, latitude, rot_inc_deg, rot_speed, rot_step_intv, rot_stills_intv, rot_trig_hold, rotationatnight, rotationcameraservo, rotationinterval, rotationmode, solarmode, speed, starttime, suncolor, time, servo2interval, servo3interval")
+            print("Toggle: dualsun, program, restartafterload, servo2, servo3, 1to1ratio")
+            print("Program/Manual: jump nextstep, jump step, listprofiles, loadprofile, profiledelete, saveprofile, savelog, status, trigger servo2, trigger servo3, trigger rotation")
+            print("Utility: fillpanel, light camera, light rotation, reset, restart, help")
             print("-----------------------")
 
         else:
@@ -2752,8 +2823,6 @@ def run_simulation():
     button_a_long_press_detected = False
     button_b_press_start = 0
     button_b_long_press_detected = False
-    both_buttons_press_start = 0
-    both_buttons_long_press_detected = False
 
     # Main loop
     while True:
@@ -2860,8 +2929,7 @@ def run_simulation():
             # Always ensure indicators are properly displayed
             update_speed_indicator(TIME_SCALE)
             update_mode_indicator(SOLAR_MODE)
-            update_hold_indicator(now_ms, TIME_SCALE == 0)
-            update_autoload_indicator()  # Show AUTO_LOAD status
+            update_hold_indicator(now_ms, TIME_SCALE == 0)  # Add this line
             
             last_update_time_ms = now_ms
         
@@ -2884,41 +2952,6 @@ def run_simulation():
 
         # Check for Button A press (jump to solar noon)
         button_a_state = not button_a.value()  # Pulled up, so LOW means pressed
-        button_b_state = not button_b.value()  # Pulled up, so LOW means pressed
-        
-        # Check for both buttons pressed together (AUTO_LOAD toggle)
-        both_buttons_pressed = button_a_state and button_b_state
-        
-        # Track start of both-button press for long press detection
-        if both_buttons_pressed and not (button_a_pressed_last and button_b_pressed_last):
-            both_buttons_press_start = now_ms
-            both_buttons_long_press_detected = False
-        
-        # Check for both-button long press (held for over 1 second)
-        if both_buttons_pressed and button_a_pressed_last and button_b_pressed_last:
-            if not both_buttons_long_press_detected and ticks_diff(now_ms, both_buttons_press_start) >= 1000:
-                # Toggle AUTO_LOAD_LATEST_PROFILE
-                global AUTO_LOAD_LATEST_PROFILE
-                AUTO_LOAD_LATEST_PROFILE = not AUTO_LOAD_LATEST_PROFILE
-                
-                # Persist to file
-                try:
-                    with open('autoload.cfg', 'w') as f:
-                        f.write('1' if AUTO_LOAD_LATEST_PROFILE else '0')
-                except:
-                    pass  # Silent fail - indicator still shows current state
-                
-                # Send parseable status for HTML interface
-                print(f"[SERIAL CMD] Auto-load latest profile set to: {AUTO_LOAD_LATEST_PROFILE} (persisted)")
-                
-                both_buttons_long_press_detected = True
-                # Block individual button long press actions
-                button_a_long_press_detected = True
-                button_b_long_press_detected = True
-        
-        # Reset both-button detection when either button is released
-        if not both_buttons_pressed:
-            both_buttons_long_press_detected = False
 
         # Track start of button press for long press detection
         if button_a_state and not button_a_pressed_last:
@@ -2954,6 +2987,8 @@ def run_simulation():
             if not button_a_long_press_detected:
                 # Short press detected - Toggle solar mode
                 if SOLAR_MODE == "BASIC":
+                    SOLAR_MODE = "SIMPLE"
+                elif SOLAR_MODE == "SIMPLE":
                     SOLAR_MODE = "SCIENTIFIC"
                 else:  # SCIENTIFIC
                     SOLAR_MODE = "BASIC"
@@ -2971,7 +3006,9 @@ def run_simulation():
 
         button_a_pressed_last = button_a_state
             
-        # Check for Button B press (button_b_state already read above for dual-button detection)
+        # Check for Button B press
+        button_b_state = not button_b.value()  # Pulled up, so LOW means pressed
+
         # Track start of button B press for long press detection
         if button_b_state and not button_b_pressed_last:
             button_b_press_start = now_ms

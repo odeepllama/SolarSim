@@ -1,46 +1,8 @@
 <!DOCTYPE html>
-<!--
-================================================================================
-SolaSim Studio - Solar Simulator Profile Builder
-================================================================================
-
-Copyright (C) 2025 Andy Crofts
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-================================================================================
-Project Description:
-================================================================================
-
-SolaSim Studio is a web-based profile builder and real-time device monitor
-for solar simulation hardware. It provides:
-
-- Visual timeline editor for multi-day solar simulation programs
-- Real-time device monitoring via Web Serial API
-- Profile import/export with diff tracking
-- Interactive sun arc visualization
-- Comprehensive validation and error handling
-
-For full source code and documentation, visit:
-https://github.com/[your-repository-here]
-
-================================================================================
--->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>SolaSim Studio</title>
+<title>Solar Simulator Studio</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -765,7 +727,7 @@ select:not(#filename_tag):not(#filename_preview) {
 </style>
 </head>
 <body>
-<h1>Solar Simulator Studio 20251207</h1>
+<h1>Solar Simulator Studio 20251201</h1>
 <div class="monitor-toggle-bar">
   <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" title="Show or hide live device monitor"><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt">Monitor / Interact</span></button>
   <span id="monitorConnBadge" class="pill red" title="Serial connection status">DISCONNECTED</span>
@@ -775,11 +737,6 @@ select:not(#filename_tag):not(#filename_preview) {
   <!-- <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button> -->
   <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title="Send 'help all' to device">Show All Commands</button>
   <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title="Show status output in log">Show Status</button>
-  <div id="bgColorChooser" style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-    <div class="bg-swatch" data-color="#abbea6" style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Green (Default)"></div>
-    <div class="bg-swatch" data-color="#a6b0be" style="background:#a6b0be; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Blue"></div>
-    <div class="bg-swatch" data-color="#bea6a6" style="background:#bea6a6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Red"></div>
-  </div>
 </div>
 <div id="monitorPanel" aria-hidden="true">
   <div id="monitorControls"></div>
@@ -1351,52 +1308,14 @@ select:not(#filename_tag):not(#filename_preview) {
 <!-- (Removed duplicate Export section) -->
 
 <script type="text/javascript">
-// ============================================================================
-// CONFIGURATION CONSTANTS
-// ============================================================================
-
-/**
- * Application-wide configuration constants.
- * Centralizes magic numbers for maintainability and consistency.
- */
-const CONFIG = {
-  // Undo/Redo buffer sizes
-  UNDO_BUFFER_SIZE: 10,
-  REDO_BUFFER_SIZE: 10,
-  TIMELINE_UNDO_BUFFER_SIZE: 5,
-  TIMELINE_REDO_BUFFER_SIZE: 5,
-  
-  // Validation timing
-  VALIDATION_DEBOUNCE_MS: 800,
-  
-  // Form population
-  MAX_POPULATION_RETRIES: 50,
-  POPULATION_RETRY_DELAY_MS: 200,
-  
-  // UI dimensions
-  PREVIEW_MIN_HEIGHT_PX: 280,
-  PREVIEW_DEFAULT_HEIGHT_PX: 700,
-  LOG_DEFAULT_HEIGHT_PX: 250,
-  
-  // Storage keys
-  UNDO_STORAGE_KEY: 'undoRedoBuffer',
-  UNDO_INDEX_KEY: 'undoRedoIndex',
-  UNDO_SESSION_KEY: 'undoRedoSession',
-  
-  // Time constants
-  MINUTES_PER_DAY: 1440,
-  SECONDS_PER_HOUR: 3600,
-  SECONDS_PER_MINUTE: 60
-};
-
 // Disable automatic scroll restoration so page always loads at top
 if (history && history.scrollRestoration) {
   history.scrollRestoration = 'manual';
 }
 
-// ============================================================================
-// FIELD METADATA
-// ============================================================================
+// -----------------------------
+// Field Metadata
+// -----------------------------
 const ORDERED_KEYS = [
  'START_TIME_HHMM','TIME_SCALE','INTENSITY_SCALE','SOLAR_MODE','SUN_COLOR_MODE','CUSTOM_SUN_R','CUSTOM_SUN_G','CUSTOM_SUN_B','STILLS_IMAGING_INTERVAL_SEC','SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC','IMAGE_AT_NIGHT','ROTATION_ENABLED','ROTATION_CAMERA_SERVO','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','ROTATION_AT_NIGHT','CAMERA_TRIGGER_HOLD_MS','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','CAMERA_LIGHTING_PANELS','CAMERA_LIGHT_R','CAMERA_LIGHT_G','CAMERA_LIGHT_B','ROTATION_LIGHT_R','ROTATION_LIGHT_G','ROTATION_LIGHT_B','DUAL_SUN_ENABLED','SIMULATION_DATE','LATITUDE'
 ];
@@ -1874,13 +1793,13 @@ function recomputeGlobalErrors(){
 
 // Debounced validation support
 let _validateDebounceTimer = null;
-// Validation debounce timing defined in CONFIG (increased from 500ms for smoother typing)
+const VALIDATION_DEBOUNCE_MS = 800; // increased from 500ms for smoother typing without banner flicker
 function scheduleGlobalValidation(){
   if(_validateDebounceTimer) clearTimeout(_validateDebounceTimer);
   _validateDebounceTimer = setTimeout(()=>{
     _validateDebounceTimer = null;
     recomputeGlobalErrors();
-  }, CONFIG.VALIDATION_DEBOUNCE_MS);
+  }, VALIDATION_DEBOUNCE_MS);
 }
 
 function renderErrorBanner(){
@@ -1910,8 +1829,12 @@ let programSteps = [];
 // Unified Undo/Redo Buffer System (Form + Program Steps)
 // Persists in localStorage but clears on fresh page load
 // Stores last 10 actions (Ctrl+Z, Ctrl+Y)
-// Note: Buffer sizes and storage keys defined in CONFIG object above
 // -----------------------------
+const UNDO_BUFFER_SIZE = 10;
+const REDO_BUFFER_SIZE = 10;
+const UNDO_STORAGE_KEY = 'undoRedoBuffer';
+const UNDO_INDEX_KEY = 'undoRedoIndex';
+const UNDO_SESSION_KEY = 'undoRedoSession';
 
 let undoBuffer = []; // Array of full application state snapshots
 let redoBuffer = []; // Array of states that were undone
@@ -1924,8 +1847,8 @@ function initializeUndoSession(){
 
   // Try to restore undo/redo buffers from localStorage if session matches
   try {
-    const storedSession = localStorage.getItem(CONFIG.UNDO_SESSION_KEY);
-    const storedUndo = localStorage.getItem(CONFIG.UNDO_STORAGE_KEY);
+    const storedSession = localStorage.getItem(UNDO_SESSION_KEY);
+    const storedUndo = localStorage.getItem(UNDO_STORAGE_KEY);
 
     if(storedSession === newSession && storedUndo){
       undoBuffer = JSON.parse(storedUndo);
@@ -1933,8 +1856,8 @@ function initializeUndoSession(){
     } else {
       // New session - clear old buffers
       undoBuffer = [];
-      localStorage.removeItem(CONFIG.UNDO_STORAGE_KEY);
-      localStorage.removeItem(CONFIG.UNDO_INDEX_KEY);
+      localStorage.removeItem(UNDO_STORAGE_KEY);
+      localStorage.removeItem(UNDO_INDEX_KEY);
       console.log('[Undo] Started fresh undo/redo session');
     }
   } catch(e){
@@ -1943,7 +1866,7 @@ function initializeUndoSession(){
   }
 
   redoBuffer = [];
-  localStorage.setItem(CONFIG.UNDO_SESSION_KEY, newSession);
+  localStorage.setItem(UNDO_SESSION_KEY, newSession);
 }
 
 // Create a complete snapshot of current state (form fields + program steps)
@@ -1979,7 +1902,7 @@ function saveUndoState(){
   undoBuffer.push(snapshot);
 
   // Keep only last 10 states
-  if(undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE){
+  if(undoBuffer.length > UNDO_BUFFER_SIZE){
     undoBuffer.shift();
   }
 
@@ -1988,7 +1911,7 @@ function saveUndoState(){
 
   // Persist to localStorage
   try {
-    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -2007,7 +1930,7 @@ function performUndo(){
   redoBuffer.push(currentState);
 
   // Keep only last 10 redo states
-  if(redoBuffer.length > CONFIG.REDO_BUFFER_SIZE){
+  if(redoBuffer.length > REDO_BUFFER_SIZE){
     redoBuffer.shift();
   }
 
@@ -2019,7 +1942,7 @@ function performUndo(){
 
   // Persist updated undo buffer to localStorage
   try {
-    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -2040,7 +1963,7 @@ function performRedo(){
   undoBuffer.push(currentState);
 
   // Keep only last 10 undo states
-  if(undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE){
+  if(undoBuffer.length > UNDO_BUFFER_SIZE){
     undoBuffer.shift();
   }
 
@@ -2052,7 +1975,7 @@ function performRedo(){
 
   // Persist updated undo buffer to localStorage
   try {
-    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -2065,8 +1988,9 @@ function performRedo(){
 // -----------------------------
 // Timeline-Specific Undo/Redo Buffer System
 // (For drag operations on Day visualization bars)
-// Note: Buffer sizes defined in CONFIG object
 // -----------------------------
+const TIMELINE_UNDO_BUFFER_SIZE = 5;
+const TIMELINE_REDO_BUFFER_SIZE = 5;
 let timelineUndoBuffer = []; // Array of program step snapshots for timeline drags
 let timelineRedoBuffer = []; // Array of timeline states that were undone
 let timelineDragInProgress = false; // Flag to track if a timeline drag is happening
@@ -2077,7 +2001,7 @@ function saveTimelineUndoState(){
   timelineUndoBuffer.push(snapshot);
 
   // Keep only last 5 states
-  if(timelineUndoBuffer.length > CONFIG.TIMELINE_UNDO_BUFFER_SIZE){
+  if(timelineUndoBuffer.length > TIMELINE_UNDO_BUFFER_SIZE){
     timelineUndoBuffer.shift();
   }
 
@@ -2098,7 +2022,7 @@ function performTimelineUndo(){
   timelineRedoBuffer.push(currentState);
 
   // Keep only last 5 redo states
-  if(timelineRedoBuffer.length > CONFIG.TIMELINE_REDO_BUFFER_SIZE){
+  if(timelineRedoBuffer.length > TIMELINE_REDO_BUFFER_SIZE){
     timelineRedoBuffer.shift();
   }
 
@@ -2129,7 +2053,7 @@ function performTimelineRedo(){
   timelineUndoBuffer.push(currentState);
 
   // Keep only last 5 undo states
-  if(timelineUndoBuffer.length > CONFIG.TIMELINE_UNDO_BUFFER_SIZE){
+  if(timelineUndoBuffer.length > TIMELINE_UNDO_BUFFER_SIZE){
     timelineUndoBuffer.shift();
   }
 
@@ -2192,7 +2116,7 @@ document.addEventListener('keydown', (e) => {
 // Populate form from device configuration
 let __populatingForm = false; // Guard to prevent multiple simultaneous attempts
 let __populationRetryCount = 0; // Track retry attempts
-// Max retries defined in CONFIG (50 * 200ms = 10 seconds)
+const MAX_POPULATION_RETRIES = 50; // Max retries (50 * 200ms = 10 seconds)
 
 function populateFormFromDeviceConfig(){
   // Prevent multiple simultaneous population attempts
@@ -2208,20 +2132,20 @@ function populateFormFromDeviceConfig(){
   
   // Check if form has been built yet using the flag
   if(!window.__formIsReady){
-    if(__populationRetryCount >= CONFIG.MAX_POPULATION_RETRIES){
-      console.error('[FORM] Form never became ready after', CONFIG.MAX_POPULATION_RETRIES, 'retries. Giving up.');
+    if(__populationRetryCount >= MAX_POPULATION_RETRIES){
+      console.error('[FORM] Form never became ready after', MAX_POPULATION_RETRIES, 'retries. Giving up.');
       console.error('[FORM] window.__formIsReady:', window.__formIsReady);
       console.error('[FORM] This should not happen! buildForm() may not have been called.');
       __populationRetryCount = 0; // Reset for next attempt
       return;
     }
     __populationRetryCount++;
-    console.warn('[FORM] Form not ready yet (window.__formIsReady =', window.__formIsReady, '), retry', __populationRetryCount, '/', CONFIG.MAX_POPULATION_RETRIES, 'in', CONFIG.POPULATION_RETRY_DELAY_MS, 'ms...');
+    console.warn('[FORM] Form not ready yet (window.__formIsReady =', window.__formIsReady, '), retry', __populationRetryCount, '/', MAX_POPULATION_RETRIES, 'in 200ms...');
     __populatingForm = true;
     setTimeout(() => {
       __populatingForm = false;
       populateFormFromDeviceConfig();
-    }, CONFIG.POPULATION_RETRY_DELAY_MS);
+    }, 200);
     return;
   }
   
@@ -13210,114 +13134,6 @@ function clearHoldState(){
   // Check for sim time updates every second
   // (will only re-render when time actually changes, which is once per minute)
   setInterval(updatePlayhead, 1000);
-})();
-
-// Background Color Chooser Logic
-// Color logic backed by sessionStorage so each tab keeps its own theme after reload
-(function(){
-  const swatches = document.querySelectorAll('.bg-swatch');
-  const BG_COLOR_KEY = 'profileBuilderBgColor';
-  const DEFAULT_BG_COLOR = '#abbea6';
-  let currentColor = sessionStorage.getItem(BG_COLOR_KEY) || DEFAULT_BG_COLOR;
-
-  function applyColor(color, options = {}){
-    const themeColor = (color || DEFAULT_BG_COLOR);
-    currentColor = themeColor;
-    document.body.style.backgroundColor = themeColor;
-    // Update active state visual
-    swatches.forEach(s => {
-      const isActive = s.dataset.color === themeColor;
-      if(isActive){
-        s.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px #333';
-        s.style.zIndex = '10';
-        s.style.transform = 'scale(1.1)';
-      } else {
-        s.style.boxShadow = '0 2px 4px rgba(0,0,0,0.25)';
-        s.style.zIndex = '1';
-        s.style.transform = 'scale(1)';
-      }
-      s.style.transition = 'all 0.2s ease';
-    });
-    if(options.persist){
-      try{
-        sessionStorage.setItem(BG_COLOR_KEY, themeColor);
-      }catch(e){
-        console.warn('Failed to store background color', e);
-      }
-    }
-  }
-
-  if(currentColor){
-    applyColor(currentColor);
-  } else {
-    applyColor(DEFAULT_BG_COLOR);
-  }
-
-  swatches.forEach(s => {
-    s.addEventListener('click', function(){
-      const color = this.dataset.color;
-      applyColor(color, { persist: true });
-    });
-    s.addEventListener('mouseenter', function(){
-      if(this.dataset.color !== currentColor){
-        this.style.transform = 'scale(1.1)';
-      }
-    });
-    s.addEventListener('mouseleave', function(){
-      if(this.dataset.color !== currentColor){
-        this.style.transform = 'scale(1)';
-      }
-    });
-  });
-
-})();
-
-// Device Identity Logic (Top Center Badge)
-(function(){
-  // Create badge
-  const b = document.createElement('div');
-  b.id = 'deviceIdentityBadge';
-  b.style.cssText = 'position:fixed; top:0; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); color:#fff; padding:4px 20px 6px; border-radius:0 0 8px 8px; font-size:1.1rem; font-weight:600; cursor:pointer; z-index:2000; transition:all 0.2s ease; backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.1); border-top:none; user-select:none; box-shadow:0 2px 8px rgba(0,0,0,0.2);';
-  b.title = 'Click to rename device identifier';
-  
-  const span = document.createElement('span');
-  span.id = 'deviceIdText';
-  b.appendChild(span);
-  document.body.appendChild(b);
-  
-  // Load saved ID from SESSION storage (unique per tab)
-  // Default to 'Device 1' if not set for this session
-  const savedId = sessionStorage.getItem('profileBuilderDeviceId') || 'Device 1';
-  span.textContent = savedId;
-  // Update page title to include device ID for tab distinction
-  document.title = savedId + " - " + document.title;
-
-  b.addEventListener('click', function(){
-    const newId = prompt("Enter Device Name/Number (e.g. Device 1):", span.textContent);
-    if(newId && newId.trim() !== ""){
-      // Remove old ID from title if present
-      const currentTitle = document.title;
-      const oldId = span.textContent;
-      if(currentTitle.startsWith(oldId + " - ")){
-        document.title = currentTitle.substring((oldId + " - ").length);
-      }
-      
-      span.textContent = newId;
-      sessionStorage.setItem('profileBuilderDeviceId', newId);
-      
-      // Add new ID to title
-      document.title = newId + " - " + document.title;
-    }
-  });
-  
-  b.addEventListener('mouseenter', function(){
-    this.style.paddingTop = '10px'; // Pop down slightly
-    this.style.background = 'rgba(0,0,0,0.8)';
-  });
-  b.addEventListener('mouseleave', function(){
-    this.style.paddingTop = '4px';
-    this.style.background = 'rgba(0,0,0,0.6)';
-  });
 })();
 </script>
 </body>

@@ -1,46 +1,8 @@
 <!DOCTYPE html>
-<!--
-================================================================================
-SolaSim Studio - Solar Simulator Profile Builder
-================================================================================
-
-Copyright (C) 2025 Andy Crofts
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-================================================================================
-Project Description:
-================================================================================
-
-SolaSim Studio is a web-based profile builder and real-time device monitor
-for solar simulation hardware. It provides:
-
-- Visual timeline editor for multi-day solar simulation programs
-- Real-time device monitoring via Web Serial API
-- Profile import/export with diff tracking
-- Interactive sun arc visualization
-- Comprehensive validation and error handling
-
-For full source code and documentation, visit:
-https://github.com/[your-repository-here]
-
-================================================================================
--->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>SolaSim Studio</title>
+<title>Solar Simulator Studio</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -765,7 +727,7 @@ select:not(#filename_tag):not(#filename_preview) {
 </style>
 </head>
 <body>
-<h1>Solar Simulator Studio 20251207</h1>
+<h1>Solar Simulator Studio 20251124</h1>
 <div class="monitor-toggle-bar">
   <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" title="Show or hide live device monitor"><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt">Monitor / Interact</span></button>
   <span id="monitorConnBadge" class="pill red" title="Serial connection status">DISCONNECTED</span>
@@ -775,11 +737,6 @@ select:not(#filename_tag):not(#filename_preview) {
   <!-- <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button> -->
   <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title="Send 'help all' to device">Show All Commands</button>
   <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title="Show status output in log">Show Status</button>
-  <div id="bgColorChooser" style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-    <div class="bg-swatch" data-color="#abbea6" style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Green (Default)"></div>
-    <div class="bg-swatch" data-color="#a6b0be" style="background:#a6b0be; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Blue"></div>
-    <div class="bg-swatch" data-color="#bea6a6" style="background:#bea6a6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Red"></div>
-  </div>
 </div>
 <div id="monitorPanel" aria-hidden="true">
   <div id="monitorControls"></div>
@@ -799,7 +756,7 @@ select:not(#filename_tag):not(#filename_preview) {
       <div id="monitorLog" aria-label="Monitor log" role="log"></div>
       <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
       <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-        <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" autocomplete="off" style="flex:1;" />
+        <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" style="flex:1;" />
         <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
         <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
       </div>
@@ -1351,52 +1308,14 @@ select:not(#filename_tag):not(#filename_preview) {
 <!-- (Removed duplicate Export section) -->
 
 <script type="text/javascript">
-// ============================================================================
-// CONFIGURATION CONSTANTS
-// ============================================================================
-
-/**
- * Application-wide configuration constants.
- * Centralizes magic numbers for maintainability and consistency.
- */
-const CONFIG = {
-  // Undo/Redo buffer sizes
-  UNDO_BUFFER_SIZE: 10,
-  REDO_BUFFER_SIZE: 10,
-  TIMELINE_UNDO_BUFFER_SIZE: 5,
-  TIMELINE_REDO_BUFFER_SIZE: 5,
-  
-  // Validation timing
-  VALIDATION_DEBOUNCE_MS: 800,
-  
-  // Form population
-  MAX_POPULATION_RETRIES: 50,
-  POPULATION_RETRY_DELAY_MS: 200,
-  
-  // UI dimensions
-  PREVIEW_MIN_HEIGHT_PX: 280,
-  PREVIEW_DEFAULT_HEIGHT_PX: 700,
-  LOG_DEFAULT_HEIGHT_PX: 250,
-  
-  // Storage keys
-  UNDO_STORAGE_KEY: 'undoRedoBuffer',
-  UNDO_INDEX_KEY: 'undoRedoIndex',
-  UNDO_SESSION_KEY: 'undoRedoSession',
-  
-  // Time constants
-  MINUTES_PER_DAY: 1440,
-  SECONDS_PER_HOUR: 3600,
-  SECONDS_PER_MINUTE: 60
-};
-
 // Disable automatic scroll restoration so page always loads at top
 if (history && history.scrollRestoration) {
   history.scrollRestoration = 'manual';
 }
 
-// ============================================================================
-// FIELD METADATA
-// ============================================================================
+// -----------------------------
+// Field Metadata
+// -----------------------------
 const ORDERED_KEYS = [
  'START_TIME_HHMM','TIME_SCALE','INTENSITY_SCALE','SOLAR_MODE','SUN_COLOR_MODE','CUSTOM_SUN_R','CUSTOM_SUN_G','CUSTOM_SUN_B','STILLS_IMAGING_INTERVAL_SEC','SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC','IMAGE_AT_NIGHT','ROTATION_ENABLED','ROTATION_CAMERA_SERVO','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','ROTATION_AT_NIGHT','CAMERA_TRIGGER_HOLD_MS','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','CAMERA_LIGHTING_PANELS','CAMERA_LIGHT_R','CAMERA_LIGHT_G','CAMERA_LIGHT_B','ROTATION_LIGHT_R','ROTATION_LIGHT_G','ROTATION_LIGHT_B','DUAL_SUN_ENABLED','SIMULATION_DATE','LATITUDE'
 ];
@@ -1812,17 +1731,9 @@ function validateField(key){
 
 function validateProgramSteps(){
   errorState.programErrors = [];
+  const hhmmRe = /^([0-1]?\d|2[0-3])[0-5]\d$/;
   programSteps.forEach((s,i)=>{
-    // Validate sim_time_hhmm: must be integer 0-2359 with minutes portion < 60
-    // Accepts any format: 1 (00:01), 100 (01:00), 600 (06:00), 2359 (23:59)
-    if(s.sim_time_hhmm === undefined || s.sim_time_hhmm === null || s.sim_time_hhmm === '') {
-      errorState.programErrors.push(`Step ${i+1}: bad sim_time_hhmm`);
-    } else {
-      const val = parseInt(String(s.sim_time_hhmm), 10);
-      if(isNaN(val) || val < 0 || val > 2359 || (val % 100) >= 60) {
-        errorState.programErrors.push(`Step ${i+1}: bad sim_time_hhmm`);
-      }
-    }
+    if(!s.sim_time_hhmm || !hhmmRe.test(String(s.sim_time_hhmm))) errorState.programErrors.push(`Step ${i+1}: bad sim_time_hhmm`);
   // Negative speed now allowed (reverse time). Only validate HOLD semantics.
     if(s.speed===0 && (s.hold_minutes===undefined || s.hold_minutes==='')) {
       // Only require hold_minutes if there is NOT a subsequent step with a valid sim_time_hhmm
@@ -1830,11 +1741,8 @@ function validateProgramSteps(){
       let nextStepHasTime = false;
       if(hasNextStep) {
         const nextStep = programSteps[i+1];
-        // Check if next step has valid sim_time_hhmm (integer 0-2359 with minutes < 60)
-        if(nextStep.sim_time_hhmm !== undefined && nextStep.sim_time_hhmm !== null && nextStep.sim_time_hhmm !== '') {
-          const nextVal = parseInt(String(nextStep.sim_time_hhmm), 10);
-          nextStepHasTime = !isNaN(nextVal) && nextVal >= 0 && nextVal <= 2359 && (nextVal % 100) < 60;
-        }
+        const hhmmRe = /^([0-1]?\d|2[0-3])[0-5]\d$/;
+        nextStepHasTime = nextStep.sim_time_hhmm && hhmmRe.test(String(nextStep.sim_time_hhmm));
       }
       if(!hasNextStep || !nextStepHasTime) {
         errorState.programErrors.push(`Step ${i+1}: hold_minutes required when speed=0`);
@@ -1874,13 +1782,13 @@ function recomputeGlobalErrors(){
 
 // Debounced validation support
 let _validateDebounceTimer = null;
-// Validation debounce timing defined in CONFIG (increased from 500ms for smoother typing)
+const VALIDATION_DEBOUNCE_MS = 800; // increased from 500ms for smoother typing without banner flicker
 function scheduleGlobalValidation(){
   if(_validateDebounceTimer) clearTimeout(_validateDebounceTimer);
   _validateDebounceTimer = setTimeout(()=>{
     _validateDebounceTimer = null;
     recomputeGlobalErrors();
-  }, CONFIG.VALIDATION_DEBOUNCE_MS);
+  }, VALIDATION_DEBOUNCE_MS);
 }
 
 function renderErrorBanner(){
@@ -1910,8 +1818,12 @@ let programSteps = [];
 // Unified Undo/Redo Buffer System (Form + Program Steps)
 // Persists in localStorage but clears on fresh page load
 // Stores last 10 actions (Ctrl+Z, Ctrl+Y)
-// Note: Buffer sizes and storage keys defined in CONFIG object above
 // -----------------------------
+const UNDO_BUFFER_SIZE = 10;
+const REDO_BUFFER_SIZE = 10;
+const UNDO_STORAGE_KEY = 'undoRedoBuffer';
+const UNDO_INDEX_KEY = 'undoRedoIndex';
+const UNDO_SESSION_KEY = 'undoRedoSession';
 
 let undoBuffer = []; // Array of full application state snapshots
 let redoBuffer = []; // Array of states that were undone
@@ -1924,8 +1836,8 @@ function initializeUndoSession(){
 
   // Try to restore undo/redo buffers from localStorage if session matches
   try {
-    const storedSession = localStorage.getItem(CONFIG.UNDO_SESSION_KEY);
-    const storedUndo = localStorage.getItem(CONFIG.UNDO_STORAGE_KEY);
+    const storedSession = localStorage.getItem(UNDO_SESSION_KEY);
+    const storedUndo = localStorage.getItem(UNDO_STORAGE_KEY);
 
     if(storedSession === newSession && storedUndo){
       undoBuffer = JSON.parse(storedUndo);
@@ -1933,8 +1845,8 @@ function initializeUndoSession(){
     } else {
       // New session - clear old buffers
       undoBuffer = [];
-      localStorage.removeItem(CONFIG.UNDO_STORAGE_KEY);
-      localStorage.removeItem(CONFIG.UNDO_INDEX_KEY);
+      localStorage.removeItem(UNDO_STORAGE_KEY);
+      localStorage.removeItem(UNDO_INDEX_KEY);
       console.log('[Undo] Started fresh undo/redo session');
     }
   } catch(e){
@@ -1943,7 +1855,7 @@ function initializeUndoSession(){
   }
 
   redoBuffer = [];
-  localStorage.setItem(CONFIG.UNDO_SESSION_KEY, newSession);
+  localStorage.setItem(UNDO_SESSION_KEY, newSession);
 }
 
 // Create a complete snapshot of current state (form fields + program steps)
@@ -1979,7 +1891,7 @@ function saveUndoState(){
   undoBuffer.push(snapshot);
 
   // Keep only last 10 states
-  if(undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE){
+  if(undoBuffer.length > UNDO_BUFFER_SIZE){
     undoBuffer.shift();
   }
 
@@ -1988,7 +1900,7 @@ function saveUndoState(){
 
   // Persist to localStorage
   try {
-    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -2007,7 +1919,7 @@ function performUndo(){
   redoBuffer.push(currentState);
 
   // Keep only last 10 redo states
-  if(redoBuffer.length > CONFIG.REDO_BUFFER_SIZE){
+  if(redoBuffer.length > REDO_BUFFER_SIZE){
     redoBuffer.shift();
   }
 
@@ -2019,7 +1931,7 @@ function performUndo(){
 
   // Persist updated undo buffer to localStorage
   try {
-    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -2040,7 +1952,7 @@ function performRedo(){
   undoBuffer.push(currentState);
 
   // Keep only last 10 undo states
-  if(undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE){
+  if(undoBuffer.length > UNDO_BUFFER_SIZE){
     undoBuffer.shift();
   }
 
@@ -2052,7 +1964,7 @@ function performRedo(){
 
   // Persist updated undo buffer to localStorage
   try {
-    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -2065,8 +1977,9 @@ function performRedo(){
 // -----------------------------
 // Timeline-Specific Undo/Redo Buffer System
 // (For drag operations on Day visualization bars)
-// Note: Buffer sizes defined in CONFIG object
 // -----------------------------
+const TIMELINE_UNDO_BUFFER_SIZE = 5;
+const TIMELINE_REDO_BUFFER_SIZE = 5;
 let timelineUndoBuffer = []; // Array of program step snapshots for timeline drags
 let timelineRedoBuffer = []; // Array of timeline states that were undone
 let timelineDragInProgress = false; // Flag to track if a timeline drag is happening
@@ -2077,7 +1990,7 @@ function saveTimelineUndoState(){
   timelineUndoBuffer.push(snapshot);
 
   // Keep only last 5 states
-  if(timelineUndoBuffer.length > CONFIG.TIMELINE_UNDO_BUFFER_SIZE){
+  if(timelineUndoBuffer.length > TIMELINE_UNDO_BUFFER_SIZE){
     timelineUndoBuffer.shift();
   }
 
@@ -2098,7 +2011,7 @@ function performTimelineUndo(){
   timelineRedoBuffer.push(currentState);
 
   // Keep only last 5 redo states
-  if(timelineRedoBuffer.length > CONFIG.TIMELINE_REDO_BUFFER_SIZE){
+  if(timelineRedoBuffer.length > TIMELINE_REDO_BUFFER_SIZE){
     timelineRedoBuffer.shift();
   }
 
@@ -2129,7 +2042,7 @@ function performTimelineRedo(){
   timelineUndoBuffer.push(currentState);
 
   // Keep only last 5 undo states
-  if(timelineUndoBuffer.length > CONFIG.TIMELINE_UNDO_BUFFER_SIZE){
+  if(timelineUndoBuffer.length > TIMELINE_UNDO_BUFFER_SIZE){
     timelineUndoBuffer.shift();
   }
 
@@ -2192,7 +2105,7 @@ document.addEventListener('keydown', (e) => {
 // Populate form from device configuration
 let __populatingForm = false; // Guard to prevent multiple simultaneous attempts
 let __populationRetryCount = 0; // Track retry attempts
-// Max retries defined in CONFIG (50 * 200ms = 10 seconds)
+const MAX_POPULATION_RETRIES = 50; // Max retries (50 * 200ms = 10 seconds)
 
 function populateFormFromDeviceConfig(){
   // Prevent multiple simultaneous population attempts
@@ -2208,20 +2121,20 @@ function populateFormFromDeviceConfig(){
   
   // Check if form has been built yet using the flag
   if(!window.__formIsReady){
-    if(__populationRetryCount >= CONFIG.MAX_POPULATION_RETRIES){
-      console.error('[FORM] Form never became ready after', CONFIG.MAX_POPULATION_RETRIES, 'retries. Giving up.');
+    if(__populationRetryCount >= MAX_POPULATION_RETRIES){
+      console.error('[FORM] Form never became ready after', MAX_POPULATION_RETRIES, 'retries. Giving up.');
       console.error('[FORM] window.__formIsReady:', window.__formIsReady);
       console.error('[FORM] This should not happen! buildForm() may not have been called.');
       __populationRetryCount = 0; // Reset for next attempt
       return;
     }
     __populationRetryCount++;
-    console.warn('[FORM] Form not ready yet (window.__formIsReady =', window.__formIsReady, '), retry', __populationRetryCount, '/', CONFIG.MAX_POPULATION_RETRIES, 'in', CONFIG.POPULATION_RETRY_DELAY_MS, 'ms...');
+    console.warn('[FORM] Form not ready yet (window.__formIsReady =', window.__formIsReady, '), retry', __populationRetryCount, '/', MAX_POPULATION_RETRIES, 'in 200ms...');
     __populatingForm = true;
     setTimeout(() => {
       __populatingForm = false;
       populateFormFromDeviceConfig();
-    }, CONFIG.POPULATION_RETRY_DELAY_MS);
+    }, 200);
     return;
   }
   
@@ -2514,9 +2427,7 @@ function renderProgramSteps(){
   const dayCell = mkCell(dayNum !== undefined ? dayNum : '');
   dayCell.classList.add('day-number-cell');
   tr.appendChild(dayCell);
-  // Format time with 4-digit padding for display (1 -> 0001, 600 -> 0600)
-  const simTimeDisplay = step.sim_time_hhmm != null ? String(step.sim_time_hhmm).padStart(4, '0') : '';
-  const simCell = mkCell(`<input data-f='sim_time_hhmm' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
+  const simCell = mkCell(`<input data-f='sim_time_hhmm' value='${step.sim_time_hhmm||''}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
     // Speed cell with color coding
     const spd = step.speed != null ? step.speed : 1;
     const speedBg = spd <= 1 ? '#4DA6FF' : spd <= 1.5 ? '#A8D5BA' : spd <= 2 ? '#90be6d' : spd <= 2.5 ? '#A8C968' : spd <= 3.5 ? '#E5D55E' : spd <= 6 ? '#f9c74f' : '#f9844a';
@@ -2771,12 +2682,7 @@ function attachProgramTableListeners(){
         }
       }
 
-      // Valid time - format with 4-digit padding for display
-      const parsedInt = parseInt(newTimeStr, 10);
-      if(!isNaN(parsedInt) && parsedInt >= 0 && parsedInt <= 2359 && (parsedInt % 100) < 60){
-        // Update display with 4-digit format
-        e.target.value = String(parsedInt).padStart(4, '0');
-      }
+      // Valid time - proceed normally
       renderProgramSteps();
       updatePreview(true);
     }
@@ -2882,8 +2788,7 @@ function attachProgramTableListeners(){
             const nextRowSelector = `#programStepsTable tbody tr[data-step-index='${row + 1}'] input[data-f='sim_time_hhmm']`;
             const nextInput = document.querySelector(nextRowSelector);
             if(nextInput){
-              // Format with 4-digit padding for display
-              nextInput.value = String(nextStep.sim_time_hhmm).padStart(4, '0');
+              nextInput.value = nextStep.sim_time_hhmm;
               console.log(`[hold_minutes] ✓ Updated DOM for step ${row + 2} time to ${nextStep.sim_time_hhmm}`);
             }
           }
@@ -2903,10 +2808,7 @@ function attachProgramTableListeners(){
       }
     } else if(field==='sim_time_hhmm'){
       const newTimeStr = e.target.value.trim();
-      // Parse to integer to remove leading zeros (0001 -> 1, 0600 -> 600)
-      // Store as integer for firmware compatibility
-      const parsedInt = parseInt(newTimeStr, 10);
-      programSteps[row][field] = isNaN(parsedInt) ? newTimeStr : parsedInt;
+      programSteps[row][field] = newTimeStr;
       const inputElem = e.target;
 
       // Auto-update next step's time if this is a HOLD step (same logic as hold_minutes)
@@ -2928,8 +2830,7 @@ function attachProgramTableListeners(){
               const nextRowSelector = `#programStepsTable tbody tr[data-step-index='${row + 1}'] input[data-f='sim_time_hhmm']`;
               const nextInput = document.querySelector(nextRowSelector);
               if(nextInput){
-                // Format with 4-digit padding for display
-                nextInput.value = String(nextStep.sim_time_hhmm).padStart(4, '0');
+                nextInput.value = nextStep.sim_time_hhmm;
               }
             } else {
               console.log(`[Table Edit] ✗ hold_minutes is not a number: ${currentStep.hold_minutes}`);
@@ -9325,19 +9226,10 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         if(DIGIT_INPUT_COMMANDS.test(textBeforeCursor)){
           // Check if we're past the command part and typing parameter values
           const tokens = textBeforeCursor.trim().split(/\s+/);
-          // If we have 2+ tokens (command is complete: e.g., "set speed"), we're ready to type values
-          // OR if placeholders are visible (e.g., "set speed <value>")
-          if(tokens.length >= 2 || /<[^>]+>/.test(input.value)){
-            // User is ready to type parameter values - let the number through and hide panel
-            hidePanel();
-            // Ensure there's a space before the cursor if needed (e.g., "set time" -> "set time ")
-            if(cursorPos > 0 && input.value[cursorPos - 1] !== ' '){
-              e.preventDefault();
-              const beforeCursor = input.value.slice(0, cursorPos);
-              const afterCursor = input.value.slice(cursorPos);
-              input.value = beforeCursor + ' ' + e.key + afterCursor;
-              input.setSelectionRange(cursorPos + 2, cursorPos + 2);
-            }
+          // If we have 3+ tokens (e.g., "set speed 1"), we're typing values - allow digit
+          // If we only have 1-2 tokens (e.g., "set rot"), we're still typing command - use for selection
+          if(tokens.length >= 3 || /<[^>]+>/.test(input.value)){
+            // User is typing parameter values - let the number through
             return;
           }
         }
@@ -9777,17 +9669,12 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     const nowTs = performance.now();
     // Detect status output (from status command)
     const isStatusOutput = typeof msg === 'string' && (msg.includes('System Status') || msg.includes('-- Simulation & Time --') || msg.includes('Sim Time:') || msg.includes('Program Repeats:') || msg.includes('Program Steps:'));
-    
-    // ONLY allow status output when explicitly requested by user
-    if(isStatusOutput){
-      if(state.statusOutputAllowed){
-        state.statusOutputAllowed = false; // Reset after showing first line
-        // Continue to show this status output
-      } else {
-        return; // Block all status output unless user explicitly requested it
-      }
+    if(isStatusOutput && !state.statusOutputAllowed){
+      return; // Block status output unless explicitly allowed
     }
-    
+    if(isStatusOutput && state.statusOutputAllowed){
+      state.statusOutputAllowed = false; // Reset after showing
+    }
     if(cls === 'update'){
       // Explicit update entries bypass suppression so users see concise changes
     } else if(state.__suppressDisabledUntil && nowTs < state.__suppressDisabledUntil){
@@ -11151,6 +11038,16 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   // When user requests full command list, temporarily disable scroll lock,
   // then re-enable after the output settles so user can see new content
   helpBtn && helpBtn.addEventListener('click', ()=> {
+    // Temporarily disable scroll lock to allow viewing new output
+    state.scrollLock = false;
+    if(scrollLockBtn){
+      scrollLockBtn.textContent = 'Scroll Lock: Off';
+      scrollLockBtn.classList.remove('scroll-lock-on');
+    }
+
+    // Enable bulk display mode for smooth scrolling
+    state.__bulkDisplayMode = true;
+
     // Disable output suppression so commands are visible
     state.__silentStatusUntil = 0;
     state.__suppressDisabledUntil = performance.now() + 2400;
@@ -11160,9 +11057,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if(state.__stopPeriodicStatus) state.__stopPeriodicStatus();
       setTimeout(()=>{ if(state.autoRefreshEnabled && state.__startPeriodicStatus) state.__startPeriodicStatus(); }, 2500);
     }catch(_){ }
-
-    // Enable bulk display mode for smooth scrolling effect
-    state.__bulkDisplayMode = true;
 
     // Print command list directly from HTML instead of sending serial command
     const allCommands = [
@@ -11239,9 +11133,9 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     log('', 'system');
     log('-----------------------', 'system');
 
-    // Wait for output to settle, then disable bulk mode and scroll to bottom
+    // After commands are displayed, wait for scroll to settle then disable bulk mode and re-enable scroll lock
     const IDLE_MS = 350, MAX_WAIT_MS = 4000;
-    let lastCount = logBox ? logBox.children.length : 0;
+    let lastCount = logBox.children.length;
     let startTs = performance.now();
     let lastChangeTs = startTs;
 
@@ -11253,8 +11147,12 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if((now - lastChangeTs) >= IDLE_MS || (now - startTs) >= MAX_WAIT_MS) {
         // Disable bulk display mode to return to normal scrolling
         state.__bulkDisplayMode = false;
-        // Scroll to bottom to ensure all commands are visible
-        if(logBox) logBox.scrollTop = logBox.scrollHeight;
+        // Re-activate scroll lock after output settles
+        state.scrollLock = true;
+        if(scrollLockBtn) {
+          scrollLockBtn.textContent = 'Scroll Lock: On';
+          scrollLockBtn.classList.add('scroll-lock-on');
+        }
         return;
       }
       requestAnimationFrame(poll);
@@ -11262,29 +11160,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     requestAnimationFrame(poll);
   });
   function postSendSelect(){ if(cmdInput){ cmdInput.focus(); cmdInput.select(); }}
-  function handleManualStatus(){
-    if(!logBox) return;
-    state.__bulkDisplayMode = true;
-    const IDLE_MS = 350, MAX_WAIT_MS = 4000;
-    let lastCount = logBox.children.length;
-    let startTs = performance.now();
-    let lastChangeTs = startTs;
-    const poll = () => {
-      if(!logBox) return;
-      const cur = logBox.children.length;
-      if(cur !== lastCount) { lastCount = cur; lastChangeTs = performance.now(); }
-      const now = performance.now();
-      if((now - lastChangeTs) >= IDLE_MS || (now - startTs) >= MAX_WAIT_MS) {
-        state.__bulkDisplayMode = false;
-        if(logBox) logBox.scrollTop = logBox.scrollHeight;
-        return;
-      }
-      requestAnimationFrame(poll);
-    };
-    requestAnimationFrame(poll);
-  }
-  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status'){ window.allowStatusOutput(); handleManualStatus(); } sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
-  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status'){ window.allowStatusOutput(); handleManualStatus(); } sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
+  sendBtn && sendBtn.addEventListener('click', ()=>{ const v=cmdInput.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); });
+  cmdInput && cmdInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){ if(window.__addCommandToHistory) window.__addCommandToHistory(v); state.__silentStatusUntil = 0; if(v.toLowerCase() === 'status') window.allowStatusOutput(); sendLine(v, {silentEcho: false, logSource: 'manual'}).then(()=>postSendSelect()); } else postSendSelect(); }});
   exportLogBtn && exportLogBtn.addEventListener('click', exportCommandLog);
   // Silent status trigger (used by auto refresh and initial connect)
   function sendStatusSilent(){
@@ -11297,7 +11174,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   }
   // Manual visible status is provided by Show Status button; no separate refresh icon button
 
-  // Visible status output with smooth scrolling
+  // Visible status output with auto scroll-lock (similar logic to help all)
   showStatusBtn && showStatusBtn.addEventListener('click', ()=>{
     // Ensure visible output is not suppressed
     state.__silentStatusUntil = 0;
@@ -11312,30 +11189,26 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Enable bulk display mode for smooth scrolling
     state.__bulkDisplayMode = true;
 
-    sendLine('status');
-    
-    // Wait for output to settle, then disable bulk mode and scroll to bottom
-    if(!logBox) return;
-    const IDLE_MS = 350, MAX_WAIT_MS = 4000;
-    let lastCount = logBox.children.length;
-    let startTs = performance.now();
-    let lastChangeTs = startTs;
+    // Temporarily disable scroll lock to allow viewing new output
+    state.scrollLock = false;
+    if(scrollLockBtn){
+      scrollLockBtn.textContent = 'Scroll Lock: Off';
+      scrollLockBtn.classList.remove('scroll-lock-on');
+    }
 
-    const poll = () => {
-      if(!logBox) return;
-      const cur = logBox.children.length;
-      if(cur !== lastCount) { lastCount = cur; lastChangeTs = performance.now(); }
-      const now = performance.now();
-      if((now - lastChangeTs) >= IDLE_MS || (now - startTs) >= MAX_WAIT_MS) {
+    sendLine('status');
+    if(!logBox) return;
+    const IDLE_MS=350, MAX_WAIT_MS=4000; let lastCount=logBox.children.length; let startTs=performance.now(); let lastChangeTs=startTs;
+    const poll=()=>{
+      if(!logBox) return; const cur=logBox.children.length; if(cur!==lastCount){ lastCount=cur; lastChangeTs=performance.now(); }
+      const now=performance.now(); if((now-lastChangeTs)>=IDLE_MS || (now-startTs)>=MAX_WAIT_MS){
         // Disable bulk display mode to return to normal scrolling
         state.__bulkDisplayMode = false;
-        // Scroll to bottom to show all status output
-        if(logBox) logBox.scrollTop = logBox.scrollHeight;
-        return;
-      }
+        // Re-activate scroll lock after output settles
+        state.scrollLock=true; if(scrollLockBtn){ scrollLockBtn.textContent='Scroll Lock: On'; scrollLockBtn.classList.add('scroll-lock-on'); }
+        return; }
       requestAnimationFrame(poll);
-    };
-    requestAnimationFrame(poll);
+    }; requestAnimationFrame(poll);
   });
 
   // Auto-reconnect previously granted serial port on secure origins (https or localhost)
@@ -11986,16 +11859,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   });
   grid.addEventListener('dblclick', (e)=>{ const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if(!box) return; const k=keyFromBox(box); if(!k) return; clearTimeout(clickTimer); e.stopPropagation(); hide(); // Confirm for toggle-capable tiles
     const toggleMap={ program:'toggle program', dualSun:'toggle dualsun', rotation:'toggle rotation' };
-    // Handle solarMode toggle specially - switch between BASIC and SCIENTIFIC
-    if(k === 'solarMode'){
-      showConfirm(box, `Are you sure you want to toggle ${box.querySelector('b')?.textContent||''}?`, ()=>{
-        // Get current mode from the tile's displayed value
-        const currentMode = box.querySelector('span')?.textContent?.trim();
-        const newMode = currentMode === 'BASIC' ? 'scientific' : 'basic';
-        sendSilent('set solarmode ' + newMode);
-      });
-      return;
-    }
     const cmd = toggleMap[k]; if(!cmd) return; showConfirm(box, `Are you sure you want to toggle ${box.querySelector('b')?.textContent||''}?`, ()=>{ sendSilent(cmd); });
   });
   grid.__tilePopoverDelegated = true; })();
@@ -12004,7 +11867,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   let confirmOutside=null;
   function showConfirm(tileEl, msg, onYes){ const txt=confirmEl.querySelector('.txt'); const yes=confirmEl.querySelector('.yes'); const no=confirmEl.querySelector('.no'); txt.textContent = msg; const r=tileEl.getBoundingClientRect(); confirmEl.style.left = Math.round(r.left + window.scrollX) + 'px'; confirmEl.style.top = Math.round(r.bottom + window.scrollY + 6) + 'px'; confirmEl.style.display='block'; const cleanup=()=>{ confirmEl.style.display='none'; yes.onclick=null; no.onclick=null; if(confirmOutside){ document.removeEventListener('mousedown', confirmOutside); confirmOutside=null; } }; yes.onclick=()=>{ try{ onYes && onYes(); }finally{ cleanup(); } }; no.onclick=cleanup; confirmOutside=(e)=>{ if(!confirmEl.contains(e.target)) cleanup(); }; document.addEventListener('mousedown', confirmOutside); }
   // Tooltips for discoverability
-  function applyTooltips(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return; const editOnly = ['sim','speed','intensity','sunColor','servo2Int']; const toggleKeys=['program','rotation','dualSun','solarMode']; for(const [k, box] of (window.kvCache?.entries?.()||[])){ if(!box) continue; if(toggleKeys.includes(k)) box.title='Click to edit; Double-click to toggle'; else if(editOnly.includes(k)) box.title='Click to edit'; }
+  function applyTooltips(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return; const editOnly = ['sim','speed','intensity','sunColor','solarMode','servo2Int']; const toggleKeys=['program','rotation','dualSun']; for(const [k, box] of (window.kvCache?.entries?.()||[])){ if(!box) continue; if(toggleKeys.includes(k)) box.title='Click to edit; Double-click to toggle'; else if(editOnly.includes(k)) box.title='Click to edit'; }
     // Fallback by scanning labels
     grid.querySelectorAll('.mon-kv').forEach(box=>{ if(box.title) return; const key=keyFromBox(box); if(!key) return; if(toggleKeys.includes(key)) box.title='Click to edit; Double-click to toggle'; else box.title='Click to edit'; });
   }
@@ -12310,14 +12173,18 @@ window.__currentStepIndex = 0; // Track which step we're currently on (0 = befor
 
 // Helper function to set playhead manual flag with proper timeout management
 function __setPlayheadManualFlag(){
-  // Manual navigation should persist until next explicit navigation or profile load
+  // Clear any existing timeout to prevent premature clearing
   if(window.__playheadManualTimeout){
     clearTimeout(window.__playheadManualTimeout);
     window.__playheadManualTimeout = null;
   }
   window.__playheadManuallySet = true;
-  // Do NOT auto-clear after 2 seconds; only clear on explicit navigation or profile load
-  console.log('[Playhead] Manual navigation set, auto-detection paused');
+  // Schedule clearing the flag after 2 seconds
+  window.__playheadManualTimeout = setTimeout(() => {
+    window.__playheadManuallySet = false;
+    window.__playheadManualTimeout = null;
+    console.log('[Playhead] Cleared manual flag, auto-detection resumed');
+  }, 2000);
 }
 
 // Helper function to send command to device
@@ -12587,35 +12454,19 @@ window.__scrollToPrevStep = async function(){
     return;
   }
 
-  // Enhanced logic: If at first step of a day, jump to last step of previous day
+  // Find the previous step before current time (search backward)
+  // IMPORTANT: Only search within the current day's steps to avoid jumping to wrong day
   let prevStepIndex = window.__currentStepIndex - 1;
-  if (currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function') {
+  if(currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function'){
     const currentDay = window.__playheadCurrentDay || 1;
-    // Find all step indices for current day
-    let currentDayStepIndices = [];
-    for (let i = 0; i < programSteps.length; i++) {
-      if (__getDayForStep(i) === currentDay) currentDayStepIndices.push(i);
-    }
-    // If at first step of the day, jump to last step of previous day
-    if (currentDayStepIndices.length && window.__currentStepIndex - 1 === currentDayStepIndices[0]) {
-      // Find all step indices for previous day
-      const prevDay = currentDay - 1;
-      let prevDayStepIndices = [];
-      for (let i = 0; i < programSteps.length; i++) {
-        if (__getDayForStep(i) === prevDay) prevDayStepIndices.push(i);
-      }
-      if (prevDayStepIndices.length) {
-        prevStepIndex = prevDayStepIndices[prevDayStepIndices.length - 1] + 1; // 1-based index
-      }
-    } else {
-      // Otherwise, search backward for last step with time < current time AND on the same day
-      for (let i = programSteps.length - 1; i >= 0; i--) {
-        const stepDay = __getDayForStep(i);
-        const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
-        if (stepDay === currentDay && stepMinutes < currentSimMinutes) {
-          prevStepIndex = i + 1; // 1-based index
-          break;
-        }
+    // Search backward for last step with time < current time AND on the same day
+    for(let i = programSteps.length - 1; i >= 0; i--){
+      const stepDay = __getDayForStep(i);
+      const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
+      // Only consider steps on the current day
+      if(stepDay === currentDay && stepMinutes < currentSimMinutes){
+        prevStepIndex = i + 1; // Convert to 1-based index
+        break;
       }
     }
   }
@@ -12623,7 +12474,15 @@ window.__scrollToPrevStep = async function(){
   const targetStepIndex = prevStepIndex;
   console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
 
-  // Allow jump to previous day's final step (no abort)
+  // Validate that the target step is on the current day
+  const currentDay = window.__playheadCurrentDay || 1;
+  if(targetStepIndex > 0 && typeof __getDayForStep === 'function'){
+    const targetDay = __getDayForStep(targetStepIndex - 1); // Convert to 0-based index
+    if(targetDay !== currentDay){
+      console.log('[Step Nav] Target step is on day', targetDay, 'but current day is', currentDay, '- aborting to prevent day jump');
+      return;
+    }
+  }
 
   // Check if device is connected
   const serialState = window.__serialState || null;
@@ -13210,114 +13069,6 @@ function clearHoldState(){
   // Check for sim time updates every second
   // (will only re-render when time actually changes, which is once per minute)
   setInterval(updatePlayhead, 1000);
-})();
-
-// Background Color Chooser Logic
-// Color logic backed by sessionStorage so each tab keeps its own theme after reload
-(function(){
-  const swatches = document.querySelectorAll('.bg-swatch');
-  const BG_COLOR_KEY = 'profileBuilderBgColor';
-  const DEFAULT_BG_COLOR = '#abbea6';
-  let currentColor = sessionStorage.getItem(BG_COLOR_KEY) || DEFAULT_BG_COLOR;
-
-  function applyColor(color, options = {}){
-    const themeColor = (color || DEFAULT_BG_COLOR);
-    currentColor = themeColor;
-    document.body.style.backgroundColor = themeColor;
-    // Update active state visual
-    swatches.forEach(s => {
-      const isActive = s.dataset.color === themeColor;
-      if(isActive){
-        s.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px #333';
-        s.style.zIndex = '10';
-        s.style.transform = 'scale(1.1)';
-      } else {
-        s.style.boxShadow = '0 2px 4px rgba(0,0,0,0.25)';
-        s.style.zIndex = '1';
-        s.style.transform = 'scale(1)';
-      }
-      s.style.transition = 'all 0.2s ease';
-    });
-    if(options.persist){
-      try{
-        sessionStorage.setItem(BG_COLOR_KEY, themeColor);
-      }catch(e){
-        console.warn('Failed to store background color', e);
-      }
-    }
-  }
-
-  if(currentColor){
-    applyColor(currentColor);
-  } else {
-    applyColor(DEFAULT_BG_COLOR);
-  }
-
-  swatches.forEach(s => {
-    s.addEventListener('click', function(){
-      const color = this.dataset.color;
-      applyColor(color, { persist: true });
-    });
-    s.addEventListener('mouseenter', function(){
-      if(this.dataset.color !== currentColor){
-        this.style.transform = 'scale(1.1)';
-      }
-    });
-    s.addEventListener('mouseleave', function(){
-      if(this.dataset.color !== currentColor){
-        this.style.transform = 'scale(1)';
-      }
-    });
-  });
-
-})();
-
-// Device Identity Logic (Top Center Badge)
-(function(){
-  // Create badge
-  const b = document.createElement('div');
-  b.id = 'deviceIdentityBadge';
-  b.style.cssText = 'position:fixed; top:0; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); color:#fff; padding:4px 20px 6px; border-radius:0 0 8px 8px; font-size:1.1rem; font-weight:600; cursor:pointer; z-index:2000; transition:all 0.2s ease; backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.1); border-top:none; user-select:none; box-shadow:0 2px 8px rgba(0,0,0,0.2);';
-  b.title = 'Click to rename device identifier';
-  
-  const span = document.createElement('span');
-  span.id = 'deviceIdText';
-  b.appendChild(span);
-  document.body.appendChild(b);
-  
-  // Load saved ID from SESSION storage (unique per tab)
-  // Default to 'Device 1' if not set for this session
-  const savedId = sessionStorage.getItem('profileBuilderDeviceId') || 'Device 1';
-  span.textContent = savedId;
-  // Update page title to include device ID for tab distinction
-  document.title = savedId + " - " + document.title;
-
-  b.addEventListener('click', function(){
-    const newId = prompt("Enter Device Name/Number (e.g. Device 1):", span.textContent);
-    if(newId && newId.trim() !== ""){
-      // Remove old ID from title if present
-      const currentTitle = document.title;
-      const oldId = span.textContent;
-      if(currentTitle.startsWith(oldId + " - ")){
-        document.title = currentTitle.substring((oldId + " - ").length);
-      }
-      
-      span.textContent = newId;
-      sessionStorage.setItem('profileBuilderDeviceId', newId);
-      
-      // Add new ID to title
-      document.title = newId + " - " + document.title;
-    }
-  });
-  
-  b.addEventListener('mouseenter', function(){
-    this.style.paddingTop = '10px'; // Pop down slightly
-    this.style.background = 'rgba(0,0,0,0.8)';
-  });
-  b.addEventListener('mouseleave', function(){
-    this.style.paddingTop = '4px';
-    this.style.background = 'rgba(0,0,0,0.6)';
-  });
 })();
 </script>
 </body>

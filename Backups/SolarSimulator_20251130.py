@@ -775,8 +775,8 @@ def update_speed_indicator(speed_scale):
 
 def update_mode_indicator(mode):
     """Update column 4 of matrix display to indicate simulation mode (BASIC, SCIENTIFIC)."""
-    # Clear the penultimate column (column 4) EXCEPT the top pixel used for the autoload indicator
-    for r in range(1, 5):  # Start from row 1 instead of 0 to preserve autoload indicator
+    # Clear the penultimate column (column 4) EXCEPT the top pixel used for the HOLD indicator
+    for r in range(1, 5):  # Start from row 1 instead of 0
         matrix_buffer[r][4] = 0
 
     # Determine number of LEDs to light based on mode
@@ -805,17 +805,6 @@ def update_hold_indicator(now_ms, is_hold_mode):
     # In HOLD mode, blink the top-left pixel at 1Hz (500ms on, 500ms off)
     blink_cycle = (now_ms // 1000) % 2  # 0 or 1
     matrix_buffer[0][0] = blink_cycle
-
-def update_autoload_indicator():
-    """Update the top-right pixel (column 4, row 0) to indicate AUTO_LOAD_LATEST_PROFILE status.
-    Illuminated when AUTO_LOAD_LATEST_PROFILE is False."""
-    global matrix_buffer
-    
-    # Top pixel in column 4 (mode indicator column)
-    if AUTO_LOAD_LATEST_PROFILE:
-        matrix_buffer[0][4] = 0  # Off when auto-load is enabled
-    else:
-        matrix_buffer[0][4] = 1  # On when auto-load is disabled
 
 # --- Rotation Cycle State Machine ---
 def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
@@ -2615,7 +2604,7 @@ def handle_command(command_str):
 
         elif command == "help" and len(parts) > 1 and parts[1] == "all":
             print("--- Command Summary ---")
-            print("Set: time <hhmm>, autoload <on|off|true|false|1|0>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>, date <yyyymmdd>, degrees_per_image <float>, images_per_rotation <num>, imageatnight <true|false|on|off|1|0>, intensity <0.0-1.0>, latitude <degrees>, programenabled <on|off>, programrepeats <n>, rotationatnight <true|false|on|off|1|0>, rotationcameraservo <2|3>, rotationinterval <minutes>, rotationlightrgb <r> <g> <b>, rotationmode <stills|video>, rot_inc_deg <float>, rot_speed <slow|medium|fast>, rot_step_intv <int>, rot_stills_intv <float>, rot_trig_hold <int>, savelog <yyyymmdd>, servo2interval <seconds>, servo3interval <seconds>, solarmode <basic|scientific>, speed <scale>, starttime <hhmm>, suncolor <natural|blue|custom> [r g b]")
+            print("Set: time <hhmm>, date <yyyymmdd>, intensity <0.0-1.0>, latitude <degrees>, speed <scale>, suncolor <natural|blue|custom> [r g b], rotationinterval <minutes>, images_per_rotation <num>, degrees_per_image <float>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>")
             print("Toggle: dualsun, program, rotation, restartafterload, servo2, servo3, 1to1ratio")
             print("Program/Manual: jump nextstep, jump step <n>, listprofiles, loadprofile <profilename>, saveprofile <profilename> [note], profiledelete <profilename>, savelog <yyyymmdd>, status, trigger servo2, trigger servo3, trigger rotation")
             print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help all")
@@ -2752,8 +2741,6 @@ def run_simulation():
     button_a_long_press_detected = False
     button_b_press_start = 0
     button_b_long_press_detected = False
-    both_buttons_press_start = 0
-    both_buttons_long_press_detected = False
 
     # Main loop
     while True:
@@ -2860,8 +2847,7 @@ def run_simulation():
             # Always ensure indicators are properly displayed
             update_speed_indicator(TIME_SCALE)
             update_mode_indicator(SOLAR_MODE)
-            update_hold_indicator(now_ms, TIME_SCALE == 0)
-            update_autoload_indicator()  # Show AUTO_LOAD status
+            update_hold_indicator(now_ms, TIME_SCALE == 0)  # Add this line
             
             last_update_time_ms = now_ms
         
@@ -2884,41 +2870,6 @@ def run_simulation():
 
         # Check for Button A press (jump to solar noon)
         button_a_state = not button_a.value()  # Pulled up, so LOW means pressed
-        button_b_state = not button_b.value()  # Pulled up, so LOW means pressed
-        
-        # Check for both buttons pressed together (AUTO_LOAD toggle)
-        both_buttons_pressed = button_a_state and button_b_state
-        
-        # Track start of both-button press for long press detection
-        if both_buttons_pressed and not (button_a_pressed_last and button_b_pressed_last):
-            both_buttons_press_start = now_ms
-            both_buttons_long_press_detected = False
-        
-        # Check for both-button long press (held for over 1 second)
-        if both_buttons_pressed and button_a_pressed_last and button_b_pressed_last:
-            if not both_buttons_long_press_detected and ticks_diff(now_ms, both_buttons_press_start) >= 1000:
-                # Toggle AUTO_LOAD_LATEST_PROFILE
-                global AUTO_LOAD_LATEST_PROFILE
-                AUTO_LOAD_LATEST_PROFILE = not AUTO_LOAD_LATEST_PROFILE
-                
-                # Persist to file
-                try:
-                    with open('autoload.cfg', 'w') as f:
-                        f.write('1' if AUTO_LOAD_LATEST_PROFILE else '0')
-                except:
-                    pass  # Silent fail - indicator still shows current state
-                
-                # Send parseable status for HTML interface
-                print(f"[SERIAL CMD] Auto-load latest profile set to: {AUTO_LOAD_LATEST_PROFILE} (persisted)")
-                
-                both_buttons_long_press_detected = True
-                # Block individual button long press actions
-                button_a_long_press_detected = True
-                button_b_long_press_detected = True
-        
-        # Reset both-button detection when either button is released
-        if not both_buttons_pressed:
-            both_buttons_long_press_detected = False
 
         # Track start of button press for long press detection
         if button_a_state and not button_a_pressed_last:
@@ -2971,7 +2922,9 @@ def run_simulation():
 
         button_a_pressed_last = button_a_state
             
-        # Check for Button B press (button_b_state already read above for dual-button detection)
+        # Check for Button B press
+        button_b_state = not button_b.value()  # Pulled up, so LOW means pressed
+
         # Track start of button B press for long press detection
         if button_b_state and not button_b_pressed_last:
             button_b_press_start = now_ms

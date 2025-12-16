@@ -1,4 +1,42 @@
 <!DOCTYPE html>
+<!--
+================================================================================
+SolaSim Studio - Solar Simulator Profile Builder
+================================================================================
+
+Copyright (C) 2025 Andy Crofts
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+================================================================================
+Project Description:
+================================================================================
+
+SolaSim Studio is a web-based profile builder and real-time device monitor
+for solar simulation hardware. It provides:
+
+- Visual timeline editor for multi-day solar simulation programs
+- Real-time device monitoring via Web Serial API
+- Profile import/export with diff tracking
+- Interactive sun arc visualization
+- Comprehensive validation and error handling
+
+For full source code and documentation, visit:
+https://github.com/[your-repository-here]
+
+================================================================================
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1313,14 +1351,52 @@ select:not(#filename_tag):not(#filename_preview) {
 <!-- (Removed duplicate Export section) -->
 
 <script type="text/javascript">
+// ============================================================================
+// CONFIGURATION CONSTANTS
+// ============================================================================
+
+/**
+ * Application-wide configuration constants.
+ * Centralizes magic numbers for maintainability and consistency.
+ */
+const CONFIG = {
+  // Undo/Redo buffer sizes
+  UNDO_BUFFER_SIZE: 10,
+  REDO_BUFFER_SIZE: 10,
+  TIMELINE_UNDO_BUFFER_SIZE: 5,
+  TIMELINE_REDO_BUFFER_SIZE: 5,
+  
+  // Validation timing
+  VALIDATION_DEBOUNCE_MS: 800,
+  
+  // Form population
+  MAX_POPULATION_RETRIES: 50,
+  POPULATION_RETRY_DELAY_MS: 200,
+  
+  // UI dimensions
+  PREVIEW_MIN_HEIGHT_PX: 280,
+  PREVIEW_DEFAULT_HEIGHT_PX: 700,
+  LOG_DEFAULT_HEIGHT_PX: 250,
+  
+  // Storage keys
+  UNDO_STORAGE_KEY: 'undoRedoBuffer',
+  UNDO_INDEX_KEY: 'undoRedoIndex',
+  UNDO_SESSION_KEY: 'undoRedoSession',
+  
+  // Time constants
+  MINUTES_PER_DAY: 1440,
+  SECONDS_PER_HOUR: 3600,
+  SECONDS_PER_MINUTE: 60
+};
+
 // Disable automatic scroll restoration so page always loads at top
 if (history && history.scrollRestoration) {
   history.scrollRestoration = 'manual';
 }
 
-// -----------------------------
-// Field Metadata
-// -----------------------------
+// ============================================================================
+// FIELD METADATA
+// ============================================================================
 const ORDERED_KEYS = [
  'START_TIME_HHMM','TIME_SCALE','INTENSITY_SCALE','SOLAR_MODE','SUN_COLOR_MODE','CUSTOM_SUN_R','CUSTOM_SUN_G','CUSTOM_SUN_B','STILLS_IMAGING_INTERVAL_SEC','SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC','IMAGE_AT_NIGHT','ROTATION_ENABLED','ROTATION_CAMERA_SERVO','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','ROTATION_AT_NIGHT','CAMERA_TRIGGER_HOLD_MS','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','CAMERA_LIGHTING_PANELS','CAMERA_LIGHT_R','CAMERA_LIGHT_G','CAMERA_LIGHT_B','ROTATION_LIGHT_R','ROTATION_LIGHT_G','ROTATION_LIGHT_B','DUAL_SUN_ENABLED','SIMULATION_DATE','LATITUDE'
 ];
@@ -1798,13 +1874,13 @@ function recomputeGlobalErrors(){
 
 // Debounced validation support
 let _validateDebounceTimer = null;
-const VALIDATION_DEBOUNCE_MS = 800; // increased from 500ms for smoother typing without banner flicker
+// Validation debounce timing defined in CONFIG (increased from 500ms for smoother typing)
 function scheduleGlobalValidation(){
   if(_validateDebounceTimer) clearTimeout(_validateDebounceTimer);
   _validateDebounceTimer = setTimeout(()=>{
     _validateDebounceTimer = null;
     recomputeGlobalErrors();
-  }, VALIDATION_DEBOUNCE_MS);
+  }, CONFIG.VALIDATION_DEBOUNCE_MS);
 }
 
 function renderErrorBanner(){
@@ -1834,12 +1910,8 @@ let programSteps = [];
 // Unified Undo/Redo Buffer System (Form + Program Steps)
 // Persists in localStorage but clears on fresh page load
 // Stores last 10 actions (Ctrl+Z, Ctrl+Y)
+// Note: Buffer sizes and storage keys defined in CONFIG object above
 // -----------------------------
-const UNDO_BUFFER_SIZE = 10;
-const REDO_BUFFER_SIZE = 10;
-const UNDO_STORAGE_KEY = 'undoRedoBuffer';
-const UNDO_INDEX_KEY = 'undoRedoIndex';
-const UNDO_SESSION_KEY = 'undoRedoSession';
 
 let undoBuffer = []; // Array of full application state snapshots
 let redoBuffer = []; // Array of states that were undone
@@ -1852,8 +1924,8 @@ function initializeUndoSession(){
 
   // Try to restore undo/redo buffers from localStorage if session matches
   try {
-    const storedSession = localStorage.getItem(UNDO_SESSION_KEY);
-    const storedUndo = localStorage.getItem(UNDO_STORAGE_KEY);
+    const storedSession = localStorage.getItem(CONFIG.UNDO_SESSION_KEY);
+    const storedUndo = localStorage.getItem(CONFIG.UNDO_STORAGE_KEY);
 
     if(storedSession === newSession && storedUndo){
       undoBuffer = JSON.parse(storedUndo);
@@ -1861,8 +1933,8 @@ function initializeUndoSession(){
     } else {
       // New session - clear old buffers
       undoBuffer = [];
-      localStorage.removeItem(UNDO_STORAGE_KEY);
-      localStorage.removeItem(UNDO_INDEX_KEY);
+      localStorage.removeItem(CONFIG.UNDO_STORAGE_KEY);
+      localStorage.removeItem(CONFIG.UNDO_INDEX_KEY);
       console.log('[Undo] Started fresh undo/redo session');
     }
   } catch(e){
@@ -1871,7 +1943,7 @@ function initializeUndoSession(){
   }
 
   redoBuffer = [];
-  localStorage.setItem(UNDO_SESSION_KEY, newSession);
+  localStorage.setItem(CONFIG.UNDO_SESSION_KEY, newSession);
 }
 
 // Create a complete snapshot of current state (form fields + program steps)
@@ -1907,7 +1979,7 @@ function saveUndoState(){
   undoBuffer.push(snapshot);
 
   // Keep only last 10 states
-  if(undoBuffer.length > UNDO_BUFFER_SIZE){
+  if(undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE){
     undoBuffer.shift();
   }
 
@@ -1916,7 +1988,7 @@ function saveUndoState(){
 
   // Persist to localStorage
   try {
-    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -1935,7 +2007,7 @@ function performUndo(){
   redoBuffer.push(currentState);
 
   // Keep only last 10 redo states
-  if(redoBuffer.length > REDO_BUFFER_SIZE){
+  if(redoBuffer.length > CONFIG.REDO_BUFFER_SIZE){
     redoBuffer.shift();
   }
 
@@ -1947,7 +2019,7 @@ function performUndo(){
 
   // Persist updated undo buffer to localStorage
   try {
-    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -1968,7 +2040,7 @@ function performRedo(){
   undoBuffer.push(currentState);
 
   // Keep only last 10 undo states
-  if(undoBuffer.length > UNDO_BUFFER_SIZE){
+  if(undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE){
     undoBuffer.shift();
   }
 
@@ -1980,7 +2052,7 @@ function performRedo(){
 
   // Persist updated undo buffer to localStorage
   try {
-    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
+    localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer));
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
@@ -1993,9 +2065,8 @@ function performRedo(){
 // -----------------------------
 // Timeline-Specific Undo/Redo Buffer System
 // (For drag operations on Day visualization bars)
+// Note: Buffer sizes defined in CONFIG object
 // -----------------------------
-const TIMELINE_UNDO_BUFFER_SIZE = 5;
-const TIMELINE_REDO_BUFFER_SIZE = 5;
 let timelineUndoBuffer = []; // Array of program step snapshots for timeline drags
 let timelineRedoBuffer = []; // Array of timeline states that were undone
 let timelineDragInProgress = false; // Flag to track if a timeline drag is happening
@@ -2006,7 +2077,7 @@ function saveTimelineUndoState(){
   timelineUndoBuffer.push(snapshot);
 
   // Keep only last 5 states
-  if(timelineUndoBuffer.length > TIMELINE_UNDO_BUFFER_SIZE){
+  if(timelineUndoBuffer.length > CONFIG.TIMELINE_UNDO_BUFFER_SIZE){
     timelineUndoBuffer.shift();
   }
 
@@ -2027,7 +2098,7 @@ function performTimelineUndo(){
   timelineRedoBuffer.push(currentState);
 
   // Keep only last 5 redo states
-  if(timelineRedoBuffer.length > TIMELINE_REDO_BUFFER_SIZE){
+  if(timelineRedoBuffer.length > CONFIG.TIMELINE_REDO_BUFFER_SIZE){
     timelineRedoBuffer.shift();
   }
 
@@ -2058,7 +2129,7 @@ function performTimelineRedo(){
   timelineUndoBuffer.push(currentState);
 
   // Keep only last 5 undo states
-  if(timelineUndoBuffer.length > TIMELINE_UNDO_BUFFER_SIZE){
+  if(timelineUndoBuffer.length > CONFIG.TIMELINE_UNDO_BUFFER_SIZE){
     timelineUndoBuffer.shift();
   }
 
@@ -2121,7 +2192,7 @@ document.addEventListener('keydown', (e) => {
 // Populate form from device configuration
 let __populatingForm = false; // Guard to prevent multiple simultaneous attempts
 let __populationRetryCount = 0; // Track retry attempts
-const MAX_POPULATION_RETRIES = 50; // Max retries (50 * 200ms = 10 seconds)
+// Max retries defined in CONFIG (50 * 200ms = 10 seconds)
 
 function populateFormFromDeviceConfig(){
   // Prevent multiple simultaneous population attempts
@@ -2137,20 +2208,20 @@ function populateFormFromDeviceConfig(){
   
   // Check if form has been built yet using the flag
   if(!window.__formIsReady){
-    if(__populationRetryCount >= MAX_POPULATION_RETRIES){
-      console.error('[FORM] Form never became ready after', MAX_POPULATION_RETRIES, 'retries. Giving up.');
+    if(__populationRetryCount >= CONFIG.MAX_POPULATION_RETRIES){
+      console.error('[FORM] Form never became ready after', CONFIG.MAX_POPULATION_RETRIES, 'retries. Giving up.');
       console.error('[FORM] window.__formIsReady:', window.__formIsReady);
       console.error('[FORM] This should not happen! buildForm() may not have been called.');
       __populationRetryCount = 0; // Reset for next attempt
       return;
     }
     __populationRetryCount++;
-    console.warn('[FORM] Form not ready yet (window.__formIsReady =', window.__formIsReady, '), retry', __populationRetryCount, '/', MAX_POPULATION_RETRIES, 'in 200ms...');
+    console.warn('[FORM] Form not ready yet (window.__formIsReady =', window.__formIsReady, '), retry', __populationRetryCount, '/', CONFIG.MAX_POPULATION_RETRIES, 'in', CONFIG.POPULATION_RETRY_DELAY_MS, 'ms...');
     __populatingForm = true;
     setTimeout(() => {
       __populatingForm = false;
       populateFormFromDeviceConfig();
-    }, 200);
+    }, CONFIG.POPULATION_RETRY_DELAY_MS);
     return;
   }
   
