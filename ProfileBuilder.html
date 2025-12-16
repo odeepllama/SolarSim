@@ -43,12 +43,23 @@ https://github.com/[your-repository-here]
 <title>SolaSim Studio</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
+/* ============================================================================
+   SOLASIM STUDIO STYLES
+   ============================================================================ */
+
+/* ============================================================================
+   BASE STYLES & TYPOGRAPHY
+   ============================================================================ */
  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
  body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 0 1rem 3rem; background:#abbea6; color:#111; font-size: 16px; }
  h1 { font-size: 1.8rem; margin: 1rem 0 .5rem; background:#fff; border-radius:8px; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
  h2 { font-size: 1.4rem; margin-top: 2rem; background:#ffffff; border-radius:8px; padding:1rem; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; }
  fieldset { border:1px solid #ccd; border-radius:6px; margin:1rem 0; padding:.75rem 1rem; background:#fff; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
  legend { font-weight:600; font-size: 1.1rem; padding:4px 12px; background:#dcdcdc; border-radius:4px; }
+
+/* ============================================================================
+   FORM LAYOUT & CONTROLS
+   ============================================================================ */
  label { display:block; font-size:0.9rem; font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:4px; }
  .field { display:flex; flex-direction:column; gap:4px; flex: 1 1 160px; min-width:160px; }
  .group-grid { display:flex; flex-wrap:wrap; gap:14px; }
@@ -87,6 +98,10 @@ https://github.com/[your-repository-here]
  .small-note { font-size:.65rem; opacity:.7; }
  .error { color:#b00; font-size:.65rem; font-weight:600; }
  input.derived { background:#f0f4f8 !important; cursor:not-allowed; }
+
+/* ============================================================================
+   PROGRAM STEPS TABLE
+   ============================================================================ */
  .program-steps-table { width:100%; border-collapse: collapse; margin-top:1rem; }
  .program-steps-table th, .program-steps-table td { border:1px solid #000; padding:7px 9px; font-size:0.9rem; }
  .program-steps-table th { background:#c6c4c4; font-size:1.1rem; font-weight:600; }
@@ -196,6 +211,10 @@ https://github.com/[your-repository-here]
    box-sizing: border-box;
  }
  .toolbar { display:flex; flex-wrap:wrap; gap:.7rem; margin: 1rem 0 1.2rem; }
+
+/* ============================================================================
+   EXPORT PREVIEW & RESIZE GRIPS
+   ============================================================================ */
 #exportPreview { box-sizing:border-box !important; width:100% !important; max-width:100% !important; min-height:280px; height:700px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:0.85rem; line-height:1.3; padding:12px; background:#000000 !important; color:#ffffff !important; border:1px solid #444; border-bottom:none; border-radius:6px 6px 0 0; display:block; margin-bottom:0; overflow-y:auto; scrollbar-width:none; }
 #exportPreview::-webkit-scrollbar { display:none; }
  #exportPreviewResizeGrip {
@@ -252,8 +271,15 @@ https://github.com/[your-repository-here]
  #exportPreviewTopResizeGrip:hover::before { opacity:1; }
  .two-col { display:grid; grid-template-columns: minmax(280px, 480px) 1fr; gap:2rem; align-items:start; }
  @media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ============================================================================
+   BADGES & STATUS PILLS
+   ============================================================================ */
  .badge { background:#444; color:#fff; padding:2px 6px; font-size:.6rem; border-radius:10px; margin-left:6px; }
- /* Help panel */
+
+/* ============================================================================
+   HELP PANEL
+   ============================================================================ */
 #helpToggleBtn { position:fixed; bottom:14px; right:14px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; }
 #helpToggleBtn:hover:not(:disabled), #helpToggleBtn:focus-visible { background:#ffcc00; border-color:#a67d00; outline:none; }
 #helpToggleBtn:active:not(:disabled) { background:#e6b800; border-color:#8f6a00; }
@@ -285,7 +311,10 @@ https://github.com/[your-repository-here]
   .program-steps-table th:last-child,
   .program-steps-table td:last-child { min-width:140px; white-space:nowrap; }
 }
- /* Load from Device modal */
+
+/* ============================================================================
+   MODALS & OVERLAYS
+   ============================================================================ */
  #loadProfileModal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
  #loadProfileModal.open { display:flex; }
  #loadProfileModal .modal-content { background:#ffffff !important; border-radius:8px; max-width:600px; max-height:80%; width:90%; display:flex; flex-direction:column; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
@@ -325,10 +354,17 @@ https://github.com/[your-repository-here]
  #compareProfileModal .modal-footer { padding:12px 20px; border-top:1px solid #ddd; display:flex; justify-content:space-between; align-items:center; gap:12px; }
  #compareProfileModal .diff-summary { font-size:0.9rem; color:#e65100; font-weight:600; }
  #compareProfileFilters { flex-shrink:0; }
+
+/* ============================================================================
+   VALIDATION & ERROR DISPLAY
+   ============================================================================ */
  .invalid > input, .invalid > select { border-color:#c00 !important; background:#ffecec; }
  #errorBanner { display:none; background:#c62828; color:#fff; padding:8px 12px; border-radius:6px; margin-top:1rem; font-size:.75rem; }
  #errorBanner ul { margin:4px 0 0 18px; padding:0; }
  #errorBanner li { line-height:1.2; }
+/* ============================================================================
+   FILENAME & PROFILE META
+   ============================================================================ */
  .filename-tag { flex:0 0 150px; max-width:150px; }
  /* Make filename preview same width style as other small numeric/text fields */
  .filename-preview { flex:0 0 500px; max-width:500px; }
@@ -336,7 +372,10 @@ https://github.com/[your-repository-here]
  /* Two-column layout for Profile Meta and Filename Options */
  .meta-options-container { display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; }
  @media (max-width:960px) { .meta-options-container { grid-template-columns: 1fr; } }
- /* Refined tooltip styling (smaller, no icon) */
+
+/* ============================================================================
+   TOOLTIPS & CONTEXTUAL HELP
+   ============================================================================ */
  .field { position:relative; }
  .tip-bubble { position:absolute; left:0; bottom:100%; transform:translateY(-6px); background:#2d3339; color:#fff; padding:6px 8px; border-radius:5px; font-size:.72rem; line-height:1.15; min-width:200px; max-width:320px; white-space:normal; box-shadow:0 3px 10px rgba(0,0,0,0.22); opacity:0; pointer-events:none; transition:opacity .12s ease; z-index:40; text-transform:none; }
  .tip-bubble::after { content:""; position:absolute; bottom:-5px; left:10px; border-width:5px; border-style:solid; border-color:#2d3339 transparent transparent transparent; }
@@ -344,7 +383,10 @@ https://github.com/[your-repository-here]
  /* Special positioning for PROGRAM_ENABLED tooltip - move to right */
  .field:has(#PROGRAM_ENABLED) .tip-bubble { left:auto; right:60%; max-width:240px; min-width:auto; }
  .field:has(#PROGRAM_ENABLED) .tip-bubble::after { left:auto; right:10px; }
- /* Highlighted commonly changed fields */
+
+/* ============================================================================
+   FIELD HIGHLIGHTING & VISUAL STATES
+   ============================================================================ */
  input.hotvar, select.hotvar { background:#d6e8ff; border-color:#5a92dd; }
  input.hotvar:focus, select.hotvar:focus { outline:2px solid #5a92dd; }
  /* Upload button green styling */
@@ -396,7 +438,10 @@ button#importBtn:hover:not(:disabled) {
  .program-steps-table tr.jump-row.odd-day-row td:not([style*="background"]) { background:#ffd699 !important; }
  .program-steps-table tr.jump-row.odd-day-row td:not([style*="background"]) input,
  .program-steps-table tr.jump-row.odd-day-row td:not([style*="background"]) select { background:#ffe4ba !important; }
-/* Drag and drop styling */
+
+/* ============================================================================
+   DRAG & DROP INTERACTION
+   ============================================================================ */
 .program-steps-table tbody tr { transition:opacity 0.2s ease; }
 .program-steps-table tbody tr.dragging { opacity:0.4; }
 .program-steps-table tbody tr.drag-over-top {
@@ -422,7 +467,10 @@ button#importBtn:hover:not(:disabled) {
 }
 .drag-handle:hover { color:#3478f6; }
 .drag-handle:active { cursor:grabbing; }
-/* Sun color mode visual preview */
+
+/* ============================================================================
+   SUN COLOR MODE & VISUAL FEEDBACK
+   ============================================================================ */
 select#SUN_COLOR_MODE.sun-color-visual {
   transition: background-color .25s ease, color .25s ease, border-color .25s ease;
   background-image: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(0,0,0,0.08));
@@ -435,7 +483,10 @@ select:not(#filename_tag):not(#filename_preview) {
 }
 /* Explicit override: command entry should be left aligned */
 #monitorCmdInput { text-align:left !important; }
-/* Monitor panel additions */
+
+/* ============================================================================
+   MONITOR PANEL & STATUS DISPLAY
+   ============================================================================ */
 .monitor-toggle-bar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin:.75rem 0 1rem; }
 #monitorPanel { background:#ffffff !important; border-radius:8px; padding:14px 16px 18px; margin:0 0 1.5rem; display:none; }
 #monitorPanel.open { display:block; }
@@ -537,7 +588,10 @@ select:not(#filename_tag):not(#filename_preview) {
   font-weight:500;
   border-radius:4px;
 }
-/* Autocomplete styles */
+
+/* ============================================================================
+   AUTOCOMPLETE DROPDOWN
+   ============================================================================ */
 /* Autocomplete panel (enlarged) */
 /* Enlarged dropdown font for accessibility */
 #serialCmdAutocomplete { 
@@ -630,6 +684,10 @@ select:not(#filename_tag):not(#filename_preview) {
     .vislog-row .vis-col{ min-width:0; width:100%; }
     .vislog-row .log-col{ min-width:0; width:100%; }
   }
+
+/* ============================================================================
+   CONFIRMATION POPOVERS
+   ============================================================================ */
   /* Near-cursor confirm popover (for quick actions like delete) */
   #nearbyConfirm{ position:absolute; z-index:100000; background:#ffffff !important; color:#111; border:3px solid #3478f6; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,0.4), 0 4px 12px rgba(52,120,246,0.3); padding:16px 20px; width:50vw; max-width:420px; min-width:300px; display:none; }
   #nearbyConfirm .txt{ margin:0 0 12px; font-size:1rem; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; }
@@ -668,7 +726,9 @@ select:not(#filename_tag):not(#filename_preview) {
   .program-lock-text{ color:#d32f2f; font-weight:500; animation:lockPulse 2s ease-in-out infinite; }
   @keyframes lockPulse{ 0%, 100%{ opacity:1; color:#ff1744; } 50%{ opacity:0.5; color:#d32f2f; } }
 
-  /* Timeline playhead indicator */
+/* ============================================================================
+   TIMELINE VISUALIZATION
+   ============================================================================ */
   .timeline-playhead{
     position:absolute;
     top:0;
@@ -726,7 +786,9 @@ select:not(#filename_tag):not(#filename_preview) {
   /* Device Program Status content padding for nice spacing inside fieldset */
   #deviceProgramStatusContent{ padding:4px 8px 8px; }
 
-  /* Profile Diff Highlighting Styles */
+/* ============================================================================
+   PROFILE DIFF HIGHLIGHTING
+   ============================================================================ */
   .field-differs { background: #fff9e6 !important; border-left: 3px solid #ffc107 !important; }
   .field-diff-badge { font-size: 0.7rem; color: #e65100; opacity: 0.8; margin-left: 6px; font-weight: 500; }
   #diffBanner {
@@ -1457,9 +1519,9 @@ const HIGHLIGHT_KEYS = new Set([
   'CAMERA_LIGHTING_PANELS','CAMERA_TRIGGER_HOLD_MS','TIME_SCALE'
 ]);
 
-// -----------------------------
-// State
-// -----------------------------
+// ============================================================================
+// STATE MANAGEMENT
+// ============================================================================
 const state = {};
 let errorState = { fieldErrors:{}, programErrors:[], hasErrors:false };
 function initState(){
@@ -1906,7 +1968,10 @@ function setExportButtonsState(){
 let programSteps = [];
 // Note: programSteps is accessed directly by functions in this script scope
 
-// -----------------------------
+// ============================================================================
+// UNDO/REDO SYSTEM
+// ============================================================================
+
 // Unified Undo/Redo Buffer System (Form + Program Steps)
 // Persists in localStorage but clears on fresh page load
 // Stores last 10 actions (Ctrl+Z, Ctrl+Y)
@@ -3624,9 +3689,10 @@ function attachProgramTableListeners(){
   window.__attachProgramDragListeners = attachDragListeners;
 })();
 
-// -----------------------------
-// Text Sync Toggle State
-// -----------------------------
+// ============================================================================
+// TEXT SYNCHRONIZATION
+// ============================================================================
+
 let textSyncMode = 'form-to-text'; // 'form-to-text' (default) or 'text-to-form' (locked for editing)
 
 function updateTextSyncButton(){
@@ -3694,9 +3760,9 @@ function handleTextSyncToggle(){
   }
 }
 
-// -----------------------------
-// Export Logic
-// -----------------------------
+// ============================================================================
+// PROFILE EXPORT & IMPORT
+// ============================================================================
 function generateProfileText(){
   const lines = [];
   const note = document.getElementById('note').value.trim();
