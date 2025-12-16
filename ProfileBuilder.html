@@ -1828,6 +1828,13 @@ function handleInputChange(key, input, opts={}){
 }
 
 // TIME_SCALE: transform select -> numeric input when 'custom' selected
+/**
+ * Handles TIME_SCALE mode changes between preset and custom values.
+ * When 'custom' is selected, replaces the select dropdown with a numeric input.
+ * Allows negative values for reverse time simulation.
+ * 
+ * @param {string|number} val - Selected time scale value ('custom' or preset number)
+ */
 function handleTimeScaleModeChange(val){
   const container = document.getElementById('TIME_SCALE_CUSTOM_WRAP');
   if(!container) return;
@@ -2803,7 +2810,8 @@ function computeProgramSummary(){
   // Net span forward baseline (ignores direction) using first and last raw times with forward wrap if needed.
   const firstRaw = entries[0].raw;
   const lastRaw = entries[entries.length-1].raw;
-  const netSpan = (lastRaw >= firstRaw) ? (lastRaw - firstRaw) : (lastRaw + 1440 - firstRaw);
+  // Net span: simple first-to-last difference (wraps forward into next day if needed)
+  const netSpan = (lastRaw >= firstRaw) ? (lastRaw - firstRaw) : (lastRaw + CONFIG.MINUTES_PER_DAY - firstRaw);
   // Traversed simulated minutes sums absolute path length of RUN segments respecting direction & wraps.
   let traversed = 0;
   let realSeconds = 0;
@@ -2813,41 +2821,48 @@ function computeProgramSummary(){
   let activeSpeed = globalSpeed;
   const firstStep = entries[0].step;
   if(firstStep.speed !== undefined) activeSpeed = firstStep.speed;
+  
+  // Iterate through step pairs to calculate segment durations
   for(let i=1;i<entries.length;i++){
     const prev = entries[i-1];
     const cur = entries[i];
     const prevStep = prev.step;
     const curStep = cur.step;
     const trans = (curStep.transition||'RUN').toUpperCase();
+    
     // Segment speed is the activeSpeed in effect starting at prevStep's timestamp.
     const segSpeed = activeSpeed;
     let segmentRealSeconds = 0; // Real time for this segment before repeats
     if(trans==='RUN'){
       if(segSpeed >= 0){
+        // Forward motion: calculate minutes from prev to cur
         let d = (cur.raw - prev.raw);
-        if(d<0) d += 1440; // forward wrap into next day
+        if(d<0) d += CONFIG.MINUTES_PER_DAY; // wrap into next day
         traversed += d;
-        if(segSpeed>0) segmentRealSeconds = (d*60)/segSpeed; // only accumulate real time if moving
-      } else { // reverse motion (negative speed)
+        if(segSpeed>0) segmentRealSeconds = (d*CONFIG.SECONDS_PER_MINUTE)/segSpeed; // real time = simulated time / speed
+      } else { // Reverse motion (negative speed)
         let d = (cur.raw - prev.raw);
-        if(d > 0) d = 1440 - d; // backward crossing midnight into previous day
+        if(d > 0) d = CONFIG.MINUTES_PER_DAY - d; // backward crossing midnight into previous day
         else d = -d; // normal backward within same day
         traversed += d;
         const mag = Math.abs(segSpeed);
-        if(mag>0) segmentRealSeconds = (d*60)/mag;
+        if(mag>0) segmentRealSeconds = (d*CONFIG.SECONDS_PER_MINUTE)/mag;
       }
     }
     realSeconds += segmentRealSeconds;
-    // Apply repeats to this segment
+    
+    // Apply repeats to this segment (multiply segment duration by repeat count)
     const repeatCount = prevStep.repeat || 0;
     if(repeatCount > 0){
       const repeatTime = segmentRealSeconds * repeatCount;
       realSeconds += repeatTime;
       repeatContributedSeconds += repeatTime;
     }
+    
     // HOLD contribution: if the previous step explicitly sets speed 0, include its hold_minutes before moving on.
+    // Hold time is real-world time (not simulated), so it's added directly to realSeconds
     if(prevStep.speed===0 && prevStep.hold_minutes){
-      const holdSeconds = prevStep.hold_minutes * 60;
+      const holdSeconds = prevStep.hold_minutes * CONFIG.SECONDS_PER_MINUTE;
       realSeconds += holdSeconds;
       // Apply repeats to hold time as well
       if(repeatCount > 0){
@@ -2859,10 +2874,10 @@ function computeProgramSummary(){
     // Update activeSpeed AFTER applying segment: a speed specified on the CURRENT step becomes active for the NEXT segment.
     if(curStep.speed !== undefined) activeSpeed = curStep.speed;
   }
-  // Final hold
+  // Final hold: process any hold time on the last step
   const lastStep = entries[entries.length-1].step;
   if(lastStep.speed===0 && lastStep.hold_minutes){
-    const holdSeconds = lastStep.hold_minutes * 60;
+    const holdSeconds = lastStep.hold_minutes * CONFIG.SECONDS_PER_MINUTE;
     realSeconds += holdSeconds;
     // Apply repeats to final hold time
     const repeatCount = lastStep.repeat || 0;
@@ -2872,9 +2887,11 @@ function computeProgramSummary(){
       repeatContributedSeconds += repeatHoldTime;
     }
   }
-  const netH = Math.floor(netSpan/60), netM = netSpan%60;
-  const travH = Math.floor(traversed/60), travM = traversed%60;
-  const realH = Math.floor(realSeconds/3600), realM = Math.floor((realSeconds%3600)/60), realS = Math.round(realSeconds%60);
+  
+  // Format summary: convert minutes and seconds to hours/minutes/seconds
+  const netH = Math.floor(netSpan/CONFIG.SECONDS_PER_MINUTE), netM = netSpan%CONFIG.SECONDS_PER_MINUTE;
+  const travH = Math.floor(traversed/CONFIG.SECONDS_PER_MINUTE), travM = traversed%CONFIG.SECONDS_PER_MINUTE;
+  const realH = Math.floor(realSeconds/CONFIG.SECONDS_PER_HOUR), realM = Math.floor((realSeconds%CONFIG.SECONDS_PER_HOUR)/CONFIG.SECONDS_PER_MINUTE), realS = Math.round(realSeconds%CONFIG.SECONDS_PER_MINUTE);
   // Format repeat contribution info if any repeats exist
   let repeatInfo = '';
   if(repeatContributedSeconds > 0){
@@ -3499,16 +3516,21 @@ function attachProgramTableListeners(){
 // Drag and Drop Reordering
 // -----------------------------
 (function setupDragDrop(){
-  let draggedRowIndex = null;
-  let draggedOverRowIndex = null;
-  let listenersAttached = false;
-  let dragStateBeforeDrop = null; // Store programSteps state before drag for undo
+  // Drag state tracking
+  let draggedRowIndex = null;         // Index of row being dragged
+  let draggedOverRowIndex = null;     // Index of row currently hovered over
+  let listenersAttached = false;      // Prevent duplicate listener attachment
+  let dragStateBeforeDrop = null;     // Store programSteps state before drag for undo
 
-  // Touch drag state
-  let touchDraggedRow = null;
-  let touchStartY = 0;
-  let touchCurrentY = 0;
+  // Touch drag state (mobile/tablet support)
+  let touchDraggedRow = null;         // Reference to touched row element
+  let touchStartY = 0;                // Initial touch Y coordinate
+  let touchCurrentY = 0;              // Current touch Y coordinate
 
+  /**
+   * Handles drag start event - only triggers from drag handle element.
+   * Stores the dragged row index and saves state for potential undo.
+   */
   function onDragStart(e){
     // Only allow dragging from the drag handle (check target or its parent)
     const handle = e.target.classList?.contains('drag-handle') ? e.target : e.target.closest('.drag-handle');
@@ -3532,6 +3554,10 @@ function attachProgramTableListeners(){
     row.classList.add('dragging');
   }
 
+  /**
+   * Handles drag end event - cleans up visual indicators.
+   * Includes fallback logic to complete reorder if drop event didn't fire.
+   */
   function onDragEnd(e){
     const handle = e.target.classList?.contains('drag-handle') ? e.target : e.target.closest('.drag-handle');
     if(!handle) return;
@@ -3539,12 +3565,13 @@ function attachProgramTableListeners(){
     const row = handle.closest('tr');
     if(!row) return;
     
+    // Restore visual state
     row.style.opacity = '';
     row.classList.remove('dragging');
     
     const tbody = document.querySelector('#programStepsTable tbody');
     if(tbody){
-      // Clear all drag-over styling
+      // Clear all drag-over styling from all rows
       tbody.querySelectorAll('tr').forEach(r => {
         r.classList.remove('drag-over-top', 'drag-over-bottom');
       });
@@ -3638,11 +3665,15 @@ function attachProgramTableListeners(){
     });
   }
 
+  /**
+   * Handles drop event - performs the actual row reordering.
+   * Syncs form values back to state, reorders programSteps array, and saves undo state.
+   */
   function onDrop(e){
     e.preventDefault();
     e.stopPropagation();
     
-    // Clear all visual indicators immediately
+    // Clear all visual indicators immediately for clean transition
     const tbody = document.querySelector('#programStepsTable tbody');
     if(tbody){
       tbody.querySelectorAll('tr').forEach(r => {
@@ -3651,10 +3682,11 @@ function attachProgramTableListeners(){
       });
     }
     
+    // Validate we have a valid drop operation
     if(draggedRowIndex === null || draggedOverRowIndex === null) return;
     if(draggedRowIndex === draggedOverRowIndex) return;
     
-    // Save current values before reordering
+    // Save current input values back to state before reordering (prevent data loss)
     syncStepFromRow(draggedRowIndex);
     
     // Perform the reorder
@@ -3682,7 +3714,10 @@ function attachProgramTableListeners(){
     updatePreview(true);
   }
 
-  // Touch event handlers for mobile/tablet drag and drop
+  /**
+   * Touch event handlers for mobile/tablet drag and drop.
+   * Provides same functionality as mouse drag but with touch coordinates.
+   */
   function onTouchStart(e){
     // Only allow dragging from the drag handle
     const handle = e.target.classList?.contains('drag-handle') ? e.target : e.target.closest('.drag-handle');
@@ -3691,12 +3726,13 @@ function attachProgramTableListeners(){
     const row = handle.closest('tr');
     if(!row) return;
 
+    // Store touch state
     touchDraggedRow = row;
     draggedRowIndex = parseInt(row.getAttribute('data-step-index'), 10);
     touchStartY = e.touches[0].clientY;
     touchCurrentY = touchStartY;
 
-    // Visual feedback
+    // Visual feedback (semi-transparent while dragging)
     row.style.opacity = '0.4';
     row.classList.add('dragging');
 
@@ -3831,21 +3867,32 @@ function attachProgramTableListeners(){
     listenersAttached = true;
   }
 
-  // Helper to sync data from a row back to programSteps before reordering
+  /**
+   * Helper function to sync input values from a table row back to programSteps array.
+   * Called before reordering to ensure no data loss from unsaved edits.
+   * Handles checkboxes, numbers, and text inputs with proper type conversion.
+   * 
+   * @param {number} idx - Index of the step/row to sync
+   */
   function syncStepFromRow(idx){
     const tbody = document.querySelector('#programStepsTable tbody');
     const row = tbody.querySelector(`tr[data-step-index="${idx}"]`);
     if(!row) return;
     
     const step = programSteps[idx];
+    // Iterate through all form inputs in this row
     row.querySelectorAll('[data-f]').forEach(inp=>{
       const f = inp.getAttribute('data-f');
-      if(inp.type==='checkbox'){ step[f] = inp.checked; }
+      if(inp.type==='checkbox'){ 
+        step[f] = inp.checked; 
+      }
       else if(inp.type==='number'){ 
         const v = parseFloat(inp.value);
-        step[f] = isNaN(v) ? null : v;
+        step[f] = isNaN(v) ? null : v;  // null if empty or invalid
       }
-      else { step[f] = inp.value || null; }
+      else { 
+        step[f] = inp.value || null;    // empty string becomes null
+      }
     });
   }
 
