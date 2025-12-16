@@ -1524,12 +1524,31 @@ const HIGHLIGHT_KEYS = new Set([
 // ============================================================================
 const state = {};
 let errorState = { fieldErrors:{}, programErrors:[], hasErrors:false };
+
+/**
+ * Initializes application state with default values from field metadata.
+ * Sets up all form fields with their default values and computes derived fields.
+ * Must be called before building the form UI.
+ * 
+ * @function initState
+ * @returns {void}
+ * @sideeffects Populates the global state object with default field values
+ */
 function initState(){
   Object.keys(FIELDS).forEach(k=>{ state[k] = FIELDS[k].default; });
   // Derived initial
   recomputeDegreesPerImage();
 }
 
+/**
+ * Recalculates the degrees per image based on images per rotation setting.
+ * This is a derived value used for rotation calculations: 360° / images_per_rotation.
+ * Updates state.DEGREES_PER_IMAGE with 2 decimal precision.
+ * 
+ * @function recomputeDegreesPerImage
+ * @returns {void}
+ * @sideeffects Updates state.DEGREES_PER_IMAGE
+ */
 function recomputeDegreesPerImage(){
   const n = parseInt(state.IMAGES_PER_ROTATION||0,10);
   if(n>0){ state.DEGREES_PER_IMAGE = (360.0 / n).toFixed(2); }
@@ -1744,6 +1763,15 @@ initState();
 buildForm();
 console.log('[INIT] Initial form build complete');
 
+/**
+ * Shows or hides form sections based on current state values.
+ * Primarily handles PROGRAM_ENABLED checkbox visibility logic.
+ * Reserves layout space to prevent UI shifting when toggling visibility.
+ * 
+ * @function refreshConditionalVisibility
+ * @returns {void}
+ * @sideeffects Modifies DOM visibility and height of conditional form fields
+ */
 function refreshConditionalVisibility(){
   const showProg = !!state.PROGRAM_ENABLED;
   const repeatsField = document.getElementById('PROGRAM_REPEATS')?.closest('.field');
@@ -1756,6 +1784,20 @@ function refreshConditionalVisibility(){
   if(progSection) progSection.style.display = showProg ? '' : 'none';
 }
 
+/**
+ * Handles input change events for form fields, updating state and triggering validation.
+ * Supports debounced validation for smooth typing and immediate validation on blur/change.
+ * Handles special cases like TIME_SCALE custom mode and derived field recalculation.
+ * 
+ * @function handleInputChange
+ * @param {string} key - Field identifier matching FIELDS metadata
+ * @param {HTMLElement} input - The input element that changed
+ * @param {Object} opts - Options object
+ * @param {boolean} opts.debounced - Use debounced validation (during typing)
+ * @param {boolean} opts.force - Force immediate validation (on blur/change)
+ * @returns {void}
+ * @sideeffects Updates state, validates field, triggers preview update, saves undo state
+ */
 function handleInputChange(key, input, opts={}){
   const meta = FIELDS[key];
   let value;
@@ -1838,6 +1880,16 @@ function handleTimeScaleModeChange(val){
   }
 }
 
+/**
+ * Validates a single form field against its metadata rules and custom logic.
+ * Checks format, min/max bounds, and field-specific constraints.
+ * Updates UI to show validation errors and marks field as invalid if needed.
+ * 
+ * @function validateField
+ * @param {string} key - Field identifier to validate
+ * @returns {void}
+ * @sideeffects Updates errorState, adds/removes invalid CSS class, displays error messages
+ */
 function validateField(key){
   const meta = FIELDS[key];
   const errEl = document.getElementById(key+'__err');
@@ -1872,6 +1924,15 @@ function validateField(key){
   else { fieldWrap.classList.remove('invalid'); delete errorState.fieldErrors[key]; }
 }
 
+/**
+ * Validates all program steps for correct format and logical consistency.
+ * Checks sim_time_hhmm format, speed/hold_minutes requirements, transition types.
+ * Populates errorState.programErrors with descriptive error messages.
+ * 
+ * @function validateProgramSteps
+ * @returns {void}
+ * @sideeffects Updates errorState.programErrors array with validation errors
+ */
 function validateProgramSteps(){
   errorState.programErrors = [];
   programSteps.forEach((s,i)=>{
@@ -1907,6 +1968,15 @@ function validateProgramSteps(){
   });
 }
 
+/**
+ * Performs comprehensive validation of all form fields and program steps.
+ * Checks cross-field rules (e.g., dual sun + high intensity safety check).
+ * Updates error banner and enables/disables export buttons based on validation state.
+ * 
+ * @function recomputeGlobalErrors
+ * @returns {void}
+ * @sideeffects Updates errorState.hasErrors, renders error banner, controls button state
+ */
 function recomputeGlobalErrors(){
   validateProgramSteps();
   // Remove previous cross-field dual sun guard message if condition cleared
@@ -1937,6 +2007,16 @@ function recomputeGlobalErrors(){
 // Debounced validation support
 let _validateDebounceTimer = null;
 // Validation debounce timing defined in CONFIG (increased from 500ms for smoother typing)
+
+/**
+ * Schedules a debounced global validation check.
+ * Prevents validation from running too frequently during rapid user input.
+ * Cancels pending validation and schedules a new one after the debounce delay.
+ * 
+ * @function scheduleGlobalValidation
+ * @returns {void}
+ * @sideeffects Sets timeout for delayed recomputeGlobalErrors call
+ */
 function scheduleGlobalValidation(){
   if(_validateDebounceTimer) clearTimeout(_validateDebounceTimer);
   _validateDebounceTimer = setTimeout(()=>{
@@ -1982,7 +2062,15 @@ let undoBuffer = []; // Array of full application state snapshots
 let redoBuffer = []; // Array of states that were undone
 let undoRedoSession = null; // Track current session to differentiate from previous sessions
 
-// Initialize session on page load
+/**
+ * Initializes a new undo/redo session on page load.
+ * Attempts to restore previous session's undo buffer from localStorage.
+ * Clears old buffers if session doesn't match (fresh page load).
+ * 
+ * @function initializeUndoSession
+ * @returns {void}
+ * @sideeffects Creates session ID, may restore undoBuffer from localStorage
+ */
 function initializeUndoSession(){
   const newSession = Math.random().toString(36).substr(2, 9);
   undoRedoSession = newSession;
@@ -2011,7 +2099,16 @@ function initializeUndoSession(){
   localStorage.setItem(CONFIG.UNDO_SESSION_KEY, newSession);
 }
 
-// Create a complete snapshot of current state (form fields + program steps)
+/**
+ * Creates a deep copy snapshot of the entire application state.
+ * Captures both form field values and program steps array for complete undo/redo.
+ * 
+ * @function createAppStateSnapshot
+ * @returns {Object} Snapshot object with state, programSteps, and timestamp
+ * @property {Object} state - Deep copy of form field state object
+ * @property {Array} programSteps - Deep copy of program steps array
+ * @property {number} timestamp - Millisecond timestamp when snapshot was created
+ */
 function createAppStateSnapshot(){
   return {
     state: JSON.parse(JSON.stringify(state)), // Form field state
@@ -2020,7 +2117,15 @@ function createAppStateSnapshot(){
   };
 }
 
-// Restore a complete snapshot
+/**
+ * Restores the application to a previous state from a snapshot.
+ * Merges snapshot state into current state, replaces program steps, and re-renders UI.
+ * 
+ * @function restoreAppStateSnapshot
+ * @param {Object} snapshot - Snapshot object from createAppStateSnapshot
+ * @returns {boolean} True if restore succeeded, false if snapshot is invalid
+ * @sideeffects Modifies state and programSteps, triggers syncFormFromState and re-render
+ */
 function restoreAppStateSnapshot(snapshot){
   if(!snapshot) return false;
 
@@ -2039,6 +2144,16 @@ function restoreAppStateSnapshot(snapshot){
   return true;
 }
 
+/**
+ * Saves current application state to the undo buffer.
+ * Maintains a rolling buffer of last 10 states, discarding oldest when full.
+ * Clears redo buffer since new actions invalidate forward history.
+ * Persists buffer to localStorage for session recovery.
+ * 
+ * @function saveUndoState
+ * @returns {void}
+ * @sideeffects Modifies undoBuffer, clears redoBuffer, updates localStorage
+ */
 function saveUndoState(){
   const snapshot = createAppStateSnapshot();
   undoBuffer.push(snapshot);
@@ -2061,6 +2176,15 @@ function saveUndoState(){
   console.log(`[Undo] State saved. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
 }
 
+/**
+ * Performs an undo operation, restoring the previous application state.
+ * Saves current state to redo buffer before undoing.
+ * Returns false if no undo history is available.
+ * 
+ * @function performUndo
+ * @returns {boolean} True if undo succeeded, false if no history available
+ * @sideeffects Modifies undo/redo buffers, restores previous state, updates localStorage
+ */
 function performUndo(){
   if(undoBuffer.length === 0){
     console.log('[Undo] No undo history available');
@@ -2094,6 +2218,15 @@ function performUndo(){
   return true;
 }
 
+/**
+ * Performs a redo operation, restoring a previously undone state.
+ * Saves current state to undo buffer before redoing.
+ * Returns false if no redo history is available.
+ * 
+ * @function performRedo
+ * @returns {boolean} True if redo succeeded, false if no redo history available
+ * @sideeffects Modifies undo/redo buffers, restores next state, updates localStorage
+ */
 function performRedo(){
   if(redoBuffer.length === 0){
     console.log('[Redo] No redo history available');
@@ -2529,6 +2662,16 @@ function populateFormFromDeviceConfig(){
 // Expose to window scope immediately for cross-script access
 window.populateFormFromDeviceConfig = populateFormFromDeviceConfig;
 
+/**
+ * Renders the program steps table with editable cells and action buttons.
+ * Applies visual styling: JUMP row highlighting, odd/even day coloring, drag handles.
+ * Analyzes multi-day structure to assign day numbers to each step.
+ * Updates timeline visualization and device program status fieldset after rendering.
+ * 
+ * @function renderProgramSteps
+ * @returns {void}
+ * @sideeffects Updates #programStepsTable tbody, calls renderTimelineStrip, attaches drag listeners
+ */
 function renderProgramSteps(){
 
   const tbody = document.querySelector('#programStepsTable tbody');
@@ -2635,6 +2778,18 @@ if(!document.getElementById('rowActStyle')){
   document.head.appendChild(s);
 }
 
+/**
+ * Calculates program summary statistics: simulated time span, real execution time.
+ * Accounts for speed changes, JUMP transitions, HOLD segments, and repeats.
+ * Uses start-based speed semantics: speed at a step applies until next speed change.
+ * 
+ * @function computeProgramSummary
+ * @returns {Object} Summary object with text, spanMinutes, realSeconds, traversedMinutes
+ * @property {string} text - Human-readable summary string
+ * @property {number} spanMinutes - Net simulated time span (first to last step)
+ * @property {number} realSeconds - Estimated real-world execution time
+ * @property {number} traversedMinutes - Total simulated minutes traversed (including reversals)
+ */
 function computeProgramSummary(){
   if(!state.PROGRAM_ENABLED || programSteps.length===0){
     return { text:'Program disabled', spanMinutes:0, realSeconds:0 };
@@ -2745,6 +2900,15 @@ function updateProgramSummaryUI(){
   el.textContent = summary.text;
 }
 
+/**
+ * Adds a new program step to the end of the steps array.
+ * Automatically saves undo state, re-renders the table, and updates the preview.
+ * 
+ * @function addProgramStep
+ * @param {Object} step - Step object with properties: sim_time_hhmm, speed, transition, etc.
+ * @returns {void}
+ * @sideeffects Modifies programSteps array, saves undo state, triggers re-render
+ */
 function addProgramStep(step){ saveUndoState(); programSteps.push(step||{}); renderProgramSteps(); updatePreview(true); }
 
 // Holds last programSteps snapshot before an example Replace so user can undo once
@@ -3763,6 +3927,15 @@ function handleTextSyncToggle(){
 // ============================================================================
 // PROFILE EXPORT & IMPORT
 // ============================================================================
+
+/**
+ * Generates a text representation of the current profile configuration.
+ * Formats all settings and program steps as Python-compatible syntax for device upload.
+ * Normalizes step data: sim_time_hhmm as integers, proper boolean/string quoting.
+ * 
+ * @function generateProfileText
+ * @returns {string} Multi-line profile text suitable for download or device upload
+ */
 function generateProfileText(){
   const lines = [];
   const note = document.getElementById('note').value.trim();
@@ -3823,6 +3996,16 @@ function generateProfileText(){
   return lines.join('\n');
 }
 
+/**
+ * Updates the profile text preview and triggers validation.
+ * Only updates textarea when in auto-sync mode (not locked for manual editing).
+ * Can perform immediate validation or schedule debounced validation.
+ * 
+ * @function updatePreview
+ * @param {boolean} forceValidate - If true, validate immediately; if false, debounce validation
+ * @returns {void}
+ * @sideeffects Updates #exportPreview textarea, triggers validation, updates filename, timeline
+ */
 function updatePreview(forceValidate=false){
   // Only update textarea if in auto-sync mode (not locked for editing)
   if(textSyncMode === 'form-to-text'){
@@ -3894,7 +4077,15 @@ function computeFormDeviceDiff() {
   };
 }
 
-// Normalize values for consistent comparison
+/**
+ * Normalizes a value for consistent comparison across types.
+ * Handles boolean string conversion, number precision, and case-insensitive strings.
+ * 
+ * @function normalizeValue
+ * @param {*} value - Value to normalize
+ * @param {string} type - Field type: 'checkbox', 'number', or other
+ * @returns {*} Normalized value suitable for equality comparison
+ */
 function normalizeValue(value, type) {
   if (value === null || value === undefined) return '';
   if (type === 'checkbox') {
@@ -3914,7 +4105,15 @@ function normalizeValue(value, type) {
   return String(value).toUpperCase();
 }
 
-// Update diff highlighting across the UI
+/**
+ * Updates visual diff highlighting across the entire UI.
+ * Adds yellow background to fields that differ from device, shows device value badges.
+ * Automatically shows or hides diff banner based on whether differences exist.
+ * 
+ * @function updateDiffHighlighting
+ * @returns {void}
+ * @sideeffects Adds/removes .field-differs class, inserts/removes badges, shows/hides banner
+ */
 function updateDiffHighlighting() {
   const diff = computeFormDeviceDiff();
 
@@ -3932,7 +4131,16 @@ function updateDiffHighlighting() {
 // Track previous diff keys to detect when the set of differences changes
 let previousDiffKeys = [];
 
-// Apply visual highlighting to fields that differ
+/**
+ * Applies visual highlighting to form fields that differ from device values.
+ * Adds yellow background, orange left border, and device value badges to changed fields.
+ * Resets diff cycle index when the set of differences changes.
+ * 
+ * @function highlightDifferingFields
+ * @param {Object} changedFields - Map of changed fields from computeFormDeviceDiff
+ * @returns {void}
+ * @sideeffects Modifies DOM: adds .field-differs class and .field-diff-badge elements
+ */
 function highlightDifferingFields(changedFields) {
   // Check if the set of differing fields has changed
   const currentDiffKeys = Object.keys(changedFields).sort();
@@ -4020,7 +4228,15 @@ function clearDiffHighlights() {
   diffBannerDismissed = false;
 }
 
-// Cycle through differing fields
+/**
+ * Scrolls to and focuses the next field that differs from device.
+ * Cycles through all differing fields with wrap-around to start.
+ * Updates button text to show progress (e.g., "Show Difference 2/5").
+ * 
+ * @function scrollToNextDiff
+ * @returns {void}
+ * @sideeffects Scrolls page, focuses input, updates button text
+ */
 let currentDiffIndex = -1;
 function scrollToNextDiff() {
   const differingFields = document.querySelectorAll('.field-differs');
@@ -4055,7 +4271,15 @@ function resetDiffIndex() {
   }
 }
 
-// Revert form changes to match device values
+/**
+ * Reverts all form fields to match the current device configuration.
+ * Useful for discarding local changes and syncing back to device state.
+ * Shows success message with count of reverted fields.
+ * 
+ * @function revertFormToDevice
+ * @returns {void}
+ * @sideeffects Updates state and form inputs, triggers re-render and preview update
+ */
 function revertFormToDevice() {
   const deviceConfig = window.__deviceConfig || {};
   if (Object.keys(deviceConfig).length === 0) {
