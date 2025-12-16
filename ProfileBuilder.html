@@ -1751,17 +1751,14 @@ function buildForm(){
   
   // Set flag to indicate form is ready
   window.__formIsReady = true;
-  console.log('[FORM] buildForm() completed, form is ready');
 }
 
 // Expose buildForm globally for late initialization
 window.buildForm = buildForm;
 
 // Initialize state and build form immediately on script load (before any user interaction)
-console.log('[INIT] Calling initState() and buildForm() on script load...');
 initState();
 buildForm();
-console.log('[INIT] Initial form build complete');
 
 /**
  * Shows or hides form sections based on current state values.
@@ -2089,13 +2086,11 @@ function initializeUndoSession(){
 
     if(storedSession === newSession && storedUndo){
       undoBuffer = JSON.parse(storedUndo);
-      console.log(`[Undo] Restored ${undoBuffer.length} undo states from previous session`);
     } else {
       // New session - clear old buffers
       undoBuffer = [];
       localStorage.removeItem(CONFIG.UNDO_STORAGE_KEY);
       localStorage.removeItem(CONFIG.UNDO_INDEX_KEY);
-      console.log('[Undo] Started fresh undo/redo session');
     }
   } catch(e){
     console.warn('[Undo] Failed to restore from localStorage:', e);
@@ -2179,8 +2174,6 @@ function saveUndoState(){
   } catch(e){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
-
-  console.log(`[Undo] State saved. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
 }
 
 /**
@@ -2194,7 +2187,6 @@ function saveUndoState(){
  */
 function performUndo(){
   if(undoBuffer.length === 0){
-    console.log('[Undo] No undo history available');
     return false;
   }
 
@@ -2220,8 +2212,6 @@ function performUndo(){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
 
-  console.log(`[Undo] Restored previous state. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
-
   return true;
 }
 
@@ -2236,7 +2226,6 @@ function performUndo(){
  */
 function performRedo(){
   if(redoBuffer.length === 0){
-    console.log('[Redo] No redo history available');
     return false;
   }
 
@@ -2262,8 +2251,6 @@ function performRedo(){
     console.warn('[Undo] Failed to persist to localStorage:', e);
   }
 
-  console.log(`[Redo] Restored next state. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
-
   return true;
 }
 
@@ -2288,13 +2275,10 @@ function saveTimelineUndoState(){
 
   // Clear redo buffer when a new action is performed
   timelineRedoBuffer.length = 0;
-
-  console.log(`[Timeline Undo] State saved. Undo buffer: ${timelineUndoBuffer.length}, Redo buffer: ${timelineRedoBuffer.length}`);
 }
 
 function performTimelineUndo(){
   if(timelineUndoBuffer.length === 0){
-    console.log('[Timeline Undo] No undo history available');
     return false;
   }
 
@@ -2314,8 +2298,6 @@ function performTimelineUndo(){
   programSteps.length = 0;
   programSteps.push(...previousState);
 
-  console.log(`[Timeline Undo] Restored previous state. Undo buffer: ${timelineUndoBuffer.length}, Redo buffer: ${timelineRedoBuffer.length}`);
-
   // Re-render everything
   renderProgramSteps();
   updatePreview(true);
@@ -2325,7 +2307,6 @@ function performTimelineUndo(){
 
 function performTimelineRedo(){
   if(timelineRedoBuffer.length === 0){
-    console.log('[Timeline Redo] No redo history available');
     return false;
   }
 
@@ -2345,8 +2326,6 @@ function performTimelineRedo(){
   programSteps.length = 0;
   programSteps.push(...nextState);
 
-  console.log(`[Timeline Redo] Restored next state. Undo buffer: ${timelineUndoBuffer.length}, Redo buffer: ${timelineRedoBuffer.length}`);
-
   // Re-render everything
   renderProgramSteps();
   updatePreview(true);
@@ -2363,34 +2342,17 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
 
     // Priority: use unified undo/redo for form + program steps, then fall back to timeline-specific
-    let success = performUndo();
-    if(success){
-      console.log('[Undo] Successfully undid last change (unified undo/redo)');
-    } else {
-      console.log('[Undo] Nothing to undo');
-    }
+    performUndo();
   }
   // Redo: Ctrl-Y (Windows/Linux) or Cmd-Y (Mac)
   else if((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y') && !e.shiftKey){
     e.preventDefault();
-
-    let success = performRedo();
-    if(success){
-      console.log('[Redo] Successfully redid last change (unified undo/redo)');
-    } else {
-      console.log('[Redo] Nothing to redo');
-    }
+    performRedo();
   }
   // Alternative Redo: Ctrl-Shift-Z (Windows/Linux) or Cmd-Shift-Z (Mac)
   else if((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z'){
     e.preventDefault();
-
-    let success = performRedo();
-    if(success){
-      console.log('[Redo] Successfully redid last change (unified undo/redo)');
-    } else {
-      console.log('[Redo] Nothing to redo');
-    }
+    performRedo();
   }
 });
 
@@ -10583,7 +10545,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         window.__deviceProfile = profileName;
         window.__loadedProfile = profileName; // Device profile takes precedence
         window.__formProfile = null; // Clear form profile when device has one
-        console.log('[PROFILE] Status shows loaded profile on device:', window.__loadedProfile);
       }
       updateLoadCurrentButton();
     }
@@ -10593,14 +10554,12 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     if (mAutoloadStatus) {
       const enabled = mAutoloadStatus[1].toLowerCase() === 'true';
       window.__autoloadEnabled = enabled;
-      console.log('[AUTOLOAD] Status:', enabled ? 'ON' : 'OFF');
       updateAutoloadBadge();
     }
     const mAutoloadStatusCmd = line.match(reAutoloadStatusCmd);
     if (mAutoloadStatusCmd) {
       const enabled = mAutoloadStatusCmd[1].toLowerCase() === 'true';
       window.__autoloadEnabled = enabled;
-      console.log('[AUTOLOAD] Status set to:', enabled ? 'ON' : 'OFF');
       updateAutoloadBadge();
     }
 
