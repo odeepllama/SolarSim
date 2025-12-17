@@ -3488,6 +3488,7 @@ function attachProgramTableListeners(){
   let touchDraggedRow = null;         // Reference to touched row element
   let touchStartY = 0;                // Initial touch Y coordinate
   let touchCurrentY = 0;              // Current touch Y coordinate
+  let isDragging = false;             // Flag to track if actively dragging
 
   /**
    * Handles drag start event - only triggers from drag handle element.
@@ -3691,6 +3692,7 @@ function attachProgramTableListeners(){
     draggedRowIndex = parseInt(row.getAttribute('data-step-index'), 10);
     touchStartY = e.touches[0].clientY;
     touchCurrentY = touchStartY;
+    isDragging = true;
 
     // Save current state before drag for undo support
     dragStateBeforeDrop = JSON.parse(JSON.stringify(programSteps));
@@ -3699,20 +3701,24 @@ function attachProgramTableListeners(){
     row.style.opacity = '0.4';
     row.classList.add('dragging');
 
-    // CRITICAL: Prevent default touch behavior (scrolling) while dragging
+    // CRITICAL: Prevent all default touch behavior (scrolling/zooming)
     e.preventDefault();
-
-    // Stop propagation to prevent other touch handlers
     e.stopPropagation();
+    
+    // Disable body scrolling while dragging
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
     
     console.log(`[Touch Drag] Started dragging step ${draggedRowIndex + 1}`);
   }
 
   function onTouchMove(e){
-    if(!touchDraggedRow) return;
+    if(!touchDraggedRow || !isDragging) return;
 
-    e.preventDefault(); // Prevent scrolling
-    e.stopPropagation(); // Prevent other handlers from interfering
+    // CRITICAL: Must prevent default to stop scrolling
+    e.preventDefault();
+    e.stopPropagation();
 
     touchCurrentY = e.touches[0].clientY;
 
@@ -3761,7 +3767,13 @@ function attachProgramTableListeners(){
     if(!touchDraggedRow) return;
 
     e.preventDefault();
-    e.stopPropagation(); // Prevent other handlers from interfering
+    e.stopPropagation();
+
+    // Re-enable body scrolling
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    isDragging = false;
 
     // Restore visual state
     touchDraggedRow.style.opacity = '';
@@ -3820,6 +3832,13 @@ function attachProgramTableListeners(){
     e.preventDefault(); // Allow drop
   }
 
+  // Global touch handler to prevent scrolling during drag
+  function preventScrollDuringDrag(e){
+    if(isDragging){
+      e.preventDefault();
+    }
+  }
+
   function attachDragListeners(){
     const tbody = document.querySelector('#programStepsTable tbody');
     if(!tbody) return;
@@ -3834,6 +3853,9 @@ function attachProgramTableListeners(){
       tbody.addEventListener('dragover', onDragOver);
       tbody.addEventListener('dragleave', onDragLeave);
       tbody.addEventListener('drop', onDrop);
+      
+      // Global touch handler to prevent any scrolling while dragging
+      document.addEventListener('touchmove', preventScrollDuringDrag, {passive: false});
       
       listenersAttached = true;
     }
