@@ -3677,15 +3677,35 @@ function attachProgramTableListeners(){
     updatePreview(true);
   }
 
+  // Debug display helper
+  function showDebug(msg){
+    let debugDiv = document.getElementById('touchDebug');
+    if(!debugDiv){
+      debugDiv = document.createElement('div');
+      debugDiv.id = 'touchDebug';
+      debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;padding:10px;border-radius:5px;font-family:monospace;font-size:12px;z-index:999999;max-width:300px;';
+      document.body.appendChild(debugDiv);
+    }
+    debugDiv.innerHTML = msg + '<br>' + debugDiv.innerHTML;
+    setTimeout(() => { if(debugDiv.childNodes.length > 10) debugDiv.lastChild.remove(); }, 100);
+  }
+
   /**
    * Touch event handlers for mobile/tablet drag and drop.
    * Provides same functionality as mouse drag but with touch coordinates.
    */
   function onTouchStart(e){
+    showDebug('✓ TOUCH START');
+    console.log('[Touch Drag] onTouchStart fired!', e.target.className);
+    
     // This handler is now attached directly to .drag-handle elements
     const handle = e.currentTarget;
     const row = handle.closest('tr');
-    if(!row) return;
+    if(!row) {
+      showDebug('✗ No row found');
+      console.log('[Touch Drag] No row found!');
+      return;
+    }
 
     // Store touch state
     touchDraggedRow = row;
@@ -3694,11 +3714,14 @@ function attachProgramTableListeners(){
     touchCurrentY = touchStartY;
     isDragging = true;
 
+    showDebug(`✓ Dragging step ${draggedRowIndex + 1}`);
+
     // Save current state before drag for undo support
     dragStateBeforeDrop = JSON.parse(JSON.stringify(programSteps));
 
-    // Visual feedback (semi-transparent while dragging)
-    row.style.opacity = '0.4';
+    // Visual feedback (semi-transparent while dragging + color change for visibility)
+    row.style.opacity = '0.6';
+    row.style.backgroundColor = '#ffeb3b';
     row.classList.add('dragging');
 
     // CRITICAL: Prevent all default touch behavior (scrolling/zooming)
@@ -3710,12 +3733,18 @@ function attachProgramTableListeners(){
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
     
-    console.log(`[Touch Drag] Started dragging step ${draggedRowIndex + 1}`);
+    console.log(`[Touch Drag] Started dragging step ${draggedRowIndex + 1}, isDragging=${isDragging}`);
   }
 
   function onTouchMove(e){
-    if(!touchDraggedRow || !isDragging) return;
+    if(!touchDraggedRow || !isDragging) {
+      console.log('[Touch Drag] onTouchMove ignored - not dragging');
+      return;
+    }
 
+    showDebug('✓ MOVING');
+    console.log('[Touch Drag] onTouchMove active');
+    
     // CRITICAL: Must prevent default to stop scrolling
     e.preventDefault();
     e.stopPropagation();
@@ -3841,7 +3870,10 @@ function attachProgramTableListeners(){
 
   function attachDragListeners(){
     const tbody = document.querySelector('#programStepsTable tbody');
-    if(!tbody) return;
+    if(!tbody) {
+      console.log('[Touch Drag Setup] tbody not found!');
+      return;
+    }
 
     // For mouse events: only attach once to tbody (event delegation)
     // For touch events: must re-attach to each new drag handle after re-render
@@ -3857,13 +3889,16 @@ function attachProgramTableListeners(){
       // Global touch handler to prevent any scrolling while dragging
       document.addEventListener('touchmove', preventScrollDuringDrag, {passive: false});
       
+      console.log('[Touch Drag Setup] Mouse and global touch handlers attached');
       listenersAttached = true;
     }
     
     // Touch events must be attached directly to each drag handle
     // Re-attach on every call since table re-renders create new DOM elements
     const dragHandles = tbody.querySelectorAll('.drag-handle');
-    dragHandles.forEach(handle => {
+    console.log(`[Touch Drag Setup] Found ${dragHandles.length} drag handles`);
+    
+    dragHandles.forEach((handle, idx) => {
       // Remove any existing listeners to avoid duplicates (in case handle is reused)
       handle.removeEventListener('touchstart', onTouchStart);
       handle.removeEventListener('touchmove', onTouchMove);
@@ -3875,6 +3910,8 @@ function attachProgramTableListeners(){
       handle.addEventListener('touchmove', onTouchMove, {passive: false});
       handle.addEventListener('touchend', onTouchEnd, {passive: false});
       handle.addEventListener('touchcancel', onTouchEnd, {passive: false}); // Handle touch cancellation
+      
+      console.log(`[Touch Drag Setup] Attached touch handlers to handle ${idx + 1}`);
     });
   }
 
