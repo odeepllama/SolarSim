@@ -3681,10 +3681,8 @@ function attachProgramTableListeners(){
    * Provides same functionality as mouse drag but with touch coordinates.
    */
   function onTouchStart(e){
-    // Only allow dragging from the drag handle
-    const handle = e.target.classList?.contains('drag-handle') ? e.target : e.target.closest('.drag-handle');
-    if(!handle) return;
-
+    // This handler is now attached directly to .drag-handle elements
+    const handle = e.currentTarget;
     const row = handle.closest('tr');
     if(!row) return;
 
@@ -3694,15 +3692,20 @@ function attachProgramTableListeners(){
     touchStartY = e.touches[0].clientY;
     touchCurrentY = touchStartY;
 
+    // Save current state before drag for undo support
+    dragStateBeforeDrop = JSON.parse(JSON.stringify(programSteps));
+
     // Visual feedback (semi-transparent while dragging)
     row.style.opacity = '0.4';
     row.classList.add('dragging');
 
-    // Prevent default to avoid scrolling while dragging
+    // CRITICAL: Prevent default touch behavior (scrolling) while dragging
     e.preventDefault();
 
-    // Prevent mouse/drag events from interfering
+    // Stop propagation to prevent other touch handlers
     e.stopPropagation();
+    
+    console.log(`[Touch Drag] Started dragging step ${draggedRowIndex + 1}`);
   }
 
   function onTouchMove(e){
@@ -3790,9 +3793,21 @@ function attachProgramTableListeners(){
 
       programSteps.splice(targetIndex, 0, draggedStep);
 
+      // Save undo state if reorder actually happened
+      if(dragStateBeforeDrop){
+        undoBuffer.push(dragStateBeforeDrop);
+        redoBuffer.length = 0; // Clear redo buffer when a new action is performed
+        console.log(`[Touch Drag] Reordered step from index ${draggedRowIndex} to ${targetIndex}. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
+        dragStateBeforeDrop = null;
+      }
+
       // Re-render and update
       renderProgramSteps();
       updatePreview(true);
+      
+      console.log(`[Touch Drag] Completed: moved step ${draggedRowIndex + 1} to position ${targetIndex + 1}`);
+    } else {
+      console.log(`[Touch Drag] Cancelled: no valid drop target`);
     }
 
     // Reset state
@@ -3809,24 +3824,36 @@ function attachProgramTableListeners(){
     const tbody = document.querySelector('#programStepsTable tbody');
     if(!tbody) return;
 
-    // Only attach once to avoid duplicates
-    if(listenersAttached) return;
+    // For mouse events: only attach once to tbody (event delegation)
+    // For touch events: must re-attach to each new drag handle after re-render
+    if(!listenersAttached){
+      // Mouse drag-and-drop events (attached to tbody for event delegation)
+      tbody.addEventListener('dragstart', onDragStart);
+      tbody.addEventListener('dragend', onDragEnd);
+      tbody.addEventListener('dragenter', onDragEnter);
+      tbody.addEventListener('dragover', onDragOver);
+      tbody.addEventListener('dragleave', onDragLeave);
+      tbody.addEventListener('drop', onDrop);
+      
+      listenersAttached = true;
+    }
     
-    // Mouse drag-and-drop events
-    tbody.addEventListener('dragstart', onDragStart);
-    tbody.addEventListener('dragend', onDragEnd);
-    tbody.addEventListener('dragenter', onDragEnter);
-    tbody.addEventListener('dragover', onDragOver);
-    tbody.addEventListener('dragleave', onDragLeave);
-    tbody.addEventListener('drop', onDrop);
-    
-    // Touch drag-and-drop events
-    tbody.addEventListener('touchstart', onTouchStart, {passive: false});
-    tbody.addEventListener('touchmove', onTouchMove, {passive: false});
-    tbody.addEventListener('touchend', onTouchEnd, {passive: false});
-
-    
-    listenersAttached = true;
+    // Touch events must be attached directly to each drag handle
+    // Re-attach on every call since table re-renders create new DOM elements
+    const dragHandles = tbody.querySelectorAll('.drag-handle');
+    dragHandles.forEach(handle => {
+      // Remove any existing listeners to avoid duplicates (in case handle is reused)
+      handle.removeEventListener('touchstart', onTouchStart);
+      handle.removeEventListener('touchmove', onTouchMove);
+      handle.removeEventListener('touchend', onTouchEnd);
+      handle.removeEventListener('touchcancel', onTouchEnd);
+      
+      // Attach touch listeners with passive:false to allow preventDefault()
+      handle.addEventListener('touchstart', onTouchStart, {passive: false});
+      handle.addEventListener('touchmove', onTouchMove, {passive: false});
+      handle.addEventListener('touchend', onTouchEnd, {passive: false});
+      handle.addEventListener('touchcancel', onTouchEnd, {passive: false}); // Handle touch cancellation
+    });
   }
 
   /**
