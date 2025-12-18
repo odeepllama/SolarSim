@@ -3488,7 +3488,6 @@ function attachProgramTableListeners(){
   let touchDraggedRow = null;         // Reference to touched row element
   let touchStartY = 0;                // Initial touch Y coordinate
   let touchCurrentY = 0;              // Current touch Y coordinate
-  let isDragging = false;             // Flag to track if actively dragging
 
   /**
    * Handles drag start event - only triggers from drag handle element.
@@ -3677,77 +3676,40 @@ function attachProgramTableListeners(){
     updatePreview(true);
   }
 
-  // Debug display helper
-  function showDebug(msg){
-    let debugDiv = document.getElementById('touchDebug');
-    if(!debugDiv){
-      debugDiv = document.createElement('div');
-      debugDiv.id = 'touchDebug';
-      debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;padding:10px;border-radius:5px;font-family:monospace;font-size:12px;z-index:999999;max-width:300px;';
-      document.body.appendChild(debugDiv);
-    }
-    debugDiv.innerHTML = msg + '<br>' + debugDiv.innerHTML;
-    setTimeout(() => { if(debugDiv.childNodes.length > 10) debugDiv.lastChild.remove(); }, 100);
-  }
-
   /**
    * Touch event handlers for mobile/tablet drag and drop.
    * Provides same functionality as mouse drag but with touch coordinates.
    */
   function onTouchStart(e){
-    showDebug('✓ TOUCH START');
-    console.log('[Touch Drag] onTouchStart fired!', e.target.className);
-    
-    // This handler is now attached directly to .drag-handle elements
-    const handle = e.currentTarget;
+    // Only allow dragging from the drag handle
+    const handle = e.target.classList?.contains('drag-handle') ? e.target : e.target.closest('.drag-handle');
+    if(!handle) return;
+
     const row = handle.closest('tr');
-    if(!row) {
-      showDebug('✗ No row found');
-      console.log('[Touch Drag] No row found!');
-      return;
-    }
+    if(!row) return;
 
     // Store touch state
     touchDraggedRow = row;
     draggedRowIndex = parseInt(row.getAttribute('data-step-index'), 10);
     touchStartY = e.touches[0].clientY;
     touchCurrentY = touchStartY;
-    isDragging = true;
 
-    showDebug(`✓ Dragging step ${draggedRowIndex + 1}`);
-
-    // Save current state before drag for undo support
-    dragStateBeforeDrop = JSON.parse(JSON.stringify(programSteps));
-
-    // Visual feedback (semi-transparent while dragging + color change for visibility)
-    row.style.opacity = '0.6';
-    row.style.backgroundColor = '#ffeb3b';
+    // Visual feedback (semi-transparent while dragging)
+    row.style.opacity = '0.4';
     row.classList.add('dragging');
 
-    // CRITICAL: Prevent all default touch behavior (scrolling/zooming)
+    // Prevent default to avoid scrolling while dragging
     e.preventDefault();
+
+    // Prevent mouse/drag events from interfering
     e.stopPropagation();
-    
-    // Disable body scrolling while dragging
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    
-    console.log(`[Touch Drag] Started dragging step ${draggedRowIndex + 1}, isDragging=${isDragging}`);
   }
 
   function onTouchMove(e){
-    if(!touchDraggedRow || !isDragging) {
-      console.log('[Touch Drag] onTouchMove ignored - not dragging');
-      return;
-    }
+    if(!touchDraggedRow) return;
 
-    showDebug('✓ MOVING');
-    console.log('[Touch Drag] onTouchMove active');
-    
-    // CRITICAL: Must prevent default to stop scrolling
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); // Prevent scrolling
+    e.stopPropagation(); // Prevent other handlers from interfering
 
     touchCurrentY = e.touches[0].clientY;
 
@@ -3796,13 +3758,7 @@ function attachProgramTableListeners(){
     if(!touchDraggedRow) return;
 
     e.preventDefault();
-    e.stopPropagation();
-
-    // Re-enable body scrolling
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    isDragging = false;
+    e.stopPropagation(); // Prevent other handlers from interfering
 
     // Restore visual state
     touchDraggedRow.style.opacity = '';
@@ -3834,21 +3790,9 @@ function attachProgramTableListeners(){
 
       programSteps.splice(targetIndex, 0, draggedStep);
 
-      // Save undo state if reorder actually happened
-      if(dragStateBeforeDrop){
-        undoBuffer.push(dragStateBeforeDrop);
-        redoBuffer.length = 0; // Clear redo buffer when a new action is performed
-        console.log(`[Touch Drag] Reordered step from index ${draggedRowIndex} to ${targetIndex}. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
-        dragStateBeforeDrop = null;
-      }
-
       // Re-render and update
       renderProgramSteps();
       updatePreview(true);
-      
-      console.log(`[Touch Drag] Completed: moved step ${draggedRowIndex + 1} to position ${targetIndex + 1}`);
-    } else {
-      console.log(`[Touch Drag] Cancelled: no valid drop target`);
     }
 
     // Reset state
@@ -3861,58 +3805,28 @@ function attachProgramTableListeners(){
     e.preventDefault(); // Allow drop
   }
 
-  // Global touch handler to prevent scrolling during drag
-  function preventScrollDuringDrag(e){
-    if(isDragging){
-      e.preventDefault();
-    }
-  }
-
   function attachDragListeners(){
     const tbody = document.querySelector('#programStepsTable tbody');
-    if(!tbody) {
-      console.log('[Touch Drag Setup] tbody not found!');
-      return;
-    }
+    if(!tbody) return;
 
-    // For mouse events: only attach once to tbody (event delegation)
-    // For touch events: must re-attach to each new drag handle after re-render
-    if(!listenersAttached){
-      // Mouse drag-and-drop events (attached to tbody for event delegation)
-      tbody.addEventListener('dragstart', onDragStart);
-      tbody.addEventListener('dragend', onDragEnd);
-      tbody.addEventListener('dragenter', onDragEnter);
-      tbody.addEventListener('dragover', onDragOver);
-      tbody.addEventListener('dragleave', onDragLeave);
-      tbody.addEventListener('drop', onDrop);
-      
-      // Global touch handler to prevent any scrolling while dragging
-      document.addEventListener('touchmove', preventScrollDuringDrag, {passive: false});
-      
-      console.log('[Touch Drag Setup] Mouse and global touch handlers attached');
-      listenersAttached = true;
-    }
+    // Only attach once to avoid duplicates
+    if(listenersAttached) return;
     
-    // Touch events must be attached directly to each drag handle
-    // Re-attach on every call since table re-renders create new DOM elements
-    const dragHandles = tbody.querySelectorAll('.drag-handle');
-    console.log(`[Touch Drag Setup] Found ${dragHandles.length} drag handles`);
+    // Mouse drag-and-drop events
+    tbody.addEventListener('dragstart', onDragStart);
+    tbody.addEventListener('dragend', onDragEnd);
+    tbody.addEventListener('dragenter', onDragEnter);
+    tbody.addEventListener('dragover', onDragOver);
+    tbody.addEventListener('dragleave', onDragLeave);
+    tbody.addEventListener('drop', onDrop);
     
-    dragHandles.forEach((handle, idx) => {
-      // Remove any existing listeners to avoid duplicates (in case handle is reused)
-      handle.removeEventListener('touchstart', onTouchStart);
-      handle.removeEventListener('touchmove', onTouchMove);
-      handle.removeEventListener('touchend', onTouchEnd);
-      handle.removeEventListener('touchcancel', onTouchEnd);
-      
-      // Attach touch listeners with passive:false to allow preventDefault()
-      handle.addEventListener('touchstart', onTouchStart, {passive: false});
-      handle.addEventListener('touchmove', onTouchMove, {passive: false});
-      handle.addEventListener('touchend', onTouchEnd, {passive: false});
-      handle.addEventListener('touchcancel', onTouchEnd, {passive: false}); // Handle touch cancellation
-      
-      console.log(`[Touch Drag Setup] Attached touch handlers to handle ${idx + 1}`);
-    });
+    // Touch drag-and-drop events
+    tbody.addEventListener('touchstart', onTouchStart, {passive: false});
+    tbody.addEventListener('touchmove', onTouchMove, {passive: false});
+    tbody.addEventListener('touchend', onTouchEnd, {passive: false});
+
+    
+    listenersAttached = true;
   }
 
   /**
@@ -6457,6 +6371,8 @@ function addBoundaryDragHandler(boundary, segment, dayInfo, WINDOW_START_MIN, WI
       .sort((a, b) => a - b);
   }
 
+  // --- Mouse Events ---
+
   boundary.addEventListener('mousedown', (e) => {
     e.stopPropagation();
 
@@ -6530,6 +6446,87 @@ function addBoundaryDragHandler(boundary, segment, dayInfo, WINDOW_START_MIN, WI
     timelineDragInProgress = false;
 
     const newMinutes = xPosToMinutes(e.clientX);
+    finishDrag(newMinutes);
+  });
+
+  // --- Touch Events ---
+
+  boundary.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+
+    // Check if editing is locked (device running)
+    if(window.__programEditingLocked && window.__programEditingLocked()){
+      if(window.__flashProgramLock) window.__flashProgramLock();
+      if(e.cancelable) e.preventDefault();
+      return;
+    }
+
+    // Save state for timeline undo before starting drag
+    saveTimelineUndoState();
+    timelineDragInProgress = true;
+
+    isDragging = true;
+    startX = e.touches[0].clientX;
+    originalMinutes = parseInt(segment.dataset.segStartMin);
+    boundary.classList.add('dragging');
+    
+    // Create ghost preview
+    ghostDiv = document.createElement('div');
+    ghostDiv.className = 'tl-seg-ghost';
+    host.appendChild(ghostDiv);
+
+    // Create time label
+    timeLabel = document.createElement('div');
+    timeLabel.className = 'tl-drag-time-label';
+    host.appendChild(timeLabel);
+
+    if(e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if(!isDragging) return;
+
+    const newMinutes = xPosToMinutes(e.touches[0].clientX);
+    const stepTimes = getDayStepTimes();
+    const thisStepIndex = stepTimes.indexOf(originalMinutes);
+
+    // Constraints: stay between previous and next step times
+    const prevStepTime = thisStepIndex > 0 ? stepTimes[thisStepIndex - 1] : WINDOW_START_MIN;
+    const nextStepTime = parseInt(segment.dataset.segEndMin);
+
+    // Ensure minimum segment durations
+    const minAllowed = prevStepTime + MIN_SEGMENT_DURATION;
+    const maxAllowed = nextStepTime - MIN_SEGMENT_DURATION;
+
+    const constrainedMinutes = Math.max(minAllowed, Math.min(maxAllowed, newMinutes));
+
+    // Update ghost position
+    const leftPct = ((constrainedMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+    const widthPct = ((nextStepTime - constrainedMinutes) / WINDOW_SPAN) * 100;
+    ghostDiv.style.left = leftPct + '%';
+    ghostDiv.style.width = widthPct + '%';
+
+    // Update time label
+    timeLabel.textContent = formatHHMM(constrainedMinutes);
+    timeLabel.style.left = leftPct + '%';
+
+    if(e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if(!isDragging) return;
+    isDragging = false;
+    boundary.classList.remove('dragging');
+    
+    // Reset timeline drag flag
+    timelineDragInProgress = false;
+
+    const newMinutes = xPosToMinutes(e.changedTouches[0].clientX);
+    finishDrag(newMinutes);
+  });
+
+  // Shared finish logic
+  function finishDrag(newMinutes){
     const stepTimes = getDayStepTimes();
     const thisStepIndex = stepTimes.indexOf(originalMinutes);
     const prevStepTime = thisStepIndex > 0 ? stepTimes[thisStepIndex - 1] : WINDOW_START_MIN;
@@ -6583,7 +6580,7 @@ function addBoundaryDragHandler(boundary, segment, dayInfo, WINDOW_START_MIN, WI
         updatePreview(true);
       }
     }
-  });
+  }
 }
 
 // Add drag handler for entire segments (move left/right)
@@ -6621,6 +6618,8 @@ function addSegmentDragHandler(segment, dayInfo, WINDOW_START_MIN, WINDOW_END_MI
       .filter(m => m != null)
       .sort((a, b) => a - b);
   }
+
+  // --- Mouse Events ---
 
   segment.addEventListener('mousedown', (e) => {
     // Ignore if clicking on a boundary handle
@@ -6671,6 +6670,91 @@ function addSegmentDragHandler(segment, dayInfo, WINDOW_START_MIN, WINDOW_END_MI
     if(!isDragging) return;
 
     const currentMouseMinutes = xPosToMinutes(e.clientX);
+    updateDrag(currentMouseMinutes);
+    e.preventDefault();
+  });
+
+  document.addEventListener('mouseup', (e) => {
+    if(!isDragging) return;
+    isDragging = false;
+    segment.classList.remove('dragging');
+    document.body.style.cursor = '';
+
+    // Reset timeline drag flag
+    timelineDragInProgress = false;
+
+    const currentMouseMinutes = xPosToMinutes(e.clientX);
+    finishDrag(currentMouseMinutes);
+  });
+
+  // --- Touch Events ---
+
+  segment.addEventListener('touchstart', (e) => {
+    // Ignore if clicking on a boundary handle
+    if(e.target.classList.contains('tl-seg-boundary')) return;
+
+    e.stopPropagation();
+
+    // Check if editing is locked (device running)
+    if(window.__programEditingLocked && window.__programEditingLocked()){
+      if(window.__flashProgramLock) window.__flashProgramLock();
+      if(e.cancelable) e.preventDefault();
+      return;
+    }
+
+    // Save state for timeline undo before starting drag
+    saveTimelineUndoState();
+    timelineDragInProgress = true;
+
+    isDragging = true;
+    startX = e.touches[0].clientX;
+    startMouseMinutes = xPosToMinutes(e.touches[0].clientX);
+    originalStartMin = parseInt(segment.dataset.segStartMin);
+    originalEndMin = parseInt(segment.dataset.segEndMin);
+    segmentDuration = originalEndMin - originalStartMin;
+    segment.classList.add('dragging');
+    
+    // Create ghost preview at original position
+    ghostDiv = document.createElement('div');
+    ghostDiv.className = 'tl-seg-ghost';
+    const leftPct = ((originalStartMin - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+    const widthPct = (segmentDuration / WINDOW_SPAN) * 100;
+    ghostDiv.style.left = leftPct + '%';
+    ghostDiv.style.width = widthPct + '%';
+    host.appendChild(ghostDiv);
+
+    // Create time label
+    timeLabel = document.createElement('div');
+    timeLabel.className = 'tl-drag-time-label';
+    timeLabel.textContent = `${formatHHMM(originalStartMin)} → ${formatHHMM(originalEndMin)}`;
+    timeLabel.style.left = leftPct + '%';
+    host.appendChild(timeLabel);
+
+    if(e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if(!isDragging) return;
+
+    const currentMouseMinutes = xPosToMinutes(e.touches[0].clientX);
+    updateDrag(currentMouseMinutes);
+    if(e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if(!isDragging) return;
+    isDragging = false;
+    segment.classList.remove('dragging');
+    
+    // Reset timeline drag flag
+    timelineDragInProgress = false;
+
+    const currentMouseMinutes = xPosToMinutes(e.changedTouches[0].clientX);
+    finishDrag(currentMouseMinutes);
+  });
+
+  // Shared update logic
+  function updateDrag(currentMouseMinutes){
     const deltaMinutes = currentMouseMinutes - startMouseMinutes;
     const newStartMin = snapToGrid(originalStartMin + deltaMinutes);
     const newEndMin = newStartMin + segmentDuration;
@@ -6700,20 +6784,10 @@ function addSegmentDragHandler(segment, dayInfo, WINDOW_START_MIN, WINDOW_END_MI
     // Update time label
     timeLabel.textContent = `${formatHHMM(constrainedStartMin)} → ${formatHHMM(constrainedEndMin)}`;
     timeLabel.style.left = leftPct + '%';
+  }
 
-    e.preventDefault();
-  });
-
-  document.addEventListener('mouseup', (e) => {
-    if(!isDragging) return;
-    isDragging = false;
-    segment.classList.remove('dragging');
-    document.body.style.cursor = '';
-
-    // Reset timeline drag flag
-    timelineDragInProgress = false;
-
-    const currentMouseMinutes = xPosToMinutes(e.clientX);
+  // Shared finish logic
+  function finishDrag(currentMouseMinutes){
     const deltaMinutes = currentMouseMinutes - startMouseMinutes;
     const newStartMin = snapToGrid(originalStartMin + deltaMinutes);
     const newEndMin = newStartMin + segmentDuration;
@@ -6791,7 +6865,7 @@ function addSegmentDragHandler(segment, dayInfo, WINDOW_START_MIN, WINDOW_END_MI
       renderProgramSteps();
       updatePreview(true);
     }
-  });
+  }
 }
 
 // Filename builder (Option A)
