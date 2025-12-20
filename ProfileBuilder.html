@@ -678,6 +678,12 @@ select:not(#filename_tag):not(#filename_preview) {
   /* Allow the log column to shrink to the remaining space, but keep a 300px minimum */
   .vislog-row .log-col{ flex:1 1 64%; min-width:300px; display:flex; flex-direction:column; overflow:hidden; }
   .vislog-row .log-col .mini-sect-title{ margin-top:2px; }
+  /* Center single visible column when other is hidden */
+  .vislog-row:has(.vis-col.mode-hidden) .log-col,
+  .vislog-row:has(.log-col.mode-hidden) .vis-col {
+    margin-left: auto;
+    margin-right: auto;
+  }
   @media (max-width: 900px){
     .vislog-row{ flex-direction:column; }
     /* On mobile, remove min-width constraints to prevent horizontal overflow */
@@ -936,25 +942,28 @@ select:not(#filename_tag):not(#filename_preview) {
     border-radius: 6px;
     margin-bottom: 8px;
     background: #f8f9fa;
+    /* 3-column grid: Section name | Simple checkbox | Advanced checkbox */
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 12px;
+    align-items: center;
   }
   #modeConfigModal .section-item:hover {
     background: #e9ecef;
   }
   #modeConfigModal .section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     font-weight: 600;
-    margin-bottom: 8px;
+    /* First column: section name */
+    grid-column: 1;
   }
   #modeConfigModal .section-checks {
-    display: flex;
-    gap: 20px;
-    margin-left: 30px;
+    /* Removed - now using grid columns directly */
+    display: contents;
   }
   #modeConfigModal .check-group {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
   }
   #modeConfigModal .modal-footer {
@@ -999,17 +1008,17 @@ select:not(#filename_tag):not(#filename_preview) {
 <div id="monitorPanel" aria-hidden="true">
   <div id="monitorControls"></div>
   <!-- Sun Position removed -->
-  <div class="mini-sect-title">Status Tiles</div>
-  <div id="monitorStatusGrid"></div>
+  <div class="mini-sect-title" data-section="monitor-status-tiles">Status Tiles</div>
+  <div id="monitorStatusGrid" data-section="monitor-status-tiles"></div>
   <!-- Sun Arc + Log side-by-side -->
-  <div id="monitorVisLogRow" class="vislog-row" data-section="monitor-log">
-    <div class="vis-col">
+  <div id="monitorVisLogRow" class="vislog-row">
+    <div class="vis-col" data-section="monitor-solar-arc">
   <div class="mini-sect-title">Solar Arc Simulation</div>
   <div id="sunArcWrapper" style="margin-top:2px; margin-bottom:-40px; display:none;">
         <canvas id="sunArcCanvas" width="560" height="320" aria-label="Sun arc visualization" role="img"></canvas>
       </div>
     </div>
-    <div class="log-col">
+    <div class="log-col" data-section="monitor-log">
       <div class="mini-sect-title">Log</div>
       <div id="monitorLog" aria-label="Monitor log" role="log"></div>
       <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
@@ -1520,7 +1529,7 @@ select:not(#filename_tag):not(#filename_preview) {
  <button id="uploadBtn" type="button" class="upload-green" title="Upload directly to the connected MicroPython board via Web Serial (raw REPL)">Upload to Device</button>
  <button id="textSyncToggleBtn" type="button" class="secondary" title="Toggle sync direction: Form updates text (default) or load text into form">Form to Text ▼</button>
 </div>
-<div style="position:relative; width:100%;" data-section="export-section">
+<div style="position:relative; width:100%;" data-section="profile-text-window">
   <div id="exportPreviewTopResizeGrip" title="Drag to resize profile text"></div>
   <div id="exportPreviewTopMask" style="position:absolute; left:0; top:0; width:100%; height:15px; background:#1e272e; z-index:101; border-radius:6px 6px 0 0;"></div>
   <textarea id="exportPreview" spellcheck="false" style="display:block; width:100%; position:relative; z-index:100;"></textarea>
@@ -13965,7 +13974,9 @@ function clearHoldState(){
   
   // Section definitions with human-readable names
   const SECTIONS = [
-    { id: 'monitor-log', name: 'Monitor Log', defaultSimple: false, defaultAdvanced: true },
+    { id: 'monitor-status-tiles', name: 'Monitor: Status Tiles', defaultSimple: true, defaultAdvanced: true },
+    { id: 'monitor-solar-arc', name: 'Monitor: Solar Arc', defaultSimple: true, defaultAdvanced: true },
+    { id: 'monitor-log', name: 'Monitor: Log Window', defaultSimple: true, defaultAdvanced: true },
     { id: 'program-settings-header', name: 'Program Settings', defaultSimple: false, defaultAdvanced: true },
     { id: 'time-and-date', name: 'Time & Date Settings', defaultSimple: true, defaultAdvanced: true },
     { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false, defaultAdvanced: true },
@@ -13973,7 +13984,8 @@ function clearHoldState(){
     { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true, defaultAdvanced: true },
     { id: 'rotation-and-imaging', name: 'Rotation & Imaging', defaultSimple: false, defaultAdvanced: true },
     { id: 'program-control', name: 'Program Control', defaultSimple: true, defaultAdvanced: true },
-    { id: 'export-section', name: 'Download, Import & Upload', defaultSimple: false, defaultAdvanced: true }
+    { id: 'export-section', name: 'Download, Import & Upload', defaultSimple: false, defaultAdvanced: true },
+    { id: 'profile-text-window', name: 'Profile Text Window', defaultSimple: false, defaultAdvanced: true }
   ];
   
   // Load configuration from localStorage
@@ -14046,6 +14058,25 @@ function clearHoldState(){
         }
       });
     });
+    
+    // Special handling: Monitor/Interact toggle controls all monitor sub-sections globally
+    // If monitor panel is closed, hide all monitor sub-sections regardless of individual settings
+    const monitorPanel = document.getElementById('monitorPanel');
+    const isMonitorOpen = monitorPanel && !monitorPanel.getAttribute('aria-hidden') || 
+                          (monitorPanel && monitorPanel.style.display !== 'none');
+    
+    if (!isMonitorOpen) {
+      const monitorSections = ['monitor-status-tiles', 'monitor-solar-arc', 'monitor-log'];
+      monitorSections.forEach(sectionId => {
+        const elements = document.querySelectorAll(`[data-section="${sectionId}"]`);
+        elements.forEach(el => {
+          // Store original visibility state
+          if (!el.dataset.originalVisibility) {
+            el.dataset.originalVisibility = el.classList.contains('mode-hidden') ? 'hidden' : 'visible';
+          }
+        });
+      });
+    }
   }
   
   // Toggle between Simple and Advanced modes
@@ -14061,7 +14092,8 @@ function clearHoldState(){
     const container = document.getElementById('sectionConfigList');
     if (!container) return;
     
-    container.innerHTML = '';
+    // Add column headers
+    container.innerHTML = '<div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; padding: 8px 12px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; font-weight: 600; font-size: 0.95rem;"><div>Section</div><div style="text-align: center;">Simple</div><div style="text-align: center;">Advanced</div></div>';
     const config = loadConfig();
     
     SECTIONS.forEach(section => {
@@ -14073,10 +14105,7 @@ function clearHoldState(){
       header.textContent = section.name;
       item.appendChild(header);
       
-      const checks = document.createElement('div');
-      checks.className = 'section-checks';
-      
-      // Simple mode checkbox
+      // Simple mode checkbox (column 2)
       const simpleGroup = document.createElement('div');
       simpleGroup.className = 'check-group';
       const simpleCheckbox = document.createElement('input');
@@ -14085,16 +14114,10 @@ function clearHoldState(){
       simpleCheckbox.checked = config.simple[section.id];
       simpleCheckbox.dataset.mode = 'simple';
       simpleCheckbox.dataset.section = section.id;
-      const simpleLabel = document.createElement('label');
-      simpleLabel.htmlFor = simpleCheckbox.id;
-      simpleLabel.textContent = 'Show in Simple';
-      simpleLabel.style.cursor = 'pointer';
-      simpleLabel.style.textTransform = 'none';
-      simpleLabel.style.fontWeight = 'normal';
       simpleGroup.appendChild(simpleCheckbox);
-      simpleGroup.appendChild(simpleLabel);
+      item.appendChild(simpleGroup);
       
-      // Advanced mode checkbox
+      // Advanced mode checkbox (column 3)
       const advancedGroup = document.createElement('div');
       advancedGroup.className = 'check-group';
       const advancedCheckbox = document.createElement('input');
@@ -14103,18 +14126,9 @@ function clearHoldState(){
       advancedCheckbox.checked = config.advanced[section.id];
       advancedCheckbox.dataset.mode = 'advanced';
       advancedCheckbox.dataset.section = section.id;
-      const advancedLabel = document.createElement('label');
-      advancedLabel.htmlFor = advancedCheckbox.id;
-      advancedLabel.textContent = 'Show in Advanced';
-      advancedLabel.style.cursor = 'pointer';
-      advancedLabel.style.textTransform = 'none';
-      advancedLabel.style.fontWeight = 'normal';
       advancedGroup.appendChild(advancedCheckbox);
-      advancedGroup.appendChild(advancedLabel);
+      item.appendChild(advancedGroup);
       
-      checks.appendChild(simpleGroup);
-      checks.appendChild(advancedGroup);
-      item.appendChild(checks);
       container.appendChild(item);
     });
   }
