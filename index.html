@@ -76,7 +76,7 @@ https://github.com/odeepllama/SolarSim/tree/main
  .group-grid.program-control { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
  .group-grid.program-control .field { flex: none; max-width: none; }
  input[type=text], input[type=number], select, textarea { padding:8px 10px; font-size:1rem; border:1px solid #aaa; border-radius:4px; background:#ffffff; }
- input[type=checkbox] { transform: scale(1.15); transform-origin:center center; margin-right:6px; }
+ input[type=checkbox] { transform: scale(1.725); transform-origin:center center; margin-right:6px; }
  /* Centered checkbox field styling test */
  .field.checkbox-field { display:flex; flex-direction:column; align-items:center; }
  .field.checkbox-field label { width:100%; text-align:center; }
@@ -879,13 +879,20 @@ select:not(#filename_tag):not(#filename_preview) {
     background: #6c757d;
     border: 1px solid #5a6268;
     color: #fff;
-    padding: 8px 12px;
-    font-size: 1.1rem;
+    padding: 0;
+    font-size: 1.4rem;
     border-radius: 4px;
     cursor: pointer;
     margin-right: 10px;
     transition: all 0.2s ease;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
   #modeConfigBtn:hover {
     background: #5a6268;
@@ -911,7 +918,7 @@ select:not(#filename_tag):not(#filename_preview) {
   #modeConfigModal .modal-content {
     background: #ffffff;
     border-radius: 8px;
-    max-width: 700px;
+    max-width: 565px;
     max-height: 80%;
     width: 90%;
     display: flex;
@@ -930,6 +937,16 @@ select:not(#filename_tag):not(#filename_preview) {
   #modeConfigModal header h3 {
     margin: 0;
     font-size: 1.3rem;
+  }
+  #modeConfigModal header button {
+    font-size: 2rem;
+    padding: 0;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   #modeConfigModal .modal-body {
     padding: 20px;
@@ -953,6 +970,7 @@ select:not(#filename_tag):not(#filename_preview) {
   }
   #modeConfigModal .section-header {
     font-weight: 600;
+    font-size: 1.05rem;
     /* First column: section name */
     grid-column: 1;
   }
@@ -966,8 +984,17 @@ select:not(#filename_tag):not(#filename_preview) {
     justify-content: center;
     gap: 6px;
   }
+  #modeConfigModal .check-group {
+    text-align: center;
+    padding-right: 40px;
+  }
+  #modeConfigModal .check-group input[type=checkbox] {
+    margin-right: 0;
+    justify-self: center;
+  }
   #modeConfigModal .modal-footer {
-    padding: 12px 20px;
+    padding: 12px 12px;
+    margin-right: 22px;
     border-top: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
@@ -1335,7 +1362,7 @@ select:not(#filename_tag):not(#filename_preview) {
 <div id="modeConfigModal" aria-hidden="true">
   <div class="modal-content">
     <header>
-      <h3>Configure Section Visibility</h3>
+      <h3>Simple Mode Section Visibility</h3>
       <button id="modeConfigModalClose" type="button" class="secondary" aria-label="Close">&times;</button>
     </header>
     <div class="modal-body">
@@ -1495,7 +1522,7 @@ select:not(#filename_tag):not(#filename_preview) {
  </div>
  <div style="margin: 8px 0; padding: 6px 10px; background: #f0f0f0; border-left: 3px solid #3478f6; border-radius: 3px;">
   <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
-   <input type="checkbox" id="singleDayVisualization" style="cursor: pointer; width: 16px; height: 16px;">
+   <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
    <span>Visualize all steps on a single day</span>
   </label>
  </div>
@@ -14104,8 +14131,8 @@ function clearHoldState(){
     const container = document.getElementById('sectionConfigList');
     if (!container) return;
     
-    // Add column headers
-    container.innerHTML = '<div style="display:grid; grid-template-columns: 3fr 1fr; gap: 12px; padding: 8px 12px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; font-weight: 600; font-size: 0.95rem;"><div>Section</div><div style="text-align: center;">Show in Simple</div></div>';
+    // Add column headers with sticky positioning
+    container.innerHTML = '<div style="display:grid; grid-template-columns: 3fr 1fr; gap: 12px; padding: 10px 12px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; font-weight: 600; font-size: 1.05rem; position: sticky; top: 0; z-index: 10;"><div>Section</div><div style="text-align: center; white-space: nowrap;">Show in Simple Mode</div></div>';
     const config = loadConfig();
     
     SECTIONS.forEach(section => {
