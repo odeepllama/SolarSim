@@ -942,9 +942,9 @@ select:not(#filename_tag):not(#filename_preview) {
     border-radius: 6px;
     margin-bottom: 8px;
     background: #f8f9fa;
-    /* 3-column grid: Section name | Simple checkbox | Advanced checkbox */
+    /* 2-column grid: Section name | Simple checkbox */
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr;
     gap: 12px;
     align-items: center;
   }
@@ -1340,7 +1340,7 @@ select:not(#filename_tag):not(#filename_preview) {
     </header>
     <div class="modal-body">
       <p style="font-size:0.95rem; margin-bottom:16px; color:#666;">
-        Choose which sections are visible in Simple and Advanced modes. All sections are always available in Advanced mode configuration.
+        Choose which sections are visible in Simple mode. Advanced mode always shows all sections.
       </p>
       <div id="sectionConfigList"></div>
     </div>
@@ -13973,19 +13973,20 @@ function clearHoldState(){
   'use strict';
   
   // Section definitions with human-readable names
+  // Advanced mode always shows all sections, so we only configure Simple mode defaults
   const SECTIONS = [
-    { id: 'monitor-status-tiles', name: 'Monitor: Status Tiles', defaultSimple: true, defaultAdvanced: true },
-    { id: 'monitor-solar-arc', name: 'Monitor: Solar Arc', defaultSimple: true, defaultAdvanced: true },
-    { id: 'monitor-log', name: 'Monitor: Log Window', defaultSimple: true, defaultAdvanced: true },
-    { id: 'program-settings-header', name: 'Program Settings', defaultSimple: false, defaultAdvanced: true },
-    { id: 'time-and-date', name: 'Time & Date Settings', defaultSimple: true, defaultAdvanced: true },
-    { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false, defaultAdvanced: true },
-    { id: 'imaging-illumination', name: 'Imaging Illumination', defaultSimple: false, defaultAdvanced: true },
-    { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true, defaultAdvanced: true },
-    { id: 'rotation-and-imaging', name: 'Rotation & Imaging', defaultSimple: false, defaultAdvanced: true },
-    { id: 'program-control', name: 'Program Control', defaultSimple: true, defaultAdvanced: true },
-    { id: 'export-section', name: 'Download, Import & Upload', defaultSimple: false, defaultAdvanced: true },
-    { id: 'profile-text-window', name: 'Profile Text Window', defaultSimple: false, defaultAdvanced: true }
+    { id: 'monitor-status-tiles', name: 'Monitor: Status Tiles', defaultSimple: true },
+    { id: 'monitor-solar-arc', name: 'Monitor: Solar Arc', defaultSimple: true },
+    { id: 'monitor-log', name: 'Monitor: Log Window', defaultSimple: true },
+    { id: 'program-settings-header', name: 'Program Settings', defaultSimple: false },
+    { id: 'time-and-date', name: 'Time & Date Settings', defaultSimple: true },
+    { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false },
+    { id: 'imaging-illumination', name: 'Imaging Illumination', defaultSimple: false },
+    { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true },
+    { id: 'rotation-and-imaging', name: 'Rotation & Imaging', defaultSimple: false },
+    { id: 'program-control', name: 'Program Control', defaultSimple: true },
+    { id: 'export-section', name: 'Download, Import & Upload', defaultSimple: false },
+    { id: 'profile-text-window', name: 'Profile Text Window', defaultSimple: false }
   ];
   
   // Load configuration from localStorage
@@ -13993,16 +13994,20 @@ function clearHoldState(){
     const stored = localStorage.getItem('modeConfig');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Migrate old format if needed (had both simple and advanced)
+        if (parsed.simple) {
+          return { simple: parsed.simple };
+        }
+        return parsed;
       } catch(e) {
         console.warn('[Mode] Failed to parse stored config:', e);
       }
     }
-    // Return default configuration
-    const config = { simple: {}, advanced: {} };
+    // Return default configuration (only Simple mode needs config)
+    const config = { simple: {} };
     SECTIONS.forEach(section => {
       config.simple[section.id] = section.defaultSimple;
-      config.advanced[section.id] = section.defaultAdvanced;
     });
     return config;
   }
@@ -14030,7 +14035,6 @@ function clearHoldState(){
   function applyVisibility() {
     const mode = getCurrentMode();
     const config = loadConfig();
-    const modeConfig = config[mode];
     
     // Update button states
     const simpleModeBtn = document.getElementById('simpleModeBtn');
@@ -14048,7 +14052,15 @@ function clearHoldState(){
     
     // Apply visibility to all sections
     SECTIONS.forEach(section => {
-      const visible = modeConfig[section.id];
+      let visible;
+      if (mode === 'advanced') {
+        // Advanced mode always shows everything
+        visible = true;
+      } else {
+        // Simple mode uses configuration
+        visible = config.simple[section.id];
+      }
+      
       const elements = document.querySelectorAll(`[data-section="${section.id}"]`);
       elements.forEach(el => {
         if (visible) {
@@ -14093,7 +14105,7 @@ function clearHoldState(){
     if (!container) return;
     
     // Add column headers
-    container.innerHTML = '<div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; padding: 8px 12px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; font-weight: 600; font-size: 0.95rem;"><div>Section</div><div style="text-align: center;">Simple</div><div style="text-align: center;">Advanced</div></div>';
+    container.innerHTML = '<div style="display:grid; grid-template-columns: 3fr 1fr; gap: 12px; padding: 8px 12px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; font-weight: 600; font-size: 0.95rem;"><div>Section</div><div style="text-align: center;">Show in Simple</div></div>';
     const config = loadConfig();
     
     SECTIONS.forEach(section => {
@@ -14112,22 +14124,9 @@ function clearHoldState(){
       simpleCheckbox.type = 'checkbox';
       simpleCheckbox.id = `config-simple-${section.id}`;
       simpleCheckbox.checked = config.simple[section.id];
-      simpleCheckbox.dataset.mode = 'simple';
       simpleCheckbox.dataset.section = section.id;
       simpleGroup.appendChild(simpleCheckbox);
       item.appendChild(simpleGroup);
-      
-      // Advanced mode checkbox (column 3)
-      const advancedGroup = document.createElement('div');
-      advancedGroup.className = 'check-group';
-      const advancedCheckbox = document.createElement('input');
-      advancedCheckbox.type = 'checkbox';
-      advancedCheckbox.id = `config-advanced-${section.id}`;
-      advancedCheckbox.checked = config.advanced[section.id];
-      advancedCheckbox.dataset.mode = 'advanced';
-      advancedCheckbox.dataset.section = section.id;
-      advancedGroup.appendChild(advancedCheckbox);
-      item.appendChild(advancedGroup);
       
       container.appendChild(item);
     });
@@ -14135,13 +14134,12 @@ function clearHoldState(){
   
   // Save configuration from modal UI
   function saveConfigFromUI() {
-    const config = { simple: {}, advanced: {} };
+    const config = { simple: {} };
     
     const checkboxes = document.querySelectorAll('#sectionConfigList input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
-      const mode = checkbox.dataset.mode;
       const section = checkbox.dataset.section;
-      config[mode][section] = checkbox.checked;
+      config.simple[section] = checkbox.checked;
     });
     
     saveConfig(config);
@@ -14150,10 +14148,9 @@ function clearHoldState(){
   
   // Reset to default configuration
   function resetToDefaults() {
-    const config = { simple: {}, advanced: {} };
+    const config = { simple: {} };
     SECTIONS.forEach(section => {
       config.simple[section.id] = section.defaultSimple;
-      config.advanced[section.id] = section.defaultAdvanced;
     });
     saveConfig(config);
     buildConfigUI();
