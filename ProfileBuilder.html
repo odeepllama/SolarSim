@@ -14449,7 +14449,7 @@ function clearHoldState(){
       title: 'Program Step Timeline',
       content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
       position: 'top',
-      centerTooltip: true
+      rightTooltip: true
     },
     {
       target: '#recentProfiles',
@@ -14773,18 +14773,18 @@ function clearHoldState(){
     const viewportWidth = window.innerWidth;
     const margin = 20;
     
-    // Check if tooltip should be centered on screen (for timeline and other wide elements)
-    if (stepConfig.centerTooltip) {
-      // Position tooltip on the right side of the screen, vertically aligned with target
+    // Check if tooltip should be right-aligned on screen (for timeline and other wide elements)
+    if (stepConfig.rightTooltip) {
+      // Position tooltip on the right side of the screen, slightly higher to avoid covering table headers
       const targetVerticalCenter = rect.top + (rect.height / 2);
-      finalLeft = viewportWidth - tooltipWidth - margin;
-      finalTop = Math.max(margin, Math.min(targetVerticalCenter - (tooltipHeight / 2), viewportHeight - tooltipHeight - margin));
-      
-      // Apply final position
+      // Move tooltip up by 60px (20px higher than previous)
+      const verticalOffset = 60;
+      const finalLeft = viewportWidth - tooltipWidth - margin;
+      let finalTop = Math.max(margin, Math.min(targetVerticalCenter - (tooltipHeight / 2) - verticalOffset, viewportHeight - tooltipHeight - margin));
+      // Ensure tooltip doesn't go above the top margin
+      if (finalTop < margin) finalTop = margin;
       tooltip.style.left = finalLeft + 'px';
       tooltip.style.top = finalTop + 'px';
-      
-      // Show tooltip now that it's in the correct position
       tooltip.classList.add('positioned');
       return;
     }
