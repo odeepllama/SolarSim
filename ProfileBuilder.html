@@ -14420,12 +14420,6 @@ function clearHoldState(){
   // Guide step definitions
   const QUICK_START_STEPS = [
     {
-      target: '#deviceIdentityBadge',
-      title: 'Device Identity',
-      content: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
-      position: 'bottom'
-    },
-    {
       target: '#monitorConnectBtn',
       title: 'Connect Your Device',
       content: 'Click "Connect" to establish a serial connection with your device via USB.',
@@ -14433,16 +14427,10 @@ function clearHoldState(){
       allowInteraction: true
     },
     {
-      target: '#recentProfiles',
-      title: 'Recent Profiles',
-      content: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
-      position: 'top',
-      offsetY: 7,  // Move top down by 15px total from original -8
-      heightAdjust: -15,  // Reduce height by 15px to keep bottom edge in place
-      adjustTarget: (el) => {
-        // Target parent container to include both title and profiles
-        return el.parentElement;
-      }
+      target: '#toggleMonitorBtn',
+      title: 'Monitor Panel',
+      content: 'Click here to show/hide the device monitor. You can see live status, send commands, and interact with tiles.',
+      position: 'bottom'
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
@@ -14457,34 +14445,35 @@ function clearHoldState(){
       position: 'right'
     },
     {
+      target: '#programSection',
+      title: 'Program Step Timeline',
+      content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
+      position: 'top',
+      centerTooltip: true
+    },
+    {
+      target: '#recentProfiles',
+      title: 'Recent Profiles',
+      content: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
+      position: 'top',
+      offsetY: 7,  // Move top down by 15px total from original -8
+      heightAdjust: -15,  // Reduce height by 15px to keep bottom edge in place
+      adjustTarget: (el) => {
+        // Target parent container to include both title and profiles
+        return el.parentElement;
+      }
+    },
+    {
       target: '[data-export-ref="uploadBtn"]',
       title: 'Upload to Device',
       content: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
       position: 'bottom',
       highlight: true
-    },
-    {
-      target: '#toggleMonitorBtn',
-      title: 'Monitor Panel',
-      content: 'Click here to show/hide the device monitor. You can see live status, send commands, and interact with tiles.',
-      position: 'bottom'
     }
   ];
   
   const FULL_TOUR_STEPS = [
     ...QUICK_START_STEPS,
-    {
-      target: '#programSection',
-      title: 'Program Step Timeline',
-      content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
-      position: 'top'
-    },
-    {
-      target: '#simpleModeBtn',
-      title: 'Simple vs Advanced Mode',
-      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
-      position: 'bottom'
-    },
     {
       target: '[data-export-ref="downloadBtn"]',
       title: 'Download Profile',
@@ -14507,6 +14496,18 @@ function clearHoldState(){
       target: '#diffBanner',
       title: 'Profile Diff Viewer',
       content: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
+      position: 'bottom'
+    },
+    {
+      target: '#simpleModeBtn',
+      title: 'Simple vs Advanced Mode',
+      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
+      position: 'bottom'
+    },
+    {
+      target: '#deviceIdentityBadge',
+      title: 'Device Identity',
+      content: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
       position: 'bottom'
     },
     {
@@ -14771,6 +14772,22 @@ function clearHoldState(){
     const tooltipHeight = tooltipRect.height;
     const viewportWidth = window.innerWidth;
     const margin = 20;
+    
+    // Check if tooltip should be centered on screen (for timeline and other wide elements)
+    if (stepConfig.centerTooltip) {
+      // Position tooltip on the right side of the screen, vertically aligned with target
+      const targetVerticalCenter = rect.top + (rect.height / 2);
+      finalLeft = viewportWidth - tooltipWidth - margin;
+      finalTop = Math.max(margin, Math.min(targetVerticalCenter - (tooltipHeight / 2), viewportHeight - tooltipHeight - margin));
+      
+      // Apply final position
+      tooltip.style.left = finalLeft + 'px';
+      tooltip.style.top = finalTop + 'px';
+      
+      // Show tooltip now that it's in the correct position
+      tooltip.classList.add('positioned');
+      return;
+    }
     
     // Try positions in order of preference, checking for overlaps
     const positions = [
