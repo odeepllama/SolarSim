@@ -76,7 +76,7 @@ https://github.com/odeepllama/SolarSim/tree/main
  .group-grid.program-control { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
  .group-grid.program-control .field { flex: none; max-width: none; }
  input[type=text], input[type=number], select, textarea { padding:8px 10px; font-size:1rem; border:1px solid #aaa; border-radius:4px; background:#ffffff; }
- input[type=checkbox] { transform: scale(1.725); transform-origin:center center; margin-right:6px; }
+ input[type=checkbox] { transform: scale(1.15); transform-origin:center center; margin-right:6px; }
  /* Centered checkbox field styling test */
  .field.checkbox-field { display:flex; flex-direction:column; align-items:center; }
  .field.checkbox-field label { width:100%; text-align:center; }
@@ -280,12 +280,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 /* ============================================================================
    HELP PANEL
    ============================================================================ */
-/* Tutorial and Help buttons in top-right corner */
-#tutorialToggleBtn, #helpToggleBtn { position:fixed; top:28px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
-#tutorialToggleBtn { right:30px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
-#helpToggleBtn { right:136px; padding:8px 12px; }
-#tutorialToggleBtn:hover:not(:disabled), #tutorialToggleBtn:focus-visible { background:#4a8cf8 !important; border-color:#2560c7; outline:none; color:#fff !important; }
-#tutorialToggleBtn:active:not(:disabled) { background:#2867d9 !important; border-color:#1f4fa8; color:#fff !important; }
+#helpToggleBtn { position:fixed; bottom:14px; right:14px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; }
 #helpToggleBtn:hover:not(:disabled), #helpToggleBtn:focus-visible { background:#ffcc00; border-color:#a67d00; outline:none; }
 #helpToggleBtn:active:not(:disabled) { background:#e6b800; border-color:#8f6a00; }
  #helpPanel { position:fixed; top:0; right:0; width:380px; max-width:90%; height:100%; background:#ffffff; box-shadow:-4px 0 12px rgba(0,0,0,0.18); transform:translateX(100%); transition:transform .28s ease; z-index:999; display:flex; flex-direction:column; }
@@ -304,8 +299,7 @@ https://github.com/odeepllama/SolarSim/tree/main
  .help-detail { margin-top:8px; padding:8px 12px; background:#f5f7fa; border-left:3px solid #0066cc; border-radius:3px; }
 @media (max-width:680px){
   #helpPanel{ width:100%; }
-  #tutorialToggleBtn{ top:auto; bottom:60px; right:10px; left:auto; transform:none; }
-  #helpToggleBtn{ top:auto; bottom:10px; right:10px; left:auto; transform:none; }
+  #helpToggleBtn{ left:50%; right:auto; transform:translateX(-50%); bottom:10px; }
   /* Fix widths on mobile to match form fields */
   #exportPreview{ box-sizing:border-box; max-width:100%; }
   .vislog-row .log-col, .vislog-row .vis-col{ max-width:100%; box-sizing:border-box; }
@@ -317,49 +311,6 @@ https://github.com/odeepllama/SolarSim/tree/main
   .program-steps-table th:last-child,
   .program-steps-table td:last-child { min-width:140px; white-space:nowrap; }
 }
-
-/* ============================================================================
-   FTUE (First Time User Experience) STYLES
-   ============================================================================ */
-/* Welcome Modal */
-#ftueWelcomeModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-#ftueWelcomeModal.open { display:flex; }
-#ftueWelcomeModal .modal-content { background:#ffffff; border-radius:12px; max-width:580px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.4); padding:32px; text-align:center; }
-#ftueWelcomeModal h2 { font-size:2rem; margin:0 0 12px; color:#1f2933; }
-#ftueWelcomeModal .subtitle { font-size:1.1rem; color:#666; margin:0 0 32px; line-height:1.5; }
-#ftueWelcomeModal .role-buttons { display:flex; flex-direction:column; gap:16px; margin-bottom:24px; }
-#ftueWelcomeModal .role-btn { padding:20px 24px; border:2px solid #ddd; border-radius:8px; background:#f8f9fa; cursor:pointer; transition:all 0.2s; text-align:left; font-size:1rem; display:flex; align-items:center; gap:16px; }
-#ftueWelcomeModal .role-btn:hover { border-color:#3478f6; background:#eef4ff; transform:translateY(-2px); box-shadow:0 4px 12px rgba(52,120,246,0.2); }
-#ftueWelcomeModal .role-btn .icon { font-size:3.6rem; flex-shrink:0; }
-#ftueWelcomeModal .role-btn .title { font-weight:600; font-size:1.1rem; color:#1f2933; }
-#ftueWelcomeModal .role-btn .desc { font-size:0.9rem; color:#666; margin-top:4px; }
-#ftueWelcomeModal .skip-link { font-size:0.9rem; color:#666; cursor:pointer; text-decoration:underline; }
-#ftueWelcomeModal .skip-link:hover { color:#3478f6; }
-
-/* Spotlight Overlay System */
-#ftueSpotlight { display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; }
-#ftueSpotlight.active { display:block; pointer-events:auto; }
-#ftueSpotlight .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.25); transition:opacity 0.6s ease; }
-#ftueSpotlight .spotlight-hole { position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,0.25), 0 0 40px 8px rgba(255,215,0,0.9), 0 0 80px 16px rgba(255,215,0,0.5); border-radius:8px; transition:all 0.6s ease; pointer-events:none; z-index:10001; border:3px solid rgba(255,215,0,1); }
-#ftueSpotlight .spotlight-hole.no-transition { transition:none; }
-#ftueSpotlight .tooltip { position:absolute; background:#ffffff; border-radius:12px; padding:24px; max-width:420px; box-shadow:0 8px 32px rgba(0,0,0,0.3); z-index:10002; animation:tooltipFadeIn 0.4s ease; opacity:0; visibility:hidden; }
-#ftueSpotlight .tooltip.no-transition { transition:none; animation:none; }
-#ftueSpotlight .tooltip.positioned { opacity:1; visibility:visible; }
-#ftueSpotlight .tooltip.positioned { opacity:1; }
-@keyframes tooltipFadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-#ftueSpotlight .tooltip h3 { margin:0 0 12px; font-size:1.3rem; color:#1f2933; }
-#ftueSpotlight .tooltip p { margin:0 0 16px; line-height:1.6; color:#4a5568; font-size:0.95rem; }
-#ftueSpotlight .tooltip .buttons { display:flex; gap:12px; justify-content:space-between; align-items:center; }
-#ftueSpotlight .tooltip .step-indicator { font-size:0.85rem; color:#666; font-weight:500; }
-#ftueSpotlight .tooltip button { padding:10px 20px; border-radius:6px; font-size:0.95rem; font-weight:600; cursor:pointer; border:none; transition:all 0.2s; }
-#ftueSpotlight .tooltip .btn-skip { background:#e0e0e0; color:#333; }
-#ftueSpotlight .tooltip .btn-skip:hover { background:#d0d0d0; }
-#ftueSpotlight .tooltip .btn-back { background:#6c757d; color:#fff; }
-#ftueSpotlight .tooltip .btn-back:hover { background:#5a6268; }
-#ftueSpotlight .tooltip .btn-next { background:#3478f6; color:#fff; }
-#ftueSpotlight .tooltip .btn-next:hover { background:#2867d9; }
-#ftueSpotlight .tooltip .btn-finish { background:#28a745; color:#fff; }
-#ftueSpotlight .tooltip .btn-finish:hover { background:#218838; }
 
 /* ============================================================================
    MODALS & OVERLAYS
@@ -727,12 +678,6 @@ select:not(#filename_tag):not(#filename_preview) {
   /* Allow the log column to shrink to the remaining space, but keep a 300px minimum */
   .vislog-row .log-col{ flex:1 1 64%; min-width:300px; display:flex; flex-direction:column; overflow:hidden; }
   .vislog-row .log-col .mini-sect-title{ margin-top:2px; }
-  /* Center single visible column when other is hidden */
-  .vislog-row:has(.vis-col.mode-hidden) .log-col,
-  .vislog-row:has(.log-col.mode-hidden) .vis-col {
-    margin-left: auto;
-    margin-right: auto;
-  }
   @media (max-width: 900px){
     .vislog-row{ flex-direction:column; }
     /* On mobile, remove min-width constraints to prevent horizontal overflow */
@@ -879,184 +824,6 @@ select:not(#filename_tag):not(#filename_preview) {
     border: 1px solid #ff9800;
   }
   #diffBanner .dismiss-btn:hover:not(:disabled) { background: #fff3e0; }
-
-/* ============================================================================
-   SIMPLE/ADVANCED MODE SYSTEM
-   ============================================================================ */
-  /* Mode toggle buttons container */
-  #modeToggleContainer {
-    display: flex;
-    gap: 0;
-    margin-right: 10px;
-  }
-  
-  /* Mode toggle buttons (radio style) */
-  .mode-btn {
-    background: #e9ecef;
-    border: 1px solid #adb5bd;
-    color: #495057;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .mode-btn:first-child {
-    border-radius: 4px 0 0 4px;
-  }
-  .mode-btn:last-child {
-    border-radius: 0 4px 4px 0;
-    border-left: none;
-  }
-  .mode-btn:hover:not(.active) {
-    background: #dee2e6;
-  }
-  .mode-btn.active {
-    background: #3478f6;
-    border-color: #2d6cdf;
-    color: #fff;
-    cursor: default;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-  }
-  .mode-btn.active.simple-mode {
-    background: #28a745;
-    border-color: #218838;
-  }
-  
-  /* Gear icon for configuration button */
-  #modeConfigBtn {
-    background: #6c757d;
-    border: 1px solid #5a6268;
-    color: #fff;
-    padding: 0;
-    font-size: 1.4rem;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
-    transition: all 0.2s ease;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-  }
-  #modeConfigBtn:hover {
-    background: #5a6268;
-  }
-  
-  /* Visibility control classes */
-  .mode-hidden { display: none !important; }
-  
-  /* Mode Configuration Modal */
-  #modeConfigModal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-  }
-  #modeConfigModal.open { display: flex; }
-  #modeConfigModal .modal-content {
-    background: #ffffff;
-    border-radius: 8px;
-    max-width: 565px;
-    max-height: 80%;
-    width: 90%;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
-  #modeConfigModal header {
-    padding: 16px 20px;
-    background: #1f2933;
-    color: #fff;
-    border-radius: 8px 8px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  #modeConfigModal header h3 {
-    margin: 0;
-    font-size: 1.3rem;
-  }
-  #modeConfigModal header button {
-    font-size: 2rem;
-    padding: 0;
-    line-height: 1;
-    width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #modeConfigModal .modal-body {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-  }
-  #modeConfigModal .section-item {
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    background: #f8f9fa;
-    /* 2-column grid: Section name | Simple checkbox */
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    gap: 12px;
-    align-items: center;
-  }
-  #modeConfigModal .section-item:hover {
-    background: #e9ecef;
-  }
-  #modeConfigModal .section-header {
-    font-weight: 600;
-    font-size: 1.05rem;
-    /* First column: section name */
-    grid-column: 1;
-  }
-  #modeConfigModal .section-checks {
-    /* Removed - now using grid columns directly */
-    display: contents;
-  }
-  #modeConfigModal .check-group {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-  #modeConfigModal .check-group {
-    text-align: center;
-    padding-right: 40px;
-  }
-  #modeConfigModal .check-group input[type=checkbox] {
-    margin-right: 0;
-    justify-self: center;
-  }
-  #modeConfigModal .modal-footer {
-    padding: 12px 12px;
-    margin-right: 22px;
-    border-top: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  #modeConfigModal .btn-primary {
-    background: #3478f6;
-    color: #fff;
-    border: 1px solid #2d6cdf;
-  }
-  #modeConfigModal .btn-primary:hover {
-    background: #4a8cf8;
-  }
 </style>
 </head>
 <body>
@@ -1071,11 +838,6 @@ select:not(#filename_tag):not(#filename_preview) {
   <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title="Send 'help all' to device">Show All Commands</button>
   <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title="Show status output in log">Show Status</button>
   <div id="bgColorChooser" style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-    <button id="modeConfigBtn" type="button" title="Configure section visibility">⚙</button>
-    <div id="modeToggleContainer">
-      <button id="simpleModeBtn" type="button" class="mode-btn" data-mode="simple">Simple</button>
-      <button id="advancedModeBtn" type="button" class="mode-btn active" data-mode="advanced">Advanced</button>
-    </div>
     <div class="bg-swatch" data-color="#abbea6" style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Green (Default)"></div>
     <div class="bg-swatch" data-color="#a6b0be" style="background:#a6b0be; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Blue"></div>
     <div class="bg-swatch" data-color="#bea6a6" style="background:#bea6a6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Red"></div>
@@ -1084,17 +846,17 @@ select:not(#filename_tag):not(#filename_preview) {
 <div id="monitorPanel" aria-hidden="true">
   <div id="monitorControls"></div>
   <!-- Sun Position removed -->
-  <div class="mini-sect-title" data-section="monitor-status-tiles">Status Tiles</div>
-  <div id="monitorStatusGrid" data-section="monitor-status-tiles"></div>
+  <div class="mini-sect-title">Status Tiles</div>
+  <div id="monitorStatusGrid"></div>
   <!-- Sun Arc + Log side-by-side -->
   <div id="monitorVisLogRow" class="vislog-row">
-    <div class="vis-col" data-section="monitor-solar-arc">
+    <div class="vis-col">
   <div class="mini-sect-title">Solar Arc Simulation</div>
   <div id="sunArcWrapper" style="margin-top:2px; margin-bottom:-40px; display:none;">
         <canvas id="sunArcCanvas" width="560" height="320" aria-label="Sun arc visualization" role="img"></canvas>
       </div>
     </div>
-    <div class="log-col" data-section="monitor-log">
+    <div class="log-col">
       <div class="mini-sect-title">Log</div>
       <div id="monitorLog" aria-label="Monitor log" role="log"></div>
       <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
@@ -1106,59 +868,7 @@ select:not(#filename_tag):not(#filename_preview) {
     </div>
   </div>
 </div>
-<button id="tutorialToggleBtn" type="button">🎓 Tutorial</button>
 <button id="helpToggleBtn" type="button" class="secondary">Help</button>
-
-<!-- FTUE Welcome Modal -->
-<div id="ftueWelcomeModal" role="dialog" aria-labelledby="ftueWelcomeTitle" aria-modal="true">
-  <div class="modal-content">
-    <h2 id="ftueWelcomeTitle">Welcome to SolaSim Studio! 🌞</h2>
-    <p class="subtitle">Let's get you started with solar simulation</p>
-    <div class="role-buttons">
-      <button class="role-btn" data-path="researcher">
-        <span class="icon">🔬</span>
-        <div>
-          <div class="title">Quick Start Tutorial (~5 min)</div>
-          <div class="desc">Essential features and workflow for device control</div>
-        </div>
-      </button>
-      <button class="role-btn" data-path="full">
-        <span class="icon">📚</span>
-        <div>
-          <div class="title">Complete Tour (~12 min)</div>
-          <div class="desc">In-depth walkthrough of all features and capabilities</div>
-        </div>
-      </button>
-      <button class="role-btn" data-path="skip">
-        <span class="icon">⚡</span>
-        <div>
-          <div class="title">Skip Tutorial - Start Working</div>
-          <div class="desc">Jump straight to the interface (you can restart the tutorial anytime)</div>
-        </div>
-      </button>
-    </div>
-    <a class="skip-link" id="ftueNeverShow">Don't show this again</a>
-  </div>
-</div>
-
-<!-- FTUE Spotlight System -->
-<div id="ftueSpotlight">
-  <div class="overlay"></div>
-  <div class="spotlight-hole"></div>
-  <div class="tooltip">
-    <h3 id="ftueStepTitle">Step Title</h3>
-    <p id="ftueStepContent">Step content goes here</p>
-    <div class="buttons">
-      <button class="btn-skip" id="ftueSkipBtn">Skip Tutorial</button>
-      <div class="step-indicator" id="ftueStepIndicator">1 / 10</div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-back" id="ftueBackBtn">◄ Back</button>
-        <button class="btn-next" id="ftueNextBtn">Next ►</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <aside id="helpPanel" aria-hidden="true" aria-label="Usage Help">
   <header>
     <h3>Usage & Help</h3>
@@ -1168,37 +878,6 @@ select:not(#filename_tag):not(#filename_preview) {
   </header>
   <div class="help-body" tabindex="-1" id="helpBodyScroll">
     <p>Quick reference for building and managing profiles. Press <code>Esc</code> to close.</p>
-    
-    <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
-      <strong style="color:#0d47a1;">🎓 New to SolaSim Studio?</strong>
-      <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
-        <a href="#" id="helpRestartTutorial" style="color:#2196f3; text-decoration:underline; font-weight:500;">Click here to restart the tutorial</a> and get a guided walkthrough of all features.
-      </p>
-    </div>
-
-    <h4>Interface Controls</h4>
-    <ul>
-      <li><strong>Device Label</strong>: Click the badge at the top center of the page (e.g., "Device 1") to customize the device name. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
-        <div class="help-detail" style="display:none;">
-          <p>When working with multiple devices across different browser tabs, you can give each tab a unique identifier. Click the badge to set a custom name like "Device 1", "Device 2", "Lab A", etc.</p>
-          <p>The device label appears in both the page badge and the browser tab title, making it easy to distinguish between multiple devices. The label is saved per tab (not globally), so each browser tab can have its own device identity.</p>
-          <p><strong>Use Case:</strong> Open multiple tabs, each connected to a different physical device, and label them accordingly to avoid confusion.</p>
-        </div>
-      </li>
-      <li><strong>Background Color</strong>: Click colored swatches (top right) to change the page background color. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
-        <div class="help-detail" style="display:none;">
-          <p>Useful for visually distinguishing between multiple device tabs—assign each device a different color (green, blue, or red) to quickly identify which tab you're working in. Your color preference is saved per browser tab.</p>
-        </div>
-      </li>
-      <li><strong>Simple/Advanced Mode</strong>: Toggle between streamlined and full interface views. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
-        <div class="help-detail" style="display:none;">
-          <p><strong>Simple Mode:</strong> Hides less commonly used sections for a cleaner interface. Ideal for routine operations or when you're already familiar with the system.</p>
-          <p><strong>Advanced Mode:</strong> Shows all available sections and settings. Use this when you need full control or are learning the system.</p>
-          <p><strong>Gear Icon (⚙):</strong> Click to customize which sections are visible in Simple mode. Your preferences are saved automatically.</p>
-          <p><strong>Tip:</strong> Start with Advanced mode to explore all features, then switch to Simple mode once you know which sections you use regularly.</p>
-        </div>
-      </li>
-    </ul>
 
     <h4>Monitor / Interact</h4>
     <ul>
@@ -1207,13 +886,26 @@ select:not(#filename_tag):not(#filename_preview) {
           <p>Examples: SimTime (Sunrise/Noon or HHMM), Speed (−300x to 300x or Hold), Intensity (0.5–3.0). Double-click to toggle Program/Rotation/Dual Sun.</p>
         </div>
       </li>
-      <li><strong>Solar Arc</strong>: Visual sun path showing current time and day/night shading.</li>
+      <li><strong>Solar Arc</strong>: Visual sun path showing current time and day/night shading. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>Click anywhere on the arc to jump the device to that time. Current device time is shown with an indicator line. Double-click the sun icon to toggle between Rotation and Program modes.</p>
+        </div>
+      </li>
       <li><strong>Command Console</strong>: Type commands with autocomplete support. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Press Tab to cycle through autocomplete suggestions. Use Up/Down arrows to navigate your last 10 commands. Press Enter to send a command. Commands are case-sensitive and control device behavior directly.</p>
         </div>
       </li>
-      <li><strong>Show All Commands</strong>: Displays full list of available commands in the log.</li>
+      <li><strong>Show All Commands</strong>: Displays full list of available commands in the log. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>Temporarily disables scroll lock to show output. Common commands: <code>status</code> (device state), <code>start</code> (begin program), <code>stop</code> (halt program), <code>set autoload on/off</code> (control auto-startup behavior).</p>
+        </div>
+      </li>
+      <li><strong>Scroll Lock</strong>: Toggle auto-scroll in the command log. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>When ON (red), the log stays at your current scroll position. When OFF, it auto-scrolls to show the newest messages. Use this to review older output without being pushed down by new messages.</p>
+        </div>
+      </li>
       <li><strong>Device Connection</strong>: Web Serial API connects directly to your device via USB. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Requires a compatible browser (Chrome, Edge, Opera). Click the "Connect" button and select your device from the list. Ensure proper USB driver installation if connection fails. The status shows "Connected" when active and "Disconnected" otherwise.</p>
@@ -1228,6 +920,11 @@ select:not(#filename_tag):not(#filename_preview) {
           <p>Auto-saved when you Download, Upload, Import, or select a profile. Click a grey button to load it into the form, click ★ to pin at top (pinned profiles survive browser data clear), or click ✕ to delete. Pinned profiles are useful for frequently-used configurations.</p>
         </div>
       </li>
+      <li><strong>⚡ Load Current</strong>: Quickly load the profile currently running on the device. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>Enabled when the device reports its loaded profile name. This is a convenience feature to fetch the active profile without browsing the device file list. The profile loads into the form so you can edit and re-upload if needed.</p>
+        </div>
+      </li>
       <li><strong>Load from Device</strong>: Browse and select profiles stored on the device. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Selecting a profile immediately runs it on the device for this session only. To make a profile persistent across power cycles, click "Upload to Device" after loading. The device will auto-load the newest timestamped profile on next startup unless you disable auto-load.</p>
@@ -1238,12 +935,12 @@ select:not(#filename_tag):not(#filename_preview) {
           <p>Creates a new timestamped profile file on the device and immediately runs it. This becomes the "newest" profile for future auto-load on startup. Use this when you've made changes to a profile and want them to persist.</p>
         </div>
       </li>
-      <li><strong>Download Profile</strong>: Save the current form as a .txt file to your computer. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+      <li><strong>Download Profile</strong>: Save the current form as a JSON file to your computer. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
-          <p>Creates a .txt file with all current settings in a format compatible with the device. Useful for backup, sharing, or manual editing. Import the file later to restore settings. Downloaded files are also added to Recent Profiles automatically.</p>
+          <p>Creates a .json file with all current settings. Useful for backup, sharing, or manual editing. Import the file later to restore settings. Downloaded files are also added to Recent Profiles automatically.</p>
         </div>
       </li>
-      <li><strong>Import Profile</strong>: Load a previously saved .txt profile file. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+      <li><strong>Import Profile</strong>: Load a previously saved .json profile file. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Updates the form only—does NOT change device behavior until you click "Upload to Device." Imported profiles are added to Recent Profiles for quick access. This is useful for testing settings before uploading to hardware.</p>
         </div>
@@ -1297,7 +994,7 @@ select:not(#filename_tag):not(#filename_preview) {
     <ul>
       <li><strong>Core Settings</strong>: Essential parameters for sun simulation. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
-          <p><strong>Start Time:</strong> Initial simulated time (HHMM, 24-hour format). <strong>Time Scale:</strong> Speed multiplier for time progression. <strong>Intensity Scale:</strong> Global light multiplier (0.5–3.0). <strong>Simulation Date & Latitude:</strong> Geographic parameters for sun path calculations. <strong>Solar Mode:</strong> BASIC (constant) or SCIENTIFIC (astronomical calculations). <strong>Sun Color Mode:</strong> Color temperature settings (BLUE, NATURAL, or CUSTOM RGB).</p>
+          <p><strong>Time:</strong> Current simulated time (HHMM, 24-hour). <strong>Solar:</strong> Latitude, longitude, and date to calculate sun path. <strong>Intensity:</strong> Light multiplier (0.5–3.0). <strong>Rotation:</strong> Turntable angle and speed.</p>
         </div>
       </li>
       <li><strong>Program Settings</strong>: Enable step-based sequences. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
@@ -1472,28 +1169,6 @@ select:not(#filename_tag):not(#filename_preview) {
   </div>
 </aside>
 
-<!-- Mode Configuration Modal -->
-<div id="modeConfigModal" aria-hidden="true">
-  <div class="modal-content">
-    <header>
-      <h3>Simple Mode Section Visibility</h3>
-      <button id="modeConfigModalClose" type="button" class="secondary" aria-label="Close">&times;</button>
-    </header>
-    <div class="modal-body">
-      <p style="font-size:0.95rem; margin-bottom:16px; color:#666;">
-        Choose which sections are visible in Simple mode. Advanced mode always shows all sections.
-      </p>
-      <div id="sectionConfigList"></div>
-    </div>
-    <div class="modal-footer">
-      <button id="resetDefaultsBtn" type="button" class="secondary">Reset to Defaults</button>
-      <div style="flex:1;"></div>
-      <button id="modeConfigCancelBtn" type="button" class="secondary">Cancel</button>
-      <button id="modeConfigSaveBtn" type="button" class="btn-primary">Save</button>
-    </div>
-  </div>
-</div>
-
 <!-- Load from Device Modal -->
 <div id="loadProfileModal" aria-hidden="true">
   <div class="modal-content">
@@ -1610,9 +1285,9 @@ select:not(#filename_tag):not(#filename_preview) {
  <button type="button" id="printSummaryBtn" class="secondary" title="Generate a printer-friendly PDF summary with timeline visualization and key settings">Print Summary</button>
 </div>
 
-<h2 data-section="program-settings-header">Program Settings</h2>
+<h2>Program Settings</h2>
 
-<div id="diffBanner" data-section="program-settings-header">
+<div id="diffBanner">
   <span class="diff-count">Form differs from device</span>
   <button type="button" id="diffShowDetailsBtn">Show First Difference</button>
   <button type="button" id="diffRevertBtn">Revert to Device</button>
@@ -1636,7 +1311,7 @@ select:not(#filename_tag):not(#filename_preview) {
  </div>
  <div style="margin: 8px 0; padding: 6px 10px; background: #f0f0f0; border-left: 3px solid #3478f6; border-radius: 3px;">
   <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
-   <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
+   <input type="checkbox" id="singleDayVisualization" style="cursor: pointer; width: 16px; height: 16px;">
    <span>Visualize all steps on a single day</span>
   </label>
  </div>
@@ -1662,15 +1337,15 @@ select:not(#filename_tag):not(#filename_preview) {
  </div>
 </div>
 
-<h2 data-section="export-section">Download, Import & Upload</h2>
-<div class="toolbar" id="bottomExportBar" data-section="export-section">
+<h2>Download, Import & Upload</h2>
+<div class="toolbar" id="bottomExportBar">
  <button id="downloadBtn" type="button">Download Profile</button>
  <button id="importBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;" title="Import a profile .txt file from your computer">Import Profile</button>
  <input id="importFileInput" type="file" accept=".txt" style="display:none;" />
  <button id="uploadBtn" type="button" class="upload-green" title="Upload directly to the connected MicroPython board via Web Serial (raw REPL)">Upload to Device</button>
  <button id="textSyncToggleBtn" type="button" class="secondary" title="Toggle sync direction: Form updates text (default) or load text into form">Form to Text ▼</button>
 </div>
-<div style="position:relative; width:100%;" data-section="profile-text-window">
+<div style="position:relative; width:100%;">
   <div id="exportPreviewTopResizeGrip" title="Drag to resize profile text"></div>
   <div id="exportPreviewTopMask" style="position:absolute; left:0; top:0; width:100%; height:15px; background:#1e272e; z-index:101; border-radius:6px 6px 0 0;"></div>
   <textarea id="exportPreview" spellcheck="false" style="display:block; width:100%; position:relative; z-index:100;"></textarea>
@@ -1989,10 +1664,6 @@ function buildForm(){
   container.innerHTML='';
   FIELD_GROUPS.forEach(group=>{
     const fs = document.createElement('fieldset');
-    // Add data-section attribute for visibility control
-    const sectionKey = group.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
-    fs.setAttribute('data-section', sectionKey);
-    
     const legend = document.createElement('legend'); 
     
     // Check if this is a collapsible section
@@ -2058,7 +1729,6 @@ function buildForm(){
   });
   // Append program enabled field separately below groups for clarity
   const programFs = document.createElement('fieldset');
-  programFs.setAttribute('data-section', 'program-control');
   const legend = document.createElement('legend'); legend.textContent='Program Control'; programFs.appendChild(legend);
   const grid = document.createElement('div');
   // Use 5-column grid layout for Program Control
@@ -14104,820 +13774,6 @@ function clearHoldState(){
     this.style.paddingTop = '4px';
     this.style.background = 'rgba(0,0,0,0.6)';
   });
-})();
-
-// ============================================================================
-// SIMPLE/ADVANCED MODE SYSTEM
-// ============================================================================
-
-(function() {
-  'use strict';
-  
-  // Section definitions with human-readable names
-  // Advanced mode always shows all sections, so we only configure Simple mode defaults
-  const SECTIONS = [
-    { id: 'monitor-status-tiles', name: 'Monitor: Status Tiles', defaultSimple: true },
-    { id: 'monitor-solar-arc', name: 'Monitor: Solar Arc', defaultSimple: true },
-    { id: 'monitor-log', name: 'Monitor: Log Window', defaultSimple: true },
-    { id: 'program-settings-header', name: 'Program Settings', defaultSimple: false },
-    { id: 'time-and-date', name: 'Time & Date Settings', defaultSimple: true },
-    { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false },
-    { id: 'imaging-illumination', name: 'Imaging Illumination', defaultSimple: false },
-    { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true },
-    { id: 'rotation-and-imaging', name: 'Rotation & Imaging', defaultSimple: false },
-    { id: 'program-control', name: 'Program Control', defaultSimple: true },
-    { id: 'export-section', name: 'Download, Import & Upload', defaultSimple: false },
-    { id: 'profile-text-window', name: 'Profile Text Window', defaultSimple: false }
-  ];
-  
-  // Load configuration from localStorage
-  function loadConfig() {
-    const stored = localStorage.getItem('modeConfig');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        // Migrate old format if needed (had both simple and advanced)
-        if (parsed.simple) {
-          return { simple: parsed.simple };
-        }
-        return parsed;
-      } catch(e) {
-        console.warn('[Mode] Failed to parse stored config:', e);
-      }
-    }
-    // Return default configuration (only Simple mode needs config)
-    const config = { simple: {} };
-    SECTIONS.forEach(section => {
-      config.simple[section.id] = section.defaultSimple;
-    });
-    return config;
-  }
-  
-  // Save configuration to localStorage
-  function saveConfig(config) {
-    try {
-      localStorage.setItem('modeConfig', JSON.stringify(config));
-    } catch(e) {
-      console.error('[Mode] Failed to save config:', e);
-    }
-  }
-  
-  // Get current mode from localStorage (default: 'advanced')
-  function getCurrentMode() {
-    return localStorage.getItem('currentMode') || 'advanced';
-  }
-  
-  // Set current mode in localStorage
-  function setCurrentMode(mode) {
-    localStorage.setItem('currentMode', mode);
-  }
-  
-  // Apply visibility based on current mode and configuration
-  function applyVisibility() {
-    const mode = getCurrentMode();
-    const config = loadConfig();
-    
-    // Update button states
-    const simpleModeBtn = document.getElementById('simpleModeBtn');
-    const advancedModeBtn = document.getElementById('advancedModeBtn');
-    
-    if (simpleModeBtn && advancedModeBtn) {
-      if (mode === 'simple') {
-        simpleModeBtn.classList.add('active', 'simple-mode');
-        advancedModeBtn.classList.remove('active');
-      } else {
-        simpleModeBtn.classList.remove('active', 'simple-mode');
-        advancedModeBtn.classList.add('active');
-      }
-    }
-    
-    // Apply visibility to all sections
-    SECTIONS.forEach(section => {
-      let visible;
-      if (mode === 'advanced') {
-        // Advanced mode always shows everything
-        visible = true;
-      } else {
-        // Simple mode uses configuration
-        visible = config.simple[section.id];
-      }
-      
-      const elements = document.querySelectorAll(`[data-section="${section.id}"]`);
-      elements.forEach(el => {
-        if (visible) {
-          el.classList.remove('mode-hidden');
-        } else {
-          el.classList.add('mode-hidden');
-        }
-      });
-    });
-    
-    // Special handling: Monitor/Interact toggle controls all monitor sub-sections globally
-    // If monitor panel is closed, hide all monitor sub-sections regardless of individual settings
-    const monitorPanel = document.getElementById('monitorPanel');
-    const isMonitorOpen = monitorPanel && !monitorPanel.getAttribute('aria-hidden') || 
-                          (monitorPanel && monitorPanel.style.display !== 'none');
-    
-    if (!isMonitorOpen) {
-      const monitorSections = ['monitor-status-tiles', 'monitor-solar-arc', 'monitor-log'];
-      monitorSections.forEach(sectionId => {
-        const elements = document.querySelectorAll(`[data-section="${sectionId}"]`);
-        elements.forEach(el => {
-          // Store original visibility state
-          if (!el.dataset.originalVisibility) {
-            el.dataset.originalVisibility = el.classList.contains('mode-hidden') ? 'hidden' : 'visible';
-          }
-        });
-      });
-    }
-  }
-  
-  // Toggle between Simple and Advanced modes
-  function toggleMode() {
-    const currentMode = getCurrentMode();
-    const newMode = currentMode === 'simple' ? 'advanced' : 'simple';
-    setCurrentMode(newMode);
-    applyVisibility();
-  }
-  
-  // Build section configuration UI in modal
-  function buildConfigUI() {
-    const container = document.getElementById('sectionConfigList');
-    if (!container) return;
-    
-    // Add column headers with sticky positioning
-    container.innerHTML = '<div style="display:grid; grid-template-columns: 3fr 1fr; gap: 12px; padding: 10px 12px; background: #e9ecef; border-radius: 6px; margin-bottom: 12px; font-weight: 600; font-size: 1.05rem; position: sticky; top: 0; z-index: 10;"><div>Section</div><div style="text-align: center; white-space: nowrap;">Show in Simple Mode</div></div>';
-    const config = loadConfig();
-    
-    SECTIONS.forEach(section => {
-      const item = document.createElement('div');
-      item.className = 'section-item';
-      
-      const header = document.createElement('div');
-      header.className = 'section-header';
-      header.textContent = section.name;
-      item.appendChild(header);
-      
-      // Simple mode checkbox (column 2)
-      const simpleGroup = document.createElement('div');
-      simpleGroup.className = 'check-group';
-      const simpleCheckbox = document.createElement('input');
-      simpleCheckbox.type = 'checkbox';
-      simpleCheckbox.id = `config-simple-${section.id}`;
-      simpleCheckbox.checked = config.simple[section.id];
-      simpleCheckbox.dataset.section = section.id;
-      simpleGroup.appendChild(simpleCheckbox);
-      item.appendChild(simpleGroup);
-      
-      container.appendChild(item);
-    });
-  }
-  
-  // Save configuration from modal UI
-  function saveConfigFromUI() {
-    const config = { simple: {} };
-    
-    const checkboxes = document.querySelectorAll('#sectionConfigList input[type="checkbox"]');
-    checkboxes.forEach(checkbox => {
-      const section = checkbox.dataset.section;
-      config.simple[section] = checkbox.checked;
-    });
-    
-    saveConfig(config);
-    applyVisibility();
-  }
-  
-  // Reset to default configuration
-  function resetToDefaults() {
-    const config = { simple: {} };
-    SECTIONS.forEach(section => {
-      config.simple[section.id] = section.defaultSimple;
-    });
-    saveConfig(config);
-    buildConfigUI();
-    applyVisibility();
-  }
-  
-  // Initialize mode system
-  function init() {
-    // Apply initial visibility
-    applyVisibility();
-    
-    // Mode toggle buttons
-    const simpleModeBtn = document.getElementById('simpleModeBtn');
-    const advancedModeBtn = document.getElementById('advancedModeBtn');
-    
-    if (simpleModeBtn) {
-      simpleModeBtn.addEventListener('click', () => {
-        if (getCurrentMode() !== 'simple') {
-          setCurrentMode('simple');
-          applyVisibility();
-        }
-      });
-    }
-    
-    if (advancedModeBtn) {
-      advancedModeBtn.addEventListener('click', () => {
-        if (getCurrentMode() !== 'advanced') {
-          setCurrentMode('advanced');
-          applyVisibility();
-        }
-      });
-    }
-    
-    // Configuration button
-    const modeConfigBtn = document.getElementById('modeConfigBtn');
-    const modeConfigModal = document.getElementById('modeConfigModal');
-    if (modeConfigBtn && modeConfigModal) {
-      modeConfigBtn.addEventListener('click', () => {
-        buildConfigUI();
-        modeConfigModal.classList.add('open');
-        modeConfigModal.setAttribute('aria-hidden', 'false');
-      });
-    }
-    
-    // Modal close button
-    const closeBtn = document.getElementById('modeConfigModalClose');
-    if (closeBtn && modeConfigModal) {
-      closeBtn.addEventListener('click', () => {
-        modeConfigModal.classList.remove('open');
-        modeConfigModal.setAttribute('aria-hidden', 'true');
-      });
-    }
-    
-    // Cancel button
-    const cancelBtn = document.getElementById('modeConfigCancelBtn');
-    if (cancelBtn && modeConfigModal) {
-      cancelBtn.addEventListener('click', () => {
-        modeConfigModal.classList.remove('open');
-        modeConfigModal.setAttribute('aria-hidden', 'true');
-      });
-    }
-    
-    // Save button
-    const saveBtn = document.getElementById('modeConfigSaveBtn');
-    if (saveBtn && modeConfigModal) {
-      saveBtn.addEventListener('click', () => {
-        saveConfigFromUI();
-        modeConfigModal.classList.remove('open');
-        modeConfigModal.setAttribute('aria-hidden', 'true');
-      });
-    }
-    
-    // Reset defaults button
-    const resetBtn = document.getElementById('resetDefaultsBtn');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        if (confirm('Reset all visibility settings to defaults?')) {
-          resetToDefaults();
-        }
-      });
-    }
-    
-    // Close modal on outside click
-    if (modeConfigModal) {
-      modeConfigModal.addEventListener('click', (e) => {
-        if (e.target === modeConfigModal) {
-          modeConfigModal.classList.remove('open');
-          modeConfigModal.setAttribute('aria-hidden', 'true');
-        }
-      });
-    }
-    
-    console.log('[Mode] System initialized. Current mode:', getCurrentMode());
-  }
-  
-  // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-  
-  // Re-apply visibility after form is built (since fieldsets are dynamically created)
-  const originalBuildForm = window.buildForm;
-  if (originalBuildForm) {
-    window.buildForm = function() {
-      originalBuildForm.apply(this, arguments);
-      // Small delay to ensure DOM is updated
-      setTimeout(() => applyVisibility(), 50);
-    };
-  }
-  
-})();
-
-// ============================================================================
-// FTUE (FIRST TIME USER EXPERIENCE) SYSTEM
-// ============================================================================
-
-(function(){
-  'use strict';
-  
-  const FTUE_STORAGE_KEY = 'solasim_ftue_complete';
-  const FTUE_PROGRESS_KEY = 'solasim_ftue_progress';
-  const FTUE_NEVER_SHOW_KEY = 'solasim_ftue_never_show';
-  
-  // Tutorial step definitions
-  const QUICK_START_STEPS = [
-    {
-      target: '#deviceIdentityBadge',
-      title: 'Device Identity',
-      content: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
-      position: 'bottom'
-    },
-    {
-      target: '#monitorConnectBtn',
-      title: 'Connect Your Device',
-      content: 'Click "Connect" to establish a serial connection with your device via USB. If you don\'t have a device, you can continue in demo mode.',
-      position: 'bottom',
-      allowInteraction: true
-    },
-    {
-      target: '#recentProfiles',
-      title: 'Recent Profiles',
-      content: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
-      position: 'top',
-      offsetY: 7,  // Move top down by 15px total from original -8
-      heightAdjust: -15,  // Reduce height by 15px to keep bottom edge in place
-      adjustTarget: (el) => {
-        // Target parent container to include both title and profiles
-        return el.parentElement;
-      }
-    },
-    {
-      target: 'fieldset[data-section="time-and-date"]',
-      title: 'Key Settings',
-      content: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
-      position: 'bottom'
-    },
-    {
-      target: 'fieldset[data-section="program-control"]',
-      title: 'Program Steps',
-      content: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
-      position: 'right',
-      offsetY: -25  // Move up from default -3 positioning
-    },
-    {
-      target: '[data-export-ref="uploadBtn"]',
-      title: 'Upload to Device',
-      content: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
-      position: 'bottom',
-      highlight: true
-    },
-    {
-      target: '#toggleMonitorBtn',
-      title: 'Monitor Panel',
-      content: 'Click here to show/hide the device monitor. You can see live status, send commands, and interact with tiles.',
-      position: 'bottom'
-    }
-  ];
-  
-  const FULL_TOUR_STEPS = [
-    ...QUICK_START_STEPS,
-    {
-      target: '#simpleModeBtn',
-      title: 'Simple vs Advanced Mode',
-      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
-      position: 'bottom'
-    },
-    {
-      target: '#programSection',
-      title: 'Program Step Timeline',
-      content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
-      position: 'top'
-    },
-    {
-      target: '[data-export-ref="downloadBtn"]',
-      title: 'Download Profile',
-      content: 'Save your current settings as a .txt file to your computer. Great for backup, sharing, or manual editing.',
-      position: 'bottom'
-    },
-    {
-      target: '[data-export-ref="importBtn"]',
-      title: 'Import Profile',
-      content: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
-      position: 'bottom'
-    },
-    {
-      target: '#loadFromDeviceBtn',
-      title: 'Load from Device',
-      content: 'Browse and select profiles stored on the device. Selected profiles run immediately but are temporary (until device restart).',
-      position: 'top'
-    },
-    {
-      target: '#diffBanner',
-      title: 'Profile Diff Viewer',
-      content: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
-      position: 'bottom'
-    },
-    {
-      target: '#helpToggleBtn',
-      title: 'Help Panel',
-      content: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
-      position: 'left'
-    }
-  ];
-  
-  let currentSteps = [];
-  let currentStepIndex = 0;
-  let tutorialActive = false;
-  let deviceConnected = false;
-  let isPositioning = false; // Prevent positioning race conditions
-  
-  // DOM elements
-  const welcomeModal = document.getElementById('ftueWelcomeModal');
-  const spotlight = document.getElementById('ftueSpotlight');
-  const spotlightHole = spotlight.querySelector('.spotlight-hole');
-  const tooltip = spotlight.querySelector('.tooltip');
-  const stepTitle = document.getElementById('ftueStepTitle');
-  const stepContent = document.getElementById('ftueStepContent');
-  const stepIndicator = document.getElementById('ftueStepIndicator');
-  const skipBtn = document.getElementById('ftueSkipBtn');
-  const backBtn = document.getElementById('ftueBackBtn');
-  const nextBtn = document.getElementById('ftueNextBtn');
-  const tutorialBtn = document.getElementById('tutorialToggleBtn');
-  const helpRestartLink = document.getElementById('helpRestartTutorial');
-  
-  // Initialize FTUE on page load
-  function initFTUE() {
-    const ftueComplete = localStorage.getItem(FTUE_STORAGE_KEY);
-    const neverShow = localStorage.getItem(FTUE_NEVER_SHOW_KEY);
-    
-    // Show welcome modal if first time and not opted out
-    if (!ftueComplete && !neverShow) {
-      setTimeout(() => showWelcomeModal(), 500);
-    }
-    
-    // Check for saved progress
-    const savedProgress = localStorage.getItem(FTUE_PROGRESS_KEY);
-    if (savedProgress) {
-      const { path, step } = JSON.parse(savedProgress);
-      // Could offer to resume here if desired
-    }
-  }
-  
-  // Show welcome modal
-  function showWelcomeModal() {
-    welcomeModal.classList.add('open');
-  }
-  
-  // Hide welcome modal
-  function hideWelcomeModal() {
-    welcomeModal.classList.remove('open');
-  }
-  
-  // Start tutorial with selected path
-  function startTutorial(path) {
-    hideWelcomeModal();
-    
-    if (path === 'skip') {
-      localStorage.setItem(FTUE_STORAGE_KEY, 'true');
-      return;
-    }
-    
-    currentSteps = path === 'full' ? FULL_TOUR_STEPS : QUICK_START_STEPS;
-    currentStepIndex = 0;
-    tutorialActive = true;
-    
-    // Check device connection
-    deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
-    
-    showStep(0);
-  }
-  
-  // Show specific tutorial step
-  function showStep(index) {
-    if (index < 0 || index >= currentSteps.length) return;
-    
-    currentStepIndex = index;
-    const step = currentSteps[index];
-    
-    // Save progress
-    localStorage.setItem(FTUE_PROGRESS_KEY, JSON.stringify({
-      path: currentSteps === FULL_TOUR_STEPS ? 'full' : 'quick',
-      step: index
-    }));
-    
-    // Update step content
-    stepTitle.textContent = step.title;
-    stepContent.innerHTML = step.content;
-    stepIndicator.textContent = `${index + 1} / ${currentSteps.length}`;
-    
-    // Update buttons
-    backBtn.disabled = index === 0;
-    if (index === currentSteps.length - 1) {
-      nextBtn.textContent = 'Finish ✓';
-      nextBtn.className = 'btn-finish';
-    } else {
-      nextBtn.textContent = 'Next ►';
-      nextBtn.className = 'btn-next';
-    }
-    
-    // Position spotlight and tooltip
-    let targetEl = document.querySelector(step.target);
-    if (targetEl) {
-      // Apply target adjustment if specified (e.g., to target wrapper instead of input)
-      if (step.adjustTarget && typeof step.adjustTarget === 'function') {
-        targetEl = step.adjustTarget(targetEl) || targetEl;
-      }
-      
-      // Check if element is actually visible (not hidden with display:none or visibility:hidden)
-      const style = window.getComputedStyle(targetEl);
-      const isVisible = style.display !== 'none' && 
-                       style.visibility !== 'hidden' && 
-                       targetEl.offsetParent !== null;
-      
-      if (!isVisible) {
-        // Element exists but is hidden - skip to next step
-        console.warn('FTUE: Target is hidden:', step.target);
-        nextStep();
-        return;
-      }
-      
-      // Enable smooth transitions
-      spotlightHole.classList.remove('no-transition');
-      tooltip.classList.remove('no-transition');
-      
-      // Show spotlight
-      spotlight.classList.add('active');
-      
-      // Block scroll interference during transition
-      isTransitioning = true;
-      setTimeout(() => { isTransitioning = false; }, 700);
-      
-      // Position spotlight on target
-      positionSpotlight(targetEl, step.position, step);
-    } else {
-      // Target not found - might need to enable a section or scroll
-      console.warn('FTUE: Target not found:', step.target);
-      nextStep(); // Skip to next
-    }
-  }
-  
-  // Position spotlight on target element
-  function positionSpotlight(targetEl, position = 'bottom', stepConfig = {}) {
-    if (isPositioning) return;
-    isPositioning = true;
-    
-    // Get target position
-    const rect = targetEl.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const needsScroll = rect.top < 100 || rect.bottom > viewportHeight - 100;
-    
-    if (needsScroll) {
-      // Calculate scroll distance to estimate completion time
-      const scrollDistance = Math.abs(rect.top - viewportHeight / 2);
-      const scrollDuration = Math.min(800, Math.max(400, scrollDistance * 0.8));
-      
-      // Scroll target into view, then position
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => {
-        positionSpotlightImmediate(targetEl, position, stepConfig);
-        isPositioning = false;
-      }, scrollDuration);
-    } else {
-      // Target is already visible, position immediately
-      positionSpotlightImmediate(targetEl, position, stepConfig);
-      isPositioning = false;
-    }
-  }
-  
-  // Immediately position spotlight without scrolling
-  function positionSpotlightImmediate(targetEl, position = 'bottom', stepConfig = {}) {
-    const rect = targetEl.getBoundingClientRect();
-    const padding = 12;
-    const paddingY = stepConfig.paddingY !== undefined ? stepConfig.paddingY : padding;
-    const offsetY = stepConfig.offsetY !== undefined ? stepConfig.offsetY : -3; // Default -3 for original positioning
-    const heightAdjust = stepConfig.heightAdjust !== undefined ? stepConfig.heightAdjust : 0;
-    
-    // Check if target is in viewport
-    const viewportHeight = window.innerHeight;
-    const isInView = rect.bottom > 0 && rect.top < viewportHeight;
-    
-    // Calculate target position with custom vertical padding and offset
-    const holeLeft = rect.left - padding - 2; // Shift all highlights 2px left
-    const holeTop = rect.top - paddingY + offsetY; // offsetY can be negative to shift up
-    const holeWidth = rect.width + (padding * 2);
-    const holeHeight = rect.height + (paddingY * 2) + heightAdjust;
-    
-    // Force browser to acknowledge current position before transition
-    // This ensures animation always plays
-    if (!spotlightHole.classList.contains('no-transition')) {
-      window.getComputedStyle(spotlightHole).left;
-    }
-    
-    // Position spotlight hole - Use floor for position and ceil for dimensions to avoid gaps
-    spotlightHole.style.left = Math.floor(holeLeft) + 'px';
-    spotlightHole.style.top = Math.floor(holeTop) + 'px';
-    spotlightHole.style.width = Math.ceil(holeWidth) + 'px';
-    spotlightHole.style.height = Math.ceil(holeHeight) + 'px';
-    
-    // Only reposition tooltip if target is visible (prevent unwanted movement)
-    if (!isInView) {
-      return;
-    }
-    
-    // Position tooltip intelligently to avoid blocking target
-    tooltip.style.position = 'fixed';
-    const tooltipRect = tooltip.getBoundingClientRect();
-    const tooltipWidth = tooltipRect.width;
-    const tooltipHeight = tooltipRect.height;
-    const viewportWidth = window.innerWidth;
-    const margin = 20;
-    
-    // Try positions in order of preference, checking for overlaps
-    const positions = [
-      position, // Try requested position first
-      position === 'bottom' ? 'top' : 'bottom', // Try opposite vertical
-      position === 'left' ? 'right' : 'left', // Try opposite horizontal
-      'right', 'left', 'top', 'bottom' // Try all others
-    ];
-    
-    let finalLeft, finalTop;
-    let bestPosition = null;
-    
-    for (const pos of positions) {
-      let testLeft, testTop;
-      
-      switch (pos) {
-        case 'bottom':
-          testLeft = Math.max(margin, Math.min(rect.left, viewportWidth - tooltipWidth - margin));
-          testTop = rect.bottom + padding + 16;
-          break;
-        case 'top':
-          testLeft = Math.max(margin, Math.min(rect.left, viewportWidth - tooltipWidth - margin));
-          testTop = rect.top - padding - tooltipHeight - 16;
-          break;
-        case 'left':
-          testLeft = rect.left - tooltipWidth - padding - 16;
-          testTop = Math.max(margin, Math.min(rect.top, viewportHeight - tooltipHeight - margin));
-          break;
-        case 'right':
-          testLeft = rect.right + padding + 16;
-          testTop = Math.max(margin, Math.min(rect.top, viewportHeight - tooltipHeight - margin));
-          break;
-      }
-      
-      // Check if tooltip would be in viewport
-      const inViewport = testLeft >= margin && 
-                        testLeft + tooltipWidth <= viewportWidth - margin &&
-                        testTop >= margin && 
-                        testTop + tooltipHeight <= viewportHeight - margin;
-      
-      // Check if tooltip would overlap target (with extra margin)
-      const tooltipBounds = {
-        left: testLeft,
-        right: testLeft + tooltipWidth,
-        top: testTop,
-        bottom: testTop + tooltipHeight
-      };
-      
-      const targetBounds = {
-        left: rect.left - padding - 30,
-        right: rect.right + padding + 30,
-        top: rect.top - padding - 30,
-        bottom: rect.bottom + padding + 30
-      };
-      
-      const overlaps = !(tooltipBounds.right < targetBounds.left ||
-                        tooltipBounds.left > targetBounds.right ||
-                        tooltipBounds.bottom < targetBounds.top ||
-                        tooltipBounds.top > targetBounds.bottom);
-      
-      if (inViewport && !overlaps) {
-        finalLeft = testLeft;
-        finalTop = testTop;
-        bestPosition = pos;
-        break;
-      } else if (inViewport && !bestPosition) {
-        // Use as fallback if no perfect position found
-        finalLeft = testLeft;
-        finalTop = testTop;
-        bestPosition = pos;
-      }
-    }
-    
-    // Apply final position
-    tooltip.style.left = finalLeft + 'px';
-    tooltip.style.top = finalTop + 'px';
-    
-    // Show tooltip now that it's in the correct position
-    tooltip.classList.add('positioned');
-  }
-  
-  // Navigate to next step
-  function nextStep() {
-    if (currentStepIndex >= currentSteps.length - 1) {
-      finishTutorial();
-    } else {
-      showStep(currentStepIndex + 1);
-    }
-  }
-  
-  // Navigate to previous step
-  function prevStep() {
-    if (currentStepIndex > 0) {
-      showStep(currentStepIndex - 1);
-    }
-  }
-  
-  // Skip tutorial
-  function skipTutorial() {
-    finishTutorial();
-  }
-  
-  // Finish tutorial
-  function finishTutorial() {
-    spotlight.classList.remove('active');
-    tutorialActive = false;
-    localStorage.setItem(FTUE_STORAGE_KEY, 'true');
-    localStorage.removeItem(FTUE_PROGRESS_KEY);
-  }
-  
-  // Restart tutorial (from help panel or tutorial button)
-  function restartTutorial() {
-    localStorage.removeItem(FTUE_STORAGE_KEY);
-    localStorage.removeItem(FTUE_PROGRESS_KEY);
-    showWelcomeModal();
-  }
-  
-  // Event listeners
-  document.querySelectorAll('#ftueWelcomeModal .role-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const path = btn.dataset.path;
-      startTutorial(path);
-    });
-  });
-  
-  document.getElementById('ftueNeverShow').addEventListener('click', () => {
-    localStorage.setItem(FTUE_NEVER_SHOW_KEY, 'true');
-    localStorage.setItem(FTUE_STORAGE_KEY, 'true');
-    hideWelcomeModal();
-  });
-  
-  skipBtn.addEventListener('click', skipTutorial);
-  backBtn.addEventListener('click', prevStep);
-  nextBtn.addEventListener('click', nextStep);
-  tutorialBtn.addEventListener('click', restartTutorial);
-  helpRestartLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('helpPanel').classList.remove('open');
-    restartTutorial();
-  });
-  
-  // Handle window resize
-  window.addEventListener('resize', () => {
-    if (tutorialActive && currentSteps[currentStepIndex]) {
-      let targetEl = document.querySelector(currentSteps[currentStepIndex].target);
-      if (targetEl) {
-        const step = currentSteps[currentStepIndex];
-        if (step.adjustTarget && typeof step.adjustTarget === 'function') {
-          targetEl = step.adjustTarget(targetEl) || targetEl;
-        }
-        isPositioning = false;
-        positionSpotlightImmediate(targetEl, step.position, step);
-      }
-    }
-  });
-  
-  // Handle page scroll - keep spotlight locked to target position
-  let scrollTimeout;
-  let isTransitioning = false; // Flag to prevent scroll handler during step changes
-  window.addEventListener('scroll', () => {
-    if (tutorialActive && currentSteps[currentStepIndex] && !isTransitioning) {
-      let targetEl = document.querySelector(currentSteps[currentStepIndex].target);
-      if (!targetEl) return;
-      
-      const step = currentSteps[currentStepIndex];
-      if (step.adjustTarget && typeof step.adjustTarget === 'function') {
-        targetEl = step.adjustTarget(targetEl) || targetEl;
-      }
-      
-      // Always reposition to match target, even if off-screen (allows natural scroll off)
-      // Disable transitions for instant tracking during scroll
-      spotlightHole.classList.add('no-transition');
-      tooltip.classList.add('no-transition');
-      
-      // Update position immediately
-      isPositioning = false;
-      positionSpotlightImmediate(targetEl, step.position, step);
-      
-      // Reset scroll timeout (but don't re-enable transitions to prevent flash)
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        // Scroll has stopped - keep no-transition to prevent flash
-        // Transitions only re-enabled during step navigation
-      }, 100);
-    }
-  }, { passive: true });
-  
-  // Initialize on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initFTUE);
-  } else {
-    initFTUE();
-  }
-  
 })();
 </script>
 </body>

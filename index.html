@@ -280,7 +280,12 @@ https://github.com/odeepllama/SolarSim/tree/main
 /* ============================================================================
    HELP PANEL
    ============================================================================ */
-#helpToggleBtn { position:fixed; bottom:14px; right:14px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; }
+/* Tutorial and Help buttons in top-right corner */
+#tutorialToggleBtn, #helpToggleBtn { position:fixed; top:28px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
+#tutorialToggleBtn { right:30px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
+#helpToggleBtn { right:136px; padding:8px 12px; }
+#tutorialToggleBtn:hover:not(:disabled), #tutorialToggleBtn:focus-visible { background:#4a8cf8 !important; border-color:#2560c7; outline:none; color:#fff !important; }
+#tutorialToggleBtn:active:not(:disabled) { background:#2867d9 !important; border-color:#1f4fa8; color:#fff !important; }
 #helpToggleBtn:hover:not(:disabled), #helpToggleBtn:focus-visible { background:#ffcc00; border-color:#a67d00; outline:none; }
 #helpToggleBtn:active:not(:disabled) { background:#e6b800; border-color:#8f6a00; }
  #helpPanel { position:fixed; top:0; right:0; width:380px; max-width:90%; height:100%; background:#ffffff; box-shadow:-4px 0 12px rgba(0,0,0,0.18); transform:translateX(100%); transition:transform .28s ease; z-index:999; display:flex; flex-direction:column; }
@@ -299,7 +304,8 @@ https://github.com/odeepllama/SolarSim/tree/main
  .help-detail { margin-top:8px; padding:8px 12px; background:#f5f7fa; border-left:3px solid #0066cc; border-radius:3px; }
 @media (max-width:680px){
   #helpPanel{ width:100%; }
-  #helpToggleBtn{ left:50%; right:auto; transform:translateX(-50%); bottom:10px; }
+  #tutorialToggleBtn{ top:auto; bottom:60px; right:10px; left:auto; transform:none; }
+  #helpToggleBtn{ top:auto; bottom:10px; right:10px; left:auto; transform:none; }
   /* Fix widths on mobile to match form fields */
   #exportPreview{ box-sizing:border-box; max-width:100%; }
   .vislog-row .log-col, .vislog-row .vis-col{ max-width:100%; box-sizing:border-box; }
@@ -311,6 +317,49 @@ https://github.com/odeepllama/SolarSim/tree/main
   .program-steps-table th:last-child,
   .program-steps-table td:last-child { min-width:140px; white-space:nowrap; }
 }
+
+/* ============================================================================
+   FTUE (First Time User Experience) STYLES
+   ============================================================================ */
+/* Welcome Modal */
+#ftueWelcomeModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+#ftueWelcomeModal.open { display:flex; }
+#ftueWelcomeModal .modal-content { background:#ffffff; border-radius:12px; max-width:580px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.4); padding:32px; text-align:center; }
+#ftueWelcomeModal h2 { font-size:2rem; margin:0 0 12px; color:#1f2933; }
+#ftueWelcomeModal .subtitle { font-size:1.1rem; color:#666; margin:0 0 32px; line-height:1.5; }
+#ftueWelcomeModal .role-buttons { display:flex; flex-direction:column; gap:16px; margin-bottom:24px; }
+#ftueWelcomeModal .role-btn { padding:20px 24px; border:2px solid #ddd; border-radius:8px; background:#f8f9fa; cursor:pointer; transition:all 0.2s; text-align:left; font-size:1rem; display:flex; align-items:center; gap:16px; }
+#ftueWelcomeModal .role-btn:hover { border-color:#3478f6; background:#eef4ff; transform:translateY(-2px); box-shadow:0 4px 12px rgba(52,120,246,0.2); }
+#ftueWelcomeModal .role-btn .icon { font-size:3.6rem; flex-shrink:0; }
+#ftueWelcomeModal .role-btn .title { font-weight:600; font-size:1.1rem; color:#1f2933; }
+#ftueWelcomeModal .role-btn .desc { font-size:0.9rem; color:#666; margin-top:4px; }
+#ftueWelcomeModal .skip-link { font-size:0.9rem; color:#666; cursor:pointer; text-decoration:underline; }
+#ftueWelcomeModal .skip-link:hover { color:#3478f6; }
+
+/* Spotlight Overlay System */
+#ftueSpotlight { display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; }
+#ftueSpotlight.active { display:block; pointer-events:auto; }
+#ftueSpotlight .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.25); transition:opacity 0.6s ease; }
+#ftueSpotlight .spotlight-hole { position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,0.25), 0 0 40px 8px rgba(255,215,0,0.9), 0 0 80px 16px rgba(255,215,0,0.5); border-radius:8px; transition:all 0.6s ease; pointer-events:none; z-index:10001; border:3px solid rgba(255,215,0,1); }
+#ftueSpotlight .spotlight-hole.no-transition { transition:none; }
+#ftueSpotlight .tooltip { position:absolute; background:#ffffff; border-radius:12px; padding:24px; max-width:420px; box-shadow:0 8px 32px rgba(0,0,0,0.3); z-index:10002; animation:tooltipFadeIn 0.4s ease; opacity:0; visibility:hidden; }
+#ftueSpotlight .tooltip.no-transition { transition:none; animation:none; }
+#ftueSpotlight .tooltip.positioned { opacity:1; visibility:visible; }
+#ftueSpotlight .tooltip.positioned { opacity:1; }
+@keyframes tooltipFadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+#ftueSpotlight .tooltip h3 { margin:0 0 12px; font-size:1.3rem; color:#1f2933; }
+#ftueSpotlight .tooltip p { margin:0 0 16px; line-height:1.6; color:#4a5568; font-size:0.95rem; }
+#ftueSpotlight .tooltip .buttons { display:flex; gap:12px; justify-content:space-between; align-items:center; }
+#ftueSpotlight .tooltip .step-indicator { font-size:0.85rem; color:#666; font-weight:500; }
+#ftueSpotlight .tooltip button { padding:10px 20px; border-radius:6px; font-size:0.95rem; font-weight:600; cursor:pointer; border:none; transition:all 0.2s; }
+#ftueSpotlight .tooltip .btn-skip { background:#e0e0e0; color:#333; }
+#ftueSpotlight .tooltip .btn-skip:hover { background:#d0d0d0; }
+#ftueSpotlight .tooltip .btn-back { background:#6c757d; color:#fff; }
+#ftueSpotlight .tooltip .btn-back:hover { background:#5a6268; }
+#ftueSpotlight .tooltip .btn-next { background:#3478f6; color:#fff; }
+#ftueSpotlight .tooltip .btn-next:hover { background:#2867d9; }
+#ftueSpotlight .tooltip .btn-finish { background:#28a745; color:#fff; }
+#ftueSpotlight .tooltip .btn-finish:hover { background:#218838; }
 
 /* ============================================================================
    MODALS & OVERLAYS
@@ -1057,7 +1106,59 @@ select:not(#filename_tag):not(#filename_preview) {
     </div>
   </div>
 </div>
+<button id="tutorialToggleBtn" type="button">🎓 Tutorial</button>
 <button id="helpToggleBtn" type="button" class="secondary">Help</button>
+
+<!-- FTUE Welcome Modal -->
+<div id="ftueWelcomeModal" role="dialog" aria-labelledby="ftueWelcomeTitle" aria-modal="true">
+  <div class="modal-content">
+    <h2 id="ftueWelcomeTitle">Welcome to SolaSim Studio! 🌞</h2>
+    <p class="subtitle">Let's get you started with solar simulation</p>
+    <div class="role-buttons">
+      <button class="role-btn" data-path="researcher">
+        <span class="icon">🔬</span>
+        <div>
+          <div class="title">Quick Start Tutorial (~5 min)</div>
+          <div class="desc">Essential features and workflow for device control</div>
+        </div>
+      </button>
+      <button class="role-btn" data-path="full">
+        <span class="icon">📚</span>
+        <div>
+          <div class="title">Complete Tour (~12 min)</div>
+          <div class="desc">In-depth walkthrough of all features and capabilities</div>
+        </div>
+      </button>
+      <button class="role-btn" data-path="skip">
+        <span class="icon">⚡</span>
+        <div>
+          <div class="title">Skip Tutorial - Start Working</div>
+          <div class="desc">Jump straight to the interface (you can restart the tutorial anytime)</div>
+        </div>
+      </button>
+    </div>
+    <a class="skip-link" id="ftueNeverShow">Don't show this again</a>
+  </div>
+</div>
+
+<!-- FTUE Spotlight System -->
+<div id="ftueSpotlight">
+  <div class="overlay"></div>
+  <div class="spotlight-hole"></div>
+  <div class="tooltip">
+    <h3 id="ftueStepTitle">Step Title</h3>
+    <p id="ftueStepContent">Step content goes here</p>
+    <div class="buttons">
+      <button class="btn-skip" id="ftueSkipBtn">Skip Tutorial</button>
+      <div class="step-indicator" id="ftueStepIndicator">1 / 10</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-back" id="ftueBackBtn">◄ Back</button>
+        <button class="btn-next" id="ftueNextBtn">Next ►</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <aside id="helpPanel" aria-hidden="true" aria-label="Usage Help">
   <header>
     <h3>Usage & Help</h3>
@@ -1067,6 +1168,13 @@ select:not(#filename_tag):not(#filename_preview) {
   </header>
   <div class="help-body" tabindex="-1" id="helpBodyScroll">
     <p>Quick reference for building and managing profiles. Press <code>Esc</code> to close.</p>
+    
+    <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
+      <strong style="color:#0d47a1;">🎓 New to SolaSim Studio?</strong>
+      <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
+        <a href="#" id="helpRestartTutorial" style="color:#2196f3; text-decoration:underline; font-weight:500;">Click here to restart the tutorial</a> and get a guided walkthrough of all features.
+      </p>
+    </div>
 
     <h4>Interface Controls</h4>
     <ul>
@@ -14294,6 +14402,520 @@ function clearHoldState(){
       // Small delay to ensure DOM is updated
       setTimeout(() => applyVisibility(), 50);
     };
+  }
+  
+})();
+
+// ============================================================================
+// FTUE (FIRST TIME USER EXPERIENCE) SYSTEM
+// ============================================================================
+
+(function(){
+  'use strict';
+  
+  const FTUE_STORAGE_KEY = 'solasim_ftue_complete';
+  const FTUE_PROGRESS_KEY = 'solasim_ftue_progress';
+  const FTUE_NEVER_SHOW_KEY = 'solasim_ftue_never_show';
+  
+  // Tutorial step definitions
+  const QUICK_START_STEPS = [
+    {
+      target: '#deviceIdentityBadge',
+      title: 'Device Identity',
+      content: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
+      position: 'bottom'
+    },
+    {
+      target: '#monitorConnectBtn',
+      title: 'Connect Your Device',
+      content: 'Click "Connect" to establish a serial connection with your device via USB. If you don\'t have a device, you can continue in demo mode.',
+      position: 'bottom',
+      allowInteraction: true
+    },
+    {
+      target: '#recentProfiles',
+      title: 'Recent Profiles',
+      content: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
+      position: 'top',
+      offsetY: 7,  // Move top down by 15px total from original -8
+      heightAdjust: -15,  // Reduce height by 15px to keep bottom edge in place
+      adjustTarget: (el) => {
+        // Target parent container to include both title and profiles
+        return el.parentElement;
+      }
+    },
+    {
+      target: 'fieldset[data-section="time-and-date"]',
+      title: 'Key Settings',
+      content: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
+      position: 'bottom'
+    },
+    {
+      target: 'fieldset[data-section="program-control"]',
+      title: 'Program Steps',
+      content: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
+      position: 'right',
+      offsetY: -25  // Move up from default -3 positioning
+    },
+    {
+      target: '[data-export-ref="uploadBtn"]',
+      title: 'Upload to Device',
+      content: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
+      position: 'bottom',
+      highlight: true
+    },
+    {
+      target: '#toggleMonitorBtn',
+      title: 'Monitor Panel',
+      content: 'Click here to show/hide the device monitor. You can see live status, send commands, and interact with tiles.',
+      position: 'bottom'
+    }
+  ];
+  
+  const FULL_TOUR_STEPS = [
+    ...QUICK_START_STEPS,
+    {
+      target: '#simpleModeBtn',
+      title: 'Simple vs Advanced Mode',
+      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
+      position: 'bottom'
+    },
+    {
+      target: '#programSection',
+      title: 'Program Step Timeline',
+      content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
+      position: 'top'
+    },
+    {
+      target: '[data-export-ref="downloadBtn"]',
+      title: 'Download Profile',
+      content: 'Save your current settings as a .txt file to your computer. Great for backup, sharing, or manual editing.',
+      position: 'bottom'
+    },
+    {
+      target: '[data-export-ref="importBtn"]',
+      title: 'Import Profile',
+      content: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
+      position: 'bottom'
+    },
+    {
+      target: '#loadFromDeviceBtn',
+      title: 'Load from Device',
+      content: 'Browse and select profiles stored on the device. Selected profiles run immediately but are temporary (until device restart).',
+      position: 'top'
+    },
+    {
+      target: '#diffBanner',
+      title: 'Profile Diff Viewer',
+      content: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
+      position: 'bottom'
+    },
+    {
+      target: '#helpToggleBtn',
+      title: 'Help Panel',
+      content: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
+      position: 'left'
+    }
+  ];
+  
+  let currentSteps = [];
+  let currentStepIndex = 0;
+  let tutorialActive = false;
+  let deviceConnected = false;
+  let isPositioning = false; // Prevent positioning race conditions
+  
+  // DOM elements
+  const welcomeModal = document.getElementById('ftueWelcomeModal');
+  const spotlight = document.getElementById('ftueSpotlight');
+  const spotlightHole = spotlight.querySelector('.spotlight-hole');
+  const tooltip = spotlight.querySelector('.tooltip');
+  const stepTitle = document.getElementById('ftueStepTitle');
+  const stepContent = document.getElementById('ftueStepContent');
+  const stepIndicator = document.getElementById('ftueStepIndicator');
+  const skipBtn = document.getElementById('ftueSkipBtn');
+  const backBtn = document.getElementById('ftueBackBtn');
+  const nextBtn = document.getElementById('ftueNextBtn');
+  const tutorialBtn = document.getElementById('tutorialToggleBtn');
+  const helpRestartLink = document.getElementById('helpRestartTutorial');
+  
+  // Initialize FTUE on page load
+  function initFTUE() {
+    const ftueComplete = localStorage.getItem(FTUE_STORAGE_KEY);
+    const neverShow = localStorage.getItem(FTUE_NEVER_SHOW_KEY);
+    
+    // Show welcome modal if first time and not opted out
+    if (!ftueComplete && !neverShow) {
+      setTimeout(() => showWelcomeModal(), 500);
+    }
+    
+    // Check for saved progress
+    const savedProgress = localStorage.getItem(FTUE_PROGRESS_KEY);
+    if (savedProgress) {
+      const { path, step } = JSON.parse(savedProgress);
+      // Could offer to resume here if desired
+    }
+  }
+  
+  // Show welcome modal
+  function showWelcomeModal() {
+    welcomeModal.classList.add('open');
+  }
+  
+  // Hide welcome modal
+  function hideWelcomeModal() {
+    welcomeModal.classList.remove('open');
+  }
+  
+  // Start tutorial with selected path
+  function startTutorial(path) {
+    hideWelcomeModal();
+    
+    if (path === 'skip') {
+      localStorage.setItem(FTUE_STORAGE_KEY, 'true');
+      return;
+    }
+    
+    currentSteps = path === 'full' ? FULL_TOUR_STEPS : QUICK_START_STEPS;
+    currentStepIndex = 0;
+    tutorialActive = true;
+    
+    // Check device connection
+    deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
+    
+    showStep(0);
+  }
+  
+  // Show specific tutorial step
+  function showStep(index) {
+    if (index < 0 || index >= currentSteps.length) return;
+    
+    currentStepIndex = index;
+    const step = currentSteps[index];
+    
+    // Save progress
+    localStorage.setItem(FTUE_PROGRESS_KEY, JSON.stringify({
+      path: currentSteps === FULL_TOUR_STEPS ? 'full' : 'quick',
+      step: index
+    }));
+    
+    // Update step content
+    stepTitle.textContent = step.title;
+    stepContent.innerHTML = step.content;
+    stepIndicator.textContent = `${index + 1} / ${currentSteps.length}`;
+    
+    // Update buttons
+    backBtn.disabled = index === 0;
+    if (index === currentSteps.length - 1) {
+      nextBtn.textContent = 'Finish ✓';
+      nextBtn.className = 'btn-finish';
+    } else {
+      nextBtn.textContent = 'Next ►';
+      nextBtn.className = 'btn-next';
+    }
+    
+    // Position spotlight and tooltip
+    let targetEl = document.querySelector(step.target);
+    if (targetEl) {
+      // Apply target adjustment if specified (e.g., to target wrapper instead of input)
+      if (step.adjustTarget && typeof step.adjustTarget === 'function') {
+        targetEl = step.adjustTarget(targetEl) || targetEl;
+      }
+      
+      // Check if element is actually visible (not hidden with display:none or visibility:hidden)
+      const style = window.getComputedStyle(targetEl);
+      const isVisible = style.display !== 'none' && 
+                       style.visibility !== 'hidden' && 
+                       targetEl.offsetParent !== null;
+      
+      if (!isVisible) {
+        // Element exists but is hidden - skip to next step
+        console.warn('FTUE: Target is hidden:', step.target);
+        nextStep();
+        return;
+      }
+      
+      // Enable smooth transitions
+      spotlightHole.classList.remove('no-transition');
+      tooltip.classList.remove('no-transition');
+      
+      // Show spotlight
+      spotlight.classList.add('active');
+      
+      // Block scroll interference during transition
+      isTransitioning = true;
+      setTimeout(() => { isTransitioning = false; }, 700);
+      
+      // Position spotlight on target
+      positionSpotlight(targetEl, step.position, step);
+    } else {
+      // Target not found - might need to enable a section or scroll
+      console.warn('FTUE: Target not found:', step.target);
+      nextStep(); // Skip to next
+    }
+  }
+  
+  // Position spotlight on target element
+  function positionSpotlight(targetEl, position = 'bottom', stepConfig = {}) {
+    if (isPositioning) return;
+    isPositioning = true;
+    
+    // Get target position
+    const rect = targetEl.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const needsScroll = rect.top < 100 || rect.bottom > viewportHeight - 100;
+    
+    if (needsScroll) {
+      // Calculate scroll distance to estimate completion time
+      const scrollDistance = Math.abs(rect.top - viewportHeight / 2);
+      const scrollDuration = Math.min(800, Math.max(400, scrollDistance * 0.8));
+      
+      // Scroll target into view, then position
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        positionSpotlightImmediate(targetEl, position, stepConfig);
+        isPositioning = false;
+      }, scrollDuration);
+    } else {
+      // Target is already visible, position immediately
+      positionSpotlightImmediate(targetEl, position, stepConfig);
+      isPositioning = false;
+    }
+  }
+  
+  // Immediately position spotlight without scrolling
+  function positionSpotlightImmediate(targetEl, position = 'bottom', stepConfig = {}) {
+    const rect = targetEl.getBoundingClientRect();
+    const padding = 12;
+    const paddingY = stepConfig.paddingY !== undefined ? stepConfig.paddingY : padding;
+    const offsetY = stepConfig.offsetY !== undefined ? stepConfig.offsetY : -3; // Default -3 for original positioning
+    const heightAdjust = stepConfig.heightAdjust !== undefined ? stepConfig.heightAdjust : 0;
+    
+    // Check if target is in viewport
+    const viewportHeight = window.innerHeight;
+    const isInView = rect.bottom > 0 && rect.top < viewportHeight;
+    
+    // Calculate target position with custom vertical padding and offset
+    const holeLeft = rect.left - padding - 2; // Shift all highlights 2px left
+    const holeTop = rect.top - paddingY + offsetY; // offsetY can be negative to shift up
+    const holeWidth = rect.width + (padding * 2);
+    const holeHeight = rect.height + (paddingY * 2) + heightAdjust;
+    
+    // Force browser to acknowledge current position before transition
+    // This ensures animation always plays
+    if (!spotlightHole.classList.contains('no-transition')) {
+      window.getComputedStyle(spotlightHole).left;
+    }
+    
+    // Position spotlight hole - Use floor for position and ceil for dimensions to avoid gaps
+    spotlightHole.style.left = Math.floor(holeLeft) + 'px';
+    spotlightHole.style.top = Math.floor(holeTop) + 'px';
+    spotlightHole.style.width = Math.ceil(holeWidth) + 'px';
+    spotlightHole.style.height = Math.ceil(holeHeight) + 'px';
+    
+    // Only reposition tooltip if target is visible (prevent unwanted movement)
+    if (!isInView) {
+      return;
+    }
+    
+    // Position tooltip intelligently to avoid blocking target
+    tooltip.style.position = 'fixed';
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
+    const viewportWidth = window.innerWidth;
+    const margin = 20;
+    
+    // Try positions in order of preference, checking for overlaps
+    const positions = [
+      position, // Try requested position first
+      position === 'bottom' ? 'top' : 'bottom', // Try opposite vertical
+      position === 'left' ? 'right' : 'left', // Try opposite horizontal
+      'right', 'left', 'top', 'bottom' // Try all others
+    ];
+    
+    let finalLeft, finalTop;
+    let bestPosition = null;
+    
+    for (const pos of positions) {
+      let testLeft, testTop;
+      
+      switch (pos) {
+        case 'bottom':
+          testLeft = Math.max(margin, Math.min(rect.left, viewportWidth - tooltipWidth - margin));
+          testTop = rect.bottom + padding + 16;
+          break;
+        case 'top':
+          testLeft = Math.max(margin, Math.min(rect.left, viewportWidth - tooltipWidth - margin));
+          testTop = rect.top - padding - tooltipHeight - 16;
+          break;
+        case 'left':
+          testLeft = rect.left - tooltipWidth - padding - 16;
+          testTop = Math.max(margin, Math.min(rect.top, viewportHeight - tooltipHeight - margin));
+          break;
+        case 'right':
+          testLeft = rect.right + padding + 16;
+          testTop = Math.max(margin, Math.min(rect.top, viewportHeight - tooltipHeight - margin));
+          break;
+      }
+      
+      // Check if tooltip would be in viewport
+      const inViewport = testLeft >= margin && 
+                        testLeft + tooltipWidth <= viewportWidth - margin &&
+                        testTop >= margin && 
+                        testTop + tooltipHeight <= viewportHeight - margin;
+      
+      // Check if tooltip would overlap target (with extra margin)
+      const tooltipBounds = {
+        left: testLeft,
+        right: testLeft + tooltipWidth,
+        top: testTop,
+        bottom: testTop + tooltipHeight
+      };
+      
+      const targetBounds = {
+        left: rect.left - padding - 30,
+        right: rect.right + padding + 30,
+        top: rect.top - padding - 30,
+        bottom: rect.bottom + padding + 30
+      };
+      
+      const overlaps = !(tooltipBounds.right < targetBounds.left ||
+                        tooltipBounds.left > targetBounds.right ||
+                        tooltipBounds.bottom < targetBounds.top ||
+                        tooltipBounds.top > targetBounds.bottom);
+      
+      if (inViewport && !overlaps) {
+        finalLeft = testLeft;
+        finalTop = testTop;
+        bestPosition = pos;
+        break;
+      } else if (inViewport && !bestPosition) {
+        // Use as fallback if no perfect position found
+        finalLeft = testLeft;
+        finalTop = testTop;
+        bestPosition = pos;
+      }
+    }
+    
+    // Apply final position
+    tooltip.style.left = finalLeft + 'px';
+    tooltip.style.top = finalTop + 'px';
+    
+    // Show tooltip now that it's in the correct position
+    tooltip.classList.add('positioned');
+  }
+  
+  // Navigate to next step
+  function nextStep() {
+    if (currentStepIndex >= currentSteps.length - 1) {
+      finishTutorial();
+    } else {
+      showStep(currentStepIndex + 1);
+    }
+  }
+  
+  // Navigate to previous step
+  function prevStep() {
+    if (currentStepIndex > 0) {
+      showStep(currentStepIndex - 1);
+    }
+  }
+  
+  // Skip tutorial
+  function skipTutorial() {
+    finishTutorial();
+  }
+  
+  // Finish tutorial
+  function finishTutorial() {
+    spotlight.classList.remove('active');
+    tutorialActive = false;
+    localStorage.setItem(FTUE_STORAGE_KEY, 'true');
+    localStorage.removeItem(FTUE_PROGRESS_KEY);
+  }
+  
+  // Restart tutorial (from help panel or tutorial button)
+  function restartTutorial() {
+    localStorage.removeItem(FTUE_STORAGE_KEY);
+    localStorage.removeItem(FTUE_PROGRESS_KEY);
+    showWelcomeModal();
+  }
+  
+  // Event listeners
+  document.querySelectorAll('#ftueWelcomeModal .role-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const path = btn.dataset.path;
+      startTutorial(path);
+    });
+  });
+  
+  document.getElementById('ftueNeverShow').addEventListener('click', () => {
+    localStorage.setItem(FTUE_NEVER_SHOW_KEY, 'true');
+    localStorage.setItem(FTUE_STORAGE_KEY, 'true');
+    hideWelcomeModal();
+  });
+  
+  skipBtn.addEventListener('click', skipTutorial);
+  backBtn.addEventListener('click', prevStep);
+  nextBtn.addEventListener('click', nextStep);
+  tutorialBtn.addEventListener('click', restartTutorial);
+  helpRestartLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('helpPanel').classList.remove('open');
+    restartTutorial();
+  });
+  
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (tutorialActive && currentSteps[currentStepIndex]) {
+      let targetEl = document.querySelector(currentSteps[currentStepIndex].target);
+      if (targetEl) {
+        const step = currentSteps[currentStepIndex];
+        if (step.adjustTarget && typeof step.adjustTarget === 'function') {
+          targetEl = step.adjustTarget(targetEl) || targetEl;
+        }
+        isPositioning = false;
+        positionSpotlightImmediate(targetEl, step.position, step);
+      }
+    }
+  });
+  
+  // Handle page scroll - keep spotlight locked to target position
+  let scrollTimeout;
+  let isTransitioning = false; // Flag to prevent scroll handler during step changes
+  window.addEventListener('scroll', () => {
+    if (tutorialActive && currentSteps[currentStepIndex] && !isTransitioning) {
+      let targetEl = document.querySelector(currentSteps[currentStepIndex].target);
+      if (!targetEl) return;
+      
+      const step = currentSteps[currentStepIndex];
+      if (step.adjustTarget && typeof step.adjustTarget === 'function') {
+        targetEl = step.adjustTarget(targetEl) || targetEl;
+      }
+      
+      // Always reposition to match target, even if off-screen (allows natural scroll off)
+      // Disable transitions for instant tracking during scroll
+      spotlightHole.classList.add('no-transition');
+      tooltip.classList.add('no-transition');
+      
+      // Update position immediately
+      isPositioning = false;
+      positionSpotlightImmediate(targetEl, step.position, step);
+      
+      // Reset scroll timeout (but don't re-enable transitions to prevent flash)
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        // Scroll has stopped - keep no-transition to prevent flash
+        // Transitions only re-enabled during step navigation
+      }, 100);
+    }
+  }, { passive: true });
+  
+  // Initialize on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFTUE);
+  } else {
+    initFTUE();
   }
   
 })();
