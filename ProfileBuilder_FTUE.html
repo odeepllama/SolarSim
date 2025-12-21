@@ -281,9 +281,9 @@ https://github.com/odeepllama/SolarSim/tree/main
    HELP PANEL
    ============================================================================ */
 /* Tutorial and Help buttons in top-right corner */
-#tutorialToggleBtn, #helpToggleBtn { position:fixed; top:14px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
-#tutorialToggleBtn { right:14px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
-#helpToggleBtn { right:120px; padding:8px 12px; }
+#tutorialToggleBtn, #helpToggleBtn { position:fixed; top:28px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
+#tutorialToggleBtn { right:30px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
+#helpToggleBtn { right:136px; padding:8px 12px; }
 #tutorialToggleBtn:hover:not(:disabled), #tutorialToggleBtn:focus-visible { background:#4a8cf8 !important; border-color:#2560c7; outline:none; color:#fff !important; }
 #tutorialToggleBtn:active:not(:disabled) { background:#2867d9 !important; border-color:#1f4fa8; color:#fff !important; }
 #helpToggleBtn:hover:not(:disabled), #helpToggleBtn:focus-visible { background:#ffcc00; border-color:#a67d00; outline:none; }
@@ -328,9 +328,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 #ftueWelcomeModal h2 { font-size:2rem; margin:0 0 12px; color:#1f2933; }
 #ftueWelcomeModal .subtitle { font-size:1.1rem; color:#666; margin:0 0 32px; line-height:1.5; }
 #ftueWelcomeModal .role-buttons { display:flex; flex-direction:column; gap:16px; margin-bottom:24px; }
-#ftueWelcomeModal .role-btn { padding:20px 24px; border:2px solid #ddd; border-radius:8px; background:#f8f9fa; cursor:pointer; transition:all 0.2s; text-align:left; font-size:1rem; }
+#ftueWelcomeModal .role-btn { padding:20px 24px; border:2px solid #ddd; border-radius:8px; background:#f8f9fa; cursor:pointer; transition:all 0.2s; text-align:left; font-size:1rem; display:flex; align-items:center; gap:16px; }
 #ftueWelcomeModal .role-btn:hover { border-color:#3478f6; background:#eef4ff; transform:translateY(-2px); box-shadow:0 4px 12px rgba(52,120,246,0.2); }
-#ftueWelcomeModal .role-btn .icon { font-size:1.8rem; margin-right:12px; }
+#ftueWelcomeModal .role-btn .icon { font-size:3.6rem; flex-shrink:0; }
 #ftueWelcomeModal .role-btn .title { font-weight:600; font-size:1.1rem; color:#1f2933; }
 #ftueWelcomeModal .role-btn .desc { font-size:0.9rem; color:#666; margin-top:4px; }
 #ftueWelcomeModal .skip-link { font-size:0.9rem; color:#666; cursor:pointer; text-decoration:underline; }
@@ -1152,8 +1152,8 @@ select:not(#filename_tag):not(#filename_preview) {
       <button class="btn-skip" id="ftueSkipBtn">Skip Tutorial</button>
       <div class="step-indicator" id="ftueStepIndicator">1 / 10</div>
       <div style="display:flex; gap:8px;">
-        <button class="btn-back" id="ftueBackBtn">← Back</button>
-        <button class="btn-next" id="ftueNextBtn">Next →</button>
+        <button class="btn-back" id="ftueBackBtn">◄ Back</button>
+        <button class="btn-next" id="ftueNextBtn">Next ►</button>
       </div>
     </div>
   </div>
@@ -14436,7 +14436,13 @@ function clearHoldState(){
       target: '#recentProfiles',
       title: 'Recent Profiles',
       content: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
-      position: 'top'
+      position: 'top',
+      offsetY: 7,  // Move top down by 15px total from original -8
+      heightAdjust: -15,  // Reduce height by 15px to keep bottom edge in place
+      adjustTarget: (el) => {
+        // Target parent container to include both title and profiles
+        return el.parentElement;
+      }
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
@@ -14445,19 +14451,11 @@ function clearHoldState(){
       position: 'bottom'
     },
     {
-      target: '#PROGRAM_ENABLED',
+      target: 'fieldset[data-section="program-control"]',
       title: 'Program Steps',
       content: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
       position: 'right',
-      adjustTarget: (el) => {
-        // Get the label that contains the checkbox text for better centering
-        const label = el.previousElementSibling;
-        if (label && label.tagName === 'LABEL') {
-          return label;
-        }
-        return el;
-      },
-      paddingY: 18  // 30% more than default 12px for better vertical spacing
+      offsetY: -25  // Move up from default -3 positioning
     },
     {
       target: '[data-export-ref="uploadBtn"]',
@@ -14611,7 +14609,7 @@ function clearHoldState(){
       nextBtn.textContent = 'Finish ✓';
       nextBtn.className = 'btn-finish';
     } else {
-      nextBtn.textContent = 'Next →';
+      nextBtn.textContent = 'Next ►';
       nextBtn.className = 'btn-next';
     }
     
@@ -14689,17 +14687,18 @@ function clearHoldState(){
     const rect = targetEl.getBoundingClientRect();
     const padding = 12;
     const paddingY = stepConfig.paddingY !== undefined ? stepConfig.paddingY : padding;
-    const offset = 3; // Visual offset correction
+    const offsetY = stepConfig.offsetY !== undefined ? stepConfig.offsetY : -3; // Default -3 for original positioning
+    const heightAdjust = stepConfig.heightAdjust !== undefined ? stepConfig.heightAdjust : 0;
     
     // Check if target is in viewport
     const viewportHeight = window.innerHeight;
     const isInView = rect.bottom > 0 && rect.top < viewportHeight;
     
-    // Calculate target position with custom vertical padding if specified
-    const holeLeft = rect.left - padding - offset;
-    const holeTop = rect.top - paddingY - offset;
+    // Calculate target position with custom vertical padding and offset
+    const holeLeft = rect.left - padding - 2; // Shift all highlights 2px left
+    const holeTop = rect.top - paddingY + offsetY; // offsetY can be negative to shift up
     const holeWidth = rect.width + (padding * 2);
-    const holeHeight = rect.height + (paddingY * 2);
+    const holeHeight = rect.height + (paddingY * 2) + heightAdjust;
     
     // Force browser to acknowledge current position before transition
     // This ensures animation always plays
@@ -14824,9 +14823,7 @@ function clearHoldState(){
   
   // Skip tutorial
   function skipTutorial() {
-    if (confirm('Are you sure you want to skip the tutorial? You can restart it anytime from the Help panel.')) {
-      finishTutorial();
-    }
+    finishTutorial();
   }
   
   // Finish tutorial
@@ -14835,9 +14832,6 @@ function clearHoldState(){
     tutorialActive = false;
     localStorage.setItem(FTUE_STORAGE_KEY, 'true');
     localStorage.removeItem(FTUE_PROGRESS_KEY);
-    
-    // Show completion message
-    alert('Tutorial complete! 🎉\\n\\nYou can always restart the tutorial from the Help panel or the 🎓 Tutorial button.');
   }
   
   // Restart tutorial (from help panel or tutorial button)
