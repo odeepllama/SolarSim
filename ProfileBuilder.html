@@ -14117,8 +14117,8 @@ function clearHoldState(){
   // Advanced mode always shows all sections, so we only configure Simple mode defaults
   const SECTIONS = [
     { id: 'monitor-status-tiles', name: 'Monitor: Status Tiles', defaultSimple: true },
-    { id: 'monitor-solar-arc', name: 'Monitor: Solar Arc', defaultSimple: true },
-    { id: 'monitor-log', name: 'Monitor: Log Window', defaultSimple: true },
+    { id: 'monitor-solar-arc', name: 'Monitor: Solar Arc', defaultSimple: false },
+    { id: 'monitor-log', name: 'Monitor: Log Window', defaultSimple: false },
     { id: 'program-settings-header', name: 'Program Settings', defaultSimple: false },
     { id: 'time-and-date', name: 'Time & Date Settings', defaultSimple: true },
     { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false },
@@ -14425,12 +14425,6 @@ function clearHoldState(){
       content: 'Click "Connect" to establish a serial connection with your device via USB.',
       position: 'bottom',
       allowInteraction: true
-    },
-    {
-      target: '#toggleMonitorBtn',
-      title: 'Monitor Panel',
-      content: 'Click here to show/hide the device monitor. You can see live status, send commands, and interact with tiles.',
-      position: 'bottom'
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
