@@ -14667,7 +14667,7 @@ function clearHoldState(){
     if (needsScroll) {
       // Calculate scroll distance to estimate completion time
       const scrollDistance = Math.abs(rect.top - viewportHeight / 2);
-      const scrollDuration = Math.min(800, Math.max(400, scrollDistance * 0.8));
+      const scrollDuration = Math.min(800, Math.max(400, scrollDistance * 0.9));
       
       // Scroll target into view, then position
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
