@@ -14454,8 +14454,7 @@ function clearHoldState(){
       target: 'fieldset[data-section="program-control"]',
       title: 'Program Steps',
       content: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
-      position: 'right',
-      offsetY: -25  // Move up from default -3 positioning
+      position: 'right'
     },
     {
       target: '[data-export-ref="uploadBtn"]',
@@ -14523,6 +14522,13 @@ function clearHoldState(){
   let tutorialActive = false;
   let deviceConnected = false;
   let isPositioning = false; // Prevent positioning race conditions
+  
+  // Dynamic spotlight tracking state
+  let currentSpotlightTarget = null;
+  let currentSpotlightPosition = 'bottom';
+  let currentSpotlightConfig = {};
+  let spotlightResizeObserver = null;
+  let spotlightScrollListener = null;
   
   // DOM elements
   const welcomeModal = document.getElementById('ftueWelcomeModal');
@@ -14654,32 +14660,73 @@ function clearHoldState(){
     }
   }
   
-  // Position spotlight on target element
+  // Position spotlight on target element with continuous tracking
   function positionSpotlight(targetEl, position = 'bottom', stepConfig = {}) {
     if (isPositioning) return;
     isPositioning = true;
+    
+    // Clean up any existing observers
+    cleanupSpotlightTracking();
+    
+    // Store current tracking state
+    currentSpotlightTarget = targetEl;
+    currentSpotlightPosition = position;
+    currentSpotlightConfig = stepConfig;
     
     // Get target position
     const rect = targetEl.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const needsScroll = rect.top < 100 || rect.bottom > viewportHeight - 100;
     
+    // Set up continuous position tracking
+    setupSpotlightTracking();
+    
     if (needsScroll) {
-      // Calculate scroll distance to estimate completion time
-      const scrollDistance = Math.abs(rect.top - viewportHeight / 2);
-      const scrollDuration = Math.min(800, Math.max(400, scrollDistance * 0.9));
-      
-      // Scroll target into view, then position
+      // Scroll target into view
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => {
-        positionSpotlightImmediate(targetEl, position, stepConfig);
-        isPositioning = false;
-      }, scrollDuration);
+      // Initial position will be set by scroll listener
+      setTimeout(() => { isPositioning = false; }, 800);
     } else {
       // Target is already visible, position immediately
       positionSpotlightImmediate(targetEl, position, stepConfig);
       isPositioning = false;
     }
+  }
+  
+  // Set up observers for continuous spotlight tracking
+  function setupSpotlightTracking() {
+    if (!currentSpotlightTarget) return;
+    
+    // Update function to reposition spotlight
+    const updatePosition = () => {
+      if (currentSpotlightTarget && spotlight.classList.contains('active')) {
+        positionSpotlightImmediate(currentSpotlightTarget, currentSpotlightPosition, currentSpotlightConfig);
+      }
+    };
+    
+    // ResizeObserver for when element or ancestors resize
+    spotlightResizeObserver = new ResizeObserver(updatePosition);
+    spotlightResizeObserver.observe(currentSpotlightTarget);
+    spotlightResizeObserver.observe(document.body);
+    
+    // Scroll listener for when page scrolls
+    spotlightScrollListener = updatePosition;
+    window.addEventListener('scroll', spotlightScrollListener, { passive: true });
+    window.addEventListener('resize', spotlightScrollListener, { passive: true });
+  }
+  
+  // Clean up spotlight tracking observers
+  function cleanupSpotlightTracking() {
+    if (spotlightResizeObserver) {
+      spotlightResizeObserver.disconnect();
+      spotlightResizeObserver = null;
+    }
+    if (spotlightScrollListener) {
+      window.removeEventListener('scroll', spotlightScrollListener);
+      window.removeEventListener('resize', spotlightScrollListener);
+      spotlightScrollListener = null;
+    }
+    currentSpotlightTarget = null;
   }
   
   // Immediately position spotlight without scrolling
@@ -14830,6 +14877,7 @@ function clearHoldState(){
   function finishTutorial() {
     spotlight.classList.remove('active');
     tutorialActive = false;
+    cleanupSpotlightTracking(); // Clean up observers
     localStorage.setItem(FTUE_STORAGE_KEY, 'true');
     localStorage.removeItem(FTUE_PROGRESS_KEY);
   }
