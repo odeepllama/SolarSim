@@ -280,12 +280,12 @@ https://github.com/odeepllama/SolarSim/tree/main
 /* ============================================================================
    HELP PANEL
    ============================================================================ */
-/* Tutorial and Help buttons in top-right corner */
-#tutorialToggleBtn, #helpToggleBtn { position:fixed; top:28px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
-#tutorialToggleBtn { right:30px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
+/* Guide and Help buttons in top-right corner */
+#guideToggleBtn, #helpToggleBtn { position:fixed; top:28px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
+#guideToggleBtn { right:30px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
 #helpToggleBtn { right:136px; padding:8px 12px; }
-#tutorialToggleBtn:hover:not(:disabled), #tutorialToggleBtn:focus-visible { background:#4a8cf8 !important; border-color:#2560c7; outline:none; color:#fff !important; }
-#tutorialToggleBtn:active:not(:disabled) { background:#2867d9 !important; border-color:#1f4fa8; color:#fff !important; }
+#guideToggleBtn:hover:not(:disabled), #guideToggleBtn:focus-visible { background:#4a8cf8 !important; border-color:#2560c7; outline:none; color:#fff !important; }
+#guideToggleBtn:active:not(:disabled) { background:#2867d9 !important; border-color:#1f4fa8; color:#fff !important; }
 #helpToggleBtn:hover:not(:disabled), #helpToggleBtn:focus-visible { background:#ffcc00; border-color:#a67d00; outline:none; }
 #helpToggleBtn:active:not(:disabled) { background:#e6b800; border-color:#8f6a00; }
  #helpPanel { position:fixed; top:0; right:0; width:380px; max-width:90%; height:100%; background:#ffffff; box-shadow:-4px 0 12px rgba(0,0,0,0.18); transform:translateX(100%); transition:transform .28s ease; z-index:999; display:flex; flex-direction:column; }
@@ -304,7 +304,7 @@ https://github.com/odeepllama/SolarSim/tree/main
  .help-detail { margin-top:8px; padding:8px 12px; background:#f5f7fa; border-left:3px solid #0066cc; border-radius:3px; }
 @media (max-width:680px){
   #helpPanel{ width:100%; }
-  #tutorialToggleBtn{ top:auto; bottom:60px; right:10px; left:auto; transform:none; }
+  #guideToggleBtn{ top:auto; bottom:60px; right:10px; left:auto; transform:none; }
   #helpToggleBtn{ top:auto; bottom:10px; right:10px; left:auto; transform:none; }
   /* Fix widths on mobile to match form fields */
   #exportPreview{ box-sizing:border-box; max-width:100%; }
@@ -1106,7 +1106,7 @@ select:not(#filename_tag):not(#filename_preview) {
     </div>
   </div>
 </div>
-<button id="tutorialToggleBtn" type="button">🎓 Tutorial</button>
+<button id="guideToggleBtn" type="button">🎓 Guide</button>
 <button id="helpToggleBtn" type="button" class="secondary">Help</button>
 
 <!-- FTUE Welcome Modal -->
@@ -1118,22 +1118,22 @@ select:not(#filename_tag):not(#filename_preview) {
       <button class="role-btn" data-path="researcher">
         <span class="icon">🔬</span>
         <div>
-          <div class="title">Quick Start Tutorial (~5 min)</div>
+          <div class="title">Quick Tour</div>
           <div class="desc">Essential features and workflow for device control</div>
         </div>
       </button>
       <button class="role-btn" data-path="full">
         <span class="icon">📚</span>
         <div>
-          <div class="title">Complete Tour (~12 min)</div>
+          <div class="title">Full Tour</div>
           <div class="desc">In-depth walkthrough of all features and capabilities</div>
         </div>
       </button>
       <button class="role-btn" data-path="skip">
         <span class="icon">⚡</span>
         <div>
-          <div class="title">Skip Tutorial - Start Working</div>
-          <div class="desc">Jump straight to the interface (you can restart the tutorial anytime)</div>
+          <div class="title">Skip Guide - Start Working</div>
+          <div class="desc">Jump straight to the interface (you can restart the guide anytime)</div>
         </div>
       </button>
     </div>
@@ -1149,7 +1149,7 @@ select:not(#filename_tag):not(#filename_preview) {
     <h3 id="ftueStepTitle">Step Title</h3>
     <p id="ftueStepContent">Step content goes here</p>
     <div class="buttons">
-      <button class="btn-skip" id="ftueSkipBtn">Skip Tutorial</button>
+      <button class="btn-skip" id="ftueSkipBtn">Exit Guide</button>
       <div class="step-indicator" id="ftueStepIndicator">1 / 10</div>
       <div style="display:flex; gap:8px;">
         <button class="btn-back" id="ftueBackBtn">◄ Back</button>
@@ -1172,7 +1172,7 @@ select:not(#filename_tag):not(#filename_preview) {
     <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
       <strong style="color:#0d47a1;">🎓 New to SolaSim Studio?</strong>
       <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
-        <a href="#" id="helpRestartTutorial" style="color:#2196f3; text-decoration:underline; font-weight:500;">Click here to restart the tutorial</a> and get a guided walkthrough of all features.
+        <a href="#" id="helpRestartGuide" style="color:#2196f3; text-decoration:underline; font-weight:500;">Click here to restart the guide</a> and get a guided walkthrough of all features.
       </p>
     </div>
 
@@ -14519,7 +14519,7 @@ function clearHoldState(){
   
   let currentSteps = [];
   let currentStepIndex = 0;
-  let tutorialActive = false;
+  let guideActive = false;
   let deviceConnected = false;
   let isPositioning = false; // Prevent positioning race conditions
   
@@ -14541,8 +14541,8 @@ function clearHoldState(){
   const skipBtn = document.getElementById('ftueSkipBtn');
   const backBtn = document.getElementById('ftueBackBtn');
   const nextBtn = document.getElementById('ftueNextBtn');
-  const tutorialBtn = document.getElementById('tutorialToggleBtn');
-  const helpRestartLink = document.getElementById('helpRestartTutorial');
+  const tutorialBtn = document.getElementById('guideToggleBtn');
+  const helpRestartLink = document.getElementById('helpRestartGuide');
   
   // Initialize FTUE on page load
   function initFTUE() {
@@ -14572,8 +14572,8 @@ function clearHoldState(){
     welcomeModal.classList.remove('open');
   }
   
-  // Start tutorial with selected path
-  function startTutorial(path) {
+  // Start guide with selected path
+  function startGuide(path) {
     hideWelcomeModal();
     
     if (path === 'skip') {
@@ -14583,7 +14583,7 @@ function clearHoldState(){
     
     currentSteps = path === 'full' ? FULL_TOUR_STEPS : QUICK_START_STEPS;
     currentStepIndex = 0;
-    tutorialActive = true;
+    guideActive = true;
     
     // Check device connection
     deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
@@ -14868,22 +14868,22 @@ function clearHoldState(){
     }
   }
   
-  // Skip tutorial
-  function skipTutorial() {
-    finishTutorial();
+  // Skip guide
+  function skipGuide() {
+    finishGuide();
   }
   
-  // Finish tutorial
-  function finishTutorial() {
+  // Finish guide
+  function finishGuide() {
     spotlight.classList.remove('active');
-    tutorialActive = false;
+    guideActive = false;
     cleanupSpotlightTracking(); // Clean up observers
     localStorage.setItem(FTUE_STORAGE_KEY, 'true');
     localStorage.removeItem(FTUE_PROGRESS_KEY);
   }
   
-  // Restart tutorial (from help panel or tutorial button)
-  function restartTutorial() {
+  // Restart guide (from help panel or guide button)
+  function restartGuide() {
     localStorage.removeItem(FTUE_STORAGE_KEY);
     localStorage.removeItem(FTUE_PROGRESS_KEY);
     showWelcomeModal();
@@ -14893,7 +14893,7 @@ function clearHoldState(){
   document.querySelectorAll('#ftueWelcomeModal .role-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const path = btn.dataset.path;
-      startTutorial(path);
+      startGuide(path);
     });
   });
   
@@ -14915,7 +14915,7 @@ function clearHoldState(){
   
   // Handle window resize
   window.addEventListener('resize', () => {
-    if (tutorialActive && currentSteps[currentStepIndex]) {
+    if (guideActive && currentSteps[currentStepIndex]) {
       let targetEl = document.querySelector(currentSteps[currentStepIndex].target);
       if (targetEl) {
         const step = currentSteps[currentStepIndex];
@@ -14932,7 +14932,7 @@ function clearHoldState(){
   let scrollTimeout;
   let isTransitioning = false; // Flag to prevent scroll handler during step changes
   window.addEventListener('scroll', () => {
-    if (tutorialActive && currentSteps[currentStepIndex] && !isTransitioning) {
+    if (guideActive && currentSteps[currentStepIndex] && !isTransitioning) {
       let targetEl = document.querySelector(currentSteps[currentStepIndex].target);
       if (!targetEl) return;
       
