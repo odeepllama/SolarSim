@@ -14417,7 +14417,7 @@ function clearHoldState(){
   const FTUE_PROGRESS_KEY = 'solasim_ftue_progress';
   const FTUE_NEVER_SHOW_KEY = 'solasim_ftue_never_show';
   
-  // Tutorial step definitions
+  // Guide step definitions
   const QUICK_START_STEPS = [
     {
       target: '#deviceIdentityBadge',
@@ -14428,7 +14428,7 @@ function clearHoldState(){
     {
       target: '#monitorConnectBtn',
       title: 'Connect Your Device',
-      content: 'Click "Connect" to establish a serial connection with your device via USB. If you don\'t have a device, you can continue in demo mode.',
+      content: 'Click "Connect" to establish a serial connection with your device via USB.',
       position: 'bottom',
       allowInteraction: true
     },
@@ -14474,16 +14474,16 @@ function clearHoldState(){
   const FULL_TOUR_STEPS = [
     ...QUICK_START_STEPS,
     {
-      target: '#simpleModeBtn',
-      title: 'Simple vs Advanced Mode',
-      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
-      position: 'bottom'
-    },
-    {
       target: '#programSection',
       title: 'Program Step Timeline',
       content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
       position: 'top'
+    },
+    {
+      target: '#simpleModeBtn',
+      title: 'Simple vs Advanced Mode',
+      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
+      position: 'bottom'
     },
     {
       target: '[data-export-ref="downloadBtn"]',
@@ -14541,7 +14541,7 @@ function clearHoldState(){
   const skipBtn = document.getElementById('ftueSkipBtn');
   const backBtn = document.getElementById('ftueBackBtn');
   const nextBtn = document.getElementById('ftueNextBtn');
-  const tutorialBtn = document.getElementById('guideToggleBtn');
+  const guideBtn = document.getElementById('guideToggleBtn');
   const helpRestartLink = document.getElementById('helpRestartGuide');
   
   // Initialize FTUE on page load
@@ -14591,7 +14591,7 @@ function clearHoldState(){
     showStep(0);
   }
   
-  // Show specific tutorial step
+  // Show specific guide step
   function showStep(index) {
     if (index < 0 || index >= currentSteps.length) return;
     
@@ -14855,7 +14855,7 @@ function clearHoldState(){
   // Navigate to next step
   function nextStep() {
     if (currentStepIndex >= currentSteps.length - 1) {
-      finishTutorial();
+      finishGuide();
     } else {
       showStep(currentStepIndex + 1);
     }
@@ -14903,14 +14903,14 @@ function clearHoldState(){
     hideWelcomeModal();
   });
   
-  skipBtn.addEventListener('click', skipTutorial);
+  skipBtn.addEventListener('click', skipGuide);
   backBtn.addEventListener('click', prevStep);
   nextBtn.addEventListener('click', nextStep);
-  tutorialBtn.addEventListener('click', restartTutorial);
+  guideBtn.addEventListener('click', restartGuide);
   helpRestartLink.addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('helpPanel').classList.remove('open');
-    restartTutorial();
+    restartGuide();
   });
   
   // Handle window resize
