@@ -1068,6 +1068,30 @@ select:not(#filename_tag):not(#filename_preview) {
   <div class="help-body" tabindex="-1" id="helpBodyScroll">
     <p>Quick reference for building and managing profiles. Press <code>Esc</code> to close.</p>
 
+    <h4>Interface Controls</h4>
+    <ul>
+      <li><strong>Device Label</strong>: Click the badge at the top center of the page (e.g., "Device 1") to customize the device name. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>When working with multiple devices across different browser tabs, you can give each tab a unique identifier. Click the badge to set a custom name like "Device 1", "Device 2", "Lab A", etc.</p>
+          <p>The device label appears in both the page badge and the browser tab title, making it easy to distinguish between multiple devices. The label is saved per tab (not globally), so each browser tab can have its own device identity.</p>
+          <p><strong>Use Case:</strong> Open multiple tabs, each connected to a different physical device, and label them accordingly to avoid confusion.</p>
+        </div>
+      </li>
+      <li><strong>Background Color</strong>: Click colored swatches (top right) to change the page background color. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>Useful for visually distinguishing between multiple device tabs—assign each device a different color (green, blue, or red) to quickly identify which tab you're working in. Your color preference is saved per browser tab.</p>
+        </div>
+      </li>
+      <li><strong>Simple/Advanced Mode</strong>: Toggle between streamlined and full interface views. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p><strong>Simple Mode:</strong> Hides less commonly used sections for a cleaner interface. Ideal for routine operations or when you're already familiar with the system.</p>
+          <p><strong>Advanced Mode:</strong> Shows all available sections and settings. Use this when you need full control or are learning the system.</p>
+          <p><strong>Gear Icon (⚙):</strong> Click to customize which sections are visible in Simple mode. Your preferences are saved automatically.</p>
+          <p><strong>Tip:</strong> Start with Advanced mode to explore all features, then switch to Simple mode once you know which sections you use regularly.</p>
+        </div>
+      </li>
+    </ul>
+
     <h4>Monitor / Interact</h4>
     <ul>
       <li><strong>Status Tiles</strong>: Click any tile for presets or custom values. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
@@ -1075,26 +1099,13 @@ select:not(#filename_tag):not(#filename_preview) {
           <p>Examples: SimTime (Sunrise/Noon or HHMM), Speed (−300x to 300x or Hold), Intensity (0.5–3.0). Double-click to toggle Program/Rotation/Dual Sun.</p>
         </div>
       </li>
-      <li><strong>Solar Arc</strong>: Visual sun path showing current time and day/night shading. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
-        <div class="help-detail" style="display:none;">
-          <p>Click anywhere on the arc to jump the device to that time. Current device time is shown with an indicator line. Double-click the sun icon to toggle between Rotation and Program modes.</p>
-        </div>
-      </li>
+      <li><strong>Solar Arc</strong>: Visual sun path showing current time and day/night shading.</li>
       <li><strong>Command Console</strong>: Type commands with autocomplete support. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Press Tab to cycle through autocomplete suggestions. Use Up/Down arrows to navigate your last 10 commands. Press Enter to send a command. Commands are case-sensitive and control device behavior directly.</p>
         </div>
       </li>
-      <li><strong>Show All Commands</strong>: Displays full list of available commands in the log. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
-        <div class="help-detail" style="display:none;">
-          <p>Temporarily disables scroll lock to show output. Common commands: <code>status</code> (device state), <code>start</code> (begin program), <code>stop</code> (halt program), <code>set autoload on/off</code> (control auto-startup behavior).</p>
-        </div>
-      </li>
-      <li><strong>Scroll Lock</strong>: Toggle auto-scroll in the command log. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
-        <div class="help-detail" style="display:none;">
-          <p>When ON (red), the log stays at your current scroll position. When OFF, it auto-scrolls to show the newest messages. Use this to review older output without being pushed down by new messages.</p>
-        </div>
-      </li>
+      <li><strong>Show All Commands</strong>: Displays full list of available commands in the log.</li>
       <li><strong>Device Connection</strong>: Web Serial API connects directly to your device via USB. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Requires a compatible browser (Chrome, Edge, Opera). Click the "Connect" button and select your device from the list. Ensure proper USB driver installation if connection fails. The status shows "Connected" when active and "Disconnected" otherwise.</p>
@@ -1109,11 +1120,6 @@ select:not(#filename_tag):not(#filename_preview) {
           <p>Auto-saved when you Download, Upload, Import, or select a profile. Click a grey button to load it into the form, click ★ to pin at top (pinned profiles survive browser data clear), or click ✕ to delete. Pinned profiles are useful for frequently-used configurations.</p>
         </div>
       </li>
-      <li><strong>⚡ Load Current</strong>: Quickly load the profile currently running on the device. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
-        <div class="help-detail" style="display:none;">
-          <p>Enabled when the device reports its loaded profile name. This is a convenience feature to fetch the active profile without browsing the device file list. The profile loads into the form so you can edit and re-upload if needed.</p>
-        </div>
-      </li>
       <li><strong>Load from Device</strong>: Browse and select profiles stored on the device. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Selecting a profile immediately runs it on the device for this session only. To make a profile persistent across power cycles, click "Upload to Device" after loading. The device will auto-load the newest timestamped profile on next startup unless you disable auto-load.</p>
@@ -1124,12 +1130,12 @@ select:not(#filename_tag):not(#filename_preview) {
           <p>Creates a new timestamped profile file on the device and immediately runs it. This becomes the "newest" profile for future auto-load on startup. Use this when you've made changes to a profile and want them to persist.</p>
         </div>
       </li>
-      <li><strong>Download Profile</strong>: Save the current form as a JSON file to your computer. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+      <li><strong>Download Profile</strong>: Save the current form as a .txt file to your computer. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
-          <p>Creates a .json file with all current settings. Useful for backup, sharing, or manual editing. Import the file later to restore settings. Downloaded files are also added to Recent Profiles automatically.</p>
+          <p>Creates a .txt file with all current settings in a format compatible with the device. Useful for backup, sharing, or manual editing. Import the file later to restore settings. Downloaded files are also added to Recent Profiles automatically.</p>
         </div>
       </li>
-      <li><strong>Import Profile</strong>: Load a previously saved .json profile file. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+      <li><strong>Import Profile</strong>: Load a previously saved .txt profile file. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
           <p>Updates the form only—does NOT change device behavior until you click "Upload to Device." Imported profiles are added to Recent Profiles for quick access. This is useful for testing settings before uploading to hardware.</p>
         </div>
@@ -1183,7 +1189,7 @@ select:not(#filename_tag):not(#filename_preview) {
     <ul>
       <li><strong>Core Settings</strong>: Essential parameters for sun simulation. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
-          <p><strong>Time:</strong> Current simulated time (HHMM, 24-hour). <strong>Solar:</strong> Latitude, longitude, and date to calculate sun path. <strong>Intensity:</strong> Light multiplier (0.5–3.0). <strong>Rotation:</strong> Turntable angle and speed.</p>
+          <p><strong>Start Time:</strong> Initial simulated time (HHMM, 24-hour format). <strong>Time Scale:</strong> Speed multiplier for time progression. <strong>Intensity Scale:</strong> Global light multiplier (0.5–3.0). <strong>Simulation Date & Latitude:</strong> Geographic parameters for sun path calculations. <strong>Solar Mode:</strong> BASIC (constant) or SCIENTIFIC (astronomical calculations). <strong>Sun Color Mode:</strong> Color temperature settings (BLUE, NATURAL, or CUSTOM RGB).</p>
         </div>
       </li>
       <li><strong>Program Settings</strong>: Enable step-based sequences. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
