@@ -1,3 +1,60 @@
+/* Unified toolbar and profile default buttons hover/focus/active states */
+#saveDefaultBtn,
+#applyDefaultBtn,
+#clearDefaultBtn,
+#resetUploadConfirmBtn,
+#loadFromDeviceBtn {
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+#saveDefaultBtn,
+#applyDefaultBtn {
+  background: #3478f6;
+  border: 1px solid #2d6cdf;
+  color: #fff;
+}
+#saveDefaultBtn:hover:not(:disabled),
+#saveDefaultBtn:focus-visible:not(:disabled),
+#applyDefaultBtn:hover:not(:disabled),
+#applyDefaultBtn:focus-visible:not(:disabled) {
+  background: #4a8cf8 !important;
+  border-color: #2560c7 !important;
+  color: #fff !important;
+  box-shadow: 0 6px 18px rgba(52,120,246,0.22);
+  transform: translateY(-1px);
+}
+#saveDefaultBtn:active:not(:disabled),
+#applyDefaultBtn:active:not(:disabled) {
+  background: #2867d9 !important;
+  border-color: #1f4fa8 !important;
+  transform: translateY(0);
+  box-shadow: none;
+}
+#clearDefaultBtn,
+#resetUploadConfirmBtn,
+#loadFromDeviceBtn {
+  background: #fff !important;
+  color: #333 !important;
+  border: 1px solid #888 !important;
+}
+#clearDefaultBtn:hover:not(:disabled),
+#clearDefaultBtn:focus-visible:not(:disabled),
+#resetUploadConfirmBtn:hover:not(:disabled),
+#resetUploadConfirmBtn:focus-visible:not(:disabled),
+#loadFromDeviceBtn:hover:not(:disabled),
+#loadFromDeviceBtn:focus-visible:not(:disabled) {
+  background: #f5f7fa !important;
+  border-color: #c0c7d1 !important;
+  color: #333 !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+#clearDefaultBtn:active:not(:disabled),
+#resetUploadConfirmBtn:active:not(:disabled),
+#loadFromDeviceBtn:active:not(:disabled) {
+  background: #e9eef6 !important;
+  transform: translateY(0);
+  box-shadow: none;
+}
 <!DOCTYPE html>
 <!--
 ================================================================================
@@ -1218,7 +1275,7 @@ select:not(#filename_tag):not(#filename_preview) {
 </style>
 </head>
 <body>
-<h1>Solar Simulator Studio 20251223b</h1>
+<h1>Solar Simulator Studio 20251223c</h1>
 <div class="monitor-toggle-bar">
   <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" title="Show or hide live device monitor"><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt">Monitor / Interact</span></button>
   <span id="monitorConnBadge" class="pill red" title="Serial connection status">DISCONNECTED</span>
