@@ -123,21 +123,26 @@ https://github.com/odeepllama/SolarSim/tree/main
  button { cursor:pointer; font-size:0.9rem; padding:8px 12px; border-radius:4px; border:1px solid #2d6cdf; background:#3478f6; color:#fff; }
  button.secondary { background:#ffffff !important; color:#333; border-color:#888; }
  button.danger { background:#c0362c; border-color:#a32b22; }
- #printSummaryBtn, #printSummaryBtn2 { background:#7b2cbf !important; border-color:#5a1d99 !important; color:#fff !important; }
- #printSummaryBtn:hover:not(:disabled), #printSummaryBtn:focus-visible:not(:disabled),
- #printSummaryBtn2:hover:not(:disabled), #printSummaryBtn2:focus-visible:not(:disabled) {
-  background:#9246d9 !important;
-  border-color:#6f32b3 !important;
-  color:#fff !important;
-  box-shadow:0 6px 18px rgba(123,44,191,0.22);
-  transform:translateY(-1px);
- }
- #printSummaryBtn:active:not(:disabled), #printSummaryBtn2:active:not(:disabled) {
-  background:#611a91 !important;
-  border-color:#4b126d !important;
-  transform:translateY(0);
-  box-shadow:none;
- }
+#printSummaryBtn, #printSummaryBtn2 {
+  background: #7b2cbf !important;
+  border-color: #5a1d99 !important;
+  color: #fff !important;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+#printSummaryBtn:hover:not(:disabled), #printSummaryBtn:focus-visible:not(:disabled),
+#printSummaryBtn2:hover:not(:disabled), #printSummaryBtn2:focus-visible:not(:disabled) {
+  background: #44b366 !important;
+  border-color: #257b41 !important;
+  color: #fff !important;
+  box-shadow: 0 6px 18px rgba(45,157,79,0.18);
+  transform: translateY(-1px);
+}
+#printSummaryBtn:active:not(:disabled), #printSummaryBtn2:active:not(:disabled) {
+  background: #22813e !important;
+  border-color: #1a6130 !important;
+  transform: translateY(0);
+  box-shadow: none;
+}
  #textSyncToggleBtn.danger { background:#c0362c !important; border-color:#a32b22 !important; color:#fff !important; }
  #monitorDisconnectBtn { background:#ffc107 !important; border-color:#ffb300 !important; color:#000 !important; }
  #monitorDisconnectBtn:hover:not(:disabled) { background:#ffd54f !important; border-color:#ffa000 !important; }
