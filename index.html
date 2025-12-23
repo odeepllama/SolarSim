@@ -1,60 +1,3 @@
-/* Unified toolbar and profile default buttons hover/focus/active states */
-#saveDefaultBtn,
-#applyDefaultBtn,
-#clearDefaultBtn,
-#resetUploadConfirmBtn,
-#loadFromDeviceBtn {
-  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
-}
-#saveDefaultBtn,
-#applyDefaultBtn {
-  background: #3478f6;
-  border: 1px solid #2d6cdf;
-  color: #fff;
-}
-#saveDefaultBtn:hover:not(:disabled),
-#saveDefaultBtn:focus-visible:not(:disabled),
-#applyDefaultBtn:hover:not(:disabled),
-#applyDefaultBtn:focus-visible:not(:disabled) {
-  background: #4a8cf8 !important;
-  border-color: #2560c7 !important;
-  color: #fff !important;
-  box-shadow: 0 6px 18px rgba(52,120,246,0.22);
-  transform: translateY(-1px);
-}
-#saveDefaultBtn:active:not(:disabled),
-#applyDefaultBtn:active:not(:disabled) {
-  background: #2867d9 !important;
-  border-color: #1f4fa8 !important;
-  transform: translateY(0);
-  box-shadow: none;
-}
-#clearDefaultBtn,
-#resetUploadConfirmBtn,
-#loadFromDeviceBtn {
-  background: #fff !important;
-  color: #333 !important;
-  border: 1px solid #888 !important;
-}
-#clearDefaultBtn:hover:not(:disabled),
-#clearDefaultBtn:focus-visible:not(:disabled),
-#resetUploadConfirmBtn:hover:not(:disabled),
-#resetUploadConfirmBtn:focus-visible:not(:disabled),
-#loadFromDeviceBtn:hover:not(:disabled),
-#loadFromDeviceBtn:focus-visible:not(:disabled) {
-  background: #f5f7fa !important;
-  border-color: #c0c7d1 !important;
-  color: #333 !important;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-  transform: translateY(-1px);
-}
-#clearDefaultBtn:active:not(:disabled),
-#resetUploadConfirmBtn:active:not(:disabled),
-#loadFromDeviceBtn:active:not(:disabled) {
-  background: #e9eef6 !important;
-  transform: translateY(0);
-  box-shadow: none;
-}
 <!DOCTYPE html>
 <!--
 ================================================================================
@@ -180,86 +123,11 @@ https://github.com/odeepllama/SolarSim/tree/main
  button { cursor:pointer; font-size:0.9rem; padding:8px 12px; border-radius:4px; border:1px solid #2d6cdf; background:#3478f6; color:#fff; }
  button.secondary { background:#ffffff !important; color:#333; border-color:#888; }
  button.danger { background:#c0362c; border-color:#a32b22; }
-#printSummaryBtn, #printSummaryBtn2 {
-  background: #7b2cbf !important;
-  border-color: #5a1d99 !important;
-  color: #fff !important;
-  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
-}
-#printSummaryBtn:hover:not(:disabled), #printSummaryBtn:focus-visible:not(:disabled),
-#printSummaryBtn2:hover:not(:disabled), #printSummaryBtn2:focus-visible:not(:disabled) {
-  background: #44b366 !important;
-  border-color: #257b41 !important;
-  color: #fff !important;
-  box-shadow: 0 6px 18px rgba(45,157,79,0.18);
-  transform: translateY(-1px);
-}
-#printSummaryBtn:active:not(:disabled), #printSummaryBtn2:active:not(:disabled) {
-  background: #22813e !important;
-  border-color: #1a6130 !important;
-  transform: translateY(0);
-  box-shadow: none;
-}
+ #printSummaryBtn, #printSummaryBtn2 { background:#7b2cbf !important; border-color:#5a1d99 !important; color:#fff !important; }
  #textSyncToggleBtn.danger { background:#c0362c !important; border-color:#a32b22 !important; color:#fff !important; }
  #monitorDisconnectBtn { background:#ffc107 !important; border-color:#ffb300 !important; color:#000 !important; }
  #monitorDisconnectBtn:hover:not(:disabled) { background:#ffd54f !important; border-color:#ffa000 !important; }
  button:disabled { opacity:.4; cursor:not-allowed; }
-
- /* Hover/focus/active interactions for toolbar buttons */
- #addStepBtn:hover:not(:disabled), #addStepBtn:focus-visible:not(:disabled) {
-  background:#4a8cf8 !important;
-  border-color:#2560c7 !important;
-  color:#fff !important;
-  box-shadow:0 6px 18px rgba(52,120,246,0.22);
-  transform:translateY(-1px);
- }
- #addStepBtn:active:not(:disabled) {
-  background:#2867d9 !important;
-  border-color:#1f4fa8 !important;
-  transform:translateY(0);
-  box-shadow:none;
- }
- /* Add Day (yellow) */
- #addDayBtn:hover:not(:disabled), #addDayBtn:focus-visible:not(:disabled) {
-  background:#ffd54f !important;
-  border-color:#ffa000 !important;
-  color:#000 !important;
-  box-shadow:0 6px 18px rgba(255,193,7,0.18);
-  transform:translateY(-1px);
- }
- #addDayBtn:active:not(:disabled) {
-  background:#ffc107 !important;
-  border-color:#ffb300 !important;
-  transform:translateY(0);
-  box-shadow:none;
- }
- /* Secondary buttons */
- button.secondary:hover:not(:disabled), button.secondary:focus-visible:not(:disabled) {
-  background:#f5f7fa !important;
-  border-color:#c0c7d1 !important;
-  color:#333 !important;
-  box-shadow:0 6px 18px rgba(0,0,0,0.06);
-  transform:translateY(-1px);
- }
- button.secondary:active:not(:disabled) {
-  background:#e9eef6 !important;
-  transform:translateY(0);
-  box-shadow:none;
- }
- /* Danger buttons */
- button.danger:hover:not(:disabled), button.danger:focus-visible:not(:disabled) {
-  background:#a32b22 !important;
-  border-color:#8e2020 !important;
-  color:#fff !important;
-  box-shadow:0 6px 18px rgba(192,54,44,0.18);
-  transform:translateY(-1px);
- }
- button.danger:active:not(:disabled) {
-  background:#8b241d !important;
-  border-color:#701915 !important;
-  transform:translateY(0);
-  box-shadow:none;
- }
 
  /* Navigation button colors - Prev (red) and Next (green) */
  .playhead-nav-btn.nav-prev { background:#dc3545; border-color:#c82333; color:#fff; }
@@ -572,110 +440,27 @@ https://github.com/odeepllama/SolarSim/tree/main
  input.hotvar:focus, select.hotvar:focus { outline:2px solid #5a92dd; }
  /* Upload button green styling */
 /* Upload to Device button: base and 15% lighter green on hover */
-/* Unified export button hover/focus/active states */
-.mirror-export,
-.upload-green,
-#downloadBtn,
-#importBtn,
-#uploadBtn,
-button[data-export-ref="downloadBtn"],
-button[data-export-ref="importBtn"],
-button[data-export-ref="uploadBtn"] {
-  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
-}
-.mirror-export:active,
-.upload-green:active,
-#downloadBtn:active,
-#importBtn:active,
-#uploadBtn:active,
-button[data-export-ref="downloadBtn"]:active,
-button[data-export-ref="importBtn"]:active,
-button[data-export-ref="uploadBtn"]:active {
-  box-shadow: none !important;
-  transform: translateY(0);
-}
-/* Download (blue) */
-.mirror-export[data-export-ref="downloadBtn"],
-#downloadBtn,
-button[data-export-ref="downloadBtn"] {
-  background: #3478f6;
-  border: 1px solid #2d6cdf;
-  color: #fff;
-}
-.mirror-export[data-export-ref="downloadBtn"]:hover:not(:disabled),
-#downloadBtn:hover:not(:disabled),
-button[data-export-ref="downloadBtn"]:hover:not(:disabled),
-.mirror-export[data-export-ref="downloadBtn"]:focus-visible:not(:disabled),
-#downloadBtn:focus-visible:not(:disabled),
-button[data-export-ref="downloadBtn"]:focus-visible:not(:disabled) {
-  background: #4a8cf8 !important;
-  border-color: #2d6cdf !important;
-  color: #fff !important;
-  box-shadow: 0 6px 18px rgba(52,120,246,0.22);
-  transform: translateY(-1px);
-}
-.mirror-export[data-export-ref="downloadBtn"]:active:not(:disabled),
-#downloadBtn:active:not(:disabled),
-button[data-export-ref="downloadBtn"]:active:not(:disabled) {
-  background: #2867d9 !important;
-  border-color: #1f4fa8 !important;
-}
-/* Import (yellow) */
-.mirror-export[data-export-ref="importBtn"],
-#importBtn,
-button[data-export-ref="importBtn"] {
-  background: #ffc107;
-  border: 1px solid #e6b800;
-  color: #000;
-  font-weight: 600;
-}
-.mirror-export[data-export-ref="importBtn"]:hover:not(:disabled),
-#importBtn:hover:not(:disabled),
-button[data-export-ref="importBtn"]:hover:not(:disabled),
-.mirror-export[data-export-ref="importBtn"]:focus-visible:not(:disabled),
-#importBtn:focus-visible:not(:disabled),
-button[data-export-ref="importBtn"]:focus-visible:not(:disabled) {
-  background: #ffd84d !important;
-  border-color: #e6b800 !important;
-  color: #000 !important;
-  box-shadow: 0 6px 18px rgba(255,193,7,0.18);
-  transform: translateY(-1px);
-}
-.mirror-export[data-export-ref="importBtn"]:active:not(:disabled),
-#importBtn:active:not(:disabled),
-button[data-export-ref="importBtn"]:active:not(:disabled) {
-  background: #ffc107 !important;
-  border-color: #ffb300 !important;
-}
-/* Upload (green) */
-.mirror-export[data-export-ref="uploadBtn"],
-.upload-green,
-#uploadBtn,
-button[data-export-ref="uploadBtn"] {
-  background: #2d9d4f;
-  border: 1px solid #257b41;
-  color: #fff;
-}
-.mirror-export[data-export-ref="uploadBtn"]:hover:not(:disabled),
+.upload-green { background:#2d9d4f; border:1px solid #257b41; color:#fff; }
 .upload-green:hover:not(:disabled),
-#uploadBtn:hover:not(:disabled),
 button[data-export-ref="uploadBtn"]:hover:not(:disabled),
-.mirror-export[data-export-ref="uploadBtn"]:focus-visible:not(:disabled),
-.upload-green:focus-visible:not(:disabled),
-#uploadBtn:focus-visible:not(:disabled),
-button[data-export-ref="uploadBtn"]:focus-visible:not(:disabled) {
-  background: #44b366 !important;
-  border-color: #257b41 !important;
+button#uploadBtn:hover:not(:disabled) {
+  background: #44b366 !important; /* 15% lighter than #2d9d4f */
   color: #fff !important;
-  box-shadow: 0 6px 18px rgba(45,157,79,0.18);
-  transform: translateY(-1px);
+  border-color: #257b41 !important;
 }
-.mirror-export[data-export-ref="uploadBtn"]:active:not(:disabled),
-.upload-green:active:not(:disabled),
-#uploadBtn:active:not(:disabled),
-button[data-export-ref="uploadBtn"]:active:not(:disabled) {
-  background: #22813e !important;
-  border-color: #1a6130 !important;
+/* Download Profile button hover: 15% lighter blue */
+button[data-export-ref="downloadBtn"]:hover:not(:disabled),
+button#downloadBtn:hover:not(:disabled) {
+  background: #4a8cf8 !important; /* 15% lighter than #3478f6 */
+  color: #fff !important;
+  border-color: #2d6cdf !important;
+}
+/* Import Profile button hover: 15% lighter yellow */
+button[data-export-ref="importBtn"]:hover:not(:disabled),
+button#importBtn:hover:not(:disabled) {
+  background: #ffd84d !important; /* 15% lighter than #ffc107 */
+  color: #000 !important;
+  border-color: #e6b800 !important;
 }
 /* Connect button: same green as Upload to Device */
 #monitorConnectBtn { background:#2d9d4f !important; border:1px solid #257b41 !important; color:#fff !important; }
@@ -1275,7 +1060,7 @@ select:not(#filename_tag):not(#filename_preview) {
 </style>
 </head>
 <body>
-<h1>Solar Simulator Studio 20251223c</h1>
+<h1>Solar Simulator Studio 20251223d</h1>
 <div class="monitor-toggle-bar">
   <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" title="Show or hide live device monitor"><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt">Monitor / Interact</span></button>
   <span id="monitorConnBadge" class="pill red" title="Serial connection status">DISCONNECTED</span>
