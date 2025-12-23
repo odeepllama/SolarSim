@@ -510,27 +510,110 @@ https://github.com/odeepllama/SolarSim/tree/main
  input.hotvar:focus, select.hotvar:focus { outline:2px solid #5a92dd; }
  /* Upload button green styling */
 /* Upload to Device button: base and 15% lighter green on hover */
-.upload-green { background:#2d9d4f; border:1px solid #257b41; color:#fff; }
-.upload-green:hover:not(:disabled),
-button[data-export-ref="uploadBtn"]:hover:not(:disabled),
-button#uploadBtn:hover:not(:disabled) {
-  background: #44b366 !important; /* 15% lighter than #2d9d4f */
-  color: #fff !important;
-  border-color: #257b41 !important;
+/* Unified export button hover/focus/active states */
+.mirror-export,
+.upload-green,
+#downloadBtn,
+#importBtn,
+#uploadBtn,
+button[data-export-ref="downloadBtn"],
+button[data-export-ref="importBtn"],
+button[data-export-ref="uploadBtn"] {
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
-/* Download Profile button hover: 15% lighter blue */
+.mirror-export:active,
+.upload-green:active,
+#downloadBtn:active,
+#importBtn:active,
+#uploadBtn:active,
+button[data-export-ref="downloadBtn"]:active,
+button[data-export-ref="importBtn"]:active,
+button[data-export-ref="uploadBtn"]:active {
+  box-shadow: none !important;
+  transform: translateY(0);
+}
+/* Download (blue) */
+.mirror-export[data-export-ref="downloadBtn"],
+#downloadBtn,
+button[data-export-ref="downloadBtn"] {
+  background: #3478f6;
+  border: 1px solid #2d6cdf;
+  color: #fff;
+}
+.mirror-export[data-export-ref="downloadBtn"]:hover:not(:disabled),
+#downloadBtn:hover:not(:disabled),
 button[data-export-ref="downloadBtn"]:hover:not(:disabled),
-button#downloadBtn:hover:not(:disabled) {
-  background: #4a8cf8 !important; /* 15% lighter than #3478f6 */
-  color: #fff !important;
+.mirror-export[data-export-ref="downloadBtn"]:focus-visible:not(:disabled),
+#downloadBtn:focus-visible:not(:disabled),
+button[data-export-ref="downloadBtn"]:focus-visible:not(:disabled) {
+  background: #4a8cf8 !important;
   border-color: #2d6cdf !important;
+  color: #fff !important;
+  box-shadow: 0 6px 18px rgba(52,120,246,0.22);
+  transform: translateY(-1px);
 }
-/* Import Profile button hover: 15% lighter yellow */
+.mirror-export[data-export-ref="downloadBtn"]:active:not(:disabled),
+#downloadBtn:active:not(:disabled),
+button[data-export-ref="downloadBtn"]:active:not(:disabled) {
+  background: #2867d9 !important;
+  border-color: #1f4fa8 !important;
+}
+/* Import (yellow) */
+.mirror-export[data-export-ref="importBtn"],
+#importBtn,
+button[data-export-ref="importBtn"] {
+  background: #ffc107;
+  border: 1px solid #e6b800;
+  color: #000;
+  font-weight: 600;
+}
+.mirror-export[data-export-ref="importBtn"]:hover:not(:disabled),
+#importBtn:hover:not(:disabled),
 button[data-export-ref="importBtn"]:hover:not(:disabled),
-button#importBtn:hover:not(:disabled) {
-  background: #ffd84d !important; /* 15% lighter than #ffc107 */
-  color: #000 !important;
+.mirror-export[data-export-ref="importBtn"]:focus-visible:not(:disabled),
+#importBtn:focus-visible:not(:disabled),
+button[data-export-ref="importBtn"]:focus-visible:not(:disabled) {
+  background: #ffd84d !important;
   border-color: #e6b800 !important;
+  color: #000 !important;
+  box-shadow: 0 6px 18px rgba(255,193,7,0.18);
+  transform: translateY(-1px);
+}
+.mirror-export[data-export-ref="importBtn"]:active:not(:disabled),
+#importBtn:active:not(:disabled),
+button[data-export-ref="importBtn"]:active:not(:disabled) {
+  background: #ffc107 !important;
+  border-color: #ffb300 !important;
+}
+/* Upload (green) */
+.mirror-export[data-export-ref="uploadBtn"],
+.upload-green,
+#uploadBtn,
+button[data-export-ref="uploadBtn"] {
+  background: #2d9d4f;
+  border: 1px solid #257b41;
+  color: #fff;
+}
+.mirror-export[data-export-ref="uploadBtn"]:hover:not(:disabled),
+.upload-green:hover:not(:disabled),
+#uploadBtn:hover:not(:disabled),
+button[data-export-ref="uploadBtn"]:hover:not(:disabled),
+.mirror-export[data-export-ref="uploadBtn"]:focus-visible:not(:disabled),
+.upload-green:focus-visible:not(:disabled),
+#uploadBtn:focus-visible:not(:disabled),
+button[data-export-ref="uploadBtn"]:focus-visible:not(:disabled) {
+  background: #44b366 !important;
+  border-color: #257b41 !important;
+  color: #fff !important;
+  box-shadow: 0 6px 18px rgba(45,157,79,0.18);
+  transform: translateY(-1px);
+}
+.mirror-export[data-export-ref="uploadBtn"]:active:not(:disabled),
+.upload-green:active:not(:disabled),
+#uploadBtn:active:not(:disabled),
+button[data-export-ref="uploadBtn"]:active:not(:disabled) {
+  background: #22813e !important;
+  border-color: #1a6130 !important;
 }
 /* Connect button: same green as Upload to Device */
 #monitorConnectBtn { background:#2d9d4f !important; border:1px solid #257b41 !important; color:#fff !important; }
