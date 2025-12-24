@@ -12849,6 +12849,27 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       ctx.drawImage(plantImage, plantX, plantY, plantWidth, plantHeight);
       ctx.restore();
     }
+
+    // Draw EAST/WEST labels
+    // Fade in with sun
+    ctx.save();
+    ctx.globalAlpha = sunOpacity;
+    ctx.fillStyle = '#555555';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    
+    // Moved upwards by ~1.4x previous height (12px * 1.4 ≈ 17px)
+    // Previous Y was geom.centerY + 8, so new is approx geom.centerY - 9
+    const labelY = geom.centerY - 9; 
+    
+    // EAST on the right (theta=0)
+    ctx.fillText('EAST', geom.centerX + geom.radius, labelY);
+    
+    // WEST on the left (theta=PI)
+    ctx.fillText('WEST', geom.centerX - geom.radius, labelY);
+    
+    ctx.restore();
   }
 
   function placeholder(text){
