@@ -13350,7 +13350,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     }
 
     // Daytime: compute height to accommodate arc + small offset for sunrise sliver
-    const padTop = 18, padSide = 36, padBottom = 4;
+    const padTop = 18, padSide = 36, padBottom = 30;
     const Rc = Math.max(6, (w - padSide*2)/2);
     const curIntensity = currentIntensity();
     const curIntensityFactor = Math.min(3.0, Math.max(0.5, 0.5 + (isFinite(curIntensity)? curIntensity : 1.0)));
