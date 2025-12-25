@@ -68,8 +68,6 @@ https://github.com/odeepllama/SolarSim/tree/main
   color: #000 !important;
   border-color: #888 !important;
 }
-/* Japanese button size adjustment for i18n (monitor/toolbar row) */
-.jp-btn { font-size: 0.97rem !important; padding-top: 6px !important; padding-bottom: 6px !important; }
 /* ============================================================================
    SOLASIM STUDIO STYLES
    ============================================================================ */
@@ -83,10 +81,6 @@ https://github.com/odeepllama/SolarSim/tree/main
  h2 { font-size: 1.4rem; margin-top: 2rem; background:#ffffff; border-radius:8px; padding:1rem; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; }
  fieldset { border:1px solid #ccd; border-radius:6px; margin:1rem 0; padding:.75rem 1rem; background:#fff; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
  legend { font-weight:600; font-size: 1.1rem; padding:4px 12px; background:#dcdcdc; border-radius:4px; }
-
-/* Japanese heading size adjustment for i18n */
-.jp-heading { font-size: 1.25rem !important; letter-spacing: 0.01em; }
-#appTitle.jp-heading { font-size: 1.55rem !important; }
 
 /* ============================================================================
    FORM LAYOUT & CONTROLS
@@ -317,9 +311,9 @@ https://github.com/odeepllama/SolarSim/tree/main
    HELP PANEL
    ============================================================================ */
 /* Guide and Help buttons in top-right corner */
-#guideToggleBtn, #helpToggleBtn { z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
-#guideToggleBtn { background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
-#helpToggleBtn { padding:8px 12px; }
+#guideToggleBtn, #helpToggleBtn { position:fixed; top:28px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
+#guideToggleBtn { right:30px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
+#helpToggleBtn { right:136px; padding:8px 12px; }
 #guideToggleBtn:hover:not(:disabled), #guideToggleBtn:focus-visible { background:#4a8cf8 !important; border-color:#2560c7; outline:none; color:#fff !important; }
 #guideToggleBtn:active:not(:disabled) { background:#2867d9 !important; border-color:#1f4fa8; color:#fff !important; }
 #helpToggleBtn:hover:not(:disabled), #helpToggleBtn:focus-visible { background:#ffcc00; border-color:#a67d00; outline:none; }
@@ -374,8 +368,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
 /* Spotlight Overlay System */
 #ftueSpotlight { display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; }
-/* Keep language toggle and guide button above spotlight */
-#langToggleBtn, #guideToggleBtn, #helpToggleBtn { z-index:10000 !important; position:relative; }
 #ftueSpotlight.active { display:block; pointer-events:auto; }
 #ftueSpotlight .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.25); transition:opacity 0.6s ease; }
 #ftueSpotlight .spotlight-hole { position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,0.25), 0 0 40px 8px rgba(255,215,0,0.9), 0 0 80px 16px rgba(255,215,0,0.5); border-radius:8px; transition:all 0.6s ease; pointer-events:none; z-index:10001; border:3px solid rgba(255,215,0,1); }
@@ -781,13 +773,6 @@ select:not(#filename_tag):not(#filename_preview) {
 /* ============================================================================
    CONFIRMATION POPOVERS
    ============================================================================ */
-  /* Max steps warning popover */
-  #maxStepsPopover { position:absolute; z-index:100000; background:#fff9e6 !important; color:#856404; border:3px solid #ffc107; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,0.4), 0 4px 12px rgba(255,193,7,0.3); padding:16px 20px; max-width:380px; min-width:280px; display:none; }
-  #maxStepsPopover .warning-icon { font-size:1.8rem; line-height:1; }
-  #maxStepsPopover .warning-title { font-size:1.1rem; font-weight:700; color:#856404; line-height:1.2; }
-  #maxStepsPopover .warning-text { font-size:0.95rem; line-height:1.5; margin-bottom:12px; color:#664d03; }
-  #maxStepsPopover .btn-close { background:#ffc107; border:1px solid #e6b800; color:#000; border-radius:6px; padding:6px 16px; font-size:0.9rem; cursor:pointer; font-weight:600; transition:background 0.2s; }
-  #maxStepsPopover .btn-close:hover { background:#ffd54f; }
   /* Near-cursor confirm popover (for quick actions like delete) */
   #nearbyConfirm{ position:absolute; z-index:100000; background:#ffffff !important; color:#111; border:3px solid #3478f6; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,0.4), 0 4px 12px rgba(52,120,246,0.3); padding:16px 20px; width:50vw; max-width:420px; min-width:300px; display:none; }
   #nearbyConfirm .txt{ margin:0 0 12px; font-size:1rem; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; }
@@ -1231,10 +1216,10 @@ select:not(#filename_tag):not(#filename_preview) {
 <!-- Move topButtonBar to top of body for guaranteed visibility -->
 </div>
 <body>
-<div id="topButtonBar" style="position:fixed; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
-  <button id="guideToggleBtn" type="button" style="vertical-align:middle;">🎓 Guide</button>
-  <button id="langToggleBtn" type="button" style="padding:8px 12px; background:#fff; color:#222; border:1px solid #bbb; border-radius:6px; font-weight:600; font-size:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.10); transition:background 0.18s, color 0.18s; cursor:pointer; vertical-align:middle;">日本語 / ENG</button>
+<div id="topButtonBar" style="position:fixed; top:18px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:10px; align-items:center;">
+  <button id="langToggleBtn" type="button" style="padding:8px 12px; background:#fff; color:#222; border:1px solid #bbb; border-radius:6px; font-weight:600; font-size:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.10); transition:background 0.18s, color 0.18s; cursor:pointer; vertical-align:middle; position:relative; left:-200px; margin-top:12px;">日本語 / ENG</button>
   <button id="helpToggleBtn" type="button" class="secondary" style="padding:8px 12px; vertical-align:middle;">Help</button>
+  <button id="guideToggleBtn" type="button" style="vertical-align:middle;">🎓 Guide</button>
 </div>
 <!-- ...existing code... -->
 
@@ -1883,18 +1868,6 @@ select:not(#filename_tag):not(#filename_preview) {
   </div>
 </div>
 
-<!-- Max Steps Warning Popover -->
-<div id="maxStepsPopover">
-  <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-    <div class="warning-icon">⚠️</div>
-    <div class="warning-title" data-i18n="maxStepsReachedTitle">Maximum Steps Reached</div>
-  </div>
-  <div class="warning-text" data-i18n="maxStepsReached">Please delete steps before adding more.</div>
-  <div style="text-align:center;">
-    <button class="btn-close" data-i18n="understood">Understood</button>
-  </div>
-</div>
-
 <!-- Upload Success modal -->
 <div id="uploadSuccessOverlay" aria-hidden="true" role="dialog" aria-labelledby="uploadSuccessTitle">
   <div id="uploadSuccessDialog">
@@ -2153,7 +2126,6 @@ const TRANSLATIONS = {
     exitGuide: 'Exit Guide',
     back: '◄ Back',
     next: 'Next ►',
-    finish: 'Finish ✓',
     // --- i18n for new UI elements ---
     deviceProgramStatus: 'Device Program Status',
     profileManagement: 'Profile Management',
@@ -2218,36 +2190,6 @@ const TRANSLATIONS = {
     autoloadReenabled: 'Auto-load has been re-enabled on the device.',
     connectToDeviceNow: 'Connect to Device Now',
     errorBanner: '', // Will be set dynamically
-    maxStepsReached: 'Please delete steps before adding more.',
-    maxStepsReachedTitle: 'Maximum of 30 Steps Reached',
-    understood: 'Understood',
-    finish: 'Finish ✓',
-    // Guide step translations
-    guideConnectDevice: 'Connect Your Device',
-    guideConnectDeviceDesc: 'Click "Connect" to establish a serial connection with your device via USB.',
-    guideKeySettings: 'Key Settings',
-    guideKeySettingsDesc: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
-    guideProgramSteps: 'Program Steps',
-    guideProgramStepsDesc: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
-    guideProgramTimeline: 'Program Step Timeline',
-    guideProgramTimelineDesc: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
-    guideRecentProfiles: 'Recent Profiles',
-    guideRecentProfilesDesc: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
-    guideDownloadProfile: 'Download Profile',
-    guideDownloadProfileDesc: 'Save your current settings as a .txt file to your computer. Great for backup, sharing, or manual editing.',
-    guideImportProfile: 'Import Profile',
-    guideImportProfileDesc: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
-    guideLoadFromDevice: 'Load from Device',
-    guideLoadFromDeviceDesc: 'Browse and select profiles stored on the device. Selected profiles run immediately but are temporary (until device restart).',
-    guideProfileDiff: 'Profile Diff Viewer',
-    guideProfileDiffDesc: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
-    guideSimpleAdvanced: 'Simple vs Advanced Mode',
-    guideSimpleAdvancedDesc: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
-    guideDeviceIdentity: 'Device Identity',
-    guideDeviceIdentityDesc: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
-    guideHelpPanel: 'Help Panel',
-    guideHelpPanelDesc: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
-    guideUploadToDevice: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
   },
   ja: {
     appTitle: 'ソーラーシミュレータースタジオ 20251224a',
@@ -2275,7 +2217,6 @@ const TRANSLATIONS = {
     exitGuide: 'ガイド終了',
     back: '◄ 戻る',
     next: '次へ ►',
-    finish: '完了 ✓',
     // --- i18n for new UI elements ---
     deviceProgramStatus: 'デバイスプログラムステータス',
     profileManagement: 'プロファイル管理',
@@ -2306,35 +2247,6 @@ const TRANSLATIONS = {
     filenameLabel: 'ファイル名',
     filenameNote: 'タイムスタンプ＋タグから自動生成されます。',
     profileMeta: 'プロファイルメタ',
-    maxStepsReached: '追加する前にステップを削除してください。',
-    maxStepsReachedTitle: '最大30ステップ数に到達',
-    understood: '了解',
-    // Guide step translations
-    guideConnectDevice: 'デバイスを接続',
-    guideConnectDeviceDesc: 'USBケーブル経由でデバイスとのシリアル接続を確立するには、「接続」をクリックしてください。',
-    guideKeySettings: '主要設定',
-    guideKeySettingsDesc: 'シミュレーション開始時刻、タイムスケール（速度）、光の強度を設定します。これらは最も頻繁に調整されるパラメータです。',
-    guideProgramSteps: 'プログラムステップ',
-    guideProgramStepsDesc: 'これを有効にすると、時間指定のアクションシーケンスを作成できます。異なる速度、強度、時刻で複数のステップを定義できます。',
-    guideProgramTimeline: 'プログラムステップタイムライン',
-    guideProgramTimelineDesc: 'タイムラインはプログラムステップを視覚化します。セグメントをドラッグしてタイミングを調整したり、ナビゲーションボタンでステップや日を移動できます。',
-    guideRecentProfiles: '最近のプロファイル',
-    guideRecentProfilesDesc: '以前に保存したプロファイルにすばやくアクセスできます。星アイコンで頻繁に使用するプロファイルをピン留めできます。',
-    guideDownloadProfile: 'プロファイルをダウンロード',
-    guideDownloadProfileDesc: '現在の設定を.txtファイルとしてコンピュータに保存します。バックアップ、共有、手動編集に最適です。',
-    guideImportProfile: 'プロファイルをインポート',
-    guideImportProfileDesc: '以前に保存したプロファイルファイルを読み込みます。これはフォームのみを更新します—ハードウェアに変更を適用するには、デバイスにアップロードする必要があります。',
-    guideLoadFromDevice: 'デバイスから読み込み',
-    guideLoadFromDeviceDesc: 'デバイスに保存されているプロファイルを閲覧して選択します。選択したプロファイルはすぐに実行されますが、一時的です（デバイス再起動まで）。',
-    guideProfileDiff: 'プロファイル差分ビューア',
-    guideProfileDiffDesc: 'フォームがデバイスと異なる場合、黄色のハイライトとこのバナーが表示されます。デバイス設定の誤った上書きを防ぐのに役立ちます。',
-    guideSimpleAdvanced: 'シンプルモード vs 詳細モード',
-    guideSimpleAdvancedDesc: 'シンプルモード（簡素化）と詳細モード（全機能）を切り替えます。歯車アイコンをクリックして、シンプルモードで表示するセクションをカスタマイズできます。',
-    guideDeviceIdentity: 'デバイスID',
-    guideDeviceIdentityDesc: 'このバッジをクリックしてデバイスに名前を付けます。異なるタブで複数のデバイスを使用する場合に便利です。',
-    guideHelpPanel: 'ヘルプパネル',
-    guideHelpPanelDesc: 'ワークフローのヒントや機能の説明を含む詳細なヘルプドキュメントにいつでもアクセスできます。',
-    guideUploadToDevice: '<strong>重要:</strong> このボタンは設定をデバイスにアップロードします。アップロードされたプロファイルは「最新」ファイルとなり、自動ロードが有効な場合はデバイス起動時に自動的にロードされます。',
     noteLabel: 'メモ（任意）',
     notePlaceholder: '実験の説明...',
     downloadProfile: 'プロファイルをダウンロード',
@@ -2382,38 +2294,6 @@ function setLanguage(lang) {
   localStorage.setItem(LANG_STORAGE_KEY, lang);
   // Main navigation and monitor controls (legacy direct mapping)
   document.getElementById('appTitle').textContent = TRANSLATIONS[lang].appTitle;
-  // Adjust monitor/toolbar button size for Japanese
-  const monitorBtnIds = [
-    'toggleMonitorBtn', 'monitorConnectBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
-    'monitorCmdHelpBtn', 'monitorShowStatusBtn', 'simpleModeBtn', 'advancedModeBtn'
-  ];
-  monitorBtnIds.forEach(id => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    if (lang === 'ja') {
-      btn.classList.add('jp-btn');
-    } else {
-      btn.classList.remove('jp-btn');
-    }
-  });
-  // Adjust heading font size for Japanese
-  const appTitle = document.getElementById('appTitle');
-  const mainHeadings = [
-    appTitle,
-    document.querySelector('h2[data-i18n="profileManagement"]'),
-    document.querySelector('h2[data-i18n="programSettingsHeader"]'),
-    document.querySelector('h2[data-i18n="exportSection"]'),
-    document.querySelector('h2[data-i18n="programStepTimeline"]'),
-    document.querySelector('h2[data-i18n="programStepEditing"]')
-  ];
-  mainHeadings.forEach(h => {
-    if (!h) return;
-    if (lang === 'ja') {
-      h.classList.add('jp-heading');
-    } else {
-      h.classList.remove('jp-heading');
-    }
-  });
   document.querySelector('#toggleMonitorBtn .txt').textContent = TRANSLATIONS[lang].monitorInteract;
   document.getElementById('monitorConnBadge').textContent = TRANSLATIONS[lang].disconnected;
   document.getElementById('monitorConnectBtn').textContent = TRANSLATIONS[lang].connect;
@@ -2449,31 +2329,7 @@ function setLanguage(lang) {
   const backBtn = document.getElementById('ftueBackBtn');
   if (backBtn) backBtn.textContent = TRANSLATIONS[lang].back;
   const nextBtn = document.getElementById('ftueNextBtn');
-  if (nextBtn) {
-    // Check if guide is active and this is the last step
-    if (window.guideActive && window.currentStepIndex === window.currentSteps?.length - 1) {
-      nextBtn.textContent = TRANSLATIONS[lang].finish;
-      nextBtn.className = 'btn-finish';
-    } else {
-      nextBtn.textContent = TRANSLATIONS[lang].next;
-      nextBtn.className = 'btn-next';
-    }
-  }
-  
-  // Update guide step content if guide is active
-  if (window.guideActive && window.currentSteps && window.currentStepIndex !== undefined) {
-    const step = window.currentSteps[window.currentStepIndex];
-    if (step) {
-      const stepTitle = document.getElementById('ftueStepTitle');
-      const stepContent = document.getElementById('ftueStepContent');
-      if (stepTitle && step.titleKey) {
-        stepTitle.textContent = TRANSLATIONS[lang][step.titleKey] || step.title || 'Step';
-      }
-      if (stepContent && step.contentKey) {
-        stepContent.innerHTML = TRANSLATIONS[lang][step.contentKey] || step.content || '';
-      }
-    }
-  }
+  if (nextBtn) nextBtn.textContent = TRANSLATIONS[lang].next;
 
   // --- Universal i18n: update all elements with data-i18n ---
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -3978,9 +3834,6 @@ function updateProgramSummaryUI(){
   el.textContent = summary.text;
 }
 
-// Maximum number of program steps allowed
-const MAX_PROGRAM_STEPS = 30;
-
 /**
  * Adds a new program step to the end of the steps array.
  * Automatically saves undo state, re-renders the table, and updates the preview.
@@ -3990,86 +3843,10 @@ const MAX_PROGRAM_STEPS = 30;
  * @returns {void}
  * @sideeffects Modifies programSteps array, saves undo state, triggers re-render
  */
-function addProgramStep(step){ saveUndoState(); programSteps.push(step||{}); renderProgramSteps(); updatePreview(true); updateMaxStepsUI(); }
+function addProgramStep(step){ saveUndoState(); programSteps.push(step||{}); renderProgramSteps(); updatePreview(true); }
 
 // Holds last programSteps snapshot before an example Replace so user can undo once
 let previousProgramSteps = null;
-
-/**
- * Shows a popover warning when the maximum step limit is reached.
- * Positions near the clicked button and dismisses when clicking outside.
- * Automatically adjusts position to prevent overflow off-screen.
- */
-function showMaxStepsPopover(targetButton) {
-  const popover = document.getElementById('maxStepsPopover');
-  if (!popover) return;
-  
-  // Position near the target button
-  const rect = targetButton.getBoundingClientRect();
-  popover.style.display = 'block';
-  
-  // Get popover dimensions (need to display it first to measure)
-  const popoverWidth = popover.offsetWidth;
-  const popoverHeight = popover.offsetHeight;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  
-  // Calculate initial position (below button, left-aligned)
-  let left = rect.left + window.scrollX;
-  let top = rect.bottom + window.scrollY + 8;
-  
-  // Check if popover would overflow right edge
-  if (left + popoverWidth > window.scrollX + viewportWidth - 10) {
-    // Right-align the popover with the button instead
-    left = rect.right + window.scrollX - popoverWidth;
-  }
-  
-  // Ensure popover doesn't go off left edge
-  if (left < window.scrollX + 10) {
-    left = window.scrollX + 10;
-  }
-  
-  // Check if popover would overflow bottom edge
-  if (rect.bottom + popoverHeight + 8 > window.scrollY + viewportHeight - 10) {
-    // Position above the button instead
-    top = rect.top + window.scrollY - popoverHeight - 8;
-  }
-  
-  popover.style.left = Math.round(left) + 'px';
-  popover.style.top = Math.round(top) + 'px';
-  
-  // Close on button click
-  const closeBtn = popover.querySelector('.btn-close');
-  const closeHandler = () => {
-    popover.style.display = 'none';
-    closeBtn.removeEventListener('click', closeHandler);
-    document.removeEventListener('mousedown', outsideClickHandler);
-  };
-  
-  // Close on outside click
-  const outsideClickHandler = (e) => {
-    if (!popover.contains(e.target) && e.target !== targetButton) {
-      popover.style.display = 'none';
-      document.removeEventListener('mousedown', outsideClickHandler);
-      closeBtn.removeEventListener('click', closeHandler);
-    }
-  };
-  
-  closeBtn.addEventListener('click', closeHandler);
-  // Small delay to prevent immediate dismissal from the same click that triggered it
-  setTimeout(() => {
-    document.addEventListener('mousedown', outsideClickHandler);
-  }, 100);
-}
-
-/**
- * Updates the UI to reflect whether the maximum step limit has been reached.
- * Note: Buttons remain enabled, but show popover when limit is reached.
- */
-function updateMaxStepsUI() {
-  // Buttons remain enabled - popover will show when user tries to add
-  // This function is kept for consistency but no longer disables buttons
-}
 
 function attachProgramTableListeners(){
   // Handle keydown for Enter key on hold_minutes and sim_time_hhmm to trigger blur
@@ -4371,16 +4148,11 @@ function attachProgramTableListeners(){
     else if(act==='up' && idx>0){ const tmp=programSteps[idx-1]; programSteps[idx-1]=programSteps[idx]; programSteps[idx]=tmp; }
     else if(act==='down' && idx<programSteps.length-1){ const tmp=programSteps[idx+1]; programSteps[idx+1]=programSteps[idx]; programSteps[idx]=tmp; }
     else if(act==='dup'){
-      // Check if maximum steps limit reached
-      if(programSteps.length >= MAX_PROGRAM_STEPS) {
-        showMaxStepsPopover(btn);
-        return;
-      }
       const clone = JSON.parse(JSON.stringify(programSteps[idx]));
       delete clone.hold_minutes;  // Don't copy hold_minutes when duplicating a step row
       programSteps.splice(idx+1,0,clone);
     }
-  renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
+  renderProgramSteps(); updatePreview(true);
   });
 
   // Utility function to add minutes to HHMM format time
@@ -4394,13 +4166,7 @@ function attachProgramTableListeners(){
   }
 
   // Add Day button - creates step with same simtime as last step
-  document.getElementById('addDayBtn').addEventListener('click', (e)=> {
-    // Check if maximum steps limit reached
-    if(programSteps.length >= MAX_PROGRAM_STEPS) {
-      showMaxStepsPopover(e.currentTarget);
-      return;
-    }
-
+  document.getElementById('addDayBtn').addEventListener('click', ()=> {
     // Check if editing is locked (device running)
     if(window.__programEditingLocked && window.__programEditingLocked()){
       if(window.__flashProgramLock) window.__flashProgramLock();
@@ -4423,13 +4189,7 @@ function attachProgramTableListeners(){
   });
 
   // Add Step button - creates step with last step's simtime + 60 minutes
-  document.getElementById('addStepBtn').addEventListener('click', (e)=> {
-    // Check if maximum steps limit reached
-    if(programSteps.length >= MAX_PROGRAM_STEPS) {
-      showMaxStepsPopover(e.currentTarget);
-      return;
-    }
-
+  document.getElementById('addStepBtn').addEventListener('click', ()=> {
     // Check if editing is locked (device running)
     if(window.__programEditingLocked && window.__programEditingLocked()){
       if(window.__flashProgramLock) window.__flashProgramLock();
@@ -4617,7 +4377,7 @@ function attachProgramTableListeners(){
         previousProgramSteps = JSON.parse(JSON.stringify(programSteps));
         const undoBtn=document.getElementById('undoExampleBtn'); if(undoBtn) undoBtn.disabled=false;
         programSteps = JSON.parse(JSON.stringify(ex.steps));
-        renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
+        renderProgramSteps(); updatePreview(true);
         const tbl=document.getElementById('programStepsTable'); if(tbl){ tbl.classList.add('flash-replaced'); setTimeout(()=>tbl.classList.remove('flash-replaced'),600); }
         hideExample();
       }
@@ -4646,7 +4406,7 @@ function attachProgramTableListeners(){
       if(window.__flashProgramLock) window.__flashProgramLock();
       return;
     }
-    programSteps = []; renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
+    programSteps = []; renderProgramSteps(); updatePreview(true);
   });
   // Undo button logic
   const undoBtn = document.getElementById('undoExampleBtn');
@@ -4662,7 +4422,7 @@ function attachProgramTableListeners(){
       programSteps = JSON.parse(JSON.stringify(previousProgramSteps));
       previousProgramSteps = null;
       undoBtn.disabled = true;
-      renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
+      renderProgramSteps(); updatePreview(true);
       const tbl = document.getElementById('programStepsTable');
       if(tbl){ tbl.classList.add('flash-undo'); setTimeout(()=>tbl.classList.remove('flash-undo'), 600); }
     });
@@ -8782,7 +8542,6 @@ function downloadProfile(){
       syncFormFromState();
       renderProgramSteps();
       updatePreview(true);
-      updateMaxStepsUI();
     }
   }
   window.renderRecentProfiles = function(){
@@ -8936,8 +8695,6 @@ function downloadProfile(){
   // Initialize Undo/Redo System
   document.addEventListener('DOMContentLoaded', ()=> {
     initializeUndoSession();
-    // Initialize max steps UI
-    updateMaxStepsUI();
   });
   
   // Expose functions for Import Profile functionality
@@ -9879,13 +9636,6 @@ function toggleHelpDetail(button) {
      
      if (!parsed) {
        alert('❌ Import failed: The selected file does not appear to be a valid profile .txt format.\n\nPlease ensure the file contains settings like:\nSTART_TIME_HHMM=600\nSTOP_TIME_HHMM=1800\nPROGRAM_STEPS=[...]');
-       importFileInput.value = ''; // reset
-       return;
-     }
-     
-     // Check if imported profile exceeds maximum steps limit
-     if (parsed.PROGRAM_STEPS && Array.isArray(parsed.PROGRAM_STEPS) && parsed.PROGRAM_STEPS.length > MAX_PROGRAM_STEPS) {
-       alert(`❌ Import failed: The profile contains ${parsed.PROGRAM_STEPS.length} program steps, which exceeds the maximum limit of ${MAX_PROGRAM_STEPS} steps.\n\nPlease reduce the number of steps in the profile file before importing.`);
        importFileInput.value = ''; // reset
        return;
      }
@@ -15317,37 +15067,37 @@ function clearHoldState(){
   const QUICK_START_STEPS = [
     {
       target: '#monitorConnectBtn',
-      titleKey: 'guideConnectDevice',
-      contentKey: 'guideConnectDeviceDesc',
+      title: 'Connect Your Device',
+      content: 'Click "Connect" to establish a serial connection with your device via USB.',
       position: 'bottom',
       allowInteraction: true
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
-      titleKey: 'guideKeySettings',
-      contentKey: 'guideKeySettingsDesc',
+      title: 'Key Settings',
+      content: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
       position: 'bottom'
     },
     {
       target: 'fieldset[data-section="program-control"]',
-      titleKey: 'guideProgramSteps',
-      contentKey: 'guideProgramStepsDesc',
+      title: 'Program Steps',
+      content: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
       position: 'right'
     },
     {
       target: '#programSection',
-      titleKey: 'guideProgramTimeline',
-      contentKey: 'guideProgramTimelineDesc',
+      title: 'Program Step Timeline',
+      content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
       position: 'top',
       rightTooltip: true
     },
     {
       target: '#recentProfiles',
-      titleKey: 'guideRecentProfiles',
-      contentKey: 'guideRecentProfilesDesc',
+      title: 'Recent Profiles',
+      content: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
       position: 'top',
-      offsetY: 7,
-      heightAdjust: -15,
+      offsetY: 7,  // Move top down by 15px total from original -8
+      heightAdjust: -15,  // Reduce height by 15px to keep bottom edge in place
       adjustTarget: (el) => {
         // Target parent container to include both title and profiles
         return el.parentElement;
@@ -15355,8 +15105,8 @@ function clearHoldState(){
     },
     {
       target: '[data-export-ref="uploadBtn"]',
-      titleKey: 'uploadToDevice',
-      contentKey: 'guideUploadToDevice',
+      title: 'Upload to Device',
+      content: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
       position: 'bottom',
       highlight: true
     }
@@ -15366,44 +15116,44 @@ function clearHoldState(){
     ...QUICK_START_STEPS,
     {
       target: '[data-export-ref="downloadBtn"]',
-      titleKey: 'guideDownloadProfile',
-      contentKey: 'guideDownloadProfileDesc',
+      title: 'Download Profile',
+      content: 'Save your current settings as a .txt file to your computer. Great for backup, sharing, or manual editing.',
       position: 'bottom'
     },
     {
       target: '[data-export-ref="importBtn"]',
-      titleKey: 'guideImportProfile',
-      contentKey: 'guideImportProfileDesc',
+      title: 'Import Profile',
+      content: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
       position: 'bottom'
     },
     {
       target: '#loadFromDeviceBtn',
-      titleKey: 'guideLoadFromDevice',
-      contentKey: 'guideLoadFromDeviceDesc',
+      title: 'Load from Device',
+      content: 'Browse and select profiles stored on the device. Selected profiles run immediately but are temporary (until device restart).',
       position: 'top'
     },
     {
       target: '#diffBanner',
-      titleKey: 'guideProfileDiff',
-      contentKey: 'guideProfileDiffDesc',
+      title: 'Profile Diff Viewer',
+      content: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
       position: 'bottom'
     },
     {
       target: '#simpleModeBtn',
-      titleKey: 'guideSimpleAdvanced',
-      contentKey: 'guideSimpleAdvancedDesc',
+      title: 'Simple vs Advanced Mode',
+      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
       position: 'bottom'
     },
     {
       target: '#deviceIdentityBadge',
-      titleKey: 'guideDeviceIdentity',
-      contentKey: 'guideDeviceIdentityDesc',
+      title: 'Device Identity',
+      content: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
       position: 'bottom'
     },
     {
       target: '#helpToggleBtn',
-      titleKey: 'guideHelpPanel',
-      contentKey: 'guideHelpPanelDesc',
+      title: 'Help Panel',
+      content: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
       position: 'left'
     }
   ];
@@ -15413,11 +15163,6 @@ function clearHoldState(){
   let guideActive = false;
   let deviceConnected = false;
   let isPositioning = false; // Prevent positioning race conditions
-  
-  // Expose initial state globally
-  window.guideActive = false;
-  window.currentStepIndex = 0;
-  window.currentSteps = [];
   
   // Dynamic spotlight tracking state
   let currentSpotlightTarget = null;
@@ -15540,33 +15285,24 @@ function clearHoldState(){
     currentStepIndex = index;
     const step = currentSteps[index];
     
-    // Expose state globally for language switching
-    window.guideActive = guideActive;
-    window.currentStepIndex = currentStepIndex;
-    window.currentSteps = currentSteps;
-    
     // Save progress
     localStorage.setItem(FTUE_PROGRESS_KEY, JSON.stringify({
       path: currentSteps === FULL_TOUR_STEPS ? 'full' : 'quick',
       step: index
     }));
     
-    // Get current language
-    const lang = localStorage.getItem('solasim_language') || 'en';
-    
-    // Update step content using translation keys
-    stepTitle.textContent = TRANSLATIONS[lang][step.titleKey] || step.title || 'Step';
-    stepContent.innerHTML = TRANSLATIONS[lang][step.contentKey] || step.content || '';
+    // Update step content
+    stepTitle.textContent = step.title;
+    stepContent.innerHTML = step.content;
     stepIndicator.textContent = `${index + 1} / ${currentSteps.length}`;
     
-    // Update buttons with translations
+    // Update buttons
     backBtn.disabled = index === 0;
-    backBtn.textContent = TRANSLATIONS[lang].back;
     if (index === currentSteps.length - 1) {
-      nextBtn.textContent = TRANSLATIONS[lang].finish;
+      nextBtn.textContent = 'Finish ✓';
       nextBtn.className = 'btn-finish';
     } else {
-      nextBtn.textContent = TRANSLATIONS[lang].next;
+      nextBtn.textContent = 'Next ►';
       nextBtn.className = 'btn-next';
     }
     

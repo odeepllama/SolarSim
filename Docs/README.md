@@ -6,6 +6,12 @@
 
 Resources needed (cameras, servos, soldering iron, cables, connectors, LED matrix panels)
 
+**RP2040 GPIO pins**
+pin3  - ROTATION platform
+pin7  - LED array
+pin13 - servo2
+pin15 - servo3
+
 (Bluetooth cell phone trigger?)
 
 [Link to Video Walkthrough] (comign soon!)

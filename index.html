@@ -1,3 +1,4 @@
+<!-- ...existing code... -->
 <!DOCTYPE html>
 <!--
 ================================================================================
@@ -43,6 +44,32 @@ https://github.com/odeepllama/SolarSim/tree/main
 <title>SolaSim Studio</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
+/* Ensure language toggle button is always visible and styled */
+#langToggleBtn {
+  background: #fff !important;
+  color: #222 !important;
+  border: 1px solid #bbb !important;
+  border-radius: 6px !important;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.10);
+  transition: background 0.18s, color 0.18s;
+  cursor: pointer;
+  z-index: 1001;
+}
+#langToggleBtn:hover, #langToggleBtn:focus-visible {
+  background: #f5f5f5 !important;
+  color: #111 !important;
+  border-color: #888 !important;
+  outline: none;
+}
+#langToggleBtn:active {
+  background: #e0e0e0 !important;
+  color: #000 !important;
+  border-color: #888 !important;
+}
+/* Japanese button size adjustment for i18n (monitor/toolbar row) */
+.jp-btn { font-size: 0.97rem !important; padding-top: 6px !important; padding-bottom: 6px !important; }
 /* ============================================================================
    SOLASIM STUDIO STYLES
    ============================================================================ */
@@ -56,6 +83,10 @@ https://github.com/odeepllama/SolarSim/tree/main
  h2 { font-size: 1.4rem; margin-top: 2rem; background:#ffffff; border-radius:8px; padding:1rem; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; }
  fieldset { border:1px solid #ccd; border-radius:6px; margin:1rem 0; padding:.75rem 1rem; background:#fff; border-bottom: 1px solid #1f1e1f; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
  legend { font-weight:600; font-size: 1.1rem; padding:4px 12px; background:#dcdcdc; border-radius:4px; }
+
+/* Japanese heading size adjustment for i18n */
+.jp-heading { font-size: 1.25rem !important; letter-spacing: 0.01em; }
+#appTitle.jp-heading { font-size: 1.55rem !important; }
 
 /* ============================================================================
    FORM LAYOUT & CONTROLS
@@ -286,14 +317,14 @@ https://github.com/odeepllama/SolarSim/tree/main
    HELP PANEL
    ============================================================================ */
 /* Guide and Help buttons in top-right corner */
-#guideToggleBtn, #helpToggleBtn { position:fixed; top:28px; z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
-#guideToggleBtn { right:30px; background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
-#helpToggleBtn { right:136px; padding:8px 12px; }
+#guideToggleBtn, #helpToggleBtn { z-index:900; background:#FFD700; color:#111; border:1px solid #b58a00; box-shadow:0 2px 6px rgba(0,0,0,0.28); font-size:1rem; padding:8px 12px; height:auto; font-weight:600; line-height:1.5; }
+#guideToggleBtn { background:#3478f6 !important; border-color:#2d6cdf; color:#fff !important; padding:8px 12px; }
+#helpToggleBtn { padding:8px 12px; }
 #guideToggleBtn:hover:not(:disabled), #guideToggleBtn:focus-visible { background:#4a8cf8 !important; border-color:#2560c7; outline:none; color:#fff !important; }
 #guideToggleBtn:active:not(:disabled) { background:#2867d9 !important; border-color:#1f4fa8; color:#fff !important; }
 #helpToggleBtn:hover:not(:disabled), #helpToggleBtn:focus-visible { background:#ffcc00; border-color:#a67d00; outline:none; }
 #helpToggleBtn:active:not(:disabled) { background:#e6b800; border-color:#8f6a00; }
- #helpPanel { position:fixed; top:0; right:0; width:380px; max-width:90%; height:100%; background:#ffffff; box-shadow:-4px 0 12px rgba(0,0,0,0.18); transform:translateX(100%); transition:transform .28s ease; z-index:999; display:flex; flex-direction:column; }
+ #helpPanel { position:fixed; top:0; right:0; width:380px; max-width:90%; height:100%; background:#ffffff; box-shadow:-4px 0 12px rgba(0,0,0,0.18); transform:translateX(100%); transition:transform .28s ease; z-index:3000; display:flex; flex-direction:column; }
  #helpPanel.open { transform:translateX(0); }
  #helpPanel header { padding:12px 16px; background:#1f2933; color:#fff; display:flex; align-items:center; justify-content:space-between; }
  #helpPanel header h3 { margin:0; font-size:1.2rem; }
@@ -343,6 +374,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
 /* Spotlight Overlay System */
 #ftueSpotlight { display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; }
+/* Keep language toggle and guide button above spotlight */
+#langToggleBtn, #guideToggleBtn, #helpToggleBtn { z-index:10000 !important; position:relative; }
 #ftueSpotlight.active { display:block; pointer-events:auto; }
 #ftueSpotlight .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.25); transition:opacity 0.6s ease; }
 #ftueSpotlight .spotlight-hole { position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,0.25), 0 0 40px 8px rgba(255,215,0,0.9), 0 0 80px 16px rgba(255,215,0,0.5); border-radius:8px; transition:all 0.6s ease; pointer-events:none; z-index:10001; border:3px solid rgba(255,215,0,1); }
@@ -748,6 +781,13 @@ select:not(#filename_tag):not(#filename_preview) {
 /* ============================================================================
    CONFIRMATION POPOVERS
    ============================================================================ */
+  /* Max steps warning popover */
+  #maxStepsPopover { position:absolute; z-index:100000; background:#fff9e6 !important; color:#856404; border:3px solid #ffc107; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,0.4), 0 4px 12px rgba(255,193,7,0.3); padding:16px 20px; max-width:380px; min-width:280px; display:none; }
+  #maxStepsPopover .warning-icon { font-size:1.8rem; line-height:1; }
+  #maxStepsPopover .warning-title { font-size:1.1rem; font-weight:700; color:#856404; line-height:1.2; }
+  #maxStepsPopover .warning-text { font-size:0.95rem; line-height:1.5; margin-bottom:12px; color:#664d03; }
+  #maxStepsPopover .btn-close { background:#ffc107; border:1px solid #e6b800; color:#000; border-radius:6px; padding:6px 16px; font-size:0.9rem; cursor:pointer; font-weight:600; transition:background 0.2s; }
+  #maxStepsPopover .btn-close:hover { background:#ffd54f; }
   /* Near-cursor confirm popover (for quick actions like delete) */
   #nearbyConfirm{ position:absolute; z-index:100000; background:#ffffff !important; color:#111; border:3px solid #3478f6; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,0.4), 0 4px 12px rgba(52,120,246,0.3); padding:16px 20px; width:50vw; max-width:420px; min-width:300px; display:none; }
   #nearbyConfirm .txt{ margin:0 0 12px; font-size:1rem; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; }
@@ -1140,25 +1180,25 @@ select:not(#filename_tag):not(#filename_preview) {
 </style>
 </head>
 <body>
-<h1>Solar Simulator Studio 20251224a</h1>
+<h1 id="appTitle"></h1>
 <div class="monitor-toggle-bar">
-  <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" title="Show or hide live device monitor"><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt">Monitor / Interact</span></button>
-  <span id="monitorConnBadge" class="pill red" title="Serial connection status">DISCONNECTED</span>
-  <button id="monitorConnectBtn" type="button" class="secondary" title="Open serial device">Connect</button>
-  <button id="monitorRefreshBtn" type="button" class="secondary" title="Refresh page">Refresh</button>
-  <button id="monitorDisconnectBtn" type="button" class="secondary" disabled title="Close serial connection">Disconnect</button>
+  <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
+  <span id="monitorConnBadge" class="pill red" title=""></span>
+  <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
+  <button id="monitorRefreshBtn" type="button" class="secondary" title=""></button>
+  <button id="monitorDisconnectBtn" type="button" class="secondary" disabled title=""></button>
   <!-- <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button> -->
-  <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title="Send 'help all' to device">Show All Commands</button>
-  <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title="Show status output in log">Show Status</button>
+  <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title=""></button>
+  <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title=""></button>
   <div id="bgColorChooser" style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-    <button id="modeConfigBtn" type="button" title="Configure section visibility">⚙</button>
+    <button id="modeConfigBtn" type="button" title="">⚙</button>
     <div id="modeToggleContainer">
-      <button id="simpleModeBtn" type="button" class="mode-btn" data-mode="simple">Simple</button>
-      <button id="advancedModeBtn" type="button" class="mode-btn active" data-mode="advanced">Advanced</button>
+      <button id="simpleModeBtn" type="button" class="mode-btn" data-mode="simple"></button>
+      <button id="advancedModeBtn" type="button" class="mode-btn active" data-mode="advanced"></button>
     </div>
-    <div class="bg-swatch" data-color="#abbea6" style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Green (Default)"></div>
-    <div class="bg-swatch" data-color="#a6b0be" style="background:#a6b0be; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Blue"></div>
-    <div class="bg-swatch" data-color="#bea6a6" style="background:#bea6a6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title="Red"></div>
+    <div class="bg-swatch" data-color="#abbea6" style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title=""></div>
+    <div class="bg-swatch" data-color="#a6b0be" style="background:#a6b0be; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title=""></div>
+    <div class="bg-swatch" data-color="#bea6a6" style="background:#bea6a6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;" title=""></div>
   </div>
 </div>
 <div id="monitorPanel" aria-hidden="true">
@@ -1186,8 +1226,52 @@ select:not(#filename_tag):not(#filename_preview) {
     </div>
   </div>
 </div>
-<button id="guideToggleBtn" type="button">🎓 Guide</button>
-<button id="helpToggleBtn" type="button" class="secondary">Help</button>
+
+
+<!-- Move topButtonBar to top of body for guaranteed visibility -->
+</div>
+<body>
+<div id="topButtonBar" style="position:fixed; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
+  <button id="guideToggleBtn" type="button" style="vertical-align:middle;">🎓 Guide</button>
+  <button id="langToggleBtn" type="button" style="padding:8px 12px; background:#fff; color:#222; border:1px solid #bbb; border-radius:6px; font-weight:600; font-size:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.10); transition:background 0.18s, color 0.18s; cursor:pointer; vertical-align:middle;">日本語 / ENG</button>
+  <button id="helpToggleBtn" type="button" class="secondary" style="padding:8px 12px; vertical-align:middle;">Help</button>
+</div>
+<!-- ...existing code... -->
+
+<style>
+#topButtonBar button#langToggleBtn:hover, #topButtonBar button#langToggleBtn:focus-visible {
+  background: #f5f5f5;
+  color: #111;
+  border-color: #888;
+  outline: none;
+}
+#topButtonBar button#langToggleBtn:active {
+  background: #e0e0e0;
+  color: #000;
+  border-color: #888;
+}
+#topButtonBar button#helpToggleBtn {
+  background: #FFD700;
+  color: #111;
+  border: 1px solid #b58a00;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 6px;
+  transition: background 0.18s, color 0.18s;
+}
+#topButtonBar button#helpToggleBtn:hover, #topButtonBar button#helpToggleBtn:focus-visible {
+  background: #ffcc00;
+  color: #111;
+  border-color: #a67d00;
+  outline: none;
+}
+#topButtonBar button#helpToggleBtn:active {
+  background: #e6b800;
+  color: #000;
+  border-color: #8f6a00;
+}
+</style>
 
 <!-- FTUE Welcome Modal -->
 <div id="ftueWelcomeModal" role="dialog" aria-labelledby="ftueWelcomeTitle" aria-modal="true">
@@ -1623,21 +1707,21 @@ select:not(#filename_tag):not(#filename_preview) {
   </div>
 </div>
 
-<div id="errorBanner"></div>
+<div id="errorBanner" data-i18n="errorBanner"></div>
 
 <fieldset id="deviceProgramStatusFieldset" style="margin-top:18px; display:none;">
-  <legend id="deviceProgramStatusTitle" style="cursor:pointer; user-select:none;">▶ Device Program Status</legend>
+  <legend id="deviceProgramStatusTitle" style="cursor:pointer; user-select:none;" data-i18n="deviceProgramStatus">▶ Device Program Status</legend>
   <div id="deviceProgramStatusContent" style="display:none;">
     <div id="deviceProgramStatusTimeline" style="margin:6px 0 10px;"></div>
   </div>
 </fieldset>
 
-<h2>Profile Management</h2>
+<h2 data-i18n="profileManagement">Profile Management</h2>
 
 <div id="profileDefaultsBar" style="margin:0 0 10px 0; display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:.7rem;">
-  <button id="saveDefaultBtn" type="button">Save as Default</button>
-  <button id="applyDefaultBtn" type="button" disabled>Apply Default</button>
-  <button id="clearDefaultBtn" type="button" class="secondary" disabled>Clear Default</button>
+  <button id="saveDefaultBtn" type="button" data-i18n="saveDefault">Save as Default</button>
+  <button id="applyDefaultBtn" type="button" disabled data-i18n="applyDefault">Apply Default</button>
+  <button id="clearDefaultBtn" type="button" class="secondary" disabled data-i18n="clearDefault">Clear Default</button>
   <!-- <button id="loadCurrentProfileBtn" type="button" class="secondary" disabled title="Load the profile currently running on the device">⚡ Load Current</button> -->
   <span id="autoloadStatusBadge" style="display:none; border-radius:4px; font-size:0.9rem; font-weight:600; border:1px solid transparent;" data-tooltip="Auto-load status on device. Device RESET required for this setting to take effect."></span>
   <button id="autoloadLockBtn" type="button" class="secondary" style="display:none; padding:6px 8px; font-size:1.0rem; line-height:1;" title="Lock/unlock auto-load setting">🔓</button>
@@ -1647,7 +1731,7 @@ select:not(#filename_tag):not(#filename_preview) {
   <div style="width:100%;"></div><!-- Force new row -->
   <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
     <input type="checkbox" id="loadDefaultOnStartupCheckbox" style="cursor:pointer;">
-    <span>Load default on page at startup</span>
+    <span data-i18n="loadDefaultOnStartup">Load default on page at startup</span>
   </label>
 </div>
 
@@ -1658,54 +1742,54 @@ select:not(#filename_tag):not(#filename_preview) {
 
 <div class="meta-options-container">
   <fieldset>
-   <legend>Filename Options</legend>
+   <legend data-i18n="filenameOptions">Filename Options</legend>
    <div class="group-grid">
     <div class="field filename-tag">
-       <label for="filename_tag">Tag (optional)</label>
-       <input id="filename_tag" type="text" placeholder="e.g. testA" maxlength="32" />
+       <label for="filename_tag" data-i18n="tagLabel">Tag (optional)</label>
+       <input id="filename_tag" type="text" placeholder="e.g. testA" maxlength="32" data-i18n-placeholder="tagPlaceholder" />
      </div>
     <div class="field filename-preview">
-    <label for="filename_preview">Filename</label>
+    <label for="filename_preview" data-i18n="filenameLabel">Filename</label>
     <input id="filename_preview" type="text" class="derived" readonly />
-    <div class="small-note" style="font-size: 10pt;">Automatically generated from timestamp + tag.</div>
+    <div class="small-note" style="font-size: 10pt;" data-i18n="filenameNote">Automatically generated from timestamp + tag.</div>
      </div>
    </div>
   </fieldset>
 
   <fieldset>
-   <legend>Profile Meta</legend>
+   <legend data-i18n="profileMeta">Profile Meta</legend>
    <div class="group-grid">
     <div class="field">
-     <label for="note">Note (optional)</label>
-    <input id="note" type="text" placeholder="Experiment description..." style="text-align:left;" />
+     <label for="note" data-i18n="noteLabel">Note (optional)</label>
+    <input id="note" type="text" placeholder="Experiment description..." style="text-align:left;" data-i18n-placeholder="notePlaceholder" />
     </div>
    </div>
   </fieldset>
 </div>
 
 <div class="toolbar" id="topExportBar" style="margin:8px 0 14px;">
- <button type="button" data-export-ref="downloadBtn" class="mirror-export">Download Profile</button>
- <button type="button" data-export-ref="importBtn" class="mirror-export" style="background:#ffc107; color:#000; font-weight:600;" title="Import a profile .txt file from your computer">Import Profile</button>
- <button type="button" data-export-ref="uploadBtn" class="mirror-export upload-green" title="Upload directly to the connected MicroPython board via Web Serial (raw REPL)">Upload to Device</button>
- <button type="button" id="printSummaryBtn" class="secondary" title="Generate a printer-friendly PDF summary with timeline visualization and key settings">Print Summary</button>
+ <button type="button" data-export-ref="downloadBtn" class="mirror-export" data-i18n="downloadProfile">Download Profile</button>
+ <button type="button" data-export-ref="importBtn" class="mirror-export" style="background:#ffc107; color:#000; font-weight:600;" title="Import a profile .txt file from your computer" data-i18n="importProfile">Import Profile</button>
+ <button type="button" data-export-ref="uploadBtn" class="mirror-export upload-green" title="Upload directly to the connected MicroPython board via Web Serial (raw REPL)" data-i18n="uploadToDevice">Upload to Device</button>
+ <button type="button" id="printSummaryBtn" class="secondary" title="Generate a printer-friendly PDF summary with timeline visualization and key settings" data-i18n="printSummary">Print Summary</button>
 </div>
 
-<h2 data-section="program-settings-header">Program Settings</h2>
+<h2 data-section="program-settings-header" data-i18n="programSettingsHeader">Program Settings</h2>
 
 <div id="diffBanner" data-section="program-settings-header">
-  <span class="diff-count">Form differs from device</span>
-  <button type="button" id="diffShowDetailsBtn">Show First Difference</button>
-  <button type="button" id="diffRevertBtn">Revert to Device</button>
-  <button type="button" id="diffSyncBtn" class="upload-green">Sync to Device</button>
-  <button type="button" id="diffDismissBtn" class="dismiss-btn">Dismiss</button>
+  <span class="diff-count" data-i18n="formDiffers">Form differs from device</span>
+  <button type="button" id="diffShowDetailsBtn" data-i18n="showFirstDifference">Show First Difference</button>
+  <button type="button" id="diffRevertBtn" data-i18n="revertToDevice">Revert to Device</button>
+  <button type="button" id="diffSyncBtn" class="upload-green" data-i18n="syncToDevice">Sync to Device</button>
+  <button type="button" id="diffDismissBtn" class="dismiss-btn" data-i18n="dismiss">Dismiss</button>
 </div>
 
 <div id="formContainer"></div>
 <div id="programSection" style="display:none;">
- <h2 id="programTimelineTitle">Program Step Timeline</h2>
+<h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
  <div style="font-size:0.96rem; color:#666; margin:4px 0 8px 0; font-style:italic;">💡 Drag segment boundaries or entire segments to adjust timing when not running on device</div>
  <div id="timelineContainer" style="margin:6px 0 10px;"></div>
- <h2 id="programEditingTitle">Program Step Editing</h2>
+<h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
  <div class="toolbar">
   <button id="addStepBtn" type="button">Add Step</button>
  <button id="addDayBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;" title="Add a new step with the same simtime as the last step">Add Day</button>
@@ -1717,7 +1801,8 @@ select:not(#filename_tag):not(#filename_preview) {
  <div style="margin: 8px 0; padding: 6px 10px; background: #f0f0f0; border-left: 3px solid #3478f6; border-radius: 3px;">
   <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
    <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
-   <span>Visualize all steps on a single day</span>
+  <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
+    <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
   </label>
  </div>
  <table class="program-steps-table" id="programStepsTable">
@@ -1730,25 +1815,27 @@ select:not(#filename_tag):not(#filename_preview) {
  </table>
   <div id="programSummary" style="margin-top:6px; font-size:.95rem; font-family:ui-monospace,monospace; color:#2a2a2a; opacity:.95; line-height:1.3;"></div>
     <div id="programSummaryNote" style="margin-top:8px; font-size:1.09rem; line-height:1.5; max-width:720px; color:#333; opacity:.92; background:#f8f9fa; padding:10px 12px; border-left:3px solid #3478f6; border-radius:4px;">
-  <strong>Program Step Behavior:</strong>
+  <strong data-i18n="programStepBehavior">Program Step Behavior:</strong>
+    <strong data-i18n="programStepBehavior">Program Step Behavior:</strong>
   <ul style="margin:6px 0 0 18px; padding:0;">
-    <li><strong>Speed:</strong> Applies from step's start until next speed change</li>
-    <li><strong>RUN transitions:</strong> Advance simulated time using active speed</li>
-    <li><strong>Backward RUN:</strong> Negative speed runs to earlier time/day when next step is later</li>
-    <li><strong>JUMP transitions:</strong> Instantaneous reposition, no simulated time added</li>
-    <li><strong>RUN/JUMP to same or earlier time:</strong> Creates new day</li>
-    <li><strong>HOLD (Speed=0):</strong> Adds real-time duration only</li>
+    <li><strong data-i18n="speed">Speed:</strong> <span data-i18n="speedDesc">Applies from step's start until next speed change</span></li>
+    <li><strong data-i18n="runTransitions">RUN transitions:</strong> <span data-i18n="runTransitionsDesc">Advance simulated time using active speed</span></li>
+    <li><strong data-i18n="backwardRun">Backward RUN:</strong> <span data-i18n="backwardRunDesc">Negative speed runs to earlier time/day when next step is later</span></li>
+    <li><strong data-i18n="jumpTransitions">JUMP transitions:</strong> <span data-i18n="jumpTransitionsDesc">Instantaneous reposition, no simulated time added</span></li>
+    <li><strong data-i18n="runJumpSameOrEarlier">RUN/JUMP to same or earlier time:</strong> <span data-i18n="runJumpSameOrEarlierDesc">Creates new day</span></li>
+    <li><strong data-i18n="holdSpeedZero">HOLD (Speed=0):</strong> <span data-i18n="holdSpeedZeroDesc">Adds real-time duration only</span></li>
+    <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" autocomplete="off" style="flex:1;" data-i18n-placeholder="typeCommand" />
   </ul>
  </div>
 </div>
 
-<h2 data-section="export-section">Download, Import & Upload</h2>
+<h2 data-section="export-section" data-i18n="exportSection">Download, Import & Upload</h2>
 <div class="toolbar" id="bottomExportBar" data-section="export-section">
- <button id="downloadBtn" type="button">Download Profile</button>
- <button id="importBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;" title="Import a profile .txt file from your computer">Import Profile</button>
+ <button id="downloadBtn" type="button" data-i18n="downloadProfile">Download Profile</button>
+ <button id="importBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;" title="Import a profile .txt file from your computer" data-i18n="importProfile">Import Profile</button>
  <input id="importFileInput" type="file" accept=".txt" style="display:none;" />
- <button id="uploadBtn" type="button" class="upload-green" title="Upload directly to the connected MicroPython board via Web Serial (raw REPL)">Upload to Device</button>
- <button id="textSyncToggleBtn" type="button" class="secondary" title="Toggle sync direction: Form updates text (default) or load text into form">Form to Text ▼</button>
+ <button id="uploadBtn" type="button" class="upload-green" title="Upload directly to the connected MicroPython board via Web Serial (raw REPL)" data-i18n="uploadToDevice">Upload to Device</button>
+ <button id="textSyncToggleBtn" type="button" class="secondary" title="Toggle sync direction: Form updates text (default) or load text into form" data-i18n="formToText">Form to Text ▼</button>
 </div>
 <div style="position:relative; width:100%;" data-section="profile-text-window">
   <div id="exportPreviewTopResizeGrip" title="Drag to resize profile text"></div>
@@ -1760,18 +1847,18 @@ select:not(#filename_tag):not(#filename_preview) {
 <!-- Upload confirmation modal -->
 <div id="uploadConfirmOverlay" aria-hidden="true" role="dialog" aria-labelledby="uploadConfirmTitle">
   <div id="uploadConfirmDialog">
-    <h4 id="uploadConfirmTitle">Confirm before upload</h4>
-    <p>Please press the RP2040 board's RESET button now. Has the board been reset and is idle?</p>
+    <h4 id="uploadConfirmTitle" data-i18n="uploadConfirmTitle">Confirm before upload</h4>
+    <p data-i18n="uploadConfirmPrompt">Please press the RP2040 board's RESET button now. Has the board been reset and is idle?</p>
     <div id="uploadConfirmOptions" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin:6px 0 4px;">
       <label for="uploadDontAskAgain" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
         <input id="uploadDontAskAgain" type="checkbox" />
-        <span>Don't ask me again</span>
+        <span data-i18n="dontAskMeAgain">Don't ask me again</span>
       </label>
-      <span style="font-size:.75rem; opacity:.7;">Hold Option to show</span>
+      <span style="font-size:.75rem; opacity:.7;" data-i18n="holdOptionToShow">Hold Option to show</span>
     </div>
     <div class="btn-row">
-      <button type="button" class="secondary" id="uploadCancelBtn">Cancel</button>
-      <button type="button" class="upload-green" id="uploadProceedBtn">Yes, Upload</button>
+      <button type="button" class="secondary" id="uploadCancelBtn" data-i18n="cancel">Cancel</button>
+      <button type="button" class="upload-green" id="uploadProceedBtn" data-i18n="yesUpload">Yes, Upload</button>
     </div>
   </div>
 </div>
@@ -1779,38 +1866,50 @@ select:not(#filename_tag):not(#filename_preview) {
 <!-- Load from Device confirmation modal -->
 <div id="loadConfirmOverlay" aria-hidden="true" role="dialog" aria-labelledby="loadConfirmTitle">
   <div id="loadConfirmDialog">
-    <h4 id="loadConfirmTitle">Load Profile from Device</h4>
-    <p><strong>⚠️ Important:</strong> This will disable auto-load on the device to prevent interference.</p>
-    <p>The device will <strong>not</strong> automatically reload the latest profile on reset until you upload a new profile.</p>
+    <h4 id="loadConfirmTitle" data-i18n="loadConfirmTitle">Load Profile from Device</h4>
+    <p><strong>⚠️ <span data-i18n="important">Important:</span></strong> <span data-i18n="disableAutoload">This will disable auto-load on the device to prevent interference.</span></p>
+    <p data-i18n="deviceNotAutoload">The device will <strong>not</strong> automatically reload the latest profile on reset until you upload a new profile.</p>
     <div id="loadConfirmOptions" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin:6px 0 4px;">
       <label for="loadDontAskAgain" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
         <input id="loadDontAskAgain" type="checkbox" />
-        <span>Don't show this again</span>
+        <span data-i18n="dontShowThisAgain">Don't show this again</span>
       </label>
-      <span style="font-size:.75rem; opacity:.7;">Hold Option to show</span>
+      <span style="font-size:.75rem; opacity:.7;" data-i18n="holdOptionToShow">Hold Option to show</span>
     </div>
     <div class="btn-row">
-      <button type="button" class="secondary" id="loadCancelBtn">Cancel</button>
-      <button type="button" class="primary" id="loadProceedBtn">Continue</button>
+      <button type="button" class="secondary" id="loadCancelBtn" data-i18n="cancel">Cancel</button>
+      <button type="button" class="primary" id="loadProceedBtn" data-i18n="continue">Continue</button>
     </div>
+  </div>
+</div>
+
+<!-- Max Steps Warning Popover -->
+<div id="maxStepsPopover">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+    <div class="warning-icon">⚠️</div>
+    <div class="warning-title" data-i18n="maxStepsReachedTitle">Maximum Steps Reached</div>
+  </div>
+  <div class="warning-text" data-i18n="maxStepsReached">Please delete steps before adding more.</div>
+  <div style="text-align:center;">
+    <button class="btn-close" data-i18n="understood">Understood</button>
   </div>
 </div>
 
 <!-- Upload Success modal -->
 <div id="uploadSuccessOverlay" aria-hidden="true" role="dialog" aria-labelledby="uploadSuccessTitle">
   <div id="uploadSuccessDialog">
-    <h4 id="uploadSuccessTitle">✓ Upload Successful</h4>
-    <p>The profile has been uploaded to the device.</p>
-    <p>The next step is to refresh the connection between the page and the device.</p>
+    <h4 id="uploadSuccessTitle" data-i18n="uploadSuccessTitle">✓ Upload Successful</h4>
+    <p data-i18n="profileUploaded">The profile has been uploaded to the device.</p>
+    <p data-i18n="refreshConnection">The next step is to refresh the connection between the page and the device.</p>
     <p id="uploadSuccessConnectInstructions" style="margin-top:12px; padding:10px; background:#f0f8ff; border-left:3px solid #2196F3; border-radius:4px; font-size:0.9rem; display:none;">
-      <strong>After clicking "Connect to Device Now":</strong> The page will refresh. Then look for the <strong>"Connect"</strong> button in the Monitor section at the top of the page and click it to select your device.
+      <strong data-i18n="afterClickConnect">After clicking "Connect to Device Now":</strong> <span data-i18n="pageWillRefresh">The page will refresh. Then look for the <strong>"Connect"</strong> button in the Monitor section at the top of the page and click it to select your device.</span>
     </p>
-    <div id="uploadSuccessAutoloadMsg" style="margin-top:12px; padding:8px; background:#f5f5f5; border-radius:6px; font-size:0.85rem; opacity:0.75; display:none;">
+    <div id="uploadSuccessAutoloadMsg" style="margin-top:12px; padding:8px; background:#f5f5f5; border-radius:6px; font-size:0.85rem; opacity:0.75; display:none;" data-i18n="autoloadReenabled">
       Auto-load has been re-enabled on the device.
     </div>
     <div class="btn-row">
-      <button type="button" class="secondary" id="uploadSuccessCancelBtn">Cancel</button>
-      <button type="button" class="upload-green" id="uploadSuccessConnectBtn">Connect to Device Now</button>
+      <button type="button" class="secondary" id="uploadSuccessCancelBtn" data-i18n="cancel">Cancel</button>
+      <button type="button" class="upload-green" id="uploadSuccessConnectBtn" data-i18n="connectToDeviceNow">Connect to Device Now</button>
     </div>
   </div>
 </div>
@@ -2024,6 +2123,391 @@ select:not(#filename_tag):not(#filename_preview) {
 
 <script type="text/javascript">
 // ============================================================================
+
+
+// LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
+const TRANSLATIONS = {
+  en: {
+    appTitle: 'Solar Simulator Studio 20251224a',
+    monitorInteract: 'Monitor / Interact',
+    disconnected: 'DISCONNECTED',
+    connect: 'Connect',
+    refresh: 'Refresh',
+    disconnect: 'Disconnect',
+    showAllCommands: 'Show All Commands',
+    showStatus: 'Show Status',
+    simple: 'Simple',
+    advanced: 'Advanced',
+    langToggle: '日本語 / ENG',
+    guide: '🎓 Guide',
+    help: 'Help',
+    welcomeTitle: 'Welcome to SolaSim Studio! 🌞',
+    welcomeSubtitle: "Let's get you started with solar simulation",
+    userGuide: 'User Guide',
+    userGuideDesc: 'Comprehensive instructions for installation, setup, and usage',
+    fullTour: 'Full Tour',
+    fullTourDesc: 'In-depth walkthrough of all features and capabilities',
+    skipGuide: 'Skip Guide - Start Working',
+    skipGuideDesc: 'Jump straight to the interface (you can restart the guide anytime)',
+    dontShowAgain: "Don't show this again",
+    exitGuide: 'Exit Guide',
+    back: '◄ Back',
+    next: 'Next ►',
+    finish: 'Finish ✓',
+    // --- i18n for new UI elements ---
+    deviceProgramStatus: 'Device Program Status',
+    profileManagement: 'Profile Management',
+    saveDefault: 'Save as Default',
+    applyDefault: 'Apply Default',
+    clearDefault: 'Clear Default',
+    loadDefaultOnStartup: 'Load default on page at startup',
+    programStepTimeline: 'Program Step Timeline',
+    programStepEditing: 'Program Step Editing',
+    visualizeSingleDay: 'Visualize all steps on a single day',
+    programStepBehavior: 'Program Step Behavior:',
+    speed: 'Speed:',
+    speedDesc: 'Applies from step\'s start until next speed change',
+    runTransitions: 'RUN transitions:',
+    runTransitionsDesc: 'Advance simulated time using active speed',
+    backwardRun: 'Backward RUN:',
+    backwardRunDesc: 'Negative speed runs to earlier time/day when next step is later',
+    jumpTransitions: 'JUMP transitions:',
+    jumpTransitionsDesc: 'Instantaneous reposition, no simulated time added',
+    runJumpSameOrEarlier: 'RUN/JUMP to same or earlier time:',
+    runJumpSameOrEarlierDesc: 'Creates new day',
+    holdSpeedZero: 'HOLD (Speed=0):',
+    holdSpeedZeroDesc: 'Adds real-time duration only',
+    typeCommand: 'Type command (e.g. set, toggle, jump, trigger)',
+    filenameOptions: 'Filename Options',
+    tagLabel: 'Tag (optional)',
+    tagPlaceholder: 'e.g. testA',
+    filenameLabel: 'Filename',
+    filenameNote: 'Automatically generated from timestamp + tag.',
+    profileMeta: 'Profile Meta',
+    noteLabel: 'Note (optional)',
+    notePlaceholder: 'Experiment description...',
+    downloadProfile: 'Download Profile',
+    importProfile: 'Import Profile',
+    uploadToDevice: 'Upload to Device',
+    printSummary: 'Print Summary',
+    programSettingsHeader: 'Program Settings',
+    formDiffers: 'Form differs from device',
+    showFirstDifference: 'Show First Difference',
+    revertToDevice: 'Revert to Device',
+    syncToDevice: 'Sync to Device',
+    dismiss: 'Dismiss',
+    exportSection: 'Download, Import & Upload',
+    formToText: 'Form to Text ▼',
+    uploadConfirmTitle: 'Confirm before upload',
+    uploadConfirmPrompt: "Please press the RP2040 board's RESET button now. Has the board been reset and is idle?",
+    dontAskMeAgain: "Don't ask me again",
+    holdOptionToShow: 'Hold Option to show',
+    cancel: 'Cancel',
+    yesUpload: 'Yes, Upload',
+    loadConfirmTitle: 'Load Profile from Device',
+    important: 'Important:',
+    disableAutoload: 'This will disable auto-load on the device to prevent interference.',
+    deviceNotAutoload: 'The device will <strong>not</strong> automatically reload the latest profile on reset until you upload a new profile.',
+    dontShowThisAgain: "Don't show this again",
+    continue: 'Continue',
+    uploadSuccessTitle: '✓ Upload Successful',
+    profileUploaded: 'The profile has been uploaded to the device.',
+    refreshConnection: 'The next step is to refresh the connection between the page and the device.',
+    afterClickConnect: 'After clicking "Connect to Device Now":',
+    pageWillRefresh: 'The page will refresh. Then look for the <strong>"Connect"</strong> button in the Monitor section at the top of the page and click it to select your device.',
+    autoloadReenabled: 'Auto-load has been re-enabled on the device.',
+    connectToDeviceNow: 'Connect to Device Now',
+    errorBanner: '', // Will be set dynamically
+    maxStepsReached: 'Please delete steps before adding more.',
+    maxStepsReachedTitle: 'Maximum of 30 Steps Reached',
+    understood: 'Understood',
+    finish: 'Finish ✓',
+    // Guide step translations
+    guideConnectDevice: 'Connect Your Device',
+    guideConnectDeviceDesc: 'Click "Connect" to establish a serial connection with your device via USB.',
+    guideKeySettings: 'Key Settings',
+    guideKeySettingsDesc: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
+    guideProgramSteps: 'Program Steps',
+    guideProgramStepsDesc: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
+    guideProgramTimeline: 'Program Step Timeline',
+    guideProgramTimelineDesc: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
+    guideRecentProfiles: 'Recent Profiles',
+    guideRecentProfilesDesc: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
+    guideDownloadProfile: 'Download Profile',
+    guideDownloadProfileDesc: 'Save your current settings as a .txt file to your computer. Great for backup, sharing, or manual editing.',
+    guideImportProfile: 'Import Profile',
+    guideImportProfileDesc: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
+    guideLoadFromDevice: 'Load from Device',
+    guideLoadFromDeviceDesc: 'Browse and select profiles stored on the device. Selected profiles run immediately but are temporary (until device restart).',
+    guideProfileDiff: 'Profile Diff Viewer',
+    guideProfileDiffDesc: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
+    guideSimpleAdvanced: 'Simple vs Advanced Mode',
+    guideSimpleAdvancedDesc: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
+    guideDeviceIdentity: 'Device Identity',
+    guideDeviceIdentityDesc: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
+    guideHelpPanel: 'Help Panel',
+    guideHelpPanelDesc: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
+    guideUploadToDevice: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
+  },
+  ja: {
+    appTitle: 'ソーラーシミュレータースタジオ 20251224a',
+    monitorInteract: 'モニター / 操作',
+    disconnected: '未接続',
+    connect: '接続',
+    refresh: 'リフレッシュ',
+    disconnect: '切断',
+    showAllCommands: 'すべてのコマンドを表示',
+    showStatus: 'ステータスを表示',
+    simple: 'シンプル',
+    advanced: '詳細',
+    langToggle: '日本語 / ENG',
+    guide: '🎓 ガイド',
+    help: 'ヘルプ',
+    welcomeTitle: 'SolaSim Studio へようこそ！🌞',
+    welcomeSubtitle: '太陽シミュレーションを始めましょう',
+    userGuide: 'ユーザーガイド',
+    userGuideDesc: 'インストール、セットアップ、使用方法の詳細な説明',
+    fullTour: '全機能ツアー',
+    fullTourDesc: 'すべての機能と使い方を詳しく解説',
+    skipGuide: 'ガイドをスキップして開始',
+    skipGuideDesc: 'すぐに操作を始めます（ガイドはいつでも再開できます）',
+    dontShowAgain: '今後この画面を表示しない',
+    exitGuide: 'ガイド終了',
+    back: '◄ 戻る',
+    next: '次へ ►',
+    finish: '完了 ✓',
+    // --- i18n for new UI elements ---
+    deviceProgramStatus: 'デバイスプログラムステータス',
+    profileManagement: 'プロファイル管理',
+    saveDefault: 'デフォルトとして保存',
+    applyDefault: 'デフォルトを適用',
+    clearDefault: 'デフォルトをクリア',
+    loadDefaultOnStartup: '起動時にデフォルトを読み込む',
+    programStepTimeline: 'プログラムステップタイムライン',
+    programStepEditing: 'プログラムステップ編集',
+    visualizeSingleDay: 'すべてのステップを1日に表示',
+    programStepBehavior: 'プログラムステップの動作:',
+    speed: 'スピード:',
+    speedDesc: 'ステップ開始から次のスピード変更まで適用',
+    runTransitions: 'RUN遷移:',
+    runTransitionsDesc: 'アクティブなスピードでシミュレーション時間を進める',
+    backwardRun: '逆方向RUN:',
+    backwardRunDesc: '負のスピードで次のステップが後の場合は前日/前時刻へ',
+    jumpTransitions: 'JUMP遷移:',
+    jumpTransitionsDesc: '即座に位置変更、シミュレーション時間は進まない',
+    runJumpSameOrEarlier: '同じまたは前の時刻へのRUN/JUMP:',
+    runJumpSameOrEarlierDesc: '新しい日を作成',
+    holdSpeedZero: 'HOLD（スピード=0）:',
+    holdSpeedZeroDesc: '実時間のみ加算',
+    typeCommand: 'コマンドを入力（例: set, toggle, jump, trigger）',
+    filenameOptions: 'ファイル名オプション',
+    tagLabel: 'タグ（任意）',
+    tagPlaceholder: '例: testA',
+    filenameLabel: 'ファイル名',
+    filenameNote: 'タイムスタンプ＋タグから自動生成されます。',
+    profileMeta: 'プロファイルメタ',
+    maxStepsReached: '追加する前にステップを削除してください。',
+    maxStepsReachedTitle: '最大30ステップ数に到達',
+    understood: '了解',
+    // Guide step translations
+    guideConnectDevice: 'デバイスを接続',
+    guideConnectDeviceDesc: 'USBケーブル経由でデバイスとのシリアル接続を確立するには、「接続」をクリックしてください。',
+    guideKeySettings: '主要設定',
+    guideKeySettingsDesc: 'シミュレーション開始時刻、タイムスケール（速度）、光の強度を設定します。これらは最も頻繁に調整されるパラメータです。',
+    guideProgramSteps: 'プログラムステップ',
+    guideProgramStepsDesc: 'これを有効にすると、時間指定のアクションシーケンスを作成できます。異なる速度、強度、時刻で複数のステップを定義できます。',
+    guideProgramTimeline: 'プログラムステップタイムライン',
+    guideProgramTimelineDesc: 'タイムラインはプログラムステップを視覚化します。セグメントをドラッグしてタイミングを調整したり、ナビゲーションボタンでステップや日を移動できます。',
+    guideRecentProfiles: '最近のプロファイル',
+    guideRecentProfilesDesc: '以前に保存したプロファイルにすばやくアクセスできます。星アイコンで頻繁に使用するプロファイルをピン留めできます。',
+    guideDownloadProfile: 'プロファイルをダウンロード',
+    guideDownloadProfileDesc: '現在の設定を.txtファイルとしてコンピュータに保存します。バックアップ、共有、手動編集に最適です。',
+    guideImportProfile: 'プロファイルをインポート',
+    guideImportProfileDesc: '以前に保存したプロファイルファイルを読み込みます。これはフォームのみを更新します—ハードウェアに変更を適用するには、デバイスにアップロードする必要があります。',
+    guideLoadFromDevice: 'デバイスから読み込み',
+    guideLoadFromDeviceDesc: 'デバイスに保存されているプロファイルを閲覧して選択します。選択したプロファイルはすぐに実行されますが、一時的です（デバイス再起動まで）。',
+    guideProfileDiff: 'プロファイル差分ビューア',
+    guideProfileDiffDesc: 'フォームがデバイスと異なる場合、黄色のハイライトとこのバナーが表示されます。デバイス設定の誤った上書きを防ぐのに役立ちます。',
+    guideSimpleAdvanced: 'シンプルモード vs 詳細モード',
+    guideSimpleAdvancedDesc: 'シンプルモード（簡素化）と詳細モード（全機能）を切り替えます。歯車アイコンをクリックして、シンプルモードで表示するセクションをカスタマイズできます。',
+    guideDeviceIdentity: 'デバイスID',
+    guideDeviceIdentityDesc: 'このバッジをクリックしてデバイスに名前を付けます。異なるタブで複数のデバイスを使用する場合に便利です。',
+    guideHelpPanel: 'ヘルプパネル',
+    guideHelpPanelDesc: 'ワークフローのヒントや機能の説明を含む詳細なヘルプドキュメントにいつでもアクセスできます。',
+    guideUploadToDevice: '<strong>重要:</strong> このボタンは設定をデバイスにアップロードします。アップロードされたプロファイルは「最新」ファイルとなり、自動ロードが有効な場合はデバイス起動時に自動的にロードされます。',
+    noteLabel: 'メモ（任意）',
+    notePlaceholder: '実験の説明...',
+    downloadProfile: 'プロファイルをダウンロード',
+    importProfile: 'プロファイルをインポート',
+    uploadToDevice: 'デバイスにアップロード',
+    printSummary: '印刷用サマリー',
+    programSettingsHeader: 'プログラム設定',
+    formDiffers: 'フォームがデバイスと異なります',
+    showFirstDifference: '最初の差分を表示',
+    revertToDevice: 'デバイスに戻す',
+    syncToDevice: 'デバイスと同期',
+    dismiss: '閉じる',
+    exportSection: 'ダウンロード・インポート・アップロード',
+    formToText: 'フォーム→テキスト ▼',
+    uploadConfirmTitle: 'アップロード前の確認',
+    uploadConfirmPrompt: '今すぐRP2040ボードのRESETボタンを押してください。リセットされ、アイドル状態ですか？',
+    dontAskMeAgain: '今後この確認を表示しない',
+    holdOptionToShow: 'Optionキーで表示',
+    cancel: 'キャンセル',
+    yesUpload: 'はい、アップロード',
+    loadConfirmTitle: 'デバイスからプロファイルをロード',
+    important: '重要:',
+    disableAutoload: '干渉を防ぐため、デバイスの自動ロードが無効になります。',
+    deviceNotAutoload: '新しいプロファイルをアップロードするまで、デバイスは<strong>自動的に</strong>最新プロファイルをロードしません。',
+    dontShowThisAgain: '今後この画面を表示しない',
+    continue: '続行',
+    uploadSuccessTitle: '✓ アップロード成功',
+    profileUploaded: 'プロファイルがデバイスにアップロードされました。',
+    refreshConnection: '次のステップはページとデバイスの接続をリフレッシュすることです。',
+    afterClickConnect: '「今すぐデバイスに接続」をクリック後:',
+    pageWillRefresh: 'ページがリフレッシュされます。その後、上部のモニター欄にある<strong>「接続」</strong>ボタンをクリックしてデバイスを選択してください。',
+    autoloadReenabled: 'デバイスの自動ロードが再有効化されました。',
+    connectToDeviceNow: '今すぐデバイスに接続',
+    errorBanner: '', // Will be set dynamically
+  }
+};
+
+
+const LANG_STORAGE_KEY = 'solasim_language';
+let currentLang = localStorage.getItem(LANG_STORAGE_KEY) || 'en';
+
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem(LANG_STORAGE_KEY, lang);
+  // Main navigation and monitor controls (legacy direct mapping)
+  document.getElementById('appTitle').textContent = TRANSLATIONS[lang].appTitle;
+  // Adjust monitor/toolbar button size for Japanese
+  const monitorBtnIds = [
+    'toggleMonitorBtn', 'monitorConnectBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
+    'monitorCmdHelpBtn', 'monitorShowStatusBtn', 'simpleModeBtn', 'advancedModeBtn'
+  ];
+  monitorBtnIds.forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (lang === 'ja') {
+      btn.classList.add('jp-btn');
+    } else {
+      btn.classList.remove('jp-btn');
+    }
+  });
+  // Adjust heading font size for Japanese
+  const appTitle = document.getElementById('appTitle');
+  const mainHeadings = [
+    appTitle,
+    document.querySelector('h2[data-i18n="profileManagement"]'),
+    document.querySelector('h2[data-i18n="programSettingsHeader"]'),
+    document.querySelector('h2[data-i18n="exportSection"]'),
+    document.querySelector('h2[data-i18n="programStepTimeline"]'),
+    document.querySelector('h2[data-i18n="programStepEditing"]')
+  ];
+  mainHeadings.forEach(h => {
+    if (!h) return;
+    if (lang === 'ja') {
+      h.classList.add('jp-heading');
+    } else {
+      h.classList.remove('jp-heading');
+    }
+  });
+  document.querySelector('#toggleMonitorBtn .txt').textContent = TRANSLATIONS[lang].monitorInteract;
+  document.getElementById('monitorConnBadge').textContent = TRANSLATIONS[lang].disconnected;
+  document.getElementById('monitorConnectBtn').textContent = TRANSLATIONS[lang].connect;
+  document.getElementById('monitorRefreshBtn').textContent = TRANSLATIONS[lang].refresh;
+  document.getElementById('monitorDisconnectBtn').textContent = TRANSLATIONS[lang].disconnect;
+  document.getElementById('monitorCmdHelpBtn').textContent = TRANSLATIONS[lang].showAllCommands;
+  document.getElementById('monitorShowStatusBtn').textContent = TRANSLATIONS[lang].showStatus;
+  document.getElementById('simpleModeBtn').textContent = TRANSLATIONS[lang].simple;
+  document.getElementById('advancedModeBtn').textContent = TRANSLATIONS[lang].advanced;
+  document.getElementById('langToggleBtn').textContent = TRANSLATIONS[lang].langToggle;
+  document.getElementById('guideToggleBtn').textContent = TRANSLATIONS[lang].guide;
+  document.getElementById('helpToggleBtn').textContent = TRANSLATIONS[lang].help;
+  // FTUE modal
+  const welcomeTitle = document.getElementById('ftueWelcomeTitle');
+  if (welcomeTitle) welcomeTitle.textContent = TRANSLATIONS[lang].welcomeTitle;
+  const welcomeSubtitle = document.querySelector('#ftueWelcomeModal .subtitle');
+  if (welcomeSubtitle) welcomeSubtitle.textContent = TRANSLATIONS[lang].welcomeSubtitle;
+  // FTUE role buttons
+  const roleBtns = document.querySelectorAll('#ftueWelcomeModal .role-btn');
+  if (roleBtns.length === 3) {
+    roleBtns[0].querySelector('.title').textContent = TRANSLATIONS[lang].userGuide;
+    roleBtns[0].querySelector('.desc').textContent = TRANSLATIONS[lang].userGuideDesc;
+    roleBtns[1].querySelector('.title').textContent = TRANSLATIONS[lang].fullTour;
+    roleBtns[1].querySelector('.desc').textContent = TRANSLATIONS[lang].fullTourDesc;
+    roleBtns[2].querySelector('.title').textContent = TRANSLATIONS[lang].skipGuide;
+    roleBtns[2].querySelector('.desc').textContent = TRANSLATIONS[lang].skipGuideDesc;
+  }
+  const skipLink = document.getElementById('ftueNeverShow');
+  if (skipLink) skipLink.textContent = TRANSLATIONS[lang].dontShowAgain;
+  // FTUE Spotlight
+  const exitBtn = document.getElementById('ftueSkipBtn');
+  if (exitBtn) exitBtn.textContent = TRANSLATIONS[lang].exitGuide;
+  const backBtn = document.getElementById('ftueBackBtn');
+  if (backBtn) backBtn.textContent = TRANSLATIONS[lang].back;
+  const nextBtn = document.getElementById('ftueNextBtn');
+  if (nextBtn) {
+    // Check if guide is active and this is the last step
+    if (window.guideActive && window.currentStepIndex === window.currentSteps?.length - 1) {
+      nextBtn.textContent = TRANSLATIONS[lang].finish;
+      nextBtn.className = 'btn-finish';
+    } else {
+      nextBtn.textContent = TRANSLATIONS[lang].next;
+      nextBtn.className = 'btn-next';
+    }
+  }
+  
+  // Update guide step content if guide is active
+  if (window.guideActive && window.currentSteps && window.currentStepIndex !== undefined) {
+    const step = window.currentSteps[window.currentStepIndex];
+    if (step) {
+      const stepTitle = document.getElementById('ftueStepTitle');
+      const stepContent = document.getElementById('ftueStepContent');
+      if (stepTitle && step.titleKey) {
+        stepTitle.textContent = TRANSLATIONS[lang][step.titleKey] || step.title || 'Step';
+      }
+      if (stepContent && step.contentKey) {
+        stepContent.innerHTML = TRANSLATIONS[lang][step.contentKey] || step.content || '';
+      }
+    }
+  }
+
+  // --- Universal i18n: update all elements with data-i18n ---
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (TRANSLATIONS[lang][key] !== undefined) {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON') {
+        // For buttons, set textContent; for inputs, set value if type=button, else placeholder
+        if (el.type === 'button' || el.tagName === 'BUTTON') {
+          el.textContent = TRANSLATIONS[lang][key];
+        } else if (el.placeholder !== undefined) {
+          el.placeholder = TRANSLATIONS[lang][key];
+        } else {
+          el.value = TRANSLATIONS[lang][key];
+        }
+      } else {
+        el.innerHTML = TRANSLATIONS[lang][key];
+      }
+    }
+  });
+  // Placeholders: update all elements with data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (TRANSLATIONS[lang][key] !== undefined) {
+      el.placeholder = TRANSLATIONS[lang][key];
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('langToggleBtn').addEventListener('click', function() {
+    setLanguage(currentLang === 'en' ? 'ja' : 'en');
+  });
+  setLanguage(currentLang);
+});
 // CONFIGURATION CONSTANTS
 // ============================================================================
 
@@ -3494,6 +3978,9 @@ function updateProgramSummaryUI(){
   el.textContent = summary.text;
 }
 
+// Maximum number of program steps allowed
+const MAX_PROGRAM_STEPS = 30;
+
 /**
  * Adds a new program step to the end of the steps array.
  * Automatically saves undo state, re-renders the table, and updates the preview.
@@ -3503,10 +3990,86 @@ function updateProgramSummaryUI(){
  * @returns {void}
  * @sideeffects Modifies programSteps array, saves undo state, triggers re-render
  */
-function addProgramStep(step){ saveUndoState(); programSteps.push(step||{}); renderProgramSteps(); updatePreview(true); }
+function addProgramStep(step){ saveUndoState(); programSteps.push(step||{}); renderProgramSteps(); updatePreview(true); updateMaxStepsUI(); }
 
 // Holds last programSteps snapshot before an example Replace so user can undo once
 let previousProgramSteps = null;
+
+/**
+ * Shows a popover warning when the maximum step limit is reached.
+ * Positions near the clicked button and dismisses when clicking outside.
+ * Automatically adjusts position to prevent overflow off-screen.
+ */
+function showMaxStepsPopover(targetButton) {
+  const popover = document.getElementById('maxStepsPopover');
+  if (!popover) return;
+  
+  // Position near the target button
+  const rect = targetButton.getBoundingClientRect();
+  popover.style.display = 'block';
+  
+  // Get popover dimensions (need to display it first to measure)
+  const popoverWidth = popover.offsetWidth;
+  const popoverHeight = popover.offsetHeight;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  
+  // Calculate initial position (below button, left-aligned)
+  let left = rect.left + window.scrollX;
+  let top = rect.bottom + window.scrollY + 8;
+  
+  // Check if popover would overflow right edge
+  if (left + popoverWidth > window.scrollX + viewportWidth - 10) {
+    // Right-align the popover with the button instead
+    left = rect.right + window.scrollX - popoverWidth;
+  }
+  
+  // Ensure popover doesn't go off left edge
+  if (left < window.scrollX + 10) {
+    left = window.scrollX + 10;
+  }
+  
+  // Check if popover would overflow bottom edge
+  if (rect.bottom + popoverHeight + 8 > window.scrollY + viewportHeight - 10) {
+    // Position above the button instead
+    top = rect.top + window.scrollY - popoverHeight - 8;
+  }
+  
+  popover.style.left = Math.round(left) + 'px';
+  popover.style.top = Math.round(top) + 'px';
+  
+  // Close on button click
+  const closeBtn = popover.querySelector('.btn-close');
+  const closeHandler = () => {
+    popover.style.display = 'none';
+    closeBtn.removeEventListener('click', closeHandler);
+    document.removeEventListener('mousedown', outsideClickHandler);
+  };
+  
+  // Close on outside click
+  const outsideClickHandler = (e) => {
+    if (!popover.contains(e.target) && e.target !== targetButton) {
+      popover.style.display = 'none';
+      document.removeEventListener('mousedown', outsideClickHandler);
+      closeBtn.removeEventListener('click', closeHandler);
+    }
+  };
+  
+  closeBtn.addEventListener('click', closeHandler);
+  // Small delay to prevent immediate dismissal from the same click that triggered it
+  setTimeout(() => {
+    document.addEventListener('mousedown', outsideClickHandler);
+  }, 100);
+}
+
+/**
+ * Updates the UI to reflect whether the maximum step limit has been reached.
+ * Note: Buttons remain enabled, but show popover when limit is reached.
+ */
+function updateMaxStepsUI() {
+  // Buttons remain enabled - popover will show when user tries to add
+  // This function is kept for consistency but no longer disables buttons
+}
 
 function attachProgramTableListeners(){
   // Handle keydown for Enter key on hold_minutes and sim_time_hhmm to trigger blur
@@ -3808,11 +4371,16 @@ function attachProgramTableListeners(){
     else if(act==='up' && idx>0){ const tmp=programSteps[idx-1]; programSteps[idx-1]=programSteps[idx]; programSteps[idx]=tmp; }
     else if(act==='down' && idx<programSteps.length-1){ const tmp=programSteps[idx+1]; programSteps[idx+1]=programSteps[idx]; programSteps[idx]=tmp; }
     else if(act==='dup'){
+      // Check if maximum steps limit reached
+      if(programSteps.length >= MAX_PROGRAM_STEPS) {
+        showMaxStepsPopover(btn);
+        return;
+      }
       const clone = JSON.parse(JSON.stringify(programSteps[idx]));
       delete clone.hold_minutes;  // Don't copy hold_minutes when duplicating a step row
       programSteps.splice(idx+1,0,clone);
     }
-  renderProgramSteps(); updatePreview(true);
+  renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
   });
 
   // Utility function to add minutes to HHMM format time
@@ -3826,7 +4394,13 @@ function attachProgramTableListeners(){
   }
 
   // Add Day button - creates step with same simtime as last step
-  document.getElementById('addDayBtn').addEventListener('click', ()=> {
+  document.getElementById('addDayBtn').addEventListener('click', (e)=> {
+    // Check if maximum steps limit reached
+    if(programSteps.length >= MAX_PROGRAM_STEPS) {
+      showMaxStepsPopover(e.currentTarget);
+      return;
+    }
+
     // Check if editing is locked (device running)
     if(window.__programEditingLocked && window.__programEditingLocked()){
       if(window.__flashProgramLock) window.__flashProgramLock();
@@ -3849,7 +4423,13 @@ function attachProgramTableListeners(){
   });
 
   // Add Step button - creates step with last step's simtime + 60 minutes
-  document.getElementById('addStepBtn').addEventListener('click', ()=> {
+  document.getElementById('addStepBtn').addEventListener('click', (e)=> {
+    // Check if maximum steps limit reached
+    if(programSteps.length >= MAX_PROGRAM_STEPS) {
+      showMaxStepsPopover(e.currentTarget);
+      return;
+    }
+
     // Check if editing is locked (device running)
     if(window.__programEditingLocked && window.__programEditingLocked()){
       if(window.__flashProgramLock) window.__flashProgramLock();
@@ -4037,7 +4617,7 @@ function attachProgramTableListeners(){
         previousProgramSteps = JSON.parse(JSON.stringify(programSteps));
         const undoBtn=document.getElementById('undoExampleBtn'); if(undoBtn) undoBtn.disabled=false;
         programSteps = JSON.parse(JSON.stringify(ex.steps));
-        renderProgramSteps(); updatePreview(true);
+        renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
         const tbl=document.getElementById('programStepsTable'); if(tbl){ tbl.classList.add('flash-replaced'); setTimeout(()=>tbl.classList.remove('flash-replaced'),600); }
         hideExample();
       }
@@ -4066,7 +4646,7 @@ function attachProgramTableListeners(){
       if(window.__flashProgramLock) window.__flashProgramLock();
       return;
     }
-    programSteps = []; renderProgramSteps(); updatePreview(true);
+    programSteps = []; renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
   });
   // Undo button logic
   const undoBtn = document.getElementById('undoExampleBtn');
@@ -4082,7 +4662,7 @@ function attachProgramTableListeners(){
       programSteps = JSON.parse(JSON.stringify(previousProgramSteps));
       previousProgramSteps = null;
       undoBtn.disabled = true;
-      renderProgramSteps(); updatePreview(true);
+      renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
       const tbl = document.getElementById('programStepsTable');
       if(tbl){ tbl.classList.add('flash-undo'); setTimeout(()=>tbl.classList.remove('flash-undo'), 600); }
     });
@@ -8202,6 +8782,7 @@ function downloadProfile(){
       syncFormFromState();
       renderProgramSteps();
       updatePreview(true);
+      updateMaxStepsUI();
     }
   }
   window.renderRecentProfiles = function(){
@@ -8355,6 +8936,8 @@ function downloadProfile(){
   // Initialize Undo/Redo System
   document.addEventListener('DOMContentLoaded', ()=> {
     initializeUndoSession();
+    // Initialize max steps UI
+    updateMaxStepsUI();
   });
   
   // Expose functions for Import Profile functionality
@@ -9296,6 +9879,13 @@ function toggleHelpDetail(button) {
      
      if (!parsed) {
        alert('❌ Import failed: The selected file does not appear to be a valid profile .txt format.\n\nPlease ensure the file contains settings like:\nSTART_TIME_HHMM=600\nSTOP_TIME_HHMM=1800\nPROGRAM_STEPS=[...]');
+       importFileInput.value = ''; // reset
+       return;
+     }
+     
+     // Check if imported profile exceeds maximum steps limit
+     if (parsed.PROGRAM_STEPS && Array.isArray(parsed.PROGRAM_STEPS) && parsed.PROGRAM_STEPS.length > MAX_PROGRAM_STEPS) {
+       alert(`❌ Import failed: The profile contains ${parsed.PROGRAM_STEPS.length} program steps, which exceeds the maximum limit of ${MAX_PROGRAM_STEPS} steps.\n\nPlease reduce the number of steps in the profile file before importing.`);
        importFileInput.value = ''; // reset
        return;
      }
@@ -14727,37 +15317,37 @@ function clearHoldState(){
   const QUICK_START_STEPS = [
     {
       target: '#monitorConnectBtn',
-      title: 'Connect Your Device',
-      content: 'Click "Connect" to establish a serial connection with your device via USB.',
+      titleKey: 'guideConnectDevice',
+      contentKey: 'guideConnectDeviceDesc',
       position: 'bottom',
       allowInteraction: true
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
-      title: 'Key Settings',
-      content: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
+      titleKey: 'guideKeySettings',
+      contentKey: 'guideKeySettingsDesc',
       position: 'bottom'
     },
     {
       target: 'fieldset[data-section="program-control"]',
-      title: 'Program Steps',
-      content: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
+      titleKey: 'guideProgramSteps',
+      contentKey: 'guideProgramStepsDesc',
       position: 'right'
     },
     {
       target: '#programSection',
-      title: 'Program Step Timeline',
-      content: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
+      titleKey: 'guideProgramTimeline',
+      contentKey: 'guideProgramTimelineDesc',
       position: 'top',
       rightTooltip: true
     },
     {
       target: '#recentProfiles',
-      title: 'Recent Profiles',
-      content: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
+      titleKey: 'guideRecentProfiles',
+      contentKey: 'guideRecentProfilesDesc',
       position: 'top',
-      offsetY: 7,  // Move top down by 15px total from original -8
-      heightAdjust: -15,  // Reduce height by 15px to keep bottom edge in place
+      offsetY: 7,
+      heightAdjust: -15,
       adjustTarget: (el) => {
         // Target parent container to include both title and profiles
         return el.parentElement;
@@ -14765,8 +15355,8 @@ function clearHoldState(){
     },
     {
       target: '[data-export-ref="uploadBtn"]',
-      title: 'Upload to Device',
-      content: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
+      titleKey: 'uploadToDevice',
+      contentKey: 'guideUploadToDevice',
       position: 'bottom',
       highlight: true
     }
@@ -14776,44 +15366,44 @@ function clearHoldState(){
     ...QUICK_START_STEPS,
     {
       target: '[data-export-ref="downloadBtn"]',
-      title: 'Download Profile',
-      content: 'Save your current settings as a .txt file to your computer. Great for backup, sharing, or manual editing.',
+      titleKey: 'guideDownloadProfile',
+      contentKey: 'guideDownloadProfileDesc',
       position: 'bottom'
     },
     {
       target: '[data-export-ref="importBtn"]',
-      title: 'Import Profile',
-      content: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
+      titleKey: 'guideImportProfile',
+      contentKey: 'guideImportProfileDesc',
       position: 'bottom'
     },
     {
       target: '#loadFromDeviceBtn',
-      title: 'Load from Device',
-      content: 'Browse and select profiles stored on the device. Selected profiles run immediately but are temporary (until device restart).',
+      titleKey: 'guideLoadFromDevice',
+      contentKey: 'guideLoadFromDeviceDesc',
       position: 'top'
     },
     {
       target: '#diffBanner',
-      title: 'Profile Diff Viewer',
-      content: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
+      titleKey: 'guideProfileDiff',
+      contentKey: 'guideProfileDiffDesc',
       position: 'bottom'
     },
     {
       target: '#simpleModeBtn',
-      title: 'Simple vs Advanced Mode',
-      content: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
+      titleKey: 'guideSimpleAdvanced',
+      contentKey: 'guideSimpleAdvancedDesc',
       position: 'bottom'
     },
     {
       target: '#deviceIdentityBadge',
-      title: 'Device Identity',
-      content: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
+      titleKey: 'guideDeviceIdentity',
+      contentKey: 'guideDeviceIdentityDesc',
       position: 'bottom'
     },
     {
       target: '#helpToggleBtn',
-      title: 'Help Panel',
-      content: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
+      titleKey: 'guideHelpPanel',
+      contentKey: 'guideHelpPanelDesc',
       position: 'left'
     }
   ];
@@ -14823,6 +15413,11 @@ function clearHoldState(){
   let guideActive = false;
   let deviceConnected = false;
   let isPositioning = false; // Prevent positioning race conditions
+  
+  // Expose initial state globally
+  window.guideActive = false;
+  window.currentStepIndex = 0;
+  window.currentSteps = [];
   
   // Dynamic spotlight tracking state
   let currentSpotlightTarget = null;
@@ -14945,24 +15540,33 @@ function clearHoldState(){
     currentStepIndex = index;
     const step = currentSteps[index];
     
+    // Expose state globally for language switching
+    window.guideActive = guideActive;
+    window.currentStepIndex = currentStepIndex;
+    window.currentSteps = currentSteps;
+    
     // Save progress
     localStorage.setItem(FTUE_PROGRESS_KEY, JSON.stringify({
       path: currentSteps === FULL_TOUR_STEPS ? 'full' : 'quick',
       step: index
     }));
     
-    // Update step content
-    stepTitle.textContent = step.title;
-    stepContent.innerHTML = step.content;
+    // Get current language
+    const lang = localStorage.getItem('solasim_language') || 'en';
+    
+    // Update step content using translation keys
+    stepTitle.textContent = TRANSLATIONS[lang][step.titleKey] || step.title || 'Step';
+    stepContent.innerHTML = TRANSLATIONS[lang][step.contentKey] || step.content || '';
     stepIndicator.textContent = `${index + 1} / ${currentSteps.length}`;
     
-    // Update buttons
+    // Update buttons with translations
     backBtn.disabled = index === 0;
+    backBtn.textContent = TRANSLATIONS[lang].back;
     if (index === currentSteps.length - 1) {
-      nextBtn.textContent = 'Finish ✓';
+      nextBtn.textContent = TRANSLATIONS[lang].finish;
       nextBtn.className = 'btn-finish';
     } else {
-      nextBtn.textContent = 'Next ►';
+      nextBtn.textContent = TRANSLATIONS[lang].next;
       nextBtn.className = 'btn-next';
     }
     
