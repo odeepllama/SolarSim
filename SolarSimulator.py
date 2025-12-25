@@ -2505,10 +2505,8 @@ def handle_command(command_str):
                 print(f"  Program Repeats: \x1b[1m{PROGRAM_REPEATS}\x1b[0m")
                 print(f"  Number of Steps: \x1b[1m{len(PROGRAM_STEPS)}\x1b[0m")
                 if PROGRAM_STEPS:
-                    print("  Program Steps:")
-                    for idx, step in enumerate(PROGRAM_STEPS):
-                        import ujson as json
-                        print(f"    Step {idx+1}: \x1b[1m{json.dumps(step)}\x1b[0m")
+                    import ujson as json
+                    print(f"  Program Steps: \x1b[1m{json.dumps(PROGRAM_STEPS)}\x1b[0m")
             else:
                 print("\n\x1b[1m-- Program Configuration --\x1b[0m")
                 print(f"  Program Repeats: \x1b[1m{PROGRAM_REPEATS}\x1b[0m")
