@@ -13119,10 +13119,55 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     state.autoRefreshEnabled = true;
     try{ localStorage.setItem(AR_KEY, '1'); }catch(_){ }
     function applyUI(){ /* no-op: UI removed */ }
+    // === Adaptive Status Polling Interval ===
+    // Polling interval (ms) based on number of program steps
+    const STATUS_POLL_MIN_INTERVAL_MS = 1000;
+    const STATUS_POLL_MAX_INTERVAL_MS = 4000;
+    const STATUS_POLL_THRESHOLDS = [20, 30, 40];
+    const STATUS_POLL_INTERVALS = [1000, 2000, 3000, 4000];
+
+    function getStatusPollInterval(stepCount) {
+      if (typeof stepCount !== 'number' || isNaN(stepCount)) return STATUS_POLL_MIN_INTERVAL_MS;
+      if (stepCount < STATUS_POLL_THRESHOLDS[0]) return STATUS_POLL_INTERVALS[0];
+      if (stepCount < STATUS_POLL_THRESHOLDS[1]) return STATUS_POLL_INTERVALS[1];
+      if (stepCount < STATUS_POLL_THRESHOLDS[2]) return STATUS_POLL_INTERVALS[2];
+      return STATUS_POLL_INTERVALS[3];
+    }
+
+    function getCurrentStepCount() {
+      // programSteps is global in this script scope
+      if (Array.isArray(window.programSteps)) return window.programSteps.length;
+      if (Array.isArray(window.__solarSimMonitorState?.programSteps)) return window.__solarSimMonitorState.programSteps.length;
+      return 0;
+    }
+
     function start(){
       if(state.__statusTimer) return;
       if(!state.port) return;
-      state.__statusTimer = setInterval(()=>{ if(state.port && state.autoRefreshEnabled) sendStatusSilent(); }, 1000);
+      let interval = getStatusPollInterval(getCurrentStepCount());
+      interval = Math.max(STATUS_POLL_MIN_INTERVAL_MS, Math.min(STATUS_POLL_MAX_INTERVAL_MS, interval));
+      state.__statusTimer = setInterval(()=>{ if(state.port && state.autoRefreshEnabled) sendStatusSilent(); }, interval);
+      state.__lastStatusInterval = interval;
+    }
+
+    // Listen for program step changes and update polling interval immediately
+    function updateStatusIntervalIfNeeded() {
+      if (!state.__statusTimer) return;
+      let interval = getStatusPollInterval(getCurrentStepCount());
+      interval = Math.max(STATUS_POLL_MIN_INTERVAL_MS, Math.min(STATUS_POLL_MAX_INTERVAL_MS, interval));
+      if (interval !== state.__lastStatusInterval) {
+        clearInterval(state.__statusTimer);
+        state.__statusTimer = setInterval(()=>{ if(state.port && state.autoRefreshEnabled) sendStatusSilent(); }, interval);
+        state.__lastStatusInterval = interval;
+      }
+    }
+    // Patch global programSteps array to trigger interval update on change
+    if (window.programSteps && !window.programSteps.__adaptiveStatusPatched) {
+      const origPush = window.programSteps.push;
+      window.programSteps.push = function(...args) { const r = origPush.apply(this, args); updateStatusIntervalIfNeeded(); return r; };
+      const origSplice = window.programSteps.splice;
+      window.programSteps.splice = function(...args) { const r = origSplice.apply(this, args); updateStatusIntervalIfNeeded(); return r; };
+      window.programSteps.__adaptiveStatusPatched = true;
     }
     function stop(){ if(state.__statusTimer){ clearInterval(state.__statusTimer); state.__statusTimer=null; } }
     state.__startPeriodicStatus = start; state.__stopPeriodicStatus = stop;
