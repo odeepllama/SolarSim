@@ -2506,7 +2506,13 @@ def handle_command(command_str):
                 print(f"  Number of Steps: \x1b[1m{len(PROGRAM_STEPS)}\x1b[0m")
                 if PROGRAM_STEPS:
                     import ujson as json
-                    print(f"  Program Steps: \x1b[1m{json.dumps(PROGRAM_STEPS)}\x1b[0m")
+                    # Output program steps in chunks of 5 to reduce memory usage
+                    chunk_size = 5
+                    for i in range(0, len(PROGRAM_STEPS), chunk_size):
+                        chunk = PROGRAM_STEPS[i:i + chunk_size]
+                        start_idx = i + 1
+                        end_idx = min(i + chunk_size, len(PROGRAM_STEPS))
+                        print(f"  Program Steps ({start_idx}-{end_idx}): \x1b[1m{json.dumps(chunk)}\x1b[0m")
             else:
                 print("\n\x1b[1m-- Program Configuration --\x1b[0m")
                 print(f"  Program Repeats: \x1b[1m{PROGRAM_REPEATS}\x1b[0m")
