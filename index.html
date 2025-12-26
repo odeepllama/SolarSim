@@ -11820,6 +11820,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const reSunriseSunset=/sunrise:\s*(\d{2}):(\d{2}),\s*sunset:\s*(\d{2}):(\d{2})/i;
   const reProgramRepeats=/program\s*repeats\s*[:=]\s*([-+]?\d+)/i;
   const reProgramSteps=/program\s*steps\s*[:=]\s*(\[.*\])/i;
+  const reProgramStepsChunk=/program\s*steps\s*\((\d+)-(\d+)\)\s*[:=]\s*(\[.*\])/i;
+  const reNumberOfSteps=/number\s*of\s*steps\s*[:=]\s*(\d+)/i;
   
   // Additional parsers for Load from Device functionality
   const reStartTime=/\(re\)?start\s*time\s*[:=]\s*(\d{3,4})/i;
@@ -12316,6 +12318,15 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if(window.__loadingFromDevice) console.log('[PARSER] Found CAMERA_TRIGGER_HOLD_MS:', window.__deviceConfig.CAMERA_TRIGGER_HOLD_MS);
     }
     
+    // Parse number of steps (used to know when all chunks are received)
+    const mNumSteps = line.match(reNumberOfSteps);
+    if(mNumSteps){
+      window.__deviceConfig.__expectedStepCount = parseInt(mNumSteps[1], 10);
+      console.log('[PARSER] Found Number of Steps:', window.__deviceConfig.__expectedStepCount);
+      // Reset chunk accumulation when we see a new "Number of Steps" line
+      window.__deviceConfig.__programStepsChunks = [];
+    }
+    
     // Parse program repeats
     const mProgRep=line.match(reProgramRepeats);
     if(mProgRep){
@@ -12325,18 +12336,87 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       console.log('[PARSER] window.__loadingFromDevice:', window.__loadingFromDevice);
     }
     
-    // Parse program steps (JSON array)
+    // Parse chunked program steps (new format: "Program Steps (1-5): [...]")
+    const mProgStepsChunk = line.match(reProgramStepsChunk);
+    if(mProgStepsChunk){
+      const startIdx = parseInt(mProgStepsChunk[1], 10);
+      const endIdx = parseInt(mProgStepsChunk[2], 10);
+      const chunkJson = mProgStepsChunk[3];
+      console.log(`[PARSER] Found PROGRAM_STEPS chunk (${startIdx}-${endIdx}):`, chunkJson);
+      
+      try {
+        const chunk = JSON.parse(chunkJson);
+        
+        // Initialize chunks array if needed
+        if(!window.__deviceConfig.__programStepsChunks){
+          window.__deviceConfig.__programStepsChunks = [];
+        }
+        
+        // Add this chunk to our collection
+        window.__deviceConfig.__programStepsChunks.push({startIdx, endIdx, data: chunk});
+        
+        // Calculate total steps received so far
+        const totalReceived = window.__deviceConfig.__programStepsChunks.reduce((sum, c) => sum + c.data.length, 0);
+        console.log(`[PARSER] Received ${totalReceived} of ${window.__deviceConfig.__expectedStepCount || '?'} program steps`);
+        
+        // Check if we have all chunks
+        const expectedCount = window.__deviceConfig.__expectedStepCount || 0;
+        if(expectedCount > 0 && totalReceived >= expectedCount){
+          console.log('[PARSER] All program step chunks received - reconstructing array');
+          
+          // Sort chunks by startIdx to ensure correct order
+          window.__deviceConfig.__programStepsChunks.sort((a, b) => a.startIdx - b.startIdx);
+          
+          // Flatten all chunks into the final PROGRAM_STEPS array
+          window.__deviceConfig.PROGRAM_STEPS = [];
+          for(const chunk of window.__deviceConfig.__programStepsChunks){
+            window.__deviceConfig.PROGRAM_STEPS.push(...chunk.data);
+          }
+          
+          console.log('[PARSER] Reconstructed complete PROGRAM_STEPS:', window.__deviceConfig.PROGRAM_STEPS);
+          
+          // Clear chunk accumulation state
+          window.__deviceConfig.__programStepsChunks = [];
+          
+          // Trigger form population if appropriate
+          const hasLoadedProfile = window.__loadedProfile && window.__loadedProfile !== null;
+          const hasProgramEnabled = window.__deviceConfig.PROGRAM_ENABLED === true;
+          const hasSteps = window.__deviceConfig.PROGRAM_STEPS && window.__deviceConfig.PROGRAM_STEPS.length > 0;
+          const shouldPopulate = window.__loadingFromDevice || 
+                                 (hasLoadedProfile && window.__deviceConfig.PROGRAM_STEPS) ||
+                                 (hasProgramEnabled && hasSteps);
+          
+          if(shouldPopulate){
+            console.log('[PARSER] Triggering form population (__loadingFromDevice:', window.__loadingFromDevice, ', hasLoadedProfile:', hasLoadedProfile, ', hasProgramEnabled:', hasProgramEnabled, ', hasSteps:', hasSteps, ')...');
+            if(typeof window.populateFormFromDeviceConfig === 'function'){
+              window.populateFormFromDeviceConfig();
+            } else {
+              console.warn('populateFormFromDeviceConfig not yet available, deferring...');
+              setTimeout(() => {
+                if(typeof window.populateFormFromDeviceConfig === 'function'){
+                  window.populateFormFromDeviceConfig();
+                } else {
+                  console.error('populateFormFromDeviceConfig still not available after defer');
+                }
+              }, 100);
+            }
+          } else {
+            console.log('[PARSER] Status update - NOT populating form (preserving diff tracking). __loadingFromDevice:', window.__loadingFromDevice, ', hasLoadedProfile:', hasLoadedProfile, ', hasProgramEnabled:', hasProgramEnabled, ', hasSteps:', hasSteps);
+          }
+        }
+      } catch(e) {
+        console.warn('Failed to parse program steps chunk:', e);
+      }
+    }
+    
+    // Fallback: Parse legacy single-line program steps format (for backward compatibility during transition)
     const mProgSteps=line.match(reProgramSteps);
-    if(mProgSteps){
-      console.log('[PARSER] Found PROGRAM_STEPS:', mProgSteps[1]);
+    if(mProgSteps && !line.match(reProgramStepsChunk)){
+      console.log('[PARSER] Found PROGRAM_STEPS (legacy format):', mProgSteps[1]);
       try {
         window.__deviceConfig.PROGRAM_STEPS = JSON.parse(mProgSteps[1]);
         console.log('[PARSER] Parsed program steps:', window.__deviceConfig.PROGRAM_STEPS);
 
-        // Trigger form population if:
-        // 1. We're intentionally loading from device, OR
-        // 2. A profile is loaded on the device (from status or autoload), OR
-        // 3. Program is enabled with internal program (no profile but has steps)
         const hasLoadedProfile = window.__loadedProfile && window.__loadedProfile !== null;
         const hasProgramEnabled = window.__deviceConfig.PROGRAM_ENABLED === true;
         const hasSteps = window.__deviceConfig.PROGRAM_STEPS && window.__deviceConfig.PROGRAM_STEPS.length > 0;
@@ -12350,7 +12430,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
             window.populateFormFromDeviceConfig();
           } else {
             console.warn('populateFormFromDeviceConfig not yet available, deferring...');
-            // Defer until next tick when all scripts have loaded
             setTimeout(() => {
               if(typeof window.populateFormFromDeviceConfig === 'function'){
                 window.populateFormFromDeviceConfig();
