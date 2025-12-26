@@ -2569,7 +2569,7 @@ const FIELDS = {
  START_TIME_HHMM: { label:'Start Time (HHMM)', tooltip:'Simulation clock start (HHMM local).', type:'text', default:'600', validate:v=>/^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
  TIME_SCALE: { label:'Time Scale', tooltip:'Speed multiplier (0=Hold, negative=reverse).', type:'select', options:[0,1,6,60,600], allowCustom:true, default:1 },
  INTENSITY_SCALE: { label:'Intensity Scale', tooltip:'Global light intensity multiplier. CAUTION: High intensity values (>0.8) in DUAL SUN mode can cause over-current issues.', type:'number', step:'0.1', min:0, default:1.0 },
- SIMULATION_DATE: { label:'Simulation Date (YYYYMMDD)', tooltip:'Date used for sun path / future calc.', type:'text', default:'20250520', validate:v=>/^20\d{6}$/.test(v) },
+ SIMULATION_DATE: { label:'Simulation Date (YYYYMMDD)', tooltip:'Date used for sun path / future calc.', type:'text', default:'20250320', validate:v=>/^20\d{6}$/.test(v) },
  LATITUDE: { label:'Latitude', tooltip:'Observer latitude (-90 to 90).', type:'number', step:'0.1', min:-90, max:90, default:0 },
  SOLAR_MODE: { label:'Solar Mode', tooltip:'BASIC constant; SCIENTIFIC astronomical calc.', type:'select', options:['BASIC','SCIENTIFIC'], default:'BASIC' },
  SUN_COLOR_MODE: { label:'Sun Color Mode', tooltip:'BLUE fixed; CUSTOM uses RGB; NATURAL future.', type:'select', options:['BLUE','NATURAL','CUSTOM'], default:'BLUE' },
