@@ -6762,10 +6762,11 @@ function duplicateDay(dayNumber){
   programSteps.splice(lastStepIndex + 1, 0, ...clonedSteps);
 
   // Set PROGRAM_REPEATS to 1 (non-repeating) for multi-day programs
-  state.PROGRAM_REPEATS = 1;
+  // Set PROGRAM_REPEATS to -1 (infinite repeat) for multi-day programs
+  state.PROGRAM_REPEATS = -1;
   const programRepeatsField = document.getElementById('PROGRAM_REPEATS');
-  if(programRepeatsField && programRepeatsField.value !== '1'){
-    programRepeatsField.value = 1;
+  if(programRepeatsField && programRepeatsField.value !== '-1'){
+    programRepeatsField.value = -1;
     programRepeatsField.dispatchEvent(new Event('change'));
   }
 
