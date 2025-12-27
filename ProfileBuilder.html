@@ -1921,199 +1921,410 @@ select:not(#filename_tag):not(#filename_preview) {
   <div class="guide-content">
     <button id="userGuideCloseBtn" type="button" aria-label="Close">&times;</button>
     <div class="guide-body">
-      <h1 id="userGuideTitle">Solar Simulator User Guide</h1>
-      <p>Welcome to the <strong>SolaSim Studio</strong> user guide. This document provides everything you need to set up your solar simulation hardware and use the web interface to control lighting, rotation, and imaging for your experiments.</p>
-      
-      <h2>🚀 Quick Start: Installation & Setup</h2>
-      
-      <h3>1. Prepare the Device (RP2040:bit)</h3>
-      <p>The Solar Simulator runs on a Raspberry Pi Pico-based board called the <strong>RP2040:bit</strong>. You need to install the custom firmware (a single <code>.uf2</code> file) which contains both the operating system (MicroPython) and the Solar Simulator software.</p>
+      <div id="guide-en">
+        <!-- English guide content start -->
+        <h1 id="userGuideTitle">Solar Simulator User Guide</h1>
+        <p>Welcome to the <strong>SolaSim Studio</strong> user guide. This document provides everything you need to set up your solar simulation hardware and use the web interface to control lighting, rotation, and imaging for your experiments.</p>
+        
+        <h2>🚀 Quick Start: Installation & Setup</h2>
+        
+        <h3>1. Prepare the Device (RP2040:bit)</h3>
+        <p>The Solar Simulator runs on a Raspberry Pi Pico-based board called the <strong>RP2040:bit</strong>. You need to install the custom firmware (a single <code>.uf2</code> file) which contains both the operating system (MicroPython) and the Solar Simulator software.</p>
+        <ol>
+          <li><strong>Download the Firmware</strong>: Obtain the latest <code>SolarSimulator_YYYYMMDD.uf2</code> file from the SolaSim GitHub repository.</li>
+          <li><strong>Enter Bootloader Mode</strong>:
+            <ul>
+              <li>Hold down the <strong>BOOT</strong> button on the edge of the board.</li>
+              <li>While holding <strong>BOOT</strong>, press the <strong>RESET</strong> button on the edge of the board.</li>
+              <li>Release the button.</li>
+            </ul>
+          </li>
+          <li><strong>Install Firmware</strong>:
+            <ul>
+              <li>A new drive named <code>RPI-RP2</code> will appear on your computer (like a USB stick).</li>
+              <li>Drag and drop the <code>.uf2</code> file onto this drive.</li>
+              <li>The device will automatically disconnect and reboot. The installation is complete!</li>
+            </ul>
+          </li>
+        </ol>
+
+        <h3>2. Open SolaSim Studio</h3>
+        <p>You do not need to install any software on your computer to control the device.</p>
+        <ul>
+          <li><strong>Recommended</strong>: Open <a href="https://odeepllama.github.io/SolarSim/" target="_blank">https://odeepllama.github.io/SolarSim/</a> in a compatible browser (Google Chrome, Microsoft Edge, or Opera).</li>
+          <li><strong>Advanced/Offline</strong>: If you have the <code>ProfileBuilder.html</code> file locally, you can simply double-click it to open it in your browser.</li>
+        </ul>
+
+        <h3>3. Connect</h3>
+        <ol>
+          <li>After connecting the RP2040 board to your computer, click the green <strong>Connect</strong> button in the top "Monitor / Interact" bar.</li>
+          <li>A browser window will pop up asking permission to connect to a serial device.</li>
+          <li>Select your device (often listed as "Board in FS node") and click <strong>Connect</strong>.</li>
+          <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
+          <li>If the device does not immediately connect, press the <strong>RESET</strong> button on the edge of the board and try connecting again.</li>
+        </ol>
+
+        <h2>💡 Core Concepts</h2>
+        <p>Before using the system, it is helpful to understand two key concepts:</p>
+
+        <h3>Form vs. Device</h3>
+        <ul>
+          <li><strong>The Form (Web Page)</strong>: This is your workspace. Changing numbers or settings here <strong>does not</strong> immediately change the device. It is like writing a document before printing it.</li>
+          <li><strong>The Device (Hardware)</strong>: This is the physical board running the simulation.</li>
+          <li><strong>Syncing</strong>: To make your form settings take effect on the hardware, you must click <strong>Upload to Device</strong>.</li>
+        </ul>
+
+        <h3>Auto-Load & Persistence</h3>
+        <ul>
+          <li><strong>Temporary Changes</strong>: If you use the "Monitor" tiles to change speed or intensity, those changes are lost if the device loses power.</li>
+          <li><strong>Persistent Profiles</strong>: When you <strong>Upload to Device</strong>, the system saves your settings as a file.</li>
+          <li><strong>Auto-Load</strong>: By default, when the device powers up, it looks for the most recently uploaded profile and runs it automatically. If Auto-Load is disabled, the device will start with default settings (single sun, 1X speed, sunrise 0600, sunset 1800, etc).</li>
+        </ul>
+
+        <h2>🎮 Three Ways to Use SolaSim Studio</h2>
+
+        <h3 class="guide-pill-title">1. Real-Time Interaction (Monitor Mode)</h3>
+        <p><em>Best for: Quick adjustments, testing hardware, and checking status.</em></p>
+        <p>At the top of the page is the <strong>Monitor / Interact</strong> bar. Click the arrow to expand it if the Solar Arc is not visible.</p>
+        <ul>
+          <li><strong>Status Tiles</strong>: You will see live data from the device (e.g., <code>SimTime</code>, <code>Speed</code>, <code>Intensity</code>).
+            <ul>
+              <li><strong>Click a tile</strong> to change its value immediately. For example, click <strong>Speed</strong> to pause (HOLD) or fast-forward (600x) the simulated time.</li>
+              <li><strong>Double-click</strong> certain tiles (like <code>Program</code> or <code>Rotation</code>) to toggle them ON or OFF.</li>
+            </ul>
+          </li>
+          <li><strong>Command Console</strong>: Type commands manually (e.g., <code>set intensity 0.5</code>) in the text box for precise control. The <strong>Show All Commands</strong> button will output all commands in the log window (Visible in Advanced mode).</li>
+          <li><strong>Solar Arc</strong>: A visual representation of the sun's position and day/night cycle.</li>
+        </ul>
+        <blockquote><strong>Note</strong>: Changes made here happen immediately but are <strong>not saved</strong> to the permanent profile.</blockquote>
+
+        <h3 class="guide-pill-title">2. Building Custom Profiles</h3>
+        <p><em>Best for: Designing specific experiments with precise lighting and timing requirements.</em></p>
+        <p>Use the main form to define your experiment parameters.</p>
+
+        <h4>Core Settings</h4>
+        <ul>
+          <li><strong>Start Time</strong>: When the simulation clock begins (e.g., <code>0600</code> for 6 AM).</li>
+          <li><strong>Time Scale</strong>: How fast time passes (e.g., <code>60x</code> means 1 hour passes in 1 minute).</li>
+          <li><strong>Solar Mode</strong>:
+            <ul>
+              <li><strong>BASIC</strong>: Simple sunrise (6 AM) to sunset (6 PM) with constant sun size.</li>
+              <li><strong>SCIENTIFIC</strong>: Calculates accurate sun position based on the <strong>Date</strong> and <strong>Latitude</strong> you provide.</li>
+            </ul>
+          </li>
+          <li><strong>Sun Color</strong>: Choose <strong>BLUE</strong> (standard for experiments), <strong>NATURAL</strong> (yellow/white), or <strong>CUSTOM</strong> (RGB).</li>
+        </ul>
+
+        <h4>Program Steps (The Timeline)</h4>
+        <p>If you need the conditions to change over time (e.g., "Run at 2x speed until noon, then hold for 1 hour"), use the <strong>Program Steps</strong> section.</p>
+        <ol>
+          <li>Ensure <strong>Program Enabled</strong> is checked.</li>
+          <li>Click <strong>Add Step</strong> to create a new sequence.</li>
+          <li>For each step, define:
+            <ul>
+              <li><strong>Time</strong>: When this step targets (e.g., <code>1200</code>).</li>
+              <li><strong>Transition</strong>: <code>RUN</code> (simulate time passing) or <code>JUMP</code> (skip instantly).</li>
+              <li><strong>Speed/Intensity</strong>: The conditions during this step.</li>
+            </ul>
+          </li>
+          <li>Use the <strong>Timeline Visualization</strong> to verify your sequence looks correct.</li>
+          <li>You can add additional days with different steps/conditions if your experiment requires.</li>
+        </ol>
+
+        <h4>Rotation & Imaging</h4>
+        <p>Configure the turntable and camera triggers.</p>
+        <ul>
+          <li><strong>Rotation Enabled</strong>: Master switch for the rotating platform.</li>
+          <li><strong>Capture Mode</strong>: <code>STILLS</code> (stop-motion) or <code>VIDEO</code> (continuous).</li>
+          <li><strong>Intervals</strong>: How often to take photos or rotate.</li>
+        </ul>
+
+        <h3 class="guide-pill-title">3. Uploading & Running</h3>
+        <p><em>Best for: Starting your experiment.</em></p>
+        <p>Once your form is configured:</p>
+        <ol>
+          <li>Check the <strong>Profile Diff Viewer</strong> (yellow highlights). This shows you what is different between your form and the device.</li>
+          <li>Click the green <strong>Upload to Device</strong> button.</li>
+          <li>Follow the prompt (you may need to press the RESET button on the device if requested, though usually it is automatic).</li>
+          <li>The device will save the profile, restart, and begin running your experiment immediately.</li>
+        </ol>
+
+        <h2>📂 Managing Profiles</h2>
+
+        <h3>Loading from Device</h3>
+        <p>If you want to see or edit the profile currently running on the hardware:</p>
+        <ol>
+          <li>Click <strong>Load / Delete from Device</strong>.</li>
+          <li>A list of files stored on the RP2040 will appear.</li>
+          <li>Select a profile to load it into the web form.
+            <br><em>Note: Selecting a profile here also tells the device to run it immediately, but it does not make it the "default" for the next startup unless you re-upload it or it is already the most recent profile.</em>
+          </li>
+        </ol>
+
+        <h3>Saving & Importing</h3>
+        <ul>
+          <li><strong>Download Profile</strong>: Saves your current settings as a text file (<code>.txt</code>) to your computer. Useful for sharing experiments or backups.</li>
+          <li><strong>Import Profile</strong>: Loads a <code>.txt</code> file from your computer into the web form.</li>
+          <li><strong>Recent Profiles</strong>: The bar at the top of the form saves your recent configurations automatically. Click one to restore it. Click the <strong>Star</strong> to prevent key profiles from rotating off the screen as more are created.</li>
+        </ul>
+
+        <h3>Profile Comparison</h3>
+        <p>When you load a profile, the <strong>Comparison Window</strong> will show you exactly what is different between your current settings and the new profile.</p>
+        <ul>
+          <li><strong>Orange Fields</strong>: Indicate settings that differ.</li>
+          <li><strong>Apply</strong>: Overwrites your form with the new profile.</li>
+        </ul>
+
+        <h2>⚙️ Advanced Features</h2>
+
+        <h3>Simple vs. Advanced Mode</h3>
+        <ul>
+          <li><strong>Simple Mode</strong>: Hides complex settings (like specific servo timings or RGB values) to keep the interface clean.</li>
+          <li><strong>Advanced Mode</strong>: Shows all available parameters.</li>
+          <li>Use the <strong>Gear Icon (⚙)</strong> next to the mode toggle to customize which sections are hidden in Simple Mode.</li>
+        </ul>
+
+        <h3>Device Labeling</h3>
+        <p>If you have multiple devices connected:</p>
+        <ol>
+          <li>Click the <strong>Device Badge</strong> (e.g., "Device 1") in the top header.</li>
+          <li>Rename it (e.g., "Experiment A").</li>
+          <li>Use the <strong>Background Color</strong> swatches (top right) to color-code your tabs (Green, Blue, Red).</li>
+        </ol>
+
+        <h3>Troubleshooting</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Issue</th>
+              <th>Solution</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Device not connecting</strong></td>
+              <td>Ensure no other tab or program (like Thonny or VS Code) is using the USB port. Unplug and replug the device.</td>
+            </tr>
+            <tr>
+              <td><strong>Settings didn't change</strong></td>
+              <td>Did you click <strong>Upload</strong>? Changing the form only updates the web view, not the hardware.</td>
+            </tr>
+            <tr>
+              <td><strong>Wrong profile on startup</strong></td>
+              <td>The device auto-loads the profile with the <strong>newest timestamp</strong>. If you loaded an older profile via "Load from Device", it won't persist after a reboot. To make an old profile permanent, <strong>Upload</strong> it again so it gets a new timestamp.</td>
+            </tr>
+            <tr>
+              <td><strong>Orange highlights everywhere</strong></td>
+              <td>This is normal! It means the settings in your web form are different to those on the device. Click <strong>Sync to Device</strong> (in the banner) or <strong>Upload</strong> to make them match.</td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- English guide content end -->
+      </div>
+      <div id="guide-ja" style="display:none">
+        <h1 id="userGuideTitle-ja">ソーラーシミュレーター ユーザーガイド</h1>
+        <p><strong>SolaSim Studio</strong> ユーザーガイドへようこそ。このドキュメントは、ソーラーシミュレーションハードウェアのセットアップ方法と、ウェブインターフェースを使った照明、回転、イメージング制御の手順をすべて説明します。</p>
+
+        <h2>🚀 クイックスタート：インストールとセットアップ</h2>
+        <ol>
+          <li><strong>デバイスの準備（RP2040:bit）</strong><br>
+            ソーラーシミュレーターはRP2040:bitというRaspberry Pi Picoベースのボード上で動作します。カスタムファームウェア（.uf2ファイル）をインストールする必要があります。<br>
+            <ol>
+              <li><strong>ファームウェアのダウンロード：</strong> SolaSim GitHubリポジトリから最新のSolarSimulator_YYYYMMDD.uf2ファイルを取得します。</li>
+              <li><strong>ブートローダーモードに入る：</strong>
+                <ul>
+                  <li>基板の端にあるBOOTボタンを押し続けます。</li>
+                  <li>BOOTを押したまま、RESETボタンを押します。</li>
+                  <li>ボタンを離します。</li>
+                </ul>
+              </li>
+              <li><strong>ファームウェアのインストール：</strong>
+                <ul>
+                  <li>コンピュータに「RPI-RP2」という新しいドライブが表示されます（USBメモリのように）。</li>
+                  <li>このドライブに.uf2ファイルをドラッグ＆ドロップします。</li>
+                  <li>デバイスは自動的に切断・再起動します。これでインストール完了です！</li>
+                </ul>
+              </li>
+            </ol>
+          </li>
+          <li><strong>SolaSim Studioを開く</strong><br>
+            デバイスを操作するためにPCへソフトウェアをインストールする必要はありません。<br>
+            <ul>
+              <li>推奨：<a href="https://odeepllama.github.io/SolarSim/" target="_blank">https://odeepllama.github.io/SolarSim/</a> をGoogle Chrome、Microsoft Edge、Operaなどの対応ブラウザで開きます。</li>
+              <li>上級者/オフライン：ProfileBuilder.htmlファイルをローカルでダブルクリックしてブラウザで開くことも可能です。</li>
+            </ul>
+          </li>
+          <li><strong>接続</strong><br>
+            RP2040ボードをPCに接続後、画面上部の「Monitor / Interact」バーの緑色の「接続」ボタンをクリックします。<br>
+            <ol>
+              <li>ブラウザのウィンドウが開き、シリアルデバイスへの接続許可を求められます。</li>
+              <li>デバイス（多くの場合「Board in FS node」等）を選択し、「接続」をクリックします。</li>
+              <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
+              <li>すぐに接続できない場合は、基板のRESETボタンを押して再度お試しください。</li>
+            </ol>
+          </li>
+        </ol>
+
+        <h2>💡 基本概念</h2>
+        <ul>
+          <li><strong>フォームとデバイス</strong><br>
+            <strong>フォーム（ウェブページ）:</strong> ここが作業スペースです。数値や設定を変更しても、すぐにデバイスへ反映されるわけではありません。印刷前の文書作成のようなものです。<br>
+            <strong>デバイス（ハードウェア）:</strong> 実際にシミュレーションを実行する物理ボードです。<br>
+            <strong>同期:</strong> フォームの設定をハードウェアに反映させるには「アップロード」ボタンをクリックしてください。</li>
+          <li><strong>自動ロードと永続性</strong><br>
+            <strong>一時的な変更:</strong> 「Monitor」タイルで速度や強度を変更した場合、電源が切れるとその変更は失われます。<br>
+            <strong>永続プロファイル:</strong> 「アップロード」時、設定はファイルとして保存されます。<br>
+            <strong>自動ロード:</strong> 通常、デバイス起動時は最新のプロファイルが自動で読み込まれます。自動ロードを無効にすると、デフォルト設定（単一太陽、1X速度、日の出0600、日の入り1800等）で起動します。</li>
+        </ul>
+
+        <h2>🎮 SolaSim Studioの3つの使い方</h2>
+        <ol>
+          <li><strong>リアルタイム操作（モニターモード）</strong><br>
+            <em>最適：素早い調整、ハードウェアのテスト、状態確認</em><br>
+            ページ上部の「Monitor / Interact」バーを展開し、Solar Arcが見えない場合は矢印をクリックしてください。<br>
+            <ul>
+              <li><strong>ステータスタイル:</strong> デバイスからのライブデータ（SimTime、Speed、Intensity等）が表示されます。</li>
+              <li>タイルをクリックすると値を即座に変更できます（例：Speedで一時停止や高速化）。</li>
+              <li>一部タイル（ProgramやRotation等）はダブルクリックでON/OFF切替が可能です。</li>
+              <li><strong>コマンドコンソール:</strong> テキストボックスにコマンド（例：set intensity 0.5）を手入力できます。「Show All Commands」ボタンで全コマンドをログウィンドウに出力（Advancedモード時）。</li>
+              <li><strong>Solar Arc:</strong> 太陽の位置や昼夜サイクルを視覚的に表示します。</li>
+              <li>※ここでの変更は即時反映されますが、永続プロファイルには保存されません。</li>
+            </ul>
+          </li>
+          <li><strong>カスタムプロファイルの作成</strong><br>
+            <em>最適：実験に合わせた詳細な照明・タイミング設計</em><br>
+            メインフォームで実験パラメータを定義します。
+            <ul>
+              <li><strong>開始時刻:</strong> シミュレーション開始時刻（例：0600は午前6時）</li>
+              <li><strong>タイムスケール:</strong> 時間の進み方（例：60xは1分で1時間進行）</li>
+              <li><strong>ソーラーモード:</strong>
+                <ul>
+                  <li>BASIC：単純な日の出（6時）～日の入り（18時）、太陽サイズ一定</li>
+                  <li>SCIENTIFIC：日付・緯度に基づき正確な太陽位置を計算</li>
+                </ul>
+              </li>
+              <li><strong>太陽色:</strong> BLUE（実験標準）、NATURAL（黄/白）、CUSTOM（RGB指定）</li>
+            </ul>
+            <h4>プログラムステップ（タイムライン）</h4>
+            <ul>
+              <li>条件を時間で変化させたい場合（例：「正午まで2x速度、その後1時間HOLD」等）はProgram Stepsを利用します。</li>
+              <li>Program EnabledをONにします。</li>
+              <li>Add Stepで新しいシーケンスを追加します。</li>
+              <li>各ステップで以下を設定：
+                <ul>
+                  <li>Time：このステップの時刻（例：1200）</li>
+                  <li>Transition：RUN（時間進行）またはJUMP（即時遷移）</li>
+                  <li>Speed/Intensity：このステップ中の条件</li>
+                </ul>
+              </li>
+              <li>Timeline Visualizationでシーケンスを確認できます。</li>
+              <li>必要に応じて複数日・異なる条件も追加可能です。</li>
+            </ul>
+            <h4>回転・イメージング</h4>
+            <ul>
+              <li><strong>回転有効:</strong> ターンテーブルの主電源</li>
+              <li><strong>キャプチャモード:</strong> STILLS（静止画）またはVIDEO（連続）</li>
+              <li><strong>インターバル:</strong> 撮影や回転の間隔</li>
+            </ul>
+          </li>
+          <li><strong>アップロードと実行</strong><br>
+            <em>最適：実験開始時</em><br>
+            <ol>
+              <li>フォーム設定後、「Profile Diff Viewer」（黄色ハイライト）でフォームとデバイスの差分を確認します。</li>
+              <li>緑色の「アップロード」ボタンをクリックします。</li>
+              <li>プロンプトに従い、必要に応じてRESETボタンを押してください（通常は自動）。</li>
+              <li>デバイスがプロファイルを保存し、再起動して実験を開始します。</li>
+            </ol>
+          </li>
+        </ol>
+
+        <h2>📂 プロファイル管理</h2>
+        <h3>デバイスからの読み込み</h3>
+        <ol>
+          <li>現在ハードウェアで動作中のプロファイルを確認・編集したい場合：</li>
+          <li>「Load / Delete from Device」をクリックします。</li>
+          <li>RP2040上のファイル一覧が表示されます。</li>
+          <li>プロファイルを選択するとウェブフォームに読み込まれます。<br>
+            <em>※ここで選択したプロファイルは即時実行されますが、再起動後もデフォルトにしたい場合は再度アップロードしてください。</em>
+          </li>
+        </ol>
+        <h3>保存とインポート</h3>
+        <ul>
+          <li><strong>プロファイルのダウンロード:</strong> 現在の設定をテキストファイル（.txt）としてPCに保存。実験共有やバックアップに便利です。</li>
+          <li><strong>プロファイルのインポート:</strong> .txtファイルをPCからウェブフォームに読み込みます。</li>
+          <li><strong>最近のプロファイル:</strong> フォーム上部のバーに最近の設定が自動保存されます。クリックで復元、スターで重要プロファイルを固定可能。</li>
+        </ul>
+        <h3>プロファイル比較</h3>
+        <ul>
+          <li>プロファイルを読み込むと、Comparison Windowで現在の設定と新しいプロファイルの違いが明確に表示されます。</li>
+          <li><strong>オレンジ色のフィールド:</strong> 設定が異なる箇所を示します。</li>
+          <li><strong>適用:</strong> 新しいプロファイルでフォームを上書きします。</li>
+        </ul>
+
+        <h2>⚙️ 高度な機能</h2>
+        <h3>シンプルモードとアドバンストモード</h3>
+        <ul>
+          <li><strong>シンプルモード:</strong> 複雑な設定（サーボタイミングやRGB値等）を非表示にし、インターフェースを簡潔に保ちます。</li>
+          <li><strong>アドバンストモード:</strong> すべてのパラメータを表示します。</li>
+          <li>モード切替横の<strong>ギアアイコン（⚙）</strong>でシンプルモード時に非表示にするセクションをカスタマイズ可能です。</li>
+        </ul>
+        <h3>デバイスラベリング</h3>
+        <ul>
+          <li>複数デバイス接続時：</li>
+          <li>上部ヘッダーの<strong>Device Badge</strong>（例：「Device 1」）をクリック</li>
+          <li>名前を変更（例：「Experiment A」）</li>
+          <li>右上の<strong>背景色スウォッチ</strong>（緑・青・赤）でタブを色分け</li>
+        </ul>
+
+        <h3>トラブルシューティング</h3>
+        <table>
+          <thead>
+            <tr><th>問題</th><th>解決策</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>デバイスが接続できない</td><td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td></tr>
+            <tr><td>設定が反映されない</td><td>「アップロード」ボタンをクリックしましたか？フォームの変更だけではハードウェアに反映されません。</td></tr>
+            <tr><td>起動時に違うプロファイルが読み込まれる</td><td>デバイスは最新のタイムスタンプのプロファイルを自動で読み込みます。「Load from Device」で古いプロファイルを読み込んだ場合、再起動後は保持されません。古いプロファイルを常時使いたい場合は再度アップロードしてください。</td></tr>
+            <tr><td>オレンジ色のハイライトが消えない</td><td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」または「アップロード」で一致させてください。</td></tr>
+          </tbody>
+        </table>
+      </div>
+        <li><strong>アドバンストモード</strong>: すべてのパラメータを表示します。</li>
+        <li>シンプルモード時に非表示にするセクションは、モード切替横の<strong>ギアアイコン（⚙）</strong>でカスタマイズできます。</li>
+      </ul>
+
+      <h3>デバイスラベリング</h3>
+      <p>複数のデバイスを接続している場合：</p>
       <ol>
-        <li><strong>Download the Firmware</strong>: Obtain the latest <code>SolarSimulator_YYYYMMDD.uf2</code> file from the SolaSim GitHub repository.</li>
-        <li><strong>Enter Bootloader Mode</strong>:
-          <ul>
-            <li>Hold down the <strong>BOOT</strong> button on the edge of the board.</li>
-            <li>While holding <strong>BOOT</strong>, press the <strong>RESET</strong> button on the edge of the board.</li>
-            <li>Release the button.</li>
-          </ul>
-        </li>
-        <li><strong>Install Firmware</strong>:
-          <ul>
-            <li>A new drive named <code>RPI-RP2</code> will appear on your computer (like a USB stick).</li>
-            <li>Drag and drop the <code>.uf2</code> file onto this drive.</li>
-            <li>The device will automatically disconnect and reboot. The installation is complete!</li>
-          </ul>
-        </li>
+        <li>上部ヘッダーの<strong>Device Badge</strong>（例：「Device 1」）をクリックします。</li>
+        <li>名前を変更します（例：「Experiment A」）。</li>
+        <li>右上の<strong>背景色スウォッチ</strong>（緑・青・赤）でタブを色分けできます。</li>
       </ol>
 
-      <h3>2. Open SolaSim Studio</h3>
-      <p>You do not need to install any software on your computer to control the device.</p>
-      <ul>
-        <li><strong>Recommended</strong>: Open <a href="https://odeepllama.github.io/SolarSim/" target="_blank">https://odeepllama.github.io/SolarSim/</a> in a compatible browser (Google Chrome, Microsoft Edge, or Opera).</li>
-        <li><strong>Advanced/Offline</strong>: If you have the <code>ProfileBuilder.html</code> file locally, you can simply double-click it to open it in your browser.</li>
-      </ul>
-
-      <h3>3. Connect</h3>
-      <ol>
-        <li>After connecting the RP2040 board to your computer, click the green <strong>Connect</strong> button in the top "Monitor / Interact" bar.</li>
-        <li>A browser window will pop up asking permission to connect to a serial device.</li>
-        <li>Select your device (often listed as "Board in FS node") and click <strong>Connect</strong>.</li>
-        <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
-        <li>If the device does not immediately connect, press the <strong>RESET</strong> button on the edge of the board and try connecting again.</li>
-      </ol>
-
-      <h2>💡 Core Concepts</h2>
-      <p>Before using the system, it is helpful to understand two key concepts:</p>
-
-      <h3>Form vs. Device</h3>
-      <ul>
-        <li><strong>The Form (Web Page)</strong>: This is your workspace. Changing numbers or settings here <strong>does not</strong> immediately change the device. It is like writing a document before printing it.</li>
-        <li><strong>The Device (Hardware)</strong>: This is the physical board running the simulation.</li>
-        <li><strong>Syncing</strong>: To make your form settings take effect on the hardware, you must click <strong>Upload to Device</strong>.</li>
-      </ul>
-
-      <h3>Auto-Load & Persistence</h3>
-      <ul>
-        <li><strong>Temporary Changes</strong>: If you use the "Monitor" tiles to change speed or intensity, those changes are lost if the device loses power.</li>
-        <li><strong>Persistent Profiles</strong>: When you <strong>Upload to Device</strong>, the system saves your settings as a file.</li>
-        <li><strong>Auto-Load</strong>: By default, when the device powers up, it looks for the most recently uploaded profile and runs it automatically. If Auto-Load is disabled, the device will start with default settings (single sun, 1X speed, sunrise 0600, sunset 1800, etc).</li>
-      </ul>
-
-      <h2>🎮 Three Ways to Use SolaSim Studio</h2>
-
-      <h3 class="guide-pill-title">1. Real-Time Interaction (Monitor Mode)</h3>
-      <p><em>Best for: Quick adjustments, testing hardware, and checking status.</em></p>
-      <p>At the top of the page is the <strong>Monitor / Interact</strong> bar. Click the arrow to expand it if the Solar Arc is not visible.</p>
-      <ul>
-        <li><strong>Status Tiles</strong>: You will see live data from the device (e.g., <code>SimTime</code>, <code>Speed</code>, <code>Intensity</code>).
-          <ul>
-            <li><strong>Click a tile</strong> to change its value immediately. For example, click <strong>Speed</strong> to pause (HOLD) or fast-forward (600x) the simulated time.</li>
-            <li><strong>Double-click</strong> certain tiles (like <code>Program</code> or <code>Rotation</code>) to toggle them ON or OFF.</li>
-          </ul>
-        </li>
-        <li><strong>Command Console</strong>: Type commands manually (e.g., <code>set intensity 0.5</code>) in the text box for precise control. The <strong>Show All Commands</strong> button will output all commands in the log window (Visible in Advanced mode).</li>
-        <li><strong>Solar Arc</strong>: A visual representation of the sun's position and day/night cycle.</li>
-      </ul>
-      <blockquote><strong>Note</strong>: Changes made here happen immediately but are <strong>not saved</strong> to the permanent profile.</blockquote>
-
-      <h3 class="guide-pill-title">2. Building Custom Profiles</h3>
-      <p><em>Best for: Designing specific experiments with precise lighting and timing requirements.</em></p>
-      <p>Use the main form to define your experiment parameters.</p>
-
-      <h4>Core Settings</h4>
-      <ul>
-        <li><strong>Start Time</strong>: When the simulation clock begins (e.g., <code>0600</code> for 6 AM).</li>
-        <li><strong>Time Scale</strong>: How fast time passes (e.g., <code>60x</code> means 1 hour passes in 1 minute).</li>
-        <li><strong>Solar Mode</strong>:
-          <ul>
-            <li><strong>BASIC</strong>: Simple sunrise (6 AM) to sunset (6 PM) with constant sun size.</li>
-            <li><strong>SCIENTIFIC</strong>: Calculates accurate sun position based on the <strong>Date</strong> and <strong>Latitude</strong> you provide.</li>
-          </ul>
-        </li>
-        <li><strong>Sun Color</strong>: Choose <strong>BLUE</strong> (standard for experiments), <strong>NATURAL</strong> (yellow/white), or <strong>CUSTOM</strong> (RGB).</li>
-      </ul>
-
-      <h4>Program Steps (The Timeline)</h4>
-      <p>If you need the conditions to change over time (e.g., "Run at 2x speed until noon, then hold for 1 hour"), use the <strong>Program Steps</strong> section.</p>
-      <ol>
-        <li>Ensure <strong>Program Enabled</strong> is checked.</li>
-        <li>Click <strong>Add Step</strong> to create a new sequence.</li>
-        <li>For each step, define:
-          <ul>
-            <li><strong>Time</strong>: When this step targets (e.g., <code>1200</code>).</li>
-            <li><strong>Transition</strong>: <code>RUN</code> (simulate time passing) or <code>JUMP</code> (skip instantly).</li>
-            <li><strong>Speed/Intensity</strong>: The conditions during this step.</li>
-          </ul>
-        </li>
-        <li>Use the <strong>Timeline Visualization</strong> to verify your sequence looks correct.</li>
-        <li>You can add additional days with different steps/conditions if your experiment requires.</li>
-      </ol>
-
-      <h4>Rotation & Imaging</h4>
-      <p>Configure the turntable and camera triggers.</p>
-      <ul>
-        <li><strong>Rotation Enabled</strong>: Master switch for the rotating platform.</li>
-        <li><strong>Capture Mode</strong>: <code>STILLS</code> (stop-motion) or <code>VIDEO</code> (continuous).</li>
-        <li><strong>Intervals</strong>: How often to take photos or rotate.</li>
-      </ul>
-
-      <h3 class="guide-pill-title">3. Uploading & Running</h3>
-      <p><em>Best for: Starting your experiment.</em></p>
-      <p>Once your form is configured:</p>
-      <ol>
-        <li>Check the <strong>Profile Diff Viewer</strong> (yellow highlights). This shows you what is different between your form and the device.</li>
-        <li>Click the green <strong>Upload to Device</strong> button.</li>
-        <li>Follow the prompt (you may need to press the RESET button on the device if requested, though usually it is automatic).</li>
-        <li>The device will save the profile, restart, and begin running your experiment immediately.</li>
-      </ol>
-
-      <h2>📂 Managing Profiles</h2>
-
-      <h3>Loading from Device</h3>
-      <p>If you want to see or edit the profile currently running on the hardware:</p>
-      <ol>
-        <li>Click <strong>Load / Delete from Device</strong>.</li>
-        <li>A list of files stored on the RP2040 will appear.</li>
-        <li>Select a profile to load it into the web form.
-          <br><em>Note: Selecting a profile here also tells the device to run it immediately, but it does not make it the "default" for the next startup unless you re-upload it or it is already the most recent profile.</em>
-        </li>
-      </ol>
-
-      <h3>Saving & Importing</h3>
-      <ul>
-        <li><strong>Download Profile</strong>: Saves your current settings as a text file (<code>.txt</code>) to your computer. Useful for sharing experiments or backups.</li>
-        <li><strong>Import Profile</strong>: Loads a <code>.txt</code> file from your computer into the web form.</li>
-        <li><strong>Recent Profiles</strong>: The bar at the top of the form saves your recent configurations automatically. Click one to restore it. Click the <strong>Star</strong> to prevent key profiles from rotating off the screen as more are created.</li>
-      </ul>
-
-      <h3>Profile Comparison</h3>
-      <p>When you load a profile, the <strong>Comparison Window</strong> will show you exactly what is different between your current settings and the new profile.</p>
-      <ul>
-        <li><strong>Orange Fields</strong>: Indicate settings that differ.</li>
-        <li><strong>Apply</strong>: Overwrites your form with the new profile.</li>
-      </ul>
-
-      <h2>⚙️ Advanced Features</h2>
-
-      <h3>Simple vs. Advanced Mode</h3>
-      <ul>
-        <li><strong>Simple Mode</strong>: Hides complex settings (like specific servo timings or RGB values) to keep the interface clean.</li>
-        <li><strong>Advanced Mode</strong>: Shows all available parameters.</li>
-        <li>Use the <strong>Gear Icon (⚙)</strong> next to the mode toggle to customize which sections are hidden in Simple Mode.</li>
-      </ul>
-
-      <h3>Device Labeling</h3>
-      <p>If you have multiple devices connected:</p>
-      <ol>
-        <li>Click the <strong>Device Badge</strong> (e.g., "Device 1") in the top header.</li>
-        <li>Rename it (e.g., "Experiment A").</li>
-        <li>Use the <strong>Background Color</strong> swatches (top right) to color-code your tabs (Green, Blue, Red).</li>
-      </ol>
-
-      <h3>Troubleshooting</h3>
+      <h3>トラブルシューティング</h3>
       <table>
         <thead>
           <tr>
-            <th>Issue</th>
-            <th>Solution</th>
+            <th>問題</th>
+            <th>解決策</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Device not connecting</strong></td>
-            <td>Ensure no other tab or program (like Thonny or VS Code) is using the USB port. Unplug and replug the device.</td>
+            <td><strong>デバイスが接続できない</strong></td>
+            <td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td>
           </tr>
           <tr>
-            <td><strong>Settings didn't change</strong></td>
-            <td>Did you click <strong>Upload</strong>? Changing the form only updates the web view, not the hardware.</td>
+            <td><strong>設定が反映されない</strong></td>
+            <td>「アップロード」ボタンをクリックしましたか？フォームの変更だけではハードウェアに反映されません。</td>
           </tr>
           <tr>
-            <td><strong>Wrong profile on startup</strong></td>
-            <td>The device auto-loads the profile with the <strong>newest timestamp</strong>. If you loaded an older profile via "Load from Device", it won't persist after a reboot. To make an old profile permanent, <strong>Upload</strong> it again so it gets a new timestamp.</td>
+            <td><strong>起動時に違うプロファイルが読み込まれる</strong></td>
+            <td>デバイスは最新のタイムスタンプのプロファイルを自動で読み込みます。「Load from Device」で古いプロファイルを読み込んだ場合、再起動後は保持されません。古いプロファイルを常時使いたい場合は再度アップロードしてください。</td>
           </tr>
           <tr>
-            <td><strong>Orange highlights everywhere</strong></td>
-            <td>This is normal! It means the settings in your web form are different to those on the device. Click <strong>Sync to Device</strong> (in the banner) or <strong>Upload</strong> to make them match.</td>
+            <td><strong>オレンジ色のハイライトが消えない</strong></td>
+            <td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」（バナー内）または「アップロード」で一致させてください。</td>
           </tr>
         </tbody>
       </table>
@@ -2414,6 +2625,18 @@ function setLanguage(lang) {
       h.classList.remove('jp-heading');
     }
   });
+  // Show/hide the correct guide language
+  const guideEn = document.getElementById('guide-en');
+  const guideJa = document.getElementById('guide-ja');
+  if (guideEn && guideJa) {
+    if (lang === 'ja') {
+      guideEn.style.display = 'none';
+      guideJa.style.display = '';
+    } else {
+      guideEn.style.display = '';
+      guideJa.style.display = 'none';
+    }
+  }
   document.querySelector('#toggleMonitorBtn .txt').textContent = TRANSLATIONS[lang].monitorInteract;
   document.getElementById('monitorConnBadge').textContent = TRANSLATIONS[lang].disconnected;
   document.getElementById('monitorConnectBtn').textContent = TRANSLATIONS[lang].connect;
