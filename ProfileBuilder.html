@@ -1332,6 +1332,8 @@ select:not(#filename_tag):not(#filename_preview) {
     </div>
   </header>
   <div class="help-body" tabindex="-1" id="helpBodyScroll">
+    <!-- English Help Content -->
+    <div id="help-en">
     <p>Quick reference for building and managing profiles. Press <code>Esc</code> to close.</p>
     
     <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
@@ -1634,6 +1636,85 @@ select:not(#filename_tag):not(#filename_preview) {
     </div>
     
     <p style="opacity:.65; font-size:.85rem; margin-top:1.2rem;">All data stored locally in browser. Clear site data to remove.</p>
+    </div>
+    <!-- End English Help Content -->
+
+    <!-- Japanese Help Content -->
+    <div id="help-ja" style="display:none;">
+    <p>プロファイルの構築と管理に関するクイックリファレンス。<code>Esc</code>キーで閉じます。</p>
+    
+    <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
+      <strong style="color:#0d47a1;">🎓 SolaSim Studio が初めてですか？</strong>
+      <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
+        <a href="#" id="helpRestartGuideJa" style="color:#2196f3; text-decoration:underline; font-weight:500;">ここをクリックしてガイドを再開</a>し、すべての機能のガイドを参照してください。
+      </p>
+    </div>
+
+    <h4>インターフェース操作</h4>
+    <ul>
+      <li><strong>デバイスラベル</strong>: ページ上部中央のバッジ（「Device 1」など）をクリックして、デバイス名をカスタマイズします。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>異なるブラウザタブで複数のデバイスを使用する場合、各タブに固有の識別子を付けることができます。バッジをクリックして「Device 1」、「Device 2」、「Lab A」などのカスタム名を設定します。</p>
+          <p>デバイスラベルはページバッジとブラウザタブのタイトルの両方に表示され、複数のデバイスを簡単に区別できます。ラベルはタブごとに保存されます（グローバルではない）ので、各ブラウザタブが独自のデバイスIDを持つことができます。</p>
+          <p><strong>使用例：</strong>複数のタブを開き、それぞれ異なる物理デバイスに接続し、混乱を避けるためにそれに応じてラベルを付けます。</p>
+        </div>
+      </li>
+      <li><strong>背景色</strong>: 色付きスウォッチ（右上）をクリックして、ページの背景色を変更します。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>複数のデバイスタブを視覚的に区別するのに便利です—各デバイスに異なる色（緑、青、または赤）を割り当てると、どのタブで作業しているかをすばやく識別できます。色の設定はブラウザタブごとに保存されます。</p>
+        </div>
+      </li>
+      <li><strong>シンプル/詳細モード</strong>: 簡素化されたビューと完全なインターフェースビューを切り替えます。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p><strong>シンプルモード：</strong>使用頻度の低いセクションを非表示にして、インターフェースをすっきりさせます。日常的な操作や、すでにシステムに精通している場合に最適です。</p>
+          <p><strong>詳細モード：</strong>利用可能なすべてのセクションと設定を表示します。完全な制御が必要な場合や、システムを学習している場合に使用します。</p>
+          <p><strong>歯車アイコン（⚙）：</strong>クリックして、シンプルモードで表示するセクションをカスタマイズします。設定は自動的に保存されます。</p>
+          <p><strong>ヒント：</strong>すべての機能を探索するには詳細モードから始め、定期的に使用するセクションがわかったらシンプルモードに切り替えます。</p>
+        </div>
+      </li>
+    </ul>
+
+    <h4>モニター / 操作</h4>
+    <ul>
+      <li><strong>ステータスタイル</strong>: 任意のタイルをクリックしてプリセットまたはカスタム値を設定します。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>例：SimTime（日の出/正午またはHHMM）、速度（-300x～300xまたはホールド）、強度（0.5～3.0）。Program/Rotation/Dual Sunを切り替えるにはダブルクリックします。</p>
+        </div>
+      </li>
+      <li><strong>太陽アーク</strong>: 現在の時刻と昼夜のシェーディングを示す視覚的な太陽の経路。太陽の位置、色、強度もモデル化します。</li>
+      <li><strong>コマンドコンソール</strong>: オートコンプリートサポート付きのコマンドを入力します。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>Tabキーを押してオートコンプリート候補を順に表示します。上下矢印キーを使用して過去10個のコマンドをナビゲートします。Enterキーを押してコマンドを送信します。コマンドは大文字と小文字を区別し、デバイスの動作を直接制御します。</p>
+        </div>
+      </li>
+      <li><strong>すべてのコマンドを表示</strong>: 利用可能なすべてのコマンドの完全なリストをログウィンドウに表示します（詳細モードで表示）。</li>
+      <li><strong>デバイス接続</strong>: Web Serial APIがUSB経由でデバイスに直接接続します。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+        <div class="help-detail" style="display:none;">
+          <p>互換性のあるブラウザ（Chrome、Edge、Opera）が必要です。「接続」ボタンをクリックして、リストからデバイスを選択します。接続に失敗した場合は、適切なUSBドライバがインストールされていることを確認してください。アクティブな場合はステータスが「接続済み」と表示され、それ以外の場合は「未接続」と表示されます。</p>
+        </div>
+      </li>
+    </ul>
+
+    <h4>プロファイル管理</h4>
+    <p>主要な機能の詳細については、英語版のヘルプを参照してください。</p>
+
+    <h4>設定と構成</h4>
+    <p>設定の詳細については、英語版のヘルプを参照してください。</p>
+
+    <h4>プログラムステップ</h4>
+    <p>プログラムステップの詳細については、英語版のヘルプを参照してください。</p>
+
+    <h4>ワークフロー</h4>
+    <ol style="padding-left:18px;">
+      <li>コア設定を構成し、ステップを使用する場合はプログラムを有効にします</li>
+      <li>ステップを追加/編集します。タイムラインと検証を確認します</li>
+      <li>デバイスにアップロード（Web Serial）またはダウンロードしてローカルに保存します</li>
+      <li>オプションでデフォルトとして保存し、すばやく復元します</li>
+    </ol>
+    
+    <p style="opacity:.65; font-size:.85rem; margin-top:1.2rem;">すべてのデータはブラウザにローカルに保存されます。削除するにはサイトデータをクリアしてください。</p>
+    </div>
+    <!-- End Japanese Help Content -->
   </div>
 </aside>
 
@@ -2337,7 +2418,7 @@ select:not(#filename_tag):not(#filename_preview) {
 // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
 const TRANSLATIONS = {
   en: {
-    appTitle: 'Solar Simulator Studio 20251225a',
+    appTitle: 'Solar Simulator Studio 20251228a',
     monitorInteract: 'Monitor / Interact',
     disconnected: 'DISCONNECTED',
     connect: 'Connect',
@@ -2633,6 +2714,18 @@ function setLanguage(lang) {
     } else {
       guideEn.style.display = '';
       guideJa.style.display = 'none';
+    }
+  }
+  // Show/hide the correct help language
+  const helpEn = document.getElementById('help-en');
+  const helpJa = document.getElementById('help-ja');
+  if (helpEn && helpJa) {
+    if (lang === 'ja') {
+      helpEn.style.display = 'none';
+      helpJa.style.display = '';
+    } else {
+      helpEn.style.display = '';
+      helpJa.style.display = 'none';
     }
   }
   document.querySelector('#toggleMonitorBtn .txt').textContent = TRANSLATIONS[lang].monitorInteract;
@@ -15803,6 +15896,7 @@ function clearHoldState(){
   const nextBtn = document.getElementById('ftueNextBtn');
   const guideBtn = document.getElementById('guideToggleBtn');
   const helpRestartLink = document.getElementById('helpRestartGuide');
+  const helpRestartLinkJa = document.getElementById('helpRestartGuideJa');
   
   // Close welcome modal on click outside
   if (welcomeModal) {
@@ -16243,6 +16337,13 @@ function clearHoldState(){
     document.getElementById('helpPanel').classList.remove('open');
     restartGuide();
   });
+  if (helpRestartLinkJa) {
+    helpRestartLinkJa.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('helpPanel').classList.remove('open');
+      restartGuide();
+    });
+  }
   
   // Handle window resize
   window.addEventListener('resize', () => {
