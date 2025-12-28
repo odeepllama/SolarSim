@@ -772,6 +772,10 @@ select:not(#filename_tag):not(#filename_preview) {
     margin-left: auto;
     margin-right: auto;
   }
+  /* Keep title left-aligned even when column is centered */
+  .vislog-row:has(.log-col.mode-hidden) .vis-col .mini-sect-title {
+    text-align: left;
+  }
   @media (max-width: 900px){
     .vislog-row{ flex-direction:column; }
     /* On mobile, remove min-width constraints to prevent horizontal overflow */
