@@ -158,6 +158,7 @@ https://github.com/odeepllama/SolarSim/tree/main
  #printSummaryBtn:hover:not(:disabled), #printSummaryBtn2:hover:not(:disabled) { background:#9645d9 !important; border-color:#5a1d99 !important; color:#fff !important; }
  #saveDefaultBtn:hover:not(:disabled), #applyDefaultBtn:hover:not(:disabled), #addStepBtn:hover:not(:disabled) { background:#4a8cf8 !important; color:#fff !important; border-color:#2d6cdf !important; }
  #clearDefaultBtn:hover:not(:disabled), #loadFromDeviceBtn:hover:not(:disabled), #resetUploadConfirmBtn:hover:not(:disabled), #exampleStepsBtn:hover:not(:disabled), #undoExampleBtn:hover:not(:disabled) { background:#f0f0f0 !important; border-color:#666 !important; }
+ #monitorCmdHelpBtn:hover:not(:disabled), #monitorShowStatusBtn:hover:not(:disabled) { background:#f0f0f0 !important; border-color:#666 !important; }
  #addDayBtn:hover:not(:disabled) { background:#ffd84d !important; border-color:#e6b800 !important; }
  #clearStepsBtn:hover:not(:disabled) { background:#d44439 !important; border-color:#a32b22 !important; }
  #textSyncToggleBtn.danger { background:#c0362c !important; border-color:#a32b22 !important; color:#fff !important; }
@@ -1787,7 +1788,6 @@ select:not(#filename_tag):not(#filename_preview) {
 <div id="formContainer"></div>
 <div id="programSection" style="display:none;">
 <h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
- <div style="font-size:0.96rem; color:#666; margin:4px 0 8px 0; font-style:italic;">💡 Drag segment boundaries or entire segments to adjust timing when not running on device</div>
  <div id="timelineContainer" style="margin:6px 0 10px;"></div>
 <h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
  <div class="toolbar">
@@ -1802,7 +1802,6 @@ select:not(#filename_tag):not(#filename_preview) {
   <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
    <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
   <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
-    <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
   </label>
  </div>
  <table class="program-steps-table" id="programStepsTable">
@@ -1824,7 +1823,6 @@ select:not(#filename_tag):not(#filename_preview) {
     <li><strong data-i18n="jumpTransitions">JUMP transitions:</strong> <span data-i18n="jumpTransitionsDesc">Instantaneous reposition, no simulated time added</span></li>
     <li><strong data-i18n="runJumpSameOrEarlier">RUN/JUMP to same or earlier time:</strong> <span data-i18n="runJumpSameOrEarlierDesc">Creates new day</span></li>
     <li><strong data-i18n="holdSpeedZero">HOLD (Speed=0):</strong> <span data-i18n="holdSpeedZeroDesc">Adds real-time duration only</span></li>
-    <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)" autocomplete="off" style="flex:1;" data-i18n-placeholder="typeCommand" />
   </ul>
  </div>
 </div>
@@ -14191,7 +14189,7 @@ window.__generateNavControlsHtml = function(){
       if(locked){
         // Need to recreate if: lock icon missing OR nav button visibility changed
         if(!hasLockIcon || (hasNavBtns !== shouldShowNav)){
-          timelineTitle.innerHTML = 'Program Step Timeline - <span class="program-lock-text">Running on Device</span> <span class="program-lock-icon">▶️</span>' + navBtnHtml;
+          timelineTitle.innerHTML = 'Program Step Timeline &nbsp;&nbsp; <span class="program-lock-text">!!!Running on Device!!!</span>' + navBtnHtml;
         }
       } else {
         // Need to recreate if: lock icon present OR nav button visibility changed
@@ -14204,7 +14202,7 @@ window.__generateNavControlsHtml = function(){
     // Update editing/table title
     if(locked){
       if(!editingTitle.querySelector('.program-lock-icon')){
-        editingTitle.innerHTML = 'Program Step Editing - <span class="program-lock-text">Running on Device</span> <span class="program-lock-icon">▶️</span>';
+        editingTitle.innerHTML = 'Program Step Editing &nbsp;&nbsp; <span class="program-lock-text">!!!Running on Device!!!</span>';
       }
     } else {
       editingTitle.innerHTML = 'Program Step Editing';
