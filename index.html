@@ -12798,24 +12798,10 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   function setKV(k,label,val){
     if(!statusGrid) return;
     let box=kvCache.get(k);
-    if(!box){
+    const isNewBox = !box;
+    if(isNewBox){
       box=document.createElement('div'); box.className='mon-kv'; box.innerHTML=`<b>${label}</b><span></span>`; kvCache.set(k,box);
-      // Insert with simple priority so Speed appears second after SimTime
-      const myPri = TILE_ORDER[k] ?? 50;
-      let inserted=false;
-      for(const [ok, obox] of kvCache.entries()){
-        if(obox===box) continue; // skip self
-        const oPri = TILE_ORDER[ok] ?? 50;
-        if(oPri > myPri){ statusGrid.insertBefore(box, obox); inserted=true; break; }
-      }
-      if(!inserted) statusGrid.appendChild(box);
-      // Set CSS variable for staggered animation delay based on child index
-      const tileIndex = Array.from(statusGrid.children).indexOf(box);
-      box.style.setProperty('--tile-index', tileIndex);
-      // Add animation class for appearance
-      box.classList.add('tile-appearing');
-      // Remove animation class after animation completes so it doesn't re-trigger on updates
-      setTimeout(() => { box.classList.remove('tile-appearing'); }, 500);
+      // Don't insert yet - let reorderTiles() handle all insertions to avoid duplicates
     }
     const span=box.querySelector('span');
     const newText= val==null?'—':val;
@@ -12896,8 +12882,17 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         }
       }
     } catch(_){ }
-    // Enforce fixed layout order
-    reorderTiles();
+    // Only reorder tiles when a new one was created to avoid duplicate rendering
+    if(isNewBox){
+      reorderTiles();
+      // Set CSS variable for staggered animation delay based on child index (after reordering)
+      const tileIndex = Array.from(statusGrid.children).indexOf(box);
+      box.style.setProperty('--tile-index', tileIndex);
+      // Add animation class for appearance
+      box.classList.add('tile-appearing');
+      // Remove animation class after animation completes so it doesn't re-trigger on updates
+      setTimeout(() => { box.classList.remove('tile-appearing'); }, 500);
+    }
   }
   // Make setKV accessible for visualization wrappers
   try{ window.setKV = setKV; }catch(_){ }
