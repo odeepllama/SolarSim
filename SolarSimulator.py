@@ -1524,8 +1524,8 @@ def get_basic_sun_position(minute_of_day):
     size = 8       # Always 8×8 when visible
     
     # Basic RGB values (225, 225, 255) as specified
-    r = 225
-    g = 225
+    r = 255
+    g = 255
     b = 255
     
     # Apply intensity scaling and cap at 255

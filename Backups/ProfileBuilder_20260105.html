@@ -1375,7 +1375,7 @@ select:not(#filename_tag):not(#filename_preview) {
     <ul>
       <li><strong>Status Tiles</strong>: Click any tile for presets or custom values. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
-          <p>Examples: SimTime (Sunrise/Noon or HHMM), Speed (−300x to 300x or Hold), Intensity (0.0–1.0). Double-click to toggle Program/Rotation/Dual Sun.</p>
+          <p>Examples: SimTime (Sunrise/Noon or HHMM), Speed (−300x to 300x or Hold), Intensity (0.5–3.0). Double-click to toggle Program/Rotation/Dual Sun.</p>
         </div>
       </li>
       <li><strong>Solar Arc</strong>: Visual sun path showing current time and day/night shading. Also models sun position, colour, and intensity.</li>
@@ -1468,7 +1468,7 @@ select:not(#filename_tag):not(#filename_preview) {
     <ul>
       <li><strong>Core Settings</strong>: Essential parameters for sun simulation. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
-          <p><strong>Start Time:</strong> Initial simulated time (HHMM, 24-hour format). <strong>Time Scale:</strong> Speed multiplier for time progression. <strong>Intensity Scale:</strong> Global light multiplier (0.0–1.0). <strong>Simulation Date & Latitude:</strong> Geographic parameters for sun path calculations. <strong>Solar Mode:</strong> BASIC (constant) or SCIENTIFIC (astronomical calculations). <strong>Sun Color Mode:</strong> Color temperature settings (BLUE, NATURAL, or CUSTOM RGB).</p>
+          <p><strong>Start Time:</strong> Initial simulated time (HHMM, 24-hour format). <strong>Time Scale:</strong> Speed multiplier for time progression. <strong>Intensity Scale:</strong> Global light multiplier (0.5–3.0). <strong>Simulation Date & Latitude:</strong> Geographic parameters for sun path calculations. <strong>Solar Mode:</strong> BASIC (constant) or SCIENTIFIC (astronomical calculations). <strong>Sun Color Mode:</strong> Color temperature settings (BLUE, NATURAL, or CUSTOM RGB).</p>
         </div>
       </li>
       <li><strong>Program Settings</strong>: Enable step-based sequences. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
@@ -1483,7 +1483,7 @@ select:not(#filename_tag):not(#filename_preview) {
       </li>
       <li><strong>Validation & Safety</strong>: Rules to prevent device damage. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
         <div class="help-detail" style="display:none;">
-          <p>Errors are shown inline in red; exports are disabled until resolved. Dual Sun with high intensity is blocked to prevent overheating. Intensity above 1.0 is not permitted. Recommended ranges for research: intensity 0.8–1.0, speed 1x–4x.</p>
+          <p>Errors are shown inline in red; exports are disabled until resolved. Dual Sun with high intensity is blocked to prevent overheating. Intensity outside 0.5–3.0 is invalid. Realistic ranges for research: intensity 0.8–1.2, speed 1x–4x.</p>
         </div>
       </li>
     </ul>
@@ -1496,7 +1496,7 @@ select:not(#filename_tag):not(#filename_preview) {
         <li><code>sim_time_hhmm</code>: Target simulation time (HHMM, 24-hour format)</li>
         <li><code>transition</code>: <strong>RUN</strong> (advance time) or <strong>JUMP</strong> (instant move, no duration)</li>
         <li><code>speed</code>: Time scale (negative = reverse, 0 = hold). Leave empty to keep current speed.</li>
-        <li><code>intensity_scale</code>: Light multiplier (0.0–1.0) for this step. Leave empty to use global setting.</li>
+        <li><code>intensity_scale</code>: Light multiplier (0.0–3.0) for this step. Leave empty to use global setting.</li>
         <li><code>dual_sun</code>: Enable mirrored sun for this segment</li>
         <li><code>hold_minutes</code>: Real-time pause duration (only applies if speed=0)</li>
         <li><code>repeat</code>: Repeat this step N additional times before moving to the next</li>
@@ -1682,7 +1682,7 @@ select:not(#filename_tag):not(#filename_preview) {
     <ul>
       <li><strong>ステータスタイル</strong>: 任意のタイルをクリックしてプリセットまたはカスタム値を設定します。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
         <div class="help-detail" style="display:none;">
-          <p>例：SimTime（日の出/正午またはHHMM）、速度（-300x～300xまたはホールド）、強度（0.0～1.0）。Program/Rotation/Dual Sunを切り替えるにはダブルクリックします。</p>
+          <p>例：SimTime（日の出/正午またはHHMM）、速度（-300x～300xまたはホールド）、強度（0.5～3.0）。Program/Rotation/Dual Sunを切り替えるにはダブルクリックします。</p>
         </div>
       </li>
       <li><strong>太陽アーク</strong>: 現在の時刻と昼夜のシェーディングを示す視覚的な太陽の経路。太陽の位置、色、強度もモデル化します。</li>
@@ -2886,7 +2886,7 @@ const FIELD_GROUPS = [
 const FIELDS = {
  START_TIME_HHMM: { label:'Start Time (HHMM)', tooltip:'Simulation clock start (HHMM local).', type:'text', default:'600', validate:v=>/^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
  TIME_SCALE: { label:'Time Scale', tooltip:'Speed multiplier (0=Hold, negative=reverse).', type:'select', options:[0,1,6,60,600], allowCustom:true, default:1 },
- INTENSITY_SCALE: { label:'Intensity Scale', tooltip:'Global light intensity multiplier (0.0-1.0). Values above 1.0 are not permitted. CAUTION: High intensity values (>0.8) in DUAL SUN mode can cause over-current issues.', type:'number', step:'0.1', min:0, max:1.0, default:1.0 },
+ INTENSITY_SCALE: { label:'Intensity Scale', tooltip:'Global light intensity multiplier. CAUTION: High intensity values (>0.8) in DUAL SUN mode can cause over-current issues.', type:'number', step:'0.1', min:0, default:1.0 },
  SIMULATION_DATE: { label:'Simulation Date (YYYYMMDD)', tooltip:'Date used for sun path / future calc.', type:'text', default:'20250320', validate:v=>/^20\d{6}$/.test(v) },
  LATITUDE: { label:'Latitude', tooltip:'Observer latitude (-90 to 90).', type:'number', step:'0.1', min:-90, max:90, default:0 },
  SOLAR_MODE: { label:'Solar Mode', tooltip:'BASIC constant; SCIENTIFIC astronomical calc.', type:'select', options:['BASIC','SCIENTIFIC'], default:'BASIC' },
