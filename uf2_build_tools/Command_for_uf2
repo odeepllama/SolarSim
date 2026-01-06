@@ -1,0 +1,1 @@
+ cd '/Users/andy/Library/CloudStorage/GoogleDrive-acrofts@aiu.ac.jp/My Drive/Coding/SolarSimulator/uf2_build_tools' && /usr/local/bin/python3 uf2_builder.py '../../SolarSimulator/SolarSimulator.py'
