@@ -38,7 +38,6 @@ PROGRAM_STEPS = [              # Non-program default: neutral single step
 # {"sim_time_hhmm": 900, "dual_sun": True, "transition": "JUMP"},
 # {"sim_time_hhmm": 1200, "speed": 2, "dual_sun": False},
 # {"sim_time_hhmm": 1800, "speed": 2, "dual_sun": False},
-# e.g."sim_time_hhmm": 900, "speed": 0, "hold_minutes": 10, "intensity_scale": 0.2, "dual_sun": True, "repeat": 2
 
 PROGRAM_REPEATS = -1                   # -1 for indefinite repeats, 0 or 1 for single run, or N for N repeats
 STOP_SIMULATION_AFTER_PROGRAM = False  # When True, terminates simulation after program completes
@@ -1653,7 +1652,6 @@ def deactivate_rotation_lighting():
 #             "rotInProg": rotation_in_progress,
 #             "servo2": servo2_state,
 #             "servo3": servo3_state,
-#             "imgAtNight": IMAGE_AT_NIGHT,
 #             "rotAtNight": ROTATION_AT_NIGHT,
 #             "progRun": program_running,
 #             "progStep": (current_program_step + 1) if program_running else 0,
@@ -1680,8 +1678,8 @@ def handle_command(command_str):
     global servo2_state, servo2_controlled_by_rotation, servo2_trigger_start_ms, last_servo2_trigger_ms
     global servo3_state, servo3_trigger_start_ms, last_servo3_trigger_ms, servo3_using_lighting
     global camera_lighting_active, rotation_lighting_active, INTENSITY_SCALE, DUAL_SUN_ENABLED
-    global PROGRAM_ENABLED, ROTATION_ENABLED, SERVO2_STANDALONE_ENABLED, SERVO3_STANDALONE_ENABLED, RESTART_AFTER_LOAD, AUTO_LOAD_LATEST_PROFILE
-    global SERVO2_INTERVAL_SEC, SERVO3_INTERVAL_SEC, ROTATION_CYCLE_INTERVAL_MINUTES
+    global PROGRAM_ENABLED, ROTATION_ENABLED, RESTART_AFTER_LOAD, AUTO_LOAD_LATEST_PROFILE
+    global SERVO2_INTERVAL_DAY_SEC, SERVO2_INTERVAL_NIGHT_SEC, SERVO3_INTERVAL_DAY_SEC, SERVO3_INTERVAL_NIGHT_SEC, ROTATION_CYCLE_INTERVAL_MINUTES
     global SUN_COLOR_MODE, ROTATION_CAPTURE_MODE, SIMULATION_DATE, LATITUDE, SOLAR_MODE
     global current_step_repeat, program_step_start_sim_time, program_has_completed_all_repeats
     global STILLS_IMAGING_INTERVAL_SEC, CAMERA_TRIGGER_HOLD_MS, ROTATION_INCREMENT_DEGREES
@@ -2219,10 +2217,10 @@ def handle_command(command_str):
                             f.write(f"ROTATION_ENABLED = {ROTATION_ENABLED}\n")
                             f.write(f"ROTATION_CAPTURE_MODE = \"{ROTATION_CAPTURE_MODE}\"\n")
                             f.write(f"ROTATION_CYCLE_INTERVAL_MINUTES = {ROTATION_CYCLE_INTERVAL_MINUTES}\n")
-                            f.write(f"SERVO2_STANDALONE_ENABLED = {SERVO2_STANDALONE_ENABLED}\n")
-                            f.write(f"SERVO2_INTERVAL_SEC = {SERVO2_INTERVAL_SEC}\n")
-                            f.write(f"SERVO3_STANDALONE_ENABLED = {SERVO3_STANDALONE_ENABLED}\n")
-                            f.write(f"SERVO3_INTERVAL_SEC = {SERVO3_INTERVAL_SEC}\n")
+                            f.write(f"SERVO2_INTERVAL_DAY_SEC = {SERVO2_INTERVAL_DAY_SEC}\n")
+                            f.write(f"SERVO2_INTERVAL_NIGHT_SEC = {SERVO2_INTERVAL_NIGHT_SEC}\n")
+                            f.write(f"SERVO3_INTERVAL_DAY_SEC = {SERVO3_INTERVAL_DAY_SEC}\n")
+                            f.write(f"SERVO3_INTERVAL_NIGHT_SEC = {SERVO3_INTERVAL_NIGHT_SEC}\n")
                             f.write(f"ROTATION_CAMERA_SERVO = {ROTATION_CAMERA_SERVO}\n")
                             f.write(f"RESTART_AFTER_LOAD = {RESTART_AFTER_LOAD}\n")
                             f.write(f"STILLS_IMAGING_INTERVAL_SEC = {STILLS_IMAGING_INTERVAL_SEC}\n")
@@ -2232,7 +2230,6 @@ def handle_command(command_str):
                             f.write(f"DEGREES_PER_IMAGE = {DEGREES_PER_IMAGE:.2f}\n")
                             f.write(f"ROTATION_INCREMENT_DEGREES = {ROTATION_INCREMENT_DEGREES}\n")
                             f.write(f"ROTATION_STEP_INTERVAL_MS = {ROTATION_STEP_INTERVAL_MS}\n")
-                            f.write(f"IMAGE_AT_NIGHT = {IMAGE_AT_NIGHT}\n")
                             f.write(f"ROTATION_AT_NIGHT = {ROTATION_AT_NIGHT}\n")
                             f.write("-" * 20 + "\n\n")
                         print(f"[SERIAL CMD] Settings appended to log {filename}")
@@ -2434,8 +2431,6 @@ def handle_command(command_str):
                     PROGRAM_REPEATS = validated_settings["PROGRAM_REPEATS"]
                 if "PROGRAM_ENABLED" in validated_settings:
                     PROGRAM_ENABLED = validated_settings["PROGRAM_ENABLED"]
-                if "IMAGE_AT_NIGHT" in validated_settings:
-                    IMAGE_AT_NIGHT = validated_settings["IMAGE_AT_NIGHT"]
                 if "ROTATION_AT_NIGHT" in validated_settings:
                     ROTATION_AT_NIGHT = validated_settings["ROTATION_AT_NIGHT"]
                 if "ROTATION_CAMERA_SERVO" in validated_settings:
