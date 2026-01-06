@@ -11781,16 +11781,18 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       // Check for essential status updates that should always show
       const isSimTime = typeof msg === 'string' && /^SimTime:/i.test(msg.trim());
       const isSpeed = typeof msg === 'string' && /^Speed:/i.test(msg.trim());
+      // Check for servo trigger activation messages (but not release messages)
+      const isServoTrigger = typeof msg === 'string' && /servo[23].*trigger.*activated/i.test(msg);
       // Multi-line command output: indented lines following [SERIAL CMD]
       const isIndentedFollowup = typeof msg === 'string' && /^\s{2,}/.test(msg);
       // Track [SERIAL CMD] to allow subsequent indented lines through
       // BUT: if we're in navigation suppression mode, don't track serial cmds (prevents status dumps)
       if(isSerialCmd && !state.__navSuppressionActive) state.__lastSerialCmdTime = nowTs;
       const recentSerialCmd = state.__lastSerialCmdTime && (nowTs - state.__lastSerialCmdTime < 200);
-      // Always show PROGRAM lines, serial cmd banners, errors, SimTime, and Speed
+      // Always show PROGRAM lines, serial cmd banners, errors, SimTime, Speed, and servo triggers
       // BUT: during navigation suppression, don't show indented followup (prevents status dumps)
       const allowIndented = (isIndentedFollowup && recentSerialCmd) && !state.__navSuppressionActive;
-      if(!(isUserEcho || isSerialCmd || isProgram || isErrorLike || allowIndented || isSimTime || isSpeed)){
+      if(!(isUserEcho || isSerialCmd || isProgram || isErrorLike || allowIndented || isSimTime || isSpeed || isServoTrigger)){
         return; // swallow routine status output
       }
     }
@@ -14128,9 +14130,9 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   function buildIntensity(el){
     const h=document.createElement('h4'); h.textContent='Set Intensity'; el.appendChild(h);
     const btns=document.createElement('div'); btns.className='btn-row'; ['0.1','0.25','0.5','0.75','1.0'].forEach(v=>{ const b=document.createElement('button'); b.className=(v==='1.0'?'btn hotvar':'btn'); b.textContent=v; b.disabled=!canSend(); b.addEventListener('click',()=>{ sendSilent('set intensity '+v); hide(); }); btns.appendChild(b); }); el.appendChild(btns);
-    const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Custom:'; const num=document.createElement('input'); num.type='number'; num.step='0.1'; num.min='0'; num.max='3'; num.placeholder='e.g., 0.8'; row.appendChild(lab); row.appendChild(num); el.appendChild(row);
+    const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Custom:'; const num=document.createElement('input'); num.type='number'; num.step='0.1'; num.min='0'; num.max='1'; num.placeholder='e.g., 0.8'; row.appendChild(lab); row.appendChild(num); el.appendChild(row);
     const apply=document.createElement('button'); apply.className='btn primary'; apply.textContent='Apply'; apply.disabled=!canSend(); el.appendChild(apply);
-    const validateFmt=()=>{ const v=parseFloat(num.value); return isNaN(v)? null : v; };
+    const validateFmt=()=>{ const v=parseFloat(num.value); if(isNaN(v)) return null; return Math.min(v, 1.0); };
     wireEnterApply(num, apply, validateFmt);
     apply.addEventListener('click',()=>{ const v=validateFmt(); if(v!=null){ sendSilent('set intensity '+v); hide(); } });
   }
