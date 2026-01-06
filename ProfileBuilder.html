@@ -12463,25 +12463,13 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const mS2DayInt=line.match(reServo2DayInterval); 
   if(mS2DayInt){ 
     const val = mS2DayInt[1] === 'disabled' ? '0s' : mS2DayInt[1];
-    setKV('servo2DayInt','Servo2 Day Int', val); 
+    setKV('servo2DayInt','Servo2DayInt', val); 
     updated=true; 
   }
   const mS2NightInt=line.match(reServo2NightInterval); 
   if(mS2NightInt){ 
     const val = mS2NightInt[1] === 'disabled' ? '0s' : mS2NightInt[1];
-    setKV('servo2NightInt','Servo2 Night Int', val); 
-    updated=true; 
-  }
-  const mS3DayInt=line.match(reServo3DayInterval); 
-  if(mS3DayInt){ 
-    const val = mS3DayInt[1] === 'disabled' ? '0s' : mS3DayInt[1];
-    setKV('servo3DayInt','Servo3 Day Int', val); 
-    updated=true; 
-  }
-  const mS3NightInt=line.match(reServo3NightInterval); 
-  if(mS3NightInt){ 
-    const val = mS3NightInt[1] === 'disabled' ? '0s' : mS3NightInt[1];
-    setKV('servo3NightInt','Servo3 Night Int', val); 
+    setKV('servo2NightInt','Servo2NightInt', val); 
     updated=true; 
   }
     const mRiseSet=line.match(reSunriseSunset); if(mRiseSet){
