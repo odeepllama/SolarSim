@@ -29,13 +29,15 @@ CUSTOM_TIME_SCALE = 1.2        # Custom time scale factor (1.2 = 1.2X, etc.)
 
 # Program configuration
 PROGRAM_ENABLED = False        # Master switch for program functionality
-PROGRAM_STEPS = [              # default speed = 1X, default transition is RUN, if speed = 0, use hold_minutes
-    {"sim_time_hhmm": 1200, "speed": 1, "dual_sun": True}, # intensity_scale is also settable, as well as "repeat": x
-    {"sim_time_hhmm": 1500, "speed": 2, "dual_sun": True},
-    {"sim_time_hhmm": 900, "dual_sun": True, "transition": "JUMP"},
-    {"sim_time_hhmm": 1200, "speed": 2, "dual_sun": False},
-    {"sim_time_hhmm": 1800, "speed": 2, "dual_sun": False},
+PROGRAM_STEPS = [              # Non-program default: neutral single step
+    {"sim_time_hhmm": 1200, "speed": 1, "intensity_scale": 1.0, "dual_sun": False}
 ]
+# Example program steps (commented out - replace default above with these for testing):
+# {"sim_time_hhmm": 1200, "speed": 1, "dual_sun": True}, # intensity_scale is also settable, as well as "repeat": x
+# {"sim_time_hhmm": 1500, "speed": 2, "dual_sun": True},
+# {"sim_time_hhmm": 900, "dual_sun": True, "transition": "JUMP"},
+# {"sim_time_hhmm": 1200, "speed": 2, "dual_sun": False},
+# {"sim_time_hhmm": 1800, "speed": 2, "dual_sun": False},
 # e.g."sim_time_hhmm": 900, "speed": 0, "hold_minutes": 10, "intensity_scale": 0.2, "dual_sun": True, "repeat": 2
 
 PROGRAM_REPEATS = -1                   # -1 for indefinite repeats, 0 or 1 for single run, or N for N repeats
@@ -65,7 +67,6 @@ AUTO_LOAD_PROFILE_PREFIX = "profile_"  # Filename prefix used by HTML builder (t
 LOADED_PROFILE_NAME = None         # Tracks the filename of the currently loaded profile (None if using defaults)
 
 # --- Day/Night Mode Controls ---
-IMAGE_AT_NIGHT = False             # When False, servo2 only triggers during daylight
 ROTATION_AT_NIGHT = False          # When False, rotation cycle only happens during daylight
 
 # --- Lighting Configuration ---
@@ -101,14 +102,14 @@ SERVO_1TO1_RATIO = False               # Default: 3:4 ratio
 ROTATION_CAMERA_SERVO = 2              # Set to 2 or 3 to select which servo triggers during rotation imaging
 
 # --- Servo2 (Primary Camera - triggers with rotation) Parameters ---
-SERVO2_STANDALONE_ENABLED = True      # Set to False to disable independent servo2 triggering
-SERVO2_INTERVAL_SEC = 120             # Trigger camera every N seconds (real time)
-SERVO2_TRIGGER_HOLD_MS = 1000         # Hold camera trigger for this duration (ms)
+SERVO2_INTERVAL_DAY_SEC = 120         # Trigger camera every N seconds during daytime (real time, 0 = disabled)
+SERVO2_INTERVAL_NIGHT_SEC = 0         # Trigger camera every N seconds during nighttime (real time, 0 = disabled)
+SERVO2_TRIGGER_HOLD_MS = 1500         # Hold camera trigger for this duration (ms)
 
 # --- Servo3 (Secondary Camera - can capture a wider or closer view, or video) Parameters ---
-SERVO3_STANDALONE_ENABLED = False     # Set to False to disable independent servo3 triggering
-SERVO3_INTERVAL_SEC = 120             # Trigger camera every 30 minutes (real time)
-SERVO3_TRIGGER_HOLD_MS = 1000         # Hold camera trigger for this duration (ms)
+SERVO3_INTERVAL_DAY_SEC = 0         # Trigger camera every N seconds during daytime (real time, 0 = disabled)
+SERVO3_INTERVAL_NIGHT_SEC = 0         # Trigger camera every N seconds during nighttime (real time, 0 = disabled)
+SERVO3_TRIGGER_HOLD_MS = 1500         # Hold camera trigger for this duration (ms)
 
 # --- Rotation Capture Configuration ---
 ''' Rotation parameters are set based on the number of images per full rotation (or degress per image)'''
@@ -1061,8 +1062,8 @@ def update_standalone_servo2(now_ms):
     global servo2_state, last_servo2_trigger_ms, servo2_trigger_start_ms, servo2_controlled_by_rotation
     global camera_lighting_active, servo2_using_lighting, camera_light_hold_until_ms
 
-    # Skip if rotation is in control, or if standalone is disabled AND the servo is idle.
-    if servo2_controlled_by_rotation or (not SERVO2_STANDALONE_ENABLED and servo2_state == 'IDLE'):
+    # Skip if rotation is in control
+    if servo2_controlled_by_rotation:
         return
 
     # Determine if sun is currently visible on the display
@@ -1071,11 +1072,15 @@ def update_standalone_servo2(now_ms):
     half_size = sun_size // 2
     sun_visible = (sun_x + half_size > 0) and (sun_x - half_size < 56)
 
+    # Select appropriate interval based on sun visibility
+    current_interval = SERVO2_INTERVAL_DAY_SEC if sun_visible else SERVO2_INTERVAL_NIGHT_SEC
+
     # --- Only skip the TRIGGER logic at night, not the RELEASE logic ---
     if servo2_state == 'IDLE':
-        if not sun_visible and not IMAGE_AT_NIGHT:
+        # Skip if current interval is 0 (disabled for this time period)
+        if current_interval == 0:
             return
-        if ticks_diff(now_ms, last_servo2_trigger_ms) >= (SERVO2_INTERVAL_SEC * 1000):
+        if ticks_diff(now_ms, last_servo2_trigger_ms) >= (current_interval * 1000):
             # Time to trigger the servo
             servo2_state = 'TRIGGERED'
             servo2_trigger_start_ms = now_ms
@@ -1085,7 +1090,8 @@ def update_standalone_servo2(now_ms):
                 apply_camera_lighting()
             sleep_ms(10)
             set_servo_angle(servo_pwm_2, CAMERA_SERVO_TRIGGER_ANGLE)
-            safe_print(f"Standalone camera on servo2 trigger activated" + (" (night mode)" if not sun_visible else ""))
+            time_period = "night" if not sun_visible else "day"
+            safe_print(f"Standalone camera on servo2 trigger activated (using {time_period} interval: {current_interval}s)")
     elif servo2_state == 'TRIGGERED':
         # Always run this block, even at night
         if ticks_diff(now_ms, servo2_trigger_start_ms) >= SERVO2_TRIGGER_HOLD_MS:
@@ -1105,28 +1111,23 @@ def update_standalone_servo3(now_ms):
     global servo3_state, last_servo3_trigger_ms, servo3_trigger_start_ms
     global servo3_using_lighting, camera_lighting_active, servo2_using_lighting, camera_light_hold_until_ms, rotation_lighting_active
 
-    # Skip if standalone mode is disabled AND the servo is idle.
-    # This allows a manual trigger to complete its cycle.
-    if not SERVO3_STANDALONE_ENABLED and servo3_state == 'IDLE':
-        return
-
     # Determine if it's nighttime
     current_time = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)[1]
     sun_x, _, sun_size, _, _, _ = get_sun_position(current_time)
     half_size = sun_size // 2
     sun_visible = (sun_x + half_size > 0) and (sun_x - half_size < 56)
 
+    # Select appropriate interval based on sun visibility
+    current_interval = SERVO3_INTERVAL_DAY_SEC if sun_visible else SERVO3_INTERVAL_NIGHT_SEC
+
     # --- Only skip the TRIGGER logic at night, not the RELEASE logic ---
     if servo3_state == 'IDLE':
-        # Night operation check for servo3
-        # If it's night, only run servo3 if servo2 would also run at night
-        if not sun_visible:
-            servo2_runs_at_night = IMAGE_AT_NIGHT and SERVO2_STANDALONE_ENABLED
-            if not servo2_runs_at_night:
-                return  # Skip servo3 triggering at night if servo2 wouldn't run
+        # Skip if current interval is 0 (disabled for this time period)
+        if current_interval == 0:
+            return
 
         # Check if it's time to trigger servo3 (convert seconds to milliseconds)
-        if ticks_diff(now_ms, last_servo3_trigger_ms) >= (SERVO3_INTERVAL_SEC * 1000):
+        if ticks_diff(now_ms, last_servo3_trigger_ms) >= (current_interval * 1000):
             # Time to trigger the servo
             servo3_state = 'TRIGGERED'
             servo3_trigger_start_ms = now_ms
@@ -1139,7 +1140,8 @@ def update_standalone_servo3(now_ms):
 
             # Move the servo
             set_servo_angle(servo_pwm_3, CAMERA_SERVO_TRIGGER_ANGLE)
-            print(f"Second camera on servo3 trigger activated")
+            time_period = "night" if not sun_visible else "day"
+            print(f"Second camera on servo3 trigger activated (using {time_period} interval: {current_interval}s)")
     elif servo3_state == 'TRIGGERED':
         if ticks_diff(now_ms, servo3_trigger_start_ms) >= SERVO3_TRIGGER_HOLD_MS:
             servo3_state = 'IDLE'
@@ -1698,18 +1700,7 @@ def handle_command(command_str):
             param = parts[1]
             value = parts[2]
 
-            if param == "imageatnight":
-                if value.lower() in ("true", "on", "1"):
-                    global IMAGE_AT_NIGHT
-                    IMAGE_AT_NIGHT = True
-                    print("[SERIAL CMD] IMAGE_AT_NIGHT set to True")
-                elif value.lower() in ("false", "off", "0"):
-                    IMAGE_AT_NIGHT = False
-                    print("[SERIAL CMD] IMAGE_AT_NIGHT set to False")
-                else:
-                    print("[SERIAL CMD] Error: imageatnight must be true/on/1 or false/off/0.")
-                return
-            elif param == "rotationatnight":
+            if param == "rotationatnight":
                 if value.lower() in ("true", "on", "1"):
                     global ROTATION_AT_NIGHT
                     ROTATION_AT_NIGHT = True
@@ -1887,25 +1878,51 @@ def handle_command(command_str):
                 except ValueError:
                     print(f"[SERIAL CMD] Error: Invalid intensity value '{value}'. Must be a number.")
 
-            elif param == "servo2interval":
+            elif param == "servo2dayinterval":
                 try:
                     new_interval = int(value)
-                    if new_interval > 0:
-                        SERVO2_INTERVAL_SEC = new_interval
-                        print(f"[SERIAL CMD] Servo 2 standalone interval set to {SERVO2_INTERVAL_SEC}s")
+                    if new_interval >= 0:
+                        SERVO2_INTERVAL_DAY_SEC = new_interval
+                        status = "disabled" if new_interval == 0 else f"{SERVO2_INTERVAL_DAY_SEC}s"
+                        print(f"[SERIAL CMD] Servo 2 daytime interval set to {status}")
                     else:
-                        print("[SERIAL CMD] Error: Interval must be a positive number.")
+                        print("[SERIAL CMD] Error: Interval must be >= 0 (0 = disabled).")
                 except ValueError:
                     print(f"[SERIAL CMD] Error: Invalid interval value '{value}'. Must be an integer.")
 
-            elif param == "servo3interval":
+            elif param == "servo2nightinterval":
                 try:
                     new_interval = int(value)
-                    if new_interval > 0:
-                        SERVO3_INTERVAL_SEC = new_interval
-                        print(f"[SERIAL CMD] Servo 3 standalone interval set to {SERVO3_INTERVAL_SEC}s")
+                    if new_interval >= 0:
+                        SERVO2_INTERVAL_NIGHT_SEC = new_interval
+                        status = "disabled" if new_interval == 0 else f"{SERVO2_INTERVAL_NIGHT_SEC}s"
+                        print(f"[SERIAL CMD] Servo 2 nighttime interval set to {status}")
                     else:
-                        print("[SERIAL CMD] Error: Interval must be a positive number.")
+                        print("[SERIAL CMD] Error: Interval must be >= 0 (0 = disabled).")
+                except ValueError:
+                    print(f"[SERIAL CMD] Error: Invalid interval value '{value}'. Must be an integer.")
+
+            elif param == "servo3dayinterval":
+                try:
+                    new_interval = int(value)
+                    if new_interval >= 0:
+                        SERVO3_INTERVAL_DAY_SEC = new_interval
+                        status = "disabled" if new_interval == 0 else f"{SERVO3_INTERVAL_DAY_SEC}s"
+                        print(f"[SERIAL CMD] Servo 3 daytime interval set to {status}")
+                    else:
+                        print("[SERIAL CMD] Error: Interval must be >= 0 (0 = disabled).")
+                except ValueError:
+                    print(f"[SERIAL CMD] Error: Invalid interval value '{value}'. Must be an integer.")
+
+            elif param == "servo3nightinterval":
+                try:
+                    new_interval = int(value)
+                    if new_interval >= 0:
+                        SERVO3_INTERVAL_NIGHT_SEC = new_interval
+                        status = "disabled" if new_interval == 0 else f"{SERVO3_INTERVAL_NIGHT_SEC}s"
+                        print(f"[SERIAL CMD] Servo 3 nighttime interval set to {status}")
+                    else:
+                        print("[SERIAL CMD] Error: Interval must be >= 0 (0 = disabled).")
                 except ValueError:
                     print(f"[SERIAL CMD] Error: Invalid interval value '{value}'. Must be an integer.")
 
@@ -2105,12 +2122,6 @@ def handle_command(command_str):
             elif target == "rotation":
                 ROTATION_ENABLED = not ROTATION_ENABLED
                 print(f"[SERIAL CMD] Rotation cycle set to: {ROTATION_ENABLED}")
-            elif target == "servo2":
-                SERVO2_STANDALONE_ENABLED = not SERVO2_STANDALONE_ENABLED
-                print(f"[SERIAL CMD] Servo 2 standalone trigger set to: {SERVO2_STANDALONE_ENABLED}")
-            elif target == "servo3":
-                SERVO3_STANDALONE_ENABLED = not SERVO3_STANDALONE_ENABLED
-                print(f"[SERIAL CMD] Servo 3 standalone trigger set to: {SERVO3_STANDALONE_ENABLED}")
             elif target == "restartafterload":
                 RESTART_AFTER_LOAD = not RESTART_AFTER_LOAD
                 print(f"[SERIAL CMD] Restart after load set to: {RESTART_AFTER_LOAD}")
@@ -2256,10 +2267,10 @@ def handle_command(command_str):
                         f.write(f"ROTATION_ENABLED = {ROTATION_ENABLED}\n")
                         f.write(f"ROTATION_CAPTURE_MODE = \"{ROTATION_CAPTURE_MODE}\"\n")
                         f.write(f"ROTATION_CYCLE_INTERVAL_MINUTES = {ROTATION_CYCLE_INTERVAL_MINUTES}\n")
-                        f.write(f"SERVO2_STANDALONE_ENABLED = {SERVO2_STANDALONE_ENABLED}\n")
-                        f.write(f"SERVO2_INTERVAL_SEC = {SERVO2_INTERVAL_SEC}\n")
-                        f.write(f"SERVO3_STANDALONE_ENABLED = {SERVO3_STANDALONE_ENABLED}\n")
-                        f.write(f"SERVO3_INTERVAL_SEC = {SERVO3_INTERVAL_SEC}\n")
+                        f.write(f"SERVO2_INTERVAL_DAY_SEC = {SERVO2_INTERVAL_DAY_SEC}\n")
+                        f.write(f"SERVO2_INTERVAL_NIGHT_SEC = {SERVO2_INTERVAL_NIGHT_SEC}\n")
+                        f.write(f"SERVO3_INTERVAL_DAY_SEC = {SERVO3_INTERVAL_DAY_SEC}\n")
+                        f.write(f"SERVO3_INTERVAL_NIGHT_SEC = {SERVO3_INTERVAL_NIGHT_SEC}\n")
                         f.write(f"ROTATION_CAMERA_SERVO = {ROTATION_CAMERA_SERVO}\n")
                         f.write(f"RESTART_AFTER_LOAD = {RESTART_AFTER_LOAD}\n")
                         f.write(f"STILLS_IMAGING_INTERVAL_SEC = {STILLS_IMAGING_INTERVAL_SEC}\n")
@@ -2269,7 +2280,6 @@ def handle_command(command_str):
                         f.write(f"DEGREES_PER_IMAGE = {DEGREES_PER_IMAGE:.2f}\n")
                         f.write(f"ROTATION_INCREMENT_DEGREES = {ROTATION_INCREMENT_DEGREES}\n")
                         f.write(f"ROTATION_STEP_INTERVAL_MS = {ROTATION_STEP_INTERVAL_MS}\n")
-                        f.write(f"IMAGE_AT_NIGHT = {IMAGE_AT_NIGHT}\n")
                         f.write(f"ROTATION_AT_NIGHT = {ROTATION_AT_NIGHT}\n")
                         f.write(f"CUSTOM_SUN_R = {CUSTOM_SUN_R}\n")
                         f.write(f"CUSTOM_SUN_G = {CUSTOM_SUN_G}\n")
@@ -2329,12 +2339,16 @@ def handle_command(command_str):
                                 validated_settings[key] = v
                             elif key in ("SOLAR_MODE", "SUN_COLOR_MODE", "ROTATION_CAPTURE_MODE"):
                                 validated_settings[key] = value_str.strip('"')
-                            elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "SERVO2_STANDALONE_ENABLED", "SERVO3_STANDALONE_ENABLED", "RESTART_AFTER_LOAD"):
+                            elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD"):
                                 if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
                                 validated_settings[key] = value_str.lower() == 'true'
-                            elif key in ("ROTATION_CYCLE_INTERVAL_MINUTES", "SERVO2_INTERVAL_SEC", "SERVO3_INTERVAL_SEC"):
+                            elif key == "ROTATION_CYCLE_INTERVAL_MINUTES":
                                 v = int(value_str);
                                 if v <= 0: raise ValueError("must be positive")
+                                validated_settings[key] = v
+                            elif key in ("SERVO2_INTERVAL_DAY_SEC", "SERVO2_INTERVAL_NIGHT_SEC", "SERVO3_INTERVAL_DAY_SEC", "SERVO3_INTERVAL_NIGHT_SEC"):
+                                v = int(value_str);
+                                if v < 0: raise ValueError("must be >= 0 (0 = disabled)")
                                 validated_settings[key] = v
                             elif key == "STILLS_IMAGING_INTERVAL_SEC":
                                 v = float(value_str)
@@ -2393,14 +2407,13 @@ def handle_command(command_str):
                             elif key == "CUSTOM_SUN_B":
                                 v = int(value_str)
                                 validated_settings[key] = clamp(v)
-                            elif key == "IMAGE_AT_NIGHT":
-                                if value_str.lower() not in ('true', 'false'):
-                                    raise ValueError("IMAGE_AT_NIGHT must be True or False")
-                                validated_settings[key] = value_str.lower() == 'true'
                             elif key == "ROTATION_AT_NIGHT":
                                 if value_str.lower() not in ('true', 'false'):
                                     raise ValueError("ROTATION_AT_NIGHT must be True or False")
                                 validated_settings[key] = value_str.lower() == 'true'
+                            # Legacy fields - ignore if present in old profiles
+                            elif key in ("IMAGE_AT_NIGHT", "SERVO2_STANDALONE_ENABLED", "SERVO3_STANDALONE_ENABLED", "SERVO2_INTERVAL_SEC", "SERVO3_INTERVAL_SEC"):
+                                pass  # Silently skip obsolete fields
                 except Exception as e:
                     print(f"[SERIAL CMD] Load cancelled. Error in '{filename}': {e}")
                     return
@@ -2478,17 +2491,29 @@ def handle_command(command_str):
             #print(f"  Date (for SCI): \x1b[1m{SIMULATION_DATE}\x1b[0m")
             #print(f"  Latitude (for SCI): \x1b[1m{LATITUDE}\x1b[0m")
             print("\n\x1b[1m-- Hardware & Imaging --\x1b[0m")
-            print(f"  Servo 2 Standalone: \x1b[1m{SERVO2_STANDALONE_ENABLED}\x1b[0m")
-            print(f"  Servo 2 Interval: \x1b[1m{SERVO2_INTERVAL_SEC}s\x1b[0m")
-            print(f"  Servo 3 Standalone: \x1b[1m{SERVO3_STANDALONE_ENABLED}\x1b[0m")
-            print(f"  Servo 3 Interval: \x1b[1m{SERVO3_INTERVAL_SEC}s\x1b[0m")
+            # Determine which period is currently active
+            current_time = get_sim_time(START_TIME_HHMM, ticks_diff(ticks_ms(), start_real_time_ms), TIME_SCALE)[1]
+            sun_x, _, sun_size, _, _, _ = get_sun_position(current_time)
+            half_size = sun_size // 2
+            sun_visible = (sun_x + half_size > 0) and (sun_x - half_size < 56)
+            active_period = "DAY" if sun_visible else "NIGHT"
+            
+            # Servo 2 status with day/night intervals
+            servo2_day_status = f"{SERVO2_INTERVAL_DAY_SEC}s" if SERVO2_INTERVAL_DAY_SEC > 0 else "disabled"
+            servo2_night_status = f"{SERVO2_INTERVAL_NIGHT_SEC}s" if SERVO2_INTERVAL_NIGHT_SEC > 0 else "disabled"
+            print(f"  Servo 2: Day \x1b[1m{servo2_day_status}\x1b[0m | Night \x1b[1m{servo2_night_status}\x1b[0m [{active_period} ACTIVE]")
+            
+            # Servo 3 status with day/night intervals
+            servo3_day_status = f"{SERVO3_INTERVAL_DAY_SEC}s" if SERVO3_INTERVAL_DAY_SEC > 0 else "disabled"
+            servo3_night_status = f"{SERVO3_INTERVAL_NIGHT_SEC}s" if SERVO3_INTERVAL_NIGHT_SEC > 0 else "disabled"
+            print(f"  Servo 3: Day \x1b[1m{servo3_day_status}\x1b[0m | Night \x1b[1m{servo3_night_status}\x1b[0m [{active_period} ACTIVE]")
+            
             print("-- -- -- -- -- -- -- --")          
             print(f"  Rotation Enabled: \x1b[1m{ROTATION_ENABLED}\x1b[0m")
             print(f"  Rotation Imaging Servo: \x1b[1m{ROTATION_CAMERA_SERVO}\x1b[0m")
             print(f"  Rotation Interval: \x1b[1m{ROTATION_CYCLE_INTERVAL_MINUTES} sim min\x1b[0m")
             print(f"  Images per Rotation: \x1b[1m{IMAGES_PER_ROTATION}\x1b[0m")
             print(f"  Degrees per Image: \x1b[1m{DEGREES_PER_IMAGE:.2f}°\x1b[0m")
-            print(f"  Image at Night: \x1b[1m{IMAGE_AT_NIGHT}\x1b[0m")
             print(f"  Rotation at Night: \x1b[1m{ROTATION_AT_NIGHT}\x1b[0m")
             print(f"  Rotation Speed Preset: \x1b[1m{ROTATION_SPEED_PRESET}\x1b[0m ({ROTATION_SPEED_PRESET_TABLE[ROTATION_SPEED_PRESET]}s/360deg)")
             print(f"  Rotation Imaging Mode: \x1b[1m{ROTATION_CAPTURE_MODE}\x1b[0m")
@@ -2621,8 +2646,8 @@ def handle_command(command_str):
 
         elif command == "help" and len(parts) > 1 and parts[1] == "all":
             print("--- Command Summary ---")
-            print("Set: time <hhmm>, autoload <on|off|true|false|1|0>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>, date <yyyymmdd>, degrees_per_image <float>, images_per_rotation <num>, imageatnight <true|false|on|off|1|0>, intensity <0.0-1.0>, latitude <degrees>, programenabled <on|off>, programrepeats <n>, rotationatnight <true|false|on|off|1|0>, rotationcameraservo <2|3>, rotationinterval <minutes>, rotationlightrgb <r> <g> <b>, rotationmode <stills|video>, rot_inc_deg <float>, rot_speed <slow|medium|fast>, rot_step_intv <int>, rot_stills_intv <float>, rot_trig_hold <int>, savelog <yyyymmdd>, servo2interval <seconds>, servo3interval <seconds>, solarmode <basic|scientific>, speed <scale>, starttime <hhmm>, suncolor <natural|blue|custom> [r g b]")
-            print("Toggle: dualsun, program, rotation, restartafterload, servo2, servo3, 1to1ratio")
+            print("Set: time <hhmm>, autoload <on|off|true|false|1|0>, cameralightingpanels <ALL|MIDDLE5|MIDDLE3|OUTER2|OUTER4>, cameralightrgb <r> <g> <b>, date <yyyymmdd>, degrees_per_image <float>, images_per_rotation <num>, intensity <0.0-1.0>, latitude <degrees>, programenabled <on|off>, programrepeats <n>, rotationatnight <true|false|on|off|1|0>, rotationcameraservo <2|3>, rotationinterval <minutes>, rotationlightrgb <r> <g> <b>, rotationmode <stills|video>, rot_inc_deg <float>, rot_speed <slow|medium|fast>, rot_step_intv <int>, rot_stills_intv <float>, rot_trig_hold <int>, savelog <yyyymmdd>, servo2dayinterval <sec>, servo2nightinterval <sec>, servo3dayinterval <sec>, servo3nightinterval <sec>, solarmode <basic|scientific>, speed <scale>, starttime <hhmm>, suncolor <natural|blue|custom> [r g b]")
+            print("Toggle: dualsun, program, rotation, restartafterload, 1to1ratio")
             print("Program/Manual: jump nextstep, jump step <n>, listprofiles, loadprofile <profilename>, saveprofile <profilename> [note], profiledelete <profilename>, savelog <yyyymmdd>, status, trigger servo2, trigger servo3, trigger rotation")
             print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help all")
             print("-----------------------")

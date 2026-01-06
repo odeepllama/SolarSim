@@ -100,8 +100,8 @@ https://github.com/odeepllama/SolarSim/tree/main
  /* Imaging Illumination section: force 3-column grid layout */
  .group-grid.imaging-illumination { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
  .group-grid.imaging-illumination .field { flex: none; max-width: none; min-width: 160px; }
- /* Imaging Servo Operation & Timing section: force 5-column grid layout */
- .group-grid.imaging-servo-timing { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 14px; }
+ /* Imaging Servo Operation & Timing section: 2 rows layout */
+ .group-grid.imaging-servo-timing { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
  .group-grid.imaging-servo-timing .field { flex: none; max-width: none; min-width: 160px; }
  /* Program Control section: force 4-column grid layout *****/
  .group-grid.program-control { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
@@ -2879,7 +2879,7 @@ const FIELD_GROUPS = [
  { name: 'Time & Date', keys: ['START_TIME_HHMM','TIME_SCALE','INTENSITY_SCALE','SIMULATION_DATE','LATITUDE'] },
  { name: 'Solar Mode & Sun Color', keys: ['SOLAR_MODE','SUN_COLOR_MODE','DUAL_SUN_ENABLED','CUSTOM_SUN_R','CUSTOM_SUN_G','CUSTOM_SUN_B'] },
  { name: 'Imaging Illumination', keys: ['CAMERA_LIGHTING_PANELS','_SPACER_1','_SPACER_2','CAMERA_LIGHT_R','CAMERA_LIGHT_G','CAMERA_LIGHT_B','ROTATION_LIGHT_R','ROTATION_LIGHT_G','ROTATION_LIGHT_B'], collapsible: true },
- { name: 'Imaging Servo Operation & Timing', keys: ['SERVO2_STANDALONE_ENABLED','SERVO2_INTERVAL_SEC','SERVO3_STANDALONE_ENABLED','SERVO3_INTERVAL_SEC','IMAGE_AT_NIGHT'] },
+ { name: 'Imaging Servo Operation & Timing', keys: ['SERVO2_INTERVAL_DAY_SEC','SERVO2_INTERVAL_NIGHT_SEC','SERVO3_INTERVAL_DAY_SEC','SERVO3_INTERVAL_NIGHT_SEC'] },
  { name: 'Rotation & Imaging', keys: ['ROTATION_ENABLED','ROTATION_AT_NIGHT','ROTATION_CAPTURE_MODE','ROTATION_CYCLE_INTERVAL_MINUTES','ROTATION_CAMERA_SERVO','ROTATION_SPEED_PRESET','IMAGES_PER_ROTATION','DEGREES_PER_IMAGE','ROTATION_INCREMENT_DEGREES','ROTATION_STEP_INTERVAL_MS','STILLS_IMAGING_INTERVAL_SEC','CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
 ];
 
@@ -2895,10 +2895,10 @@ const FIELDS = {
  ROTATION_ENABLED: { label:'Rotation Enabled', tooltip:'Master switch for rotation system. (Default OFF)', type:'checkbox', default:false },
  ROTATION_CAPTURE_MODE: { label:'Rotation Capture Mode', tooltip:'STILLS = discrete shots; VIDEO = Start THEN Stop (2 servo actuations.)', type:'select', options:['STILLS','VIDEO'], default:'STILLS' },
  ROTATION_CYCLE_INTERVAL_MINUTES: { label:'ROT CYCLE INT (sim min)', tooltip:'Sim minutes between full rotation capture cycles (effective only while time scale = 1x).', type:'number', min:1, default:3 },
- SERVO2_STANDALONE_ENABLED: { label:'Servo2 Enabled', tooltip:'Run servo2 periodic motion independently.', type:'checkbox', default:true },
- SERVO2_INTERVAL_SEC: { label:'Servo2 Interval (sec)', tooltip:'Seconds between servo2 standalone actions.', type:'number', min:1, default:120 },
- SERVO3_STANDALONE_ENABLED: { label:'Servo3 Enabled', tooltip:'Run servo3 periodic motion independently.', type:'checkbox', default:false },
- SERVO3_INTERVAL_SEC: { label:'Servo3 Interval (sec)', tooltip:'Seconds between servo3 standalone actions.', type:'number', min:1, default:120 },
+ SERVO2_INTERVAL_DAY_SEC: { label:'Servo2 Day Interval (0 = off)', tooltip:'Seconds between servo2 triggers during daytime. Set to 0 to disable daytime operation.', type:'number', min:0, default:120 },
+ SERVO2_INTERVAL_NIGHT_SEC: { label:'Servo2 Night Interval (0 = off)', tooltip:'Seconds between servo2 triggers during nighttime. Set to 0 to disable nighttime operation.', type:'number', min:0, default:0 },
+ SERVO3_INTERVAL_DAY_SEC: { label:'Servo3 Day Interval (0 = off)', tooltip:'Seconds between servo3 triggers during daytime. Set to 0 to disable daytime operation.', type:'number', min:0, default:0 },
+ SERVO3_INTERVAL_NIGHT_SEC: { label:'Servo3 Night Interval (0 = off)', tooltip:'Seconds between servo3 triggers during nighttime. Set to 0 to disable nighttime operation.', type:'number', min:0, default:0 },
  ROTATION_CAMERA_SERVO: { label:'Rotation Camera Servo', tooltip:'Which servo index triggers camera rotation.', type:'select', options:[2,3], default:2 },
  STILLS_IMAGING_INTERVAL_SEC: { label:'Stills Imaging Interval (sec)', tooltip:'Auto-calculated from rotation speed and images per rotation.', type:'derived' },
  CAMERA_TRIGGER_HOLD_MS: { label:'Camera Trigger Hold (ms)', tooltip:'Duration to hold camera trigger line.', type:'number', min:1, default:1000 },
@@ -2907,7 +2907,6 @@ const FIELDS = {
  DEGREES_PER_IMAGE: { label:'Degrees per Image', tooltip:'Derived spacing (360 / images).', type:'derived' },
  ROTATION_INCREMENT_DEGREES: { label:'Rotation Increment (Deg)', tooltip:'Small motor step size each move.', type:'number', step:'0.1', min:0.01, default:0.3 },
  ROTATION_STEP_INTERVAL_MS: { label:'Rotation Step Interval (ms)', tooltip:'Delay between successive motor steps.', type:'number', min:1, default:90 },
- IMAGE_AT_NIGHT: { label:'Image at Night', tooltip:'Allow image capture during night.', type:'checkbox', default:false },
  ROTATION_AT_NIGHT: { label:'Rotate at Night', tooltip:'Allow rotation cycles during night.', type:'checkbox', default:false },
  CAMERA_LIGHT_R: { label:'Camera Light Red', tooltip:'Red component for camera lighting (0-255).', type:'number', min:0, max:255, default:30 },
  CAMERA_LIGHT_G: { label:'Camera Light Green', tooltip:'Green component for camera lighting (0-255).', type:'number', min:0, max:255, default:30 },
@@ -10803,7 +10802,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     'set time <hhmm|noon|now>',
     'set starttime <hhmm>',
     'set intensity <value>',
-    'set imageatnight <on|off>',
     'set cameralightingpanels <group>',
     'set cameralightrgb <r> <g> <b>',
     'set rotationlightrgb <r> <g> <b>',
@@ -10818,8 +10816,10 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     'set rot_trig_hold <ms>',
     'set images_per_rotation <n>',
     'set degrees_per_image <deg>',
-    'set servo2interval <sec>',
-    'set servo3interval <sec>',
+    'set servo2dayinterval <sec>',
+    'set servo2nightinterval <sec>',
+    'set servo3dayinterval <sec>',
+    'set servo3nightinterval <sec>',
     'set latitude <deg>',
     'set date <yyyymmdd>',
     'set solarmode <basic|simple|scientific>',
@@ -10830,8 +10830,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     'toggle program',
     'toggle rotation',
     'toggle restartafterload',
-    'toggle servo2',
-    'toggle servo3',
     'toggle 1to1ratio',
     // Program & manual
     'jump nextstep',
@@ -10914,12 +10912,12 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       const secondWord = (trimmed.split(/\s+/)[1] || '').toLowerCase();
       const validSetCommands = new Set([
         'speed', 'time', 'starttime', 'intensity', 'timescale',
-        'imageatnight', 'rotationatnight', 'rotationinterval',
+        'rotationatnight', 'rotationinterval',
         'cameralightingpanels', 'cameralightrgb', 'rotationlightrgb',
         'rotationcameraservo', 'rotationmode',
         'rot_speed', 'rot_inc_deg', 'rot_step_intv', 'rot_stills_intv',
         'rot_trig_hold', 'images_per_rotation', 'degrees_per_image',
-        'servo2interval', 'servo3interval', 'latitude', 'date',
+        'servo2dayinterval', 'servo2nightinterval', 'servo3dayinterval', 'servo3nightinterval', 'latitude', 'date',
         'solarmode', 'suncolor', 'autoload'
       ]);
       return validSetCommands.has(secondWord);
@@ -10928,7 +10926,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     if(firstWord === 'toggle'){
       const secondWord = (trimmed.split(/\s+/)[1] || '').toLowerCase();
       const validToggleCommands = new Set([
-        'dualsun', 'program', 'restartafterload', 'servo2', 'servo3', '1to1ratio'
+        'dualsun', 'program', 'restartafterload', '1to1ratio'
       ]);
       return validToggleCommands.has(secondWord);
     }
@@ -12134,7 +12132,10 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const reIntensityCmdEcho = />?\s*set\s+intensity\s+([-+]?\d+(?:\.\d+)?)/i;
   const reIntensitySerial = /global\s+intensity\s+scale\s+set\s+to\s+([-+]?\d+(?:\.\d+)?)/i;
   const reDualSun=/dual\s*sun\s*enabled\s*[:=]\s*(true|false)/i;
-  const reServo2Interval=/servo\s*2\s*interval\s*[:=]\s*([0-9]+)s/i;
+  const reServo2DayInterval=/servo\s*2\s*:\s*day\s+([0-9]+s|disabled)/i;
+  const reServo2NightInterval=/servo\s*2\s*:.*night\s+([0-9]+s|disabled)/i;
+  const reServo3DayInterval=/servo\s*3\s*:\s*day\s+([0-9]+s|disabled)/i;
+  const reServo3NightInterval=/servo\s*3\s*:.*night\s+([0-9]+s|disabled)/i;
   const reDualSunCmd=/dual\s*sun\s*mode\s*set\s*to\s*:\s*(true|false)/i;
   const reSunriseSunset=/sunrise:\s*(\d{2}):(\d{2}),\s*sunset:\s*(\d{2}):(\d{2})/i;
   const reProgramRepeats=/program\s*repeats\s*[:=]\s*([-+]?\d+)/i;
@@ -12459,7 +12460,30 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   if(mInt){ setKV('intensity','Intensity', mInt[1]); updated=true; }
     const mDual=line.match(reDualSun); if(mDual){ setKV('dualSun','DualSun', mDual[1].toLowerCase()==='true'?'ON':'OFF'); updated=true; }
   const mDualCmd=line.match(reDualSunCmd); if(mDualCmd){ setKV('dualSun','DualSun', mDualCmd[1].toLowerCase()==='true'?'ON':'OFF'); updated=true; }
-  const mS2Int=line.match(reServo2Interval); if(mS2Int){ setKV('servo2Int','Servo2Int', mS2Int[1]+'s'); updated=true; }
+  const mS2DayInt=line.match(reServo2DayInterval); 
+  if(mS2DayInt){ 
+    const val = mS2DayInt[1] === 'disabled' ? '0s' : mS2DayInt[1];
+    setKV('servo2DayInt','Servo2 Day Int', val); 
+    updated=true; 
+  }
+  const mS2NightInt=line.match(reServo2NightInterval); 
+  if(mS2NightInt){ 
+    const val = mS2NightInt[1] === 'disabled' ? '0s' : mS2NightInt[1];
+    setKV('servo2NightInt','Servo2 Night Int', val); 
+    updated=true; 
+  }
+  const mS3DayInt=line.match(reServo3DayInterval); 
+  if(mS3DayInt){ 
+    const val = mS3DayInt[1] === 'disabled' ? '0s' : mS3DayInt[1];
+    setKV('servo3DayInt','Servo3 Day Int', val); 
+    updated=true; 
+  }
+  const mS3NightInt=line.match(reServo3NightInterval); 
+  if(mS3NightInt){ 
+    const val = mS3NightInt[1] === 'disabled' ? '0s' : mS3NightInt[1];
+    setKV('servo3NightInt','Servo3 Night Int', val); 
+    updated=true; 
+  }
     const mRiseSet=line.match(reSunriseSunset); if(mRiseSet){
       try {
         const riseH=parseInt(mRiseSet[1],10), riseM=parseInt(mRiseSet[2],10), setH=parseInt(mRiseSet[3],10), setM=parseInt(mRiseSet[4],10);
@@ -13226,7 +13250,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         'set cameralightrgb <r> <g> <b>    - Set camera lighting RGB color (0-255)',
         'set date <yyyymmdd>               - Set simulation date for SCIENTIFIC mode',
         'set degrees_per_image <deg>       - Set degrees between images (will recalc images/rotation)',
-        'set imageatnight <on|off>         - Enable/disable servo2 imaging at night',
         'set images_per_rotation <n>       - Set number of images per 360° rotation (2-360)',
         'set intensity <val>               - Set global sun intensity scale (e.g., 0.5, 1.0)',
         'set latitude <deg>                - Set latitude for SCIENTIFIC mode (-90 to 90)',
@@ -13241,8 +13264,10 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         'set rotationlightrgb <r> <g> <b>  - Set rotation lighting RGB color (0-255)',
         'set rotationmode <m>              - Set rotation capture mode (stills or video)',
         'set solarmode <mode>              - Set solar mode (basic, simple, scientific)',
-        'set servo2interval <s>            - Set seconds between servo 2 triggers',
-        'set servo3interval <s>            - Set seconds between servo 3 triggers',
+        'set servo2dayinterval <s>         - Set seconds between servo 2 triggers during DAY (0=off)',
+        'set servo2nightinterval <s>       - Set seconds between servo 2 triggers during NIGHT (0=off)',
+        'set servo3dayinterval <s>         - Set seconds between servo 3 triggers during DAY (0=off)',
+        'set servo3nightinterval <s>       - Set seconds between servo 3 triggers during NIGHT (0=off)',
         'set speed <value>                 - Set simulation speed (e.g., 1, 60, 0 for HOLD)',
         'set starttime <hhmm>              - Set simulation start time anchor',
         'set suncolor <mode>               - Set sun color (natural, blue, or custom r g b)',
@@ -13253,8 +13278,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         'toggle program                    - Toggle timed program on/off',
         'toggle restartafterload           - Toggle auto-restart after loading profile',
         'toggle rotation                   - Toggle 360 rotation cycle on/off',
-        'toggle servo2                     - Toggle standalone servo 2 triggering',
-        'toggle servo3                     - Toggle standalone servo 3 triggering',
         'toggle 1to1ratio                  - Toggle servo-to-table 1:1 angle ratio (default 3:4)'
       ]},
       {group: 'Program & Manual Actions', commands: [
