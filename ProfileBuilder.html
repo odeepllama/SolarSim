@@ -2422,7 +2422,7 @@ select:not(#filename_tag):not(#filename_preview) {
 // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
 const TRANSLATIONS = {
   en: {
-    appTitle: 'Solar Simulator Studio 20251231',
+    appTitle: 'Solar Simulator Studio 20260106',
     monitorInteract: 'Monitor / Interact',
     disconnected: 'DISCONNECTED',
     connect: 'Connect',
@@ -14049,7 +14049,33 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   if(!pop){ pop = document.createElement('div'); pop.id = 'tilePopover'; document.body.appendChild(pop); }
   let outsideClickHandler=null;
   function hide(){ if(!pop) return; pop.style.display='none'; if(outsideClickHandler){ document.removeEventListener('mousedown', outsideClickHandler); outsideClickHandler=null; } }
-  function show(tileEl, builder){ if(!tileEl||!builder) return; pop.innerHTML=''; builder(pop); const r=tileEl.getBoundingClientRect(); pop.style.left=Math.round(r.left+window.scrollX)+'px'; pop.style.top=Math.round(r.bottom+window.scrollY+6)+'px'; pop.style.display='block'; outsideClickHandler=(e)=>{ if(!pop.contains(e.target) && e.target!==tileEl) hide(); }; document.addEventListener('mousedown', outsideClickHandler); }
+  function show(tileEl, builder){ if(!tileEl||!builder) return; pop.innerHTML=''; builder(pop); const r=tileEl.getBoundingClientRect(); 
+    // Calculate initial position (below tile, aligned left)
+    let leftPos = Math.round(r.left+window.scrollX);
+    const topPos = Math.round(r.bottom+window.scrollY+6);
+    
+    // Set initial position to measure popover width
+    pop.style.left = leftPos+'px';
+    pop.style.top = topPos+'px';
+    pop.style.display='block';
+    
+    // Check if popover extends beyond right edge of viewport
+    const popRect = pop.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const popRight = popRect.right;
+    
+    // If popover goes off screen, adjust to right-align with tile (or left edge if needed)
+    if(popRight > viewportWidth - 10){ // 10px margin from edge
+      // Try right-aligning with the tile
+      leftPos = Math.round(r.right + window.scrollX - popRect.width);
+      // If that pushes it off the left edge, align with left viewport edge
+      if(leftPos < 10){
+        leftPos = 10;
+      }
+      pop.style.left = leftPos+'px';
+    }
+    
+    outsideClickHandler=(e)=>{ if(!pop.contains(e.target) && e.target!==tileEl) hide(); }; document.addEventListener('mousedown', outsideClickHandler); }
   function canSend(){ const s=ns(); return !!(s && s.port); }
   async function sendSilent(line){ const s=ns(); if(!s||!s.port) return; try{ let w=s.writer; if(!w){ s.writer = s.port.writable.getWriter(); w=s.writer; } await w.write(new TextEncoder().encode(line+'\n')); }catch(e){ try{ (s.log||console.log)('Send fail '+e);}catch(_){} } }
   function hhmmRow(){ const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='HHMM:'; row.appendChild(lab); const inp=document.createElement('input'); inp.type='text'; inp.placeholder='0730'; inp.maxLength=4; inp.addEventListener('input',()=>{ inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,4); }); row.appendChild(inp); return {row,input:inp,get:()=>inp.value}; }
@@ -14122,16 +14148,18 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   function buildRotation(el){ buildOnOff(el, 'Rotation Imaging', 'rotation', 'toggle rotation'); }
   function buildDualSun(el){ buildOnOff(el, 'Dual Sun', 'dualSun', 'toggle dualsun'); }
   function buildServo(el, which){ const title= which===2 ? 'Servo2' : 'Servo3'; const h=document.createElement('h4'); h.textContent=title; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; const trig=document.createElement('button'); trig.className='btn'; trig.textContent='Trigger Now'; trig.disabled=!canSend(); btns.appendChild(trig); el.appendChild(btns); const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Interval (s):'; const num=document.createElement('input'); num.type='number'; num.min='0'; num.step='1'; num.placeholder='e.g., 30'; row.appendChild(lab); row.appendChild(num); el.appendChild(row); const apply=document.createElement('button'); apply.className='btn primary'; apply.textContent='Apply'; apply.disabled=!canSend(); el.appendChild(apply); trig.addEventListener('click',()=>{ sendSilent(`trigger servo${which}`); hide(); }); const validateFmt=()=>{ const v=parseInt(num.value,10); return isNaN(v)||v<0 ? null : v; }; wireEnterApply(num, apply, validateFmt); apply.addEventListener('click',()=>{ const v=validateFmt(); if(v!=null){ sendSilent(`set servo${which}interval ${v}`); hide(); } }); }
-  function tiles(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return {}; const out={}; if(window.kvCache&&kvCache.get){ ['sim','speed','intensity','sunColor','program','solarMode','dualSun','rotation','servo2Int'].forEach(k=>{ const box=kvCache.get(k); if(box) out[k]=box; }); } else { grid.querySelectorAll('.mon-kv').forEach(t=>{ const b=t.querySelector('b'); if(!b) return; const name=b.textContent.trim().toUpperCase(); if(name==='SIMTIME') out.sim=t; else if(name==='SPEED') out.speed=t; else if(name==='INTENSITY') out.intensity=t; else if(name==='SUNCOLOR') out.sunColor=t; else if(name==='PROGRAM') out.program=t; else if(name==='SOLARMODE') out.solarMode=t; else if(name==='DUALSUN') out.dualSun=t; else if(name==='ROTATIONIMAGING') out.rotation=t; else if(name==='SERVO2INT') out.servo2Int=t; }); } return out; }
-  function bind(){ const t=tiles(); const builders={ sim:buildSimTime, speed:buildSpeed, intensity:buildIntensity, sunColor:buildSunColor, program:buildProgram, solarMode:buildSolarMode, dualSun:buildDualSun, rotation:buildRotation, servo2Int:(el)=>{ /* simple interval editor and trigger */ const wrap=document.createElement('div'); buildServo(el,2); } }; Object.keys(t).forEach(k=>{ const box=t[k]; if(!box||box.__tilePopoverBound) return; box.classList.add('interactive'); box.addEventListener('click',(e)=>{ e.stopPropagation(); hide(); show(box, builders[k]); }); box.__tilePopoverBound=true; }); }
+  function buildServo2Day(el){ const h=document.createElement('h4'); h.textContent='Set Servo2 Day Interval'; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; ['0','30','60','120','300','3600'].forEach(v=>{ const b=document.createElement('button'); b.className=(v==='120'?'btn hotvar':'btn'); b.textContent=v+'s'; b.disabled=!canSend(); b.addEventListener('click',()=>{ sendSilent('set servo2dayinterval '+v); hide(); }); btns.appendChild(b); }); el.appendChild(btns); const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Custom (s):'; const num=document.createElement('input'); num.type='number'; num.step='1'; num.min='0'; num.placeholder='e.g., 120'; row.appendChild(lab); row.appendChild(num); el.appendChild(row); const apply=document.createElement('button'); apply.className='btn primary'; apply.textContent='Apply'; apply.disabled=!canSend(); el.appendChild(apply); const validateFmt=()=>{ const v=parseInt(num.value,10); return isNaN(v)||v<0 ? null : v; }; wireEnterApply(num, apply, validateFmt); apply.addEventListener('click',()=>{ const v=validateFmt(); if(v!=null){ sendSilent('set servo2dayinterval '+v); hide(); } }); }
+  function buildServo2Night(el){ const h=document.createElement('h4'); h.textContent='Set Servo2 Night Interval'; el.appendChild(h); const btns=document.createElement('div'); btns.className='btn-row'; ['0','30','60','120','300','3600'].forEach(v=>{ const b=document.createElement('button'); b.className=(v==='3600'?'btn hotvar':'btn'); b.textContent=v+'s'; b.disabled=!canSend(); b.addEventListener('click',()=>{ sendSilent('set servo2nightinterval '+v); hide(); }); btns.appendChild(b); }); el.appendChild(btns); const row=document.createElement('div'); row.className='row'; const lab=document.createElement('label'); lab.textContent='Custom (s):'; const num=document.createElement('input'); num.type='number'; num.step='1'; num.min='0'; num.placeholder='e.g., 3600'; row.appendChild(lab); row.appendChild(num); el.appendChild(row); const apply=document.createElement('button'); apply.className='btn primary'; apply.textContent='Apply'; apply.disabled=!canSend(); el.appendChild(apply); const validateFmt=()=>{ const v=parseInt(num.value,10); return isNaN(v)||v<0 ? null : v; }; wireEnterApply(num, apply, validateFmt); apply.addEventListener('click',()=>{ const v=validateFmt(); if(v!=null){ sendSilent('set servo2nightinterval '+v); hide(); } }); }
+  function tiles(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return {}; const out={}; if(window.kvCache&&kvCache.get){ ['sim','speed','intensity','sunColor','program','solarMode','dualSun','rotation','servo2DayInt','servo2NightInt'].forEach(k=>{ const box=kvCache.get(k); if(box) out[k]=box; }); } else { grid.querySelectorAll('.mon-kv').forEach(t=>{ const b=t.querySelector('b'); if(!b) return; const name=b.textContent.trim().toUpperCase(); if(name==='SIMTIME') out.sim=t; else if(name==='SPEED') out.speed=t; else if(name==='INTENSITY') out.intensity=t; else if(name==='SUNCOLOR') out.sunColor=t; else if(name==='PROGRAM') out.program=t; else if(name==='SOLARMODE') out.solarMode=t; else if(name==='DUALSUN') out.dualSun=t; else if(name==='ROTATIONIMAGING') out.rotation=t; else if(name==='SERVO2DAYINT') out.servo2DayInt=t; else if(name==='SERVO2NIGHTINT') out.servo2NightInt=t; }); } return out; }
+  function bind(){ const t=tiles(); const builders={ sim:buildSimTime, speed:buildSpeed, intensity:buildIntensity, sunColor:buildSunColor, program:buildProgram, solarMode:buildSolarMode, dualSun:buildDualSun, rotation:buildRotation, servo2DayInt:buildServo2Day, servo2NightInt:buildServo2Night }; Object.keys(t).forEach(k=>{ const box=t[k]; if(!box||box.__tilePopoverBound) return; box.classList.add('interactive'); box.addEventListener('click',(e)=>{ e.stopPropagation(); hide(); show(box, builders[k]); }); box.__tilePopoverBound=true; }); }
   // Initial attempts to bind
   setTimeout(bind, 600);
   setTimeout(bind, 1500);
   // Event delegation as a safety net: capture clicks from any matching tile even if not individually bound
-  function keyFromBox(box){ const b=box && box.querySelector && box.querySelector('b'); if(!b) return null; const name=(b.textContent||'').trim().toUpperCase(); if(name==='SIMTIME') return 'sim'; if(name==='SPEED') return 'speed'; if(name==='INTENSITY') return 'intensity'; if(name==='SUNCOLOR') return 'sunColor'; if(name==='PROGRAM') return 'program'; if(name==='SOLARMODE') return 'solarMode'; if(name==='DUALSUN') return 'dualSun'; if(name==='ROTATIONIMAGING') return 'rotation'; if(name==='SERVO2INT') return 'servo2Int'; return null; }
+  function keyFromBox(box){ const b=box && box.querySelector && box.querySelector('b'); if(!b) return null; const name=(b.textContent||'').trim().toUpperCase(); if(name==='SIMTIME') return 'sim'; if(name==='SPEED') return 'speed'; if(name==='INTENSITY') return 'intensity'; if(name==='SUNCOLOR') return 'sunColor'; if(name==='PROGRAM') return 'program'; if(name==='SOLARMODE') return 'solarMode'; if(name==='DUALSUN') return 'dualSun'; if(name==='ROTATIONIMAGING') return 'rotation'; if(name==='SERVO2DAYINT') return 'servo2DayInt'; if(name==='SERVO2NIGHTINT') return 'servo2NightInt'; return null; }
   (function attachDelegation(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid || grid.__tilePopoverDelegated) return; let clickTimer=null; grid.addEventListener('click', (e)=>{ const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if(!box) return; const k=keyFromBox(box); if(!k) return; // Delay to see if a dblclick arrives
     clearTimeout(clickTimer);
-    clickTimer = setTimeout(()=>{ e.stopPropagation(); hide(); const builders={ sim:buildSimTime, speed:buildSpeed, intensity:buildIntensity, sunColor:buildSunColor, program:buildProgram, solarMode:buildSolarMode, dualSun:buildDualSun, rotation:buildRotation, servo2Int:(el)=>buildServo(el,2) }; const builder = builders[k]; if(builder){ show(box, builder); } }, 180);
+    clickTimer = setTimeout(()=>{ e.stopPropagation(); hide(); const builders={ sim:buildSimTime, speed:buildSpeed, intensity:buildIntensity, sunColor:buildSunColor, program:buildProgram, solarMode:buildSolarMode, dualSun:buildDualSun, rotation:buildRotation, servo2DayInt:buildServo2Day, servo2NightInt:buildServo2Night }; const builder = builders[k]; if(builder){ show(box, builder); } }, 180);
   });
   grid.addEventListener('dblclick', (e)=>{ const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if(!box) return; const k=keyFromBox(box); if(!k) return; clearTimeout(clickTimer); e.stopPropagation(); hide(); // Confirm for toggle-capable tiles
     const toggleMap={ program:'toggle program', dualSun:'toggle dualsun', rotation:'toggle rotation' };
@@ -14153,7 +14181,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   let confirmOutside=null;
   function showConfirm(tileEl, msg, onYes){ const txt=confirmEl.querySelector('.txt'); const yes=confirmEl.querySelector('.yes'); const no=confirmEl.querySelector('.no'); txt.textContent = msg; const r=tileEl.getBoundingClientRect(); confirmEl.style.left = Math.round(r.left + window.scrollX) + 'px'; confirmEl.style.top = Math.round(r.bottom + window.scrollY + 6) + 'px'; confirmEl.style.display='block'; const cleanup=()=>{ confirmEl.style.display='none'; yes.onclick=null; no.onclick=null; if(confirmOutside){ document.removeEventListener('mousedown', confirmOutside); confirmOutside=null; } }; yes.onclick=()=>{ try{ onYes && onYes(); }finally{ cleanup(); } }; no.onclick=cleanup; confirmOutside=(e)=>{ if(!confirmEl.contains(e.target)) cleanup(); }; document.addEventListener('mousedown', confirmOutside); }
   // Tooltips for discoverability
-  function applyTooltips(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return; const editOnly = ['sim','speed','intensity','sunColor','servo2Int']; const toggleKeys=['program','rotation','dualSun','solarMode']; for(const [k, box] of (window.kvCache?.entries?.()||[])){ if(!box) continue; if(toggleKeys.includes(k)) box.title='Click to edit; Double-click to toggle'; else if(editOnly.includes(k)) box.title='Click to edit'; }
+  function applyTooltips(){ const grid=document.getElementById('monitorStatusGrid'); if(!grid) return; const editOnly = ['sim','speed','intensity','sunColor','servo2DayInt','servo2NightInt']; const toggleKeys=['program','rotation','dualSun','solarMode']; for(const [k, box] of (window.kvCache?.entries?.()||[])){ if(!box) continue; if(toggleKeys.includes(k)) box.title='Click to edit; Double-click to toggle'; else if(editOnly.includes(k)) box.title='Click to edit'; }
     // Fallback by scanning labels
     grid.querySelectorAll('.mon-kv').forEach(box=>{ if(box.title) return; const key=keyFromBox(box); if(!key) return; if(toggleKeys.includes(key)) box.title='Click to edit; Double-click to toggle'; else box.title='Click to edit'; });
   }
@@ -14167,7 +14195,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     grid.__tilePopoverObserved=true;
   })();
   // Wrap setKV if available to bind future tiles
-  if(typeof window.setKV==='function' && !window.setKV.__tilePopoverWrappedGlobal){ const orig=window.setKV; window.setKV=function(k,l,v){ const r=orig.apply(this, arguments); try{ if(k==='sim'||k==='speed'||k==='intensity') bind(); }catch(_){ } return r; }; window.setKV.__tilePopoverWrappedGlobal=true; }
+  if(typeof window.setKV==='function' && !window.setKV.__tilePopoverWrappedGlobal){ const orig=window.setKV; window.setKV=function(k,l,v){ const r=orig.apply(this, arguments); try{ if(k==='sim'||k==='speed'||k==='intensity'||k==='servo2DayInt'||k==='servo2NightInt') bind(); }catch(_){ } return r; }; window.setKV.__tilePopoverWrappedGlobal=true; }
   // Close on Esc/resize
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hide(); });
   window.addEventListener('resize', hide);
