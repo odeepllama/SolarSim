@@ -103,12 +103,12 @@ ROTATION_CAMERA_SERVO = 2              # Set to 2 or 3 to select which servo tri
 # --- Servo2 (Primary Camera - triggers with rotation) Parameters ---
 SERVO2_STANDALONE_ENABLED = True      # Set to False to disable independent servo2 triggering
 SERVO2_INTERVAL_SEC = 120             # Trigger camera every N seconds (real time)
-SERVO2_TRIGGER_HOLD_MS = 1000         # Hold camera trigger for this duration (ms)
+SERVO2_TRIGGER_HOLD_MS = 1500         # Hold camera trigger for this duration (ms)
 
 # --- Servo3 (Secondary Camera - can capture a wider or closer view, or video) Parameters ---
 SERVO3_STANDALONE_ENABLED = False     # Set to False to disable independent servo3 triggering
 SERVO3_INTERVAL_SEC = 120             # Trigger camera every 30 minutes (real time)
-SERVO3_TRIGGER_HOLD_MS = 1000         # Hold camera trigger for this duration (ms)
+SERVO3_TRIGGER_HOLD_MS = 1500         # Hold camera trigger for this duration (ms)
 
 # --- Rotation Capture Configuration ---
 ''' Rotation parameters are set based on the number of images per full rotation (or degress per image)'''
