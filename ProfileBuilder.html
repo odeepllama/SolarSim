@@ -11651,16 +11651,16 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   // ==================== COMMAND LOG CONFIGURATION ====================
   // Command log with 7-day retention in localStorage
   const COMMAND_LOG_KEY = 'solarSim_commandLog';
-  const COMMAND_LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const COMMAND_LOG_MAX_AGE_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
 
-  // Load command log from localStorage, removing entries older than 7 days
+  // Load command log from localStorage, removing entries older than 5 days
   function loadCommandLog(){
     try {
       const stored = localStorage.getItem(COMMAND_LOG_KEY);
       if(!stored) return [];
       const log = JSON.parse(stored);
       const now = Date.now();
-      // Filter out entries older than 7 days
+      // Filter out entries older than 5 days
       return log.filter(entry => (now - entry.timestamp) < COMMAND_LOG_MAX_AGE_MS);
     } catch(e){
       console.error('Failed to load command log:', e);
@@ -11678,13 +11678,20 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   }
 
   // Add command to log
-  function logCommand(command, source){
+  function logCommand(command, source, metadata){
     const log = loadCommandLog();
-    log.push({
+    const entry = {
       timestamp: Date.now(),
       command: command,
-      source: source // 'manual' or 'button'
-    });
+      source: source // 'manual' or 'button' or 'auto'
+    };
+    // Add optional metadata (simtime, realtime, speed)
+    if(metadata){
+      if(metadata.simTime) entry.simTime = metadata.simTime;
+      if(metadata.realTime) entry.realTime = metadata.realTime;
+      if(metadata.speed !== undefined) entry.speed = metadata.speed;
+    }
+    log.push(entry);
     saveCommandLog(log);
   }
 
@@ -11696,7 +11703,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       return;
     }
 
-    // Format: timestamp | command
+    // Format: timestamp | command [| simtime | realtime]
     const lines = log.map(entry => {
       const date = new Date(entry.timestamp);
       const timestamp = date.getFullYear() + '-' +
@@ -11705,7 +11712,33 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         String(date.getHours()).padStart(2, '0') + ':' +
         String(date.getMinutes()).padStart(2, '0') + ':' +
         String(date.getSeconds()).padStart(2, '0');
-      return timestamp + ' | ' + entry.command;
+      
+      // Shorten trigger messages for export
+      let command = entry.command;
+      if (entry.source === 'auto') {
+        if (/^Standalone camera on servo2 trigger activated/i.test(command)) {
+          command = 'servo2';
+        } else if (/^(Second camera on servo3 trigger activated|Standalone camera on servo3 trigger activated)/i.test(command)) {
+          command = 'servo3';
+        } else if (/^(STILLS mode: Camera trigger|Initial camera trigger|Rotation complete, triggering camera)/i.test(command)) {
+          command = 'rotation';
+        }
+      }
+      
+      let line = timestamp + ' | ' + command;
+      
+      // Add simtime and realtime if available (for automated triggers)
+      if(entry.speed !== undefined && entry.speed !== 1 && entry.simTime){
+        if(entry.speed === 0){
+          // HOLD mode: only simtime
+          line += ' | simtime ' + entry.simTime;
+        } else if(entry.realTime){
+          // Other speeds: both simtime and realtime
+          line += ' | simtime ' + entry.simTime + ' | realtime ' + entry.realTime;
+        }
+      }
+      
+      return line;
     });
 
     const text = lines.join('\n');
@@ -11781,8 +11814,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       // Check for essential status updates that should always show
       const isSimTime = typeof msg === 'string' && /^SimTime:/i.test(msg.trim());
       const isSpeed = typeof msg === 'string' && /^Speed:/i.test(msg.trim());
-      // Check for servo trigger activation messages (but not release messages)
-      const isServoTrigger = typeof msg === 'string' && /servo[23].*trigger.*activated/i.test(msg);
+      // Check for servo trigger activation messages (includes shortened versions)
+      const isServoTrigger = typeof msg === 'string' && (/servo[23].*trigger.*activated/i.test(msg) || /^(servo2|servo3|rotation)$/i.test(msg.trim()));
       // Multi-line command output: indented lines following [SERIAL CMD]
       const isIndentedFollowup = typeof msg === 'string' && /^\s{2,}/.test(msg);
       // Track [SERIAL CMD] to allow subsequent indented lines through
@@ -12176,7 +12209,55 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
       if (parts[0].trim()) log(parts[0]);
       if (parts[1]) log('[SERIAL CMD]' + parts[1], 'cmd');
     } else {
-      log(line);
+      // Check if this is an automated camera trigger message
+      const isTriggerMsg = /^(Standalone camera on servo[23] trigger activated|Second camera on servo3 trigger activated|STILLS mode: Camera trigger|Initial camera trigger|Rotation complete, triggering camera)/i.test(line);
+      
+      if (isTriggerMsg) {
+        // Display full message on screen
+        log(line);
+        
+        // Get current simulation time and speed from kvCache for command log
+        let simTime = null;
+        let timeScale = null;
+        
+        if (window.kvCache && window.kvCache.get) {
+          const simValue = window.kvCache.get('sim');
+          if (simValue) {
+            const valueEl = simValue.querySelector('span');
+            if (valueEl) simTime = valueEl.textContent.trim();
+          }
+          
+          const speedValue = window.kvCache.get('speed');
+          if (speedValue) {
+            const valueEl = speedValue.querySelector('span');
+            if (valueEl) {
+              const speedText = valueEl.textContent.trim();
+              // Parse speed: could be "60x", "HOLD", "1x", etc.
+              if (speedText.toLowerCase() === 'hold') {
+                timeScale = 0;
+              } else {
+                const match = speedText.match(/([-+]?\d+(?:\.\d+)?)x?/i);
+                if (match) timeScale = parseFloat(match[1]);
+              }
+            }
+          }
+        }
+        
+        // Store in command log with metadata (timestamps and shortening applied during export)
+        const metadata = {};
+        if (simTime) metadata.simTime = simTime;
+        if (timeScale !== null) metadata.speed = timeScale;
+        if (timeScale !== null && timeScale !== 1 && timeScale !== 0) {
+          const now = new Date();
+          metadata.realTime = String(now.getHours()).padStart(2, '0') + ':' +
+                             String(now.getMinutes()).padStart(2, '0');
+        }
+        
+        // Log with original full message
+        logCommand(line, 'auto', metadata);
+      } else {
+        log(line);
+      }
     }
     
     // Track loaded profile name from firmware output
