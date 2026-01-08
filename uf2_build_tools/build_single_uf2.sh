@@ -85,13 +85,15 @@ if [ ! -f "$PYTHON_FILE" ]; then
 fi
 
 # Build command
+
+# Always use a short output filename with date/time if not specified
 if [ -z "$OUTPUT_FILE" ]; then
-    echo -e "${GREEN}Building combined UF2...${NC}"
-    python3 "$SCRIPT_DIR/uf2_builder.py" "$PYTHON_FILE"
-else
-    echo -e "${GREEN}Building combined UF2: $OUTPUT_FILE${NC}"
-    python3 "$SCRIPT_DIR/uf2_builder.py" "$PYTHON_FILE" -o "$OUTPUT_FILE"
+    # Format: sim_YYYYMMDD_HHMM.uf2
+    DATESTR=$(date +"%Y%m%d_%H%M")
+    OUTPUT_FILE="solsim_${DATESTR}.uf2"
 fi
+echo -e "${GREEN}Building combined UF2: $OUTPUT_FILE${NC}"
+python3 "$SCRIPT_DIR/uf2_builder.py" "$PYTHON_FILE" -o "$OUTPUT_FILE"
 
 # Check if build succeeded
 if [ $? -eq 0 ]; then
