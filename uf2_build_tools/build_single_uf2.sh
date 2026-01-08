@@ -92,8 +92,11 @@ if [ -z "$OUTPUT_FILE" ]; then
     DATESTR=$(date +"%Y%m%d_%H%M")
     OUTPUT_FILE="solsim_${DATESTR}.uf2"
 fi
-echo -e "${GREEN}Building combined UF2: $OUTPUT_FILE${NC}"
-python3 "$SCRIPT_DIR/uf2_builder.py" "$PYTHON_FILE" -o "$OUTPUT_FILE"
+SOLAR_DIR="$PARENT_DIR"
+mkdir -p "$SOLAR_DIR"
+OUTPUT_PATH="$SOLAR_DIR/$OUTPUT_FILE"
+echo -e "${GREEN}Building combined UF2: $OUTPUT_PATH${NC}"
+python3 "$SCRIPT_DIR/uf2_builder.py" "$PYTHON_FILE" -o "$OUTPUT_PATH"
 
 # Check if build succeeded
 if [ $? -eq 0 ]; then
