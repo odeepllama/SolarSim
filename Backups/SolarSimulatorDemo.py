@@ -7,10 +7,6 @@ for plant/algae phototropism experiments.
 Hardware: RP2040:bit board microcontroller with 3 servos, 1NeoPixel panel, and an internal 5x5 display matrix.
 """
 import gc, machine, math, neopixel, os, select, sys
-try:
-    import ujson as json  # Prefer MicroPython ujson when available
-except ImportError:  # Fallback (should not normally happen on target)
-    import json
 
 from machine import PWM
 from time import ticks_ms, sleep_ms, sleep_us, ticks_diff
@@ -32,12 +28,6 @@ PROGRAM_ENABLED = False        # Master switch for program functionality
 PROGRAM_STEPS = [              # Non-program default: neutral single step
     {"sim_time_hhmm": 1200, "speed": 1, "intensity_scale": 1.0, "dual_sun": False}
 ]
-# Example program steps (commented out - replace default above with these for testing):
-# {"sim_time_hhmm": 1200, "speed": 1, "dual_sun": True}, # intensity_scale is also settable, as well as "repeat": x
-# {"sim_time_hhmm": 1500, "speed": 2, "dual_sun": True},
-# {"sim_time_hhmm": 900, "dual_sun": True, "transition": "JUMP"},
-# {"sim_time_hhmm": 1200, "speed": 2, "dual_sun": False},
-# {"sim_time_hhmm": 1800, "speed": 2, "dual_sun": False},
 
 PROGRAM_REPEATS = -1                   # -1 for indefinite repeats, 0 or 1 for single run, or N for N repeats
 STOP_SIMULATION_AFTER_PROGRAM = False  # When True, terminates simulation after program completes
@@ -656,6 +646,17 @@ def activate_demo_mode():
     print("[DEMO] Button A = Next step | Button B = Previous step")
     print("[DEMO] ═══════════════════════════════════════════════════════")
     start_program()
+
+def stop_demo_mode():
+    """Deactivate demo mode and stop the program."""
+    global demo_mode_active, PROGRAM_ENABLED, program_running
+    
+    demo_mode_active = False
+    stop_program()  # Stop the program execution
+    
+    print("[DEMO] ═══════════════════════════════════════════════════════")
+    print("[DEMO] Demo Mode Deactivated")  
+    print("[DEMO] ═══════════════════════════════════════════════════════")
 
 def demo_advance_step():
     """Manually advance to next demo step."""
@@ -2366,269 +2367,17 @@ def handle_command(command_str):
             else:
                 print(f"[SERIAL CMD] Error: Unknown target '{target_servo}'. Use 'servo2', 'servo3', or 'rotation'.")
 
+
         elif command == "savelog":
-            if len(parts) == 2:
-                datecode = parts[1]
-                # Basic validation for the datecode
-                if len(datecode) == 8 and datecode.isdigit():
-                    filename = f"settings_{datecode}.txt"
-                    try:
-                        # Get current sim time for the log entry
-                        now_ms = ticks_ms()
-                        _, time_of_day_minutes = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)
-                        sim_hour = int(time_of_day_minutes // 60) % 24
-                        sim_minute = int(time_of_day_minutes % 60)
-                        
-                        # Open file in append mode to add new entries
-                        with open(filename, "a") as f:
-                            f.write(f"--- Settings Logged on {datecode} at sim time {sim_hour:02d}:{sim_minute:02d} ---\n")
-                            f.write(f"START_TIME_HHMM = {START_TIME_HHMM}\n")
-                            f.write(f"TIME_SCALE = {TIME_SCALE}\n")
-                            f.write(f"INTENSITY_SCALE = {INTENSITY_SCALE}\n")
-                            f.write(f"SIMULATION_DATE = {SIMULATION_DATE}\n")
-                            f.write(f"LATITUDE = {LATITUDE}\n")
-                            f.write(f"SOLAR_MODE = \"{SOLAR_MODE}\"\n")
-                            f.write(f"SUN_COLOR_MODE = \"{SUN_COLOR_MODE}\"\n")
-                            f.write(f"DUAL_SUN_ENABLED = {DUAL_SUN_ENABLED}\n")
-                            f.write(f"PROGRAM_ENABLED = {PROGRAM_ENABLED}\n")
-                            f.write(f"ROTATION_ENABLED = {ROTATION_ENABLED}\n")
-                            f.write(f"ROTATION_CAPTURE_MODE = \"{ROTATION_CAPTURE_MODE}\"\n")
-                            f.write(f"ROTATION_CYCLE_INTERVAL_MINUTES = {ROTATION_CYCLE_INTERVAL_MINUTES}\n")
-                            f.write(f"SERVO2_INTERVAL_DAY_SEC = {SERVO2_INTERVAL_DAY_SEC}\n")
-                            f.write(f"SERVO2_INTERVAL_NIGHT_SEC = {SERVO2_INTERVAL_NIGHT_SEC}\n")
-                            f.write(f"SERVO3_INTERVAL_DAY_SEC = {SERVO3_INTERVAL_DAY_SEC}\n")
-                            f.write(f"SERVO3_INTERVAL_NIGHT_SEC = {SERVO3_INTERVAL_NIGHT_SEC}\n")
-                            f.write(f"ROTATION_CAMERA_SERVO = {ROTATION_CAMERA_SERVO}\n")
-                            f.write(f"RESTART_AFTER_LOAD = {RESTART_AFTER_LOAD}\n")
-                            f.write(f"STILLS_IMAGING_INTERVAL_SEC = {STILLS_IMAGING_INTERVAL_SEC}\n")
-                            f.write(f"CAMERA_TRIGGER_HOLD_MS = {CAMERA_TRIGGER_HOLD_MS}\n")
-                            f.write(f"ROTATION_SPEED_PRESET = \"{ROTATION_SPEED_PRESET}\"\n")
-                            f.write(f"IMAGES_PER_ROTATION = {IMAGES_PER_ROTATION}\n")
-                            f.write(f"DEGREES_PER_IMAGE = {DEGREES_PER_IMAGE:.2f}\n")
-                            f.write(f"ROTATION_INCREMENT_DEGREES = {ROTATION_INCREMENT_DEGREES}\n")
-                            f.write(f"ROTATION_STEP_INTERVAL_MS = {ROTATION_STEP_INTERVAL_MS}\n")
-                            f.write(f"ROTATION_AT_NIGHT = {ROTATION_AT_NIGHT}\n")
-                            f.write("-" * 20 + "\n\n")
-                        print(f"[SERIAL CMD] Settings appended to log {filename}")
-                    except Exception as e:
-                        print(f"[SERIAL CMD] Auto-load latest profile set to: {AUTO_LOAD_LATEST_PROFILE} (NOT persisted: {e})")
-                else:
-                    print("[SERIAL CMD] Error: Invalid datecode format. Use YYYYMMDD.")
-            else:
-                print("[SERIAL CMD] Usage: savelog <yyyymmdd>")
+            print("[SERIAL CMD] specific log saving disabled in demo mode")
+
 
         elif command == "saveprofile":
-            # PATCH: Support optional note after profile name
-            if len(parts) >= 2:
-                profilename = parts[1]
-                note = " ".join(parts[2:]) if len(parts) > 2 else ""
-                filename = f"{profilename}.txt"
-                try:
-                    with open(filename, "w") as f: # Use "w" to overwrite
-                        print(f"[SERIAL CMD] Saving current settings to profile {filename}...")
-                        # --- Write note if provided ---
-                        if note:
-                            f.write(f"NOTE = {note}\n")
-                        # --- Write all configurable parameters ---
-                        f.write(f"START_TIME_HHMM = {START_TIME_HHMM}\n")
-                        f.write(f"TIME_SCALE = {TIME_SCALE}\n")
-                        f.write(f"INTENSITY_SCALE = {INTENSITY_SCALE}\n")
-                        f.write(f"SIMULATION_DATE = {SIMULATION_DATE}\n")
-                        f.write(f"LATITUDE = {LATITUDE}\n")
-                        f.write(f"SOLAR_MODE = \"{SOLAR_MODE}\"\n")
-                        f.write(f"SUN_COLOR_MODE = \"{SUN_COLOR_MODE}\"\n")
-                        f.write(f"DUAL_SUN_ENABLED = {DUAL_SUN_ENABLED}\n")
-                        f.write(f"ROTATION_ENABLED = {ROTATION_ENABLED}\n")
-                        f.write(f"ROTATION_CAPTURE_MODE = \"{ROTATION_CAPTURE_MODE}\"\n")
-                        f.write(f"ROTATION_CYCLE_INTERVAL_MINUTES = {ROTATION_CYCLE_INTERVAL_MINUTES}\n")
-                        f.write(f"SERVO2_INTERVAL_DAY_SEC = {SERVO2_INTERVAL_DAY_SEC}\n")
-                        f.write(f"SERVO2_INTERVAL_NIGHT_SEC = {SERVO2_INTERVAL_NIGHT_SEC}\n")
-                        f.write(f"SERVO3_INTERVAL_DAY_SEC = {SERVO3_INTERVAL_DAY_SEC}\n")
-                        f.write(f"SERVO3_INTERVAL_NIGHT_SEC = {SERVO3_INTERVAL_NIGHT_SEC}\n")
-                        f.write(f"ROTATION_CAMERA_SERVO = {ROTATION_CAMERA_SERVO}\n")
-                        f.write(f"RESTART_AFTER_LOAD = {RESTART_AFTER_LOAD}\n")
-                        f.write(f"STILLS_IMAGING_INTERVAL_SEC = {STILLS_IMAGING_INTERVAL_SEC}\n")
-                        f.write(f"CAMERA_TRIGGER_HOLD_MS = {CAMERA_TRIGGER_HOLD_MS}\n")
-                        f.write(f"ROTATION_SPEED_PRESET = \"{ROTATION_SPEED_PRESET}\"\n")
-                        f.write(f"IMAGES_PER_ROTATION = {IMAGES_PER_ROTATION}\n")
-                        f.write(f"DEGREES_PER_IMAGE = {DEGREES_PER_IMAGE:.2f}\n")
-                        f.write(f"ROTATION_INCREMENT_DEGREES = {ROTATION_INCREMENT_DEGREES}\n")
-                        f.write(f"ROTATION_STEP_INTERVAL_MS = {ROTATION_STEP_INTERVAL_MS}\n")
-                        f.write(f"ROTATION_AT_NIGHT = {ROTATION_AT_NIGHT}\n")
-                        f.write(f"CUSTOM_SUN_R = {CUSTOM_SUN_R}\n")
-                        f.write(f"CUSTOM_SUN_G = {CUSTOM_SUN_G}\n")
-                        f.write(f"CUSTOM_SUN_B = {CUSTOM_SUN_B}\n")
-                        # Save program state and related fields only once
-                        if PROGRAM_ENABLED:
-                            import ujson as json  # Use ujson for MicroPython
-                            f.write("PROGRAM_ENABLED = True\n")
-                            f.write(f"PROGRAM_REPEATS = {PROGRAM_REPEATS}\n")
-                            f.write(f"PROGRAM_STEPS = {json.dumps(PROGRAM_STEPS)}\n")
-                        else:
-                            f.write("PROGRAM_ENABLED = False\n")
-                    print(f"[SERIAL CMD] Profile '{filename}' saved successfully.")
-                except Exception as e:
-                    print(f"[SERIAL CMD] Error saving profile: {e}")
-            else:
-                print("[SERIAL CMD] Usage: saveprofile <profilename> [optional note]")
+            print("[SERIAL CMD] Profile saving disabled in demo mode")
+
 
         elif command == "loadprofile":
-            if len(parts) == 2:
-                profilename = parts[1]
-                filename = f"{profilename}.txt"
-                
-                try:
-                    os.stat(filename)
-                except OSError:
-                    print(f"[SERIAL CMD] Error: Profile '{filename}' not found.")
-                    return
-
-                validated_settings = {}
-                try:
-                    with open(filename, "r") as f:
-                        for line in f:
-                            line = line.strip()
-                            if not line or line.startswith('#'): continue
-                            
-                            key, value_str = line.split('=', 1)
-                            key = key.strip()
-                            value_str = value_str.strip()
-
-                            if key == "START_TIME_HHMM":
-                                v = int(value_str)
-                                if not (0 <= v <= 2359 and v % 100 < 60): raise ValueError("invalid HHMM format")
-                                validated_settings[key] = v
-                            elif key == "TIME_SCALE": validated_settings[key] = float(value_str)
-                            elif key == "INTENSITY_SCALE":
-                                v = float(value_str);
-                                if v < 0: raise ValueError("must be non-negative")
-                                validated_settings[key] = v
-                            elif key == "SIMULATION_DATE":
-                                v = int(value_str);
-                                if not (20000101 <= v <= 21001231): raise ValueError("out of range")
-                                validated_settings[key] = v
-                            elif key == "LATITUDE":
-                                v = float(value_str);
-                                if not (-90 <= v <= 90): raise ValueError("must be -90 to 90")
-                                validated_settings[key] = v
-                            elif key in ("SOLAR_MODE", "SUN_COLOR_MODE", "ROTATION_CAPTURE_MODE"):
-                                validated_settings[key] = value_str.strip('"')
-                            elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD"):
-                                if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
-                                validated_settings[key] = value_str.lower() == 'true'
-                            elif key == "ROTATION_CYCLE_INTERVAL_MINUTES":
-                                v = int(value_str);
-                                if v <= 0: raise ValueError("must be positive")
-                                validated_settings[key] = v
-                            elif key in ("SERVO2_INTERVAL_DAY_SEC", "SERVO2_INTERVAL_NIGHT_SEC", "SERVO3_INTERVAL_DAY_SEC", "SERVO3_INTERVAL_NIGHT_SEC"):
-                                v = int(value_str);
-                                if v < 0: raise ValueError("must be >= 0 (0 = disabled)")
-                                validated_settings[key] = v
-                            elif key == "STILLS_IMAGING_INTERVAL_SEC":
-                                v = float(value_str)
-                                if v <= 0:
-                                    raise ValueError("must be > 0")
-                                validated_settings[key] = v
-                            elif key == "ROTATION_CAMERA_SERVO":
-                                v = int(value_str)
-                                if v not in (2, 3):
-                                    raise ValueError("ROTATION_CAMERA_SERVO must be 2 or 3")
-                                validated_settings[key] = v
-                            elif key == "CAMERA_TRIGGER_HOLD_MS":
-                                v = int(value_str)
-                                if v <= 0:
-                                    raise ValueError("must be > 0")
-                                validated_settings[key] = v
-                            elif key == "ROTATION_INCREMENT_DEGREES":
-                                v = float(value_str)
-                                if v <= 0:
-                                    raise ValueError("must be > 0")
-                                validated_settings[key] = v
-                            elif key == "ROTATION_STEP_INTERVAL_MS":
-                                v = int(value_str)
-                                if v <= 0:
-                                    raise ValueError("must be > 0")
-                                validated_settings[key] = v
-                            elif key == "ROTATION_SPEED_PRESET":
-                                preset = value_str.strip('"').lower()
-                                if preset in ROTATION_SPEED_PRESET_TABLE:
-                                    validated_settings[key] = preset
-                                else:
-                                    raise ValueError("invalid ROTATION_SPEED_PRESET")
-                            elif key == "IMAGES_PER_ROTATION":
-                                v = int(value_str)
-                                if v < 2 or v > 360:
-                                    raise ValueError("IMAGES_PER_ROTATION must be 2-360")
-                                validated_settings[key] = v
-                            elif key == "DEGREES_PER_IMAGE":
-                                v = float(value_str)
-                                if v <= 0 or v > 180:
-                                    raise ValueError("DEGREES_PER_IMAGE must be >0 and <=180")
-                                # Don't set directly; will be computed from IMAGES_PER_ROTATION
-                            elif key == "PROGRAM_ENABLED":
-                                validated_settings[key] = value_str.lower() == 'true'
-                            elif key == "PROGRAM_REPEATS":
-                                validated_settings[key] = int(value_str)
-                            elif key == "PROGRAM_STEPS":
-                                import ujson as json
-                                validated_settings[key] = json.loads(value_str)    
-                            elif key == "CUSTOM_SUN_R":
-                                v = int(value_str)
-                                validated_settings[key] = clamp(v)
-                            elif key == "CUSTOM_SUN_G":
-                                v = int(value_str)
-                                validated_settings[key] = clamp(v)
-                            elif key == "CUSTOM_SUN_B":
-                                v = int(value_str)
-                                validated_settings[key] = clamp(v)
-                            elif key == "ROTATION_AT_NIGHT":
-                                if value_str.lower() not in ('true', 'false'):
-                                    raise ValueError("ROTATION_AT_NIGHT must be True or False")
-                                validated_settings[key] = value_str.lower() == 'true'
-                            # Legacy fields - ignore if present in old profiles
-                            elif key in ("IMAGE_AT_NIGHT", "SERVO2_STANDALONE_ENABLED", "SERVO3_STANDALONE_ENABLED", "SERVO2_INTERVAL_SEC", "SERVO3_INTERVAL_SEC"):
-                                pass  # Silently skip obsolete fields
-                except Exception as e:
-                    print(f"[SERIAL CMD] Load cancelled. Error in '{filename}': {e}")
-                    return
-
-                print(f"[SERIAL CMD] Profile '{filename}' validated. Applying settings...")
-                g = globals()
-                for key, value in validated_settings.items():
-                    g[key] = value
-                if "CUSTOM_SUN_R" in validated_settings:
-                    CUSTOM_SUN_R = validated_settings["CUSTOM_SUN_R"]
-                if "CUSTOM_SUN_G" in validated_settings:
-                    CUSTOM_SUN_G = validated_settings["CUSTOM_SUN_G"]
-                if "CUSTOM_SUN_B" in validated_settings:
-                    CUSTOM_SUN_B = validated_settings["CUSTOM_SUN_B"]
-                if "PROGRAM_STEPS" in validated_settings:
-                    PROGRAM_STEPS = validated_settings["PROGRAM_STEPS"]
-                if "PROGRAM_REPEATS" in validated_settings:
-                    PROGRAM_REPEATS = validated_settings["PROGRAM_REPEATS"]
-                if "PROGRAM_ENABLED" in validated_settings:
-                    PROGRAM_ENABLED = validated_settings["PROGRAM_ENABLED"]
-                if "ROTATION_AT_NIGHT" in validated_settings:
-                    ROTATION_AT_NIGHT = validated_settings["ROTATION_AT_NIGHT"]
-                if "ROTATION_CAMERA_SERVO" in validated_settings:
-                    ROTATION_CAMERA_SERVO = validated_settings["ROTATION_CAMERA_SERVO"]
-                update_rotation_parameters()
-                print("[SERIAL CMD] Settings applied.")
-                
-                # Track the loaded profile name
-                global LOADED_PROFILE_NAME
-                LOADED_PROFILE_NAME = filename
-
-                if RESTART_AFTER_LOAD:
-                    print("[SERIAL CMD] Restarting simulation logic...")
-                    init_solar_day()
-                    start_real_time_ms = ticks_ms()
-                    print("[SERIAL CMD] Simulation restarted. Time anchor reset.")
-                else:
-                    print("[SERIAL CMD] RESTART_AFTER_LOAD is False. Manual restart may be needed.")
-
-            else:
-                print("[SERIAL CMD] Usage: loadprofile <profilename>")
+            print("[SERIAL CMD] Profile loading disabled in demo mode")
 
         elif command == "status":
             print("--- System Status ---")
@@ -2702,14 +2451,13 @@ def handle_command(command_str):
                 print(f"  Program Repeats: \x1b[1m{PROGRAM_REPEATS}\x1b[0m")
                 print(f"  Number of Steps: \x1b[1m{len(PROGRAM_STEPS)}\x1b[0m")
                 if PROGRAM_STEPS:
-                    import ujson as json
                     # Output program steps in chunks of 5 to reduce memory usage
                     chunk_size = 5
                     for i in range(0, len(PROGRAM_STEPS), chunk_size):
                         chunk = PROGRAM_STEPS[i:i + chunk_size]
                         start_idx = i + 1
                         end_idx = min(i + chunk_size, len(PROGRAM_STEPS))
-                        print(f"  Program Steps ({start_idx}-{end_idx}): \x1b[1m{json.dumps(chunk)}\x1b[0m")
+                        print(f"  Program Steps ({start_idx}-{end_idx}): \x1b[1m{str(chunk)}\x1b[0m")
             else:
                 print("\n\x1b[1m-- Program Configuration --\x1b[0m")
                 print(f"  Program Repeats: \x1b[1m{PROGRAM_REPEATS}\x1b[0m")
@@ -2757,51 +2505,13 @@ def handle_command(command_str):
                 print("[SERIAL CMD] Error: Unknown light target. Use 'camera' or 'rotation'.")
             return
 
+
         elif command == "listprofiles":
-            try:
-                files = os.listdir()
-                profiles = [f for f in files if f.endswith(".txt")]
-                if profiles:
-                    print("[SERIAL CMD] Available profiles:")
-                    for pf in profiles:
-                        note = ""
-                        try:
-                            with open(pf, "r") as f:
-                                first_line = f.readline()
-                                if first_line.startswith("NOTE ="):
-                                    note = first_line[len("NOTE ="):].strip()
-                        except Exception:
-                            pass
-                        if note:
-                            print(f"  {pf} - {note}")
-                        else:
-                            print(f"  {pf}")
-                else:
-                    print("[SERIAL CMD] No profile files found.")
-            except Exception as e:
-                print(f"[SERIAL CMD] Error listing profiles: {e}")
-            return
+            print("[SERIAL CMD] listing profiles disabled in demo mode")
+
 
         elif command == "profiledelete":
-            if len(parts) < 2:
-                print("[SERIAL CMD] Usage: profiledelete <filename>")
-                return
-            filename = parts[1]
-            # Add .txt extension if not present
-            if not filename.endswith(".txt"):
-                filename += ".txt"
-            try:
-                # Check if file exists
-                files = os.listdir()
-                if filename not in files:
-                    print(f"[SERIAL CMD] Error: Profile '{filename}' not found.")
-                    return
-                # Delete the file
-                os.remove(filename)
-                print(f"[SERIAL CMD] Profile '{filename}' deleted successfully.")
-            except Exception as e:
-                print(f"[SERIAL CMD] Error deleting profile: {e}")
-            return
+            print("[SERIAL CMD] profile deletion disabled in demo mode")
 
         elif command == "restart":
             print("[SERIAL CMD] Restarting simulation logic...")
@@ -2823,6 +2533,34 @@ def handle_command(command_str):
             print("Program/Manual: jump nextstep, jump step <n>, listprofiles, loadprofile <profilename>, saveprofile <profilename> [note], profiledelete <profilename>, savelog <yyyymmdd>, status, trigger servo2, trigger servo3, trigger rotation")
             print("Utility: fillpanel <r> <g> <b> [duration], light camera <on|off>, light rotation <on|off>, reset, restart, help all")
             print("-----------------------")
+
+        elif command == "demo" and len(parts) >= 2:
+            action = parts[1].lower()
+            
+            if action == "start":
+                if not demo_mode_active:
+                    activate_demo_mode()
+                    print("[SERIAL CMD] Demo mode activated remotely")
+                else:
+                    print("[SERIAL CMD] Demo mode already active")
+                    
+            elif action == "stop":
+                if demo_mode_active:
+                    stop_demo_mode()
+                    print("[SERIAL CMD] Demo mode deactivated")
+                else:
+                    print("[SERIAL CMD] Demo mode not active")
+                    
+            elif action == "status":
+                status = "ACTIVE" if demo_mode_active else "INACTIVE"
+                step_info = ""
+                if demo_mode_active and current_program_step < len(PROGRAM_STEPS):
+                    step_desc = get_demo_step_description(current_program_step)
+                    step_info = f" (Step {current_program_step + 1}/13: {step_desc})"
+                print(f"[SERIAL CMD] Demo mode: {status}{step_info}")
+            else:
+                print("[SERIAL CMD] Error: Unknown demo action. Use 'start', 'stop', or 'status'")
+            return
 
         else:
             print(f"[SERIAL CMD] Error: Unknown command '{command_str}'")
