@@ -16178,7 +16178,8 @@ function clearHoldState(){
       target: '#programStepsTable',
       titleKey: 'guideProgramSteps',
       contentKey: 'guideProgramStepsDesc',
-      position: 'top'
+      position: 'top',
+      tooltipOffsetX: 1.0  // Shift tooltip right by full width to avoid blocking title
     },
     {
       target: '[data-section="profile-text-window"]',
@@ -16558,17 +16559,31 @@ function clearHoldState(){
     const viewportHeight = window.innerHeight;
     const needsScroll = rect.top < 100 || rect.bottom > viewportHeight - 100;
     
-    // Set up continuous position tracking
-    setupSpotlightTracking();
-    
     if (needsScroll) {
-      // Scroll target into view
+      // Scroll target into view first, then position after scroll settles
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Initial position will be set by scroll listener
-      setTimeout(() => { isPositioning = false; }, 800);
+      
+      // Wait for scroll to settle before positioning
+      let scrollTimeout;
+      const onScrollSettle = () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          window.removeEventListener('scroll', onScrollSettle);
+          // Position spotlight after scroll completes
+          positionSpotlightImmediate(targetEl, position, stepConfig);
+          // Start continuous tracking
+          setupSpotlightTracking();
+          isPositioning = false;
+        }, 150); // Wait 150ms after last scroll event
+      };
+      
+      window.addEventListener('scroll', onScrollSettle);
+      onScrollSettle(); // Start the timer
     } else {
       // Target is already visible, position immediately
       positionSpotlightImmediate(targetEl, position, stepConfig);
+      // Set up continuous tracking
+      setupSpotlightTracking();
       isPositioning = false;
     }
   }
