@@ -15918,7 +15918,28 @@ function clearHoldState(){
       titleKey: 'guideProgramTimeline',
       contentKey: 'guideProgramTimelineDesc',
       position: 'top',
-      rightTooltip: true
+      rightTooltip: true,
+      adjustTarget: (el) => {
+        // Find the program steps table within the section
+        const table = el.querySelector('#programStepsTable');
+        if (table) {
+          // Create a temporary element that spans from section start to table end
+          const rect = el.getBoundingClientRect();
+          const tableRect = table.getBoundingClientRect();
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'absolute';
+          wrapper.style.top = rect.top + 'px';
+          wrapper.style.left = rect.left + 'px';
+          wrapper.style.width = rect.width + 'px';
+          wrapper.style.height = (tableRect.bottom - rect.top) + 'px';
+          wrapper.style.pointerEvents = 'none';
+          document.body.appendChild(wrapper);
+          // Store reference for cleanup
+          el._guideWrapper = wrapper;
+          return wrapper;
+        }
+        return el;
+      }
     },
     {
       target: '#recentProfiles',
@@ -16272,6 +16293,11 @@ function clearHoldState(){
       window.removeEventListener('scroll', spotlightScrollListener);
       window.removeEventListener('resize', spotlightScrollListener);
       spotlightScrollListener = null;
+    }
+    // Clean up any temporary wrapper elements created by adjustTarget
+    if (currentSpotlightTarget && currentSpotlightTarget._guideWrapper) {
+      currentSpotlightTarget._guideWrapper.remove();
+      currentSpotlightTarget._guideWrapper = null;
     }
     currentSpotlightTarget = null;
   }
