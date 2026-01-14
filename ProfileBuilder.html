@@ -2422,7 +2422,7 @@ select:not(#filename_tag):not(#filename_preview) {
 // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
 const TRANSLATIONS = {
   en: {
-    appTitle: 'Solar Simulator Studio 20260106',
+    appTitle: 'Solar Simulator Studio 20260114',
     monitorInteract: 'Monitor / Interact',
     disconnected: 'DISCONNECTED',
     connect: 'Connect',
@@ -2755,7 +2755,7 @@ function setLanguage(lang) {
     roleBtns[0].querySelector('.title').textContent = TRANSLATIONS[lang].userGuide;
     roleBtns[0].querySelector('.desc').textContent = TRANSLATIONS[lang].userGuideDesc;
     roleBtns[1].querySelector('.title').textContent = TRANSLATIONS[lang].fullTour;
-    roleBtns[1].querySelector('.desc').textContent = TRANSLATIONS[lang].fullTourDesc;
+    roleBtns[1].querySelector('.desc').innerHTML = TRANSLATIONS[lang].fullTourDesc;
     roleBtns[2].querySelector('.title').textContent = TRANSLATIONS[lang].skipGuide;
     roleBtns[2].querySelector('.desc').textContent = TRANSLATIONS[lang].skipGuideDesc;
   }
