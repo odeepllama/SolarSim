@@ -16071,6 +16071,7 @@ function clearHoldState(){
       titleKey: 'guideProfileManagement',
       contentKey: 'guideProfileManagementDesc',
       position: 'bottom',
+      tooltipOffsetX: 0.67,  // Shift tooltip right by 2/3 of its width
       adjustTarget: (el) => {
         // Target the h2, buttons bar, and meta-options-container together
         const metaContainer = document.querySelector('.meta-options-container');
@@ -16261,6 +16262,7 @@ function clearHoldState(){
   let deviceConnected = false;
   let isPositioning = false; // Prevent positioning race conditions
   let savedMode = null; // Store mode before guide starts
+  let savedImagingIlluminationState = null; // Store imaging illumination collapsed state
   
   // Expose initial state globally
   window.guideActive = false;
@@ -16392,6 +16394,25 @@ function clearHoldState(){
     currentSteps = path === 'full' ? FULL_TOUR_STEPS : QUICK_START_STEPS;
     currentStepIndex = 0;
     guideActive = true;
+    
+    // Save and expand Imaging Illumination section for Full Tour
+    if (path === 'full') {
+      const imagingIlluminationContent = document.getElementById('ImagingIlluminationContent');
+      if (imagingIlluminationContent) {
+        const isExpanded = imagingIlluminationContent.style.display !== 'none';
+        savedImagingIlluminationState = isExpanded;
+        console.log('[FTUE] Saved Imaging Illumination state:', isExpanded);
+        
+        // Expand the section if it's collapsed
+        if (!isExpanded) {
+          const legend = imagingIlluminationContent.previousElementSibling;
+          if (legend && legend.tagName === 'LEGEND') {
+            imagingIlluminationContent.style.display = 'grid';
+            legend.innerHTML = '▼ Imaging Illumination <small style="color: #666;">(Click to toggle visibility)</small>';
+          }
+        }
+      }
+    }
     
     // Save current mode before starting guide
     if (typeof getCurrentMode === 'function') {
@@ -16728,6 +16749,13 @@ function clearHoldState(){
     tooltip.style.left = finalLeft + 'px';
     tooltip.style.top = finalTop + 'px';
     
+    // Apply custom tooltip offset if specified (e.g., to shift right)
+    if (stepConfig.tooltipOffsetX !== undefined) {
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const offsetAmount = tooltipRect.width * stepConfig.tooltipOffsetX;
+      tooltip.style.left = (finalLeft + offsetAmount) + 'px';
+    }
+    
     // Show tooltip now that it's in the correct position
     tooltip.classList.add('positioned');
   }
@@ -16758,6 +16786,25 @@ function clearHoldState(){
     spotlight.classList.remove('active');
     guideActive = false;
     cleanupSpotlightTracking(); // Clean up observers
+    
+    // Restore Imaging Illumination section state
+    if (savedImagingIlluminationState !== null) {
+      const imagingIlluminationContent = document.getElementById('ImagingIlluminationContent');
+      if (imagingIlluminationContent) {
+        const legend = imagingIlluminationContent.previousElementSibling;
+        if (!savedImagingIlluminationState) {
+          // Was collapsed, restore to collapsed
+          imagingIlluminationContent.style.display = 'none';
+          if (legend && legend.tagName === 'LEGEND') {
+            legend.innerHTML = '▶ Imaging Illumination <small style="color: #666;">(Click to toggle visibility)</small>';
+          }
+          // Update localStorage to match restored state
+          localStorage.setItem('ImagingIlluminationExpanded', 'false');
+        }
+        console.log('[FTUE] Restored Imaging Illumination state:', savedImagingIlluminationState);
+      }
+      savedImagingIlluminationState = null;
+    }
     
     // Restore original mode if it was changed
     if (savedMode && typeof getCurrentMode === 'function' && typeof setCurrentMode === 'function') {
