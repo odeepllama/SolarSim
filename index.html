@@ -2520,11 +2520,17 @@ const TRANSLATIONS = {
     guideConnectDevice: 'Connect Your Device',
     guideConnectDeviceDesc: 'Click "Connect" to establish a serial connection with your device via USB.',
     guideStatusTiles: 'Status Tiles',
-    guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more.',
+    guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more. Click on a tile to quickly adjust its setting.',
+    guideSolarArc: 'Solar Arc Simulation',
+    guideSolarArcDesc: 'Visual sun path showing current time and day/night shading. The arc updates in real-time to display sun position, color, and intensity.',
     guideLogWindow: 'Log Window and Command Entry',
     guideLogWindowDesc: 'Monitor device activity in the log window. Type commands in the input field below for direct device control.',
+    guideDeviceProgramStatus: 'Device Program Status',
+    guideDeviceProgramStatusDesc: 'When connected to a device running a program, this read-only display shows real-time progress. The red playhead arrow indicates the current position in the program sequence.',
     guideProfileManagement: 'Profile Management',
     guideProfileManagementDesc: 'Save, load, and manage default profiles. Use "Save as Default" to set a profile that loads automatically on page startup.',
+    guideAutoLoad: 'Auto-Load Control',
+    guideAutoLoadDesc: 'The auto-load badge shows whether the device will automatically load the newest profile on startup. Use the lock button to enable/disable auto-load behavior on the device.',
     guideKeySettings: 'Basic Settings',
     guideKeySettingsDesc: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
     guideSolarMode: 'Solar Mode & Sun Color',
@@ -2625,11 +2631,17 @@ const TRANSLATIONS = {
     guideConnectDevice: 'デバイスを接続',
     guideConnectDeviceDesc: 'USBケーブル経由でデバイスとのシリアル接続を確立するには、「接続」をクリックしてください。',
     guideStatusTiles: 'ステータスタイル',
-    guideStatusTilesDesc: '接続状態、プログラム状態、時刻、強度など、主要なパラメータをひと目で確認できます。',
+    guideStatusTilesDesc: '接続状態、プログラム状態、時刻、強度など、主要なパラメータをひと目で確認できます。タイルをクリックすると設定をすばやく調整できます。',
+    guideSolarArc: 'ソーラーアークシミュレーション',
+    guideSolarArcDesc: '現在時刻と昼夜の陰影を示す視覚的な太陽経路です。アークは太陽の位置、色、強度をリアルタイムで表示するように更新されます。',
     guideLogWindow: 'ログウィンドウとコマンド入力',
     guideLogWindowDesc: 'ログウィンドウでデバイスの動作を監視できます。下の入力フィールドにコマンドを入力して直接デバイスを制御できます。',
+    guideDeviceProgramStatus: 'デバイスプログラムステータス',
+    guideDeviceProgramStatusDesc: 'プログラムを実行中のデバイスに接続すると、この読み取り専用ディスプレイにリアルタイムの進行状況が表示されます。赤い再生ヘッド矢印は、プログラムシーケンスの現在位置を示します。',
     guideProfileManagement: 'プロファイル管理',
     guideProfileManagementDesc: 'デフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込まれるプロファイルを設定できます。',
+    guideAutoLoad: '自動ロード制御',
+    guideAutoLoadDesc: '自動ロードバッジは、デバイスが起動時に最新のプロファイルを自動的に読み込むかどうかを示します。ロックボタンを使用して、デバイスの自動ロード動作を有効/無効にします。',
     guideKeySettings: '基本設定',
     guideKeySettingsDesc: 'シミュレーション開始時刻、タイムスケール（速度）、光の強度を設定します。これらは最も頻繁に調整されるパラメータです。',
     guideSolarMode: 'ソーラーモードと太陽色',
@@ -16005,20 +16017,42 @@ function clearHoldState(){
   
   const FULL_TOUR_STEPS = [
     {
-      target: '#monitorConnBtn',
+      target: '#monitorConnectBtn',
       titleKey: 'guideConnectDevice',
       contentKey: 'guideConnectDeviceDesc',
       position: 'bottom'
     },
     {
-      target: '#monitorStatusGrid',
+      target: '.mini-sect-title[data-section="monitor-status-tiles"]',
       titleKey: 'guideStatusTiles',
       contentKey: 'guideStatusTilesDesc',
       position: 'bottom',
       adjustTarget: (el) => {
-        // Target parent container to include both title and grid
-        return el.parentElement;
+        // Target the title and grid together
+        const grid = document.getElementById('monitorStatusGrid');
+        if (!grid) return el;
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+        wrapper.className = 'ftue-highlight-wrapper';
+        
+        const elRect = el.getBoundingClientRect();
+        const gridRect = grid.getBoundingClientRect();
+        
+        wrapper.style.top = elRect.top + window.scrollY + 'px';
+        wrapper.style.left = Math.min(elRect.left, gridRect.left) + window.scrollX + 'px';
+        wrapper.style.width = Math.max(elRect.width, gridRect.width) + 'px';
+        wrapper.style.height = (gridRect.bottom - elRect.top) + 'px';
+        
+        document.body.appendChild(wrapper);
+        return wrapper;
       }
+    },
+    {
+      target: '.vis-col[data-section="monitor-solar-arc"]',
+      titleKey: 'guideSolarArc',
+      contentKey: 'guideSolarArcDesc',
+      position: 'bottom'
     },
     {
       target: '.log-col[data-section="monitor-log"]',
@@ -16027,10 +16061,55 @@ function clearHoldState(){
       position: 'right'
     },
     {
-      target: '#profileMgmtWrapper',
+      target: '#deviceProgramStatusFieldset',
+      titleKey: 'guideDeviceProgramStatus',
+      contentKey: 'guideDeviceProgramStatusDesc',
+      position: 'bottom'
+    },
+    {
+      target: 'h2[data-i18n="profileManagement"]',
       titleKey: 'guideProfileManagement',
       contentKey: 'guideProfileManagementDesc',
+      position: 'bottom',
+      adjustTarget: (el) => {
+        // Target the h2, buttons bar, and meta-options-container together
+        const metaContainer = document.querySelector('.meta-options-container');
+        if (!metaContainer) return el;
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+        wrapper.className = 'ftue-highlight-wrapper';
+        
+        const elRect = el.getBoundingClientRect();
+        const metaRect = metaContainer.getBoundingClientRect();
+        
+        wrapper.style.top = elRect.top + window.scrollY + 'px';
+        wrapper.style.left = Math.min(elRect.left, metaRect.left) + window.scrollX + 'px';
+        wrapper.style.width = Math.max(elRect.width, metaRect.width) + 'px';
+        wrapper.style.height = (metaRect.bottom - elRect.top) + 'px';
+        
+        document.body.appendChild(wrapper);
+        return wrapper;
+      }
+    },
+    {
+      target: '[data-export-ref="downloadBtn"]',
+      titleKey: 'guideDownloadProfile',
+      contentKey: 'guideDownloadProfileDesc',
       position: 'bottom'
+    },
+    {
+      target: '[data-export-ref="importBtn"]',
+      titleKey: 'guideImportProfile',
+      contentKey: 'guideImportProfileDesc',
+      position: 'bottom'
+    },
+    {
+      target: '[data-export-ref="uploadBtn"]',
+      titleKey: 'uploadToDevice',
+      contentKey: 'guideUploadToDevice',
+      position: 'bottom',
+      highlight: true
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
@@ -16069,26 +16148,26 @@ function clearHoldState(){
       position: 'top'
     },
     {
-      target: '#programTimelineVisWrapper',
+      target: '#programTimelineTitle',
       titleKey: 'guideProgramTimeline',
       contentKey: 'guideProgramTimelineDesc',
       position: 'bottom',
       adjustTarget: (el) => {
-        // Create wrapper that extends to bottom of table
-        const tableBottom = document.querySelector('#programStepsTable');
-        if (!tableBottom) return el;
+        // Create wrapper that extends to bottom of timeline container
+        const timelineContainer = document.getElementById('timelineContainer');
+        if (!timelineContainer) return el;
         
         const wrapper = document.createElement('div');
         wrapper.style.cssText = 'position:absolute; pointer-events:none;';
         wrapper.className = 'ftue-highlight-wrapper';
         
         const elRect = el.getBoundingClientRect();
-        const tableRect = tableBottom.getBoundingClientRect();
+        const containerRect = timelineContainer.getBoundingClientRect();
         
         wrapper.style.top = elRect.top + window.scrollY + 'px';
         wrapper.style.left = elRect.left + window.scrollX + 'px';
-        wrapper.style.width = elRect.width + 'px';
-        wrapper.style.height = (tableRect.bottom - elRect.top) + 'px';
+        wrapper.style.width = Math.max(elRect.width, containerRect.width) + 'px';
+        wrapper.style.height = (containerRect.bottom - elRect.top) + 'px';
         
         document.body.appendChild(wrapper);
         return wrapper;
@@ -16099,35 +16178,6 @@ function clearHoldState(){
       titleKey: 'guideProgramSteps',
       contentKey: 'guideProgramStepsDesc',
       position: 'top'
-    },
-    {
-      target: '[data-section="export-section"]',
-      titleKey: 'exportSection',
-      contentKey: 'guideDownloadProfile',
-      position: 'bottom',
-      adjustTarget: (el) => {
-        // Target the h2 and toolbar together
-        if (el.tagName === 'H2') {
-          const toolbar = el.nextElementSibling;
-          if (toolbar) {
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'position:absolute; pointer-events:none;';
-            wrapper.className = 'ftue-highlight-wrapper';
-            
-            const elRect = el.getBoundingClientRect();
-            const toolbarRect = toolbar.getBoundingClientRect();
-            
-            wrapper.style.top = elRect.top + window.scrollY + 'px';
-            wrapper.style.left = elRect.left + window.scrollX + 'px';
-            wrapper.style.width = Math.max(elRect.width, toolbarRect.width) + 'px';
-            wrapper.style.height = (toolbarRect.bottom - elRect.top) + 'px';
-            
-            document.body.appendChild(wrapper);
-            return wrapper;
-          }
-        }
-        return el;
-      }
     },
     {
       target: '[data-section="profile-text-window"]',
@@ -16148,23 +16198,30 @@ function clearHoldState(){
       }
     },
     {
-      target: '[data-export-ref="downloadBtn"]',
-      titleKey: 'guideDownloadProfile',
-      contentKey: 'guideDownloadProfileDesc',
-      position: 'bottom'
-    },
-    {
-      target: '[data-export-ref="importBtn"]',
-      titleKey: 'guideImportProfile',
-      contentKey: 'guideImportProfileDesc',
-      position: 'bottom'
-    },
-    {
-      target: '[data-export-ref="uploadBtn"]',
-      titleKey: 'uploadToDevice',
-      contentKey: 'guideUploadToDevice',
+      target: '#autoloadStatusBadge',
+      titleKey: 'guideAutoLoad',
+      contentKey: 'guideAutoLoadDesc',
       position: 'bottom',
-      highlight: true
+      adjustTarget: (el) => {
+        // Target badge and lock button together
+        const lockBtn = document.getElementById('autoloadLockBtn');
+        if (!lockBtn) return el;
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+        wrapper.className = 'ftue-highlight-wrapper';
+        
+        const elRect = el.getBoundingClientRect();
+        const lockRect = lockBtn.getBoundingClientRect();
+        
+        wrapper.style.top = Math.min(elRect.top, lockRect.top) + window.scrollY + 'px';
+        wrapper.style.left = Math.min(elRect.left, lockRect.left) + window.scrollX + 'px';
+        wrapper.style.width = (Math.max(elRect.right, lockRect.right) - Math.min(elRect.left, lockRect.left)) + 'px';
+        wrapper.style.height = (Math.max(elRect.bottom, lockRect.bottom) - Math.min(elRect.top, lockRect.top)) + 'px';
+        
+        document.body.appendChild(wrapper);
+        return wrapper;
+      }
     },
     {
       target: '#loadFromDeviceBtn',
@@ -16245,6 +16302,23 @@ function clearHoldState(){
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && welcomeModal && welcomeModal.classList.contains('open')) {
       hideWelcomeModal();
+    }
+    
+    // Arrow key navigation for active guide
+    if (guideActive) {
+      // Don't interfere if user is typing in an input field
+      const activeElement = document.activeElement;
+      const isInputField = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+      
+      if (!isInputField) {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          nextStep();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          prevStep();
+        }
+      }
     }
   });
 
@@ -16330,6 +16404,12 @@ function clearHoldState(){
         if (typeof setCurrentMode === 'function' && typeof applyVisibility === 'function') {
           setCurrentMode('advanced');
           applyVisibility();
+          // Wait for visibility changes to apply before starting guide
+          setTimeout(() => {
+            deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
+            showStep(0);
+          }, 100);
+          return;
         }
       }
     }
@@ -16341,7 +16421,7 @@ function clearHoldState(){
   }
   
   // Show specific guide step
-  function showStep(index) {
+  function showStep(index, direction = 'forward') {
     if (index < 0 || index >= currentSteps.length) return;
     
     currentStepIndex = index;
@@ -16387,14 +16467,29 @@ function clearHoldState(){
       
       // Check if element is actually visible (not hidden with display:none or visibility:hidden)
       const style = window.getComputedStyle(targetEl);
+      const rect = targetEl.getBoundingClientRect();
       const isVisible = style.display !== 'none' && 
                        style.visibility !== 'hidden' && 
-                       targetEl.offsetParent !== null;
+                       (targetEl.offsetParent !== null || style.position === 'fixed') &&
+                       rect.width > 0 && rect.height > 0;
       
       if (!isVisible) {
-        // Element exists but is hidden - skip to next step
-        console.warn('FTUE: Target is hidden:', step.target);
-        nextStep();
+        // Element exists but is hidden - skip in the appropriate direction
+        console.warn('FTUE: Target is hidden or has no dimensions:', step.target, {
+          display: style.display,
+          visibility: style.visibility,
+          position: style.position,
+          width: rect.width,
+          height: rect.height
+        });
+        // Skip in direction of navigation
+        if (direction === 'backward') {
+          if (currentStepIndex > 0) {
+            showStep(currentStepIndex - 1, 'backward');
+          }
+        } else {
+          nextStep();
+        }
         return;
       }
       
@@ -16412,9 +16507,15 @@ function clearHoldState(){
       // Position spotlight on target
       positionSpotlight(targetEl, step.position, step);
     } else {
-      // Target not found - might need to enable a section or scroll
+      // Target not found - skip in the appropriate direction
       console.warn('FTUE: Target not found:', step.target);
-      nextStep(); // Skip to next
+      if (direction === 'backward') {
+        if (currentStepIndex > 0) {
+          showStep(currentStepIndex - 1, 'backward');
+        }
+      } else {
+        nextStep();
+      }
     }
   }
   
@@ -16643,7 +16744,7 @@ function clearHoldState(){
   // Navigate to previous step
   function prevStep() {
     if (currentStepIndex > 0) {
-      showStep(currentStepIndex - 1);
+      showStep(currentStepIndex - 1, 'backward');
     }
   }
   
