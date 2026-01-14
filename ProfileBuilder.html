@@ -2519,12 +2519,30 @@ const TRANSLATIONS = {
     // Guide step translations
     guideConnectDevice: 'Connect Your Device',
     guideConnectDeviceDesc: 'Click "Connect" to establish a serial connection with your device via USB.',
-    guideKeySettings: 'Key Settings',
+    guideStatusTiles: 'Status Tiles',
+    guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more.',
+    guideLogWindow: 'Log Window and Command Entry',
+    guideLogWindowDesc: 'Monitor device activity in the log window. Type commands in the input field below for direct device control.',
+    guideProfileManagement: 'Profile Management',
+    guideProfileManagementDesc: 'Save, load, and manage default profiles. Use "Save as Default" to set a profile that loads automatically on page startup.',
+    guideKeySettings: 'Basic Settings',
     guideKeySettingsDesc: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
-    guideProgramSteps: 'Program Steps',
-    guideProgramStepsDesc: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
-    guideProgramTimeline: 'Program Step Timeline',
+    guideSolarMode: 'Solar Mode & Sun Color',
+    guideSolarModeDesc: 'Choose between BASIC (constant) or SCIENTIFIC (astronomical) solar simulation modes, and configure sun color settings.',
+    guideImagingIllumination: 'Imaging Illumination',
+    guideImagingIlluminationDesc: 'Configure LED panel settings for camera and rotation illumination. Customize RGB values for specialized imaging needs.',
+    guideImagingServos: 'Imaging Servos and Timing',
+    guideImagingServosDesc: 'Control servo positions and timing for automated camera operations during your simulation.',
+    guideRotationImaging: 'Rotation and Imaging',
+    guideRotationImagingDesc: 'Set up rotation parameters and imaging intervals for time-lapse photography and plant growth monitoring.',
+    guideProgramEnable: 'Program Enable/Disable',
+    guideProgramEnableDesc: 'Enable program mode to create a sequence of timed steps. When disabled, the device runs in manual control mode.',
+    guideProgramTimeline: 'Program Step Timeline Visualization',
     guideProgramTimelineDesc: 'The timeline visualizes your program steps. You can drag segments to adjust timing when preparing a program, and use navigation buttons to jump between steps and days when that program is running.',
+    guideProgramSteps: 'Program Step Editing',
+    guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, and transition behaviors (RUN, JUMP, or HOLD).',
+    guideProfileTextWindow: 'Profile Text Window',
+    guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here before uploading to the device.',
     guideRecentProfiles: 'Recent Profiles',
     guideRecentProfilesDesc: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
     guideDownloadProfile: 'Download Profile',
@@ -2606,12 +2624,30 @@ const TRANSLATIONS = {
     // Guide step translations
     guideConnectDevice: 'デバイスを接続',
     guideConnectDeviceDesc: 'USBケーブル経由でデバイスとのシリアル接続を確立するには、「接続」をクリックしてください。',
-    guideKeySettings: '主要設定',
+    guideStatusTiles: 'ステータスタイル',
+    guideStatusTilesDesc: '接続状態、プログラム状態、時刻、強度など、主要なパラメータをひと目で確認できます。',
+    guideLogWindow: 'ログウィンドウとコマンド入力',
+    guideLogWindowDesc: 'ログウィンドウでデバイスの動作を監視できます。下の入力フィールドにコマンドを入力して直接デバイスを制御できます。',
+    guideProfileManagement: 'プロファイル管理',
+    guideProfileManagementDesc: 'デフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込まれるプロファイルを設定できます。',
+    guideKeySettings: '基本設定',
     guideKeySettingsDesc: 'シミュレーション開始時刻、タイムスケール（速度）、光の強度を設定します。これらは最も頻繁に調整されるパラメータです。',
-    guideProgramSteps: 'プログラムステップ',
-    guideProgramStepsDesc: 'これを有効にすると、時間指定のアクションシーケンスを作成できます。異なる速度、強度、時刻で複数のステップを定義できます。',
-    guideProgramTimeline: 'プログラムステップタイムライン',
+    guideSolarMode: 'ソーラーモードと太陽色',
+    guideSolarModeDesc: 'BASIC（一定）またはSCIENTIFIC（天文計算）ソーラーシミュレーションモードを選択し、太陽色の設定を行います。',
+    guideImagingIllumination: '撮像照明',
+    guideImagingIlluminationDesc: 'カメラと回転照明用のLEDパネル設定を構成します。専門的な撮像ニーズに合わせてRGB値をカスタマイズできます。',
+    guideImagingServos: '撮像サーボとタイミング',
+    guideImagingServosDesc: 'シミュレーション中の自動カメラ操作のためのサーボ位置とタイミングを制御します。',
+    guideRotationImaging: '回転と撮像',
+    guideRotationImagingDesc: 'タイムラプス撮影と植物成長モニタリングのための回転パラメータと撮像間隔を設定します。',
+    guideProgramEnable: 'プログラム有効/無効',
+    guideProgramEnableDesc: 'プログラムモードを有効にすると、タイミング付きステップのシーケンスを作成できます。無効の場合、デバイスは手動制御モードで動作します。',
+    guideProgramTimeline: 'プログラムステップタイムライン視覚化',
     guideProgramTimelineDesc: 'タイムラインはプログラムステップを視覚化します。プログラムを準備する際はセグメントをドラッグしてタイミングを調整でき、プログラムが実行中の場合はナビゲーションボタンでステップや日を移動できます。',
+    guideProgramSteps: 'プログラムステップ編集',
+    guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、遷移動作（RUN、JUMP、またはHOLD）を持つことができます。',
+    guideProfileTextWindow: 'プロファイルテキストウィンドウ',
+    guideProfileTextWindowDesc: '生のプロファイルテキストを表示・編集します。上級ユーザーはデバイスにアップロードする前にここでパラメータを直接変更できます。',
     guideRecentProfiles: '最近のプロファイル',
     guideRecentProfilesDesc: '以前に保存したプロファイルにすばやくアクセスできます。星アイコンで頻繁に使用するプロファイルをピン留めできます。',
     guideDownloadProfile: 'プロファイルをダウンロード',
@@ -15968,7 +16004,149 @@ function clearHoldState(){
   ];
   
   const FULL_TOUR_STEPS = [
-    ...QUICK_START_STEPS,
+    {
+      target: '#monitorConnBtn',
+      titleKey: 'guideConnectDevice',
+      contentKey: 'guideConnectDeviceDesc',
+      position: 'bottom'
+    },
+    {
+      target: '#monitorStatusGrid',
+      titleKey: 'guideStatusTiles',
+      contentKey: 'guideStatusTilesDesc',
+      position: 'bottom',
+      adjustTarget: (el) => {
+        // Target parent container to include both title and grid
+        return el.parentElement;
+      }
+    },
+    {
+      target: '.log-col[data-section="monitor-log"]',
+      titleKey: 'guideLogWindow',
+      contentKey: 'guideLogWindowDesc',
+      position: 'right'
+    },
+    {
+      target: '#profileMgmtWrapper',
+      titleKey: 'guideProfileManagement',
+      contentKey: 'guideProfileManagementDesc',
+      position: 'bottom'
+    },
+    {
+      target: 'fieldset[data-section="time-and-date"]',
+      titleKey: 'guideKeySettings',
+      contentKey: 'guideKeySettingsDesc',
+      position: 'top'
+    },
+    {
+      target: 'fieldset[data-section="solar-mode-and-sun-color"]',
+      titleKey: 'guideSolarMode',
+      contentKey: 'guideSolarModeDesc',
+      position: 'top'
+    },
+    {
+      target: 'fieldset[data-section="imaging-illumination"]',
+      titleKey: 'guideImagingIllumination',
+      contentKey: 'guideImagingIlluminationDesc',
+      position: 'top'
+    },
+    {
+      target: 'fieldset[data-section="imaging-servo-operation-and-timing"]',
+      titleKey: 'guideImagingServos',
+      contentKey: 'guideImagingServosDesc',
+      position: 'top'
+    },
+    {
+      target: 'fieldset[data-section="rotation-and-imaging"]',
+      titleKey: 'guideRotationImaging',
+      contentKey: 'guideRotationImagingDesc',
+      position: 'top'
+    },
+    {
+      target: 'fieldset[data-section="program-control"]',
+      titleKey: 'guideProgramEnable',
+      contentKey: 'guideProgramEnableDesc',
+      position: 'top'
+    },
+    {
+      target: '#programTimelineVisWrapper',
+      titleKey: 'guideProgramTimeline',
+      contentKey: 'guideProgramTimelineDesc',
+      position: 'bottom',
+      adjustTarget: (el) => {
+        // Create wrapper that extends to bottom of table
+        const tableBottom = document.querySelector('#programStepsTable');
+        if (!tableBottom) return el;
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+        wrapper.className = 'ftue-highlight-wrapper';
+        
+        const elRect = el.getBoundingClientRect();
+        const tableRect = tableBottom.getBoundingClientRect();
+        
+        wrapper.style.top = elRect.top + window.scrollY + 'px';
+        wrapper.style.left = elRect.left + window.scrollX + 'px';
+        wrapper.style.width = elRect.width + 'px';
+        wrapper.style.height = (tableRect.bottom - elRect.top) + 'px';
+        
+        document.body.appendChild(wrapper);
+        return wrapper;
+      }
+    },
+    {
+      target: '#programStepsTable',
+      titleKey: 'guideProgramSteps',
+      contentKey: 'guideProgramStepsDesc',
+      position: 'top'
+    },
+    {
+      target: '[data-section="export-section"]',
+      titleKey: 'exportSection',
+      contentKey: 'guideDownloadProfile',
+      position: 'bottom',
+      adjustTarget: (el) => {
+        // Target the h2 and toolbar together
+        if (el.tagName === 'H2') {
+          const toolbar = el.nextElementSibling;
+          if (toolbar) {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+            wrapper.className = 'ftue-highlight-wrapper';
+            
+            const elRect = el.getBoundingClientRect();
+            const toolbarRect = toolbar.getBoundingClientRect();
+            
+            wrapper.style.top = elRect.top + window.scrollY + 'px';
+            wrapper.style.left = elRect.left + window.scrollX + 'px';
+            wrapper.style.width = Math.max(elRect.width, toolbarRect.width) + 'px';
+            wrapper.style.height = (toolbarRect.bottom - elRect.top) + 'px';
+            
+            document.body.appendChild(wrapper);
+            return wrapper;
+          }
+        }
+        return el;
+      }
+    },
+    {
+      target: '[data-section="profile-text-window"]',
+      titleKey: 'guideProfileTextWindow',
+      contentKey: 'guideProfileTextWindowDesc',
+      position: 'top'
+    },
+    {
+      target: '#recentProfiles',
+      titleKey: 'guideRecentProfiles',
+      contentKey: 'guideRecentProfilesDesc',
+      position: 'top',
+      offsetY: 7,
+      heightAdjust: -15,
+      adjustTarget: (el) => {
+        // Target parent container to include both title and profiles
+        return el.parentElement;
+      }
+    },
     {
       target: '[data-export-ref="downloadBtn"]',
       titleKey: 'guideDownloadProfile',
@@ -15980,6 +16158,13 @@ function clearHoldState(){
       titleKey: 'guideImportProfile',
       contentKey: 'guideImportProfileDesc',
       position: 'bottom'
+    },
+    {
+      target: '[data-export-ref="uploadBtn"]',
+      titleKey: 'uploadToDevice',
+      contentKey: 'guideUploadToDevice',
+      position: 'bottom',
+      highlight: true
     },
     {
       target: '#loadFromDeviceBtn',
