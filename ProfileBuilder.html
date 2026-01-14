@@ -1871,7 +1871,7 @@ select:not(#filename_tag):not(#filename_preview) {
 </div>
 
 <div id="formContainer"></div>
-<div id="programSection" style="display:none;">
+<div id="programSection" data-section="program-steps-section" style="display:none;">
 <h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
  <div id="timelineContainer" style="margin:6px 0 10px;"></div>
 <h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
@@ -15600,6 +15600,7 @@ function clearHoldState(){
     { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true },
     { id: 'rotation-and-imaging', name: 'Rotation & Imaging', defaultSimple: false },
     { id: 'program-control', name: 'Program Control', defaultSimple: true },
+    { id: 'program-steps-section', name: 'Program Steps (Timeline & Table)', defaultSimple: false },
     { id: 'export-section', name: 'Download, Import & Upload', defaultSimple: false },
     { id: 'profile-text-window', name: 'Profile Text Window', defaultSimple: false }
   ];
