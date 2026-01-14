@@ -15879,6 +15879,11 @@ function clearHoldState(){
     };
   }
   
+  // Expose mode functions globally for FTUE guide system
+  window.getCurrentMode = getCurrentMode;
+  window.setCurrentMode = setCurrentMode;
+  window.applyVisibility = applyVisibility;
+  
 })();
 
 // ============================================================================
