@@ -1295,7 +1295,7 @@ select:not(#filename_tag):not(#filename_preview) {
         <span class="icon">📚</span>
         <div>
           <div class="title">Full Tour</div>
-          <div class="desc">In-depth walkthrough of all features and capabilities</div>
+          <div class="desc">In-depth walkthrough of all features and capabilities<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span></div>
         </div>
       </button>
       <button class="role-btn" data-path="skip">
@@ -2440,7 +2440,7 @@ const TRANSLATIONS = {
     userGuide: 'User Guide',
     userGuideDesc: 'Comprehensive instructions for installation, setup, and usage',
     fullTour: 'Full Tour',
-    fullTourDesc: 'In-depth walkthrough of all features and capabilities',
+    fullTourDesc: 'In-depth walkthrough of all features and capabilities<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
     skipGuide: 'Skip Guide - Start Working',
     skipGuideDesc: 'Jump straight to the interface (you can restart the guide anytime)',
     dontShowAgain: "Don't show this again",
@@ -2524,7 +2524,7 @@ const TRANSLATIONS = {
     guideProgramSteps: 'Program Steps',
     guideProgramStepsDesc: 'Enable this to create a sequence of timed actions. You can define multiple steps with different speeds, intensities, and times.',
     guideProgramTimeline: 'Program Step Timeline',
-    guideProgramTimelineDesc: 'The timeline visualizes your program steps. You can drag segments to adjust timing, and use navigation buttons to jump between steps and days.',
+    guideProgramTimelineDesc: 'The timeline visualizes your program steps. You can drag segments to adjust timing when preparing a program, and use navigation buttons to jump between steps and days when that program is running.',
     guideRecentProfiles: 'Recent Profiles',
     guideRecentProfilesDesc: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
     guideDownloadProfile: 'Download Profile',
@@ -2562,7 +2562,7 @@ const TRANSLATIONS = {
     userGuide: 'ユーザーガイド',
     userGuideDesc: 'インストール、セットアップ、使用方法の詳細な説明',
     fullTour: '全機能ツアー',
-    fullTourDesc: 'すべての機能と使い方を詳しく解説',
+    fullTourDesc: 'すべての機能と使い方を詳しく解説<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">注：ページは一時的に詳細モードに切り替わります</span>',
     skipGuide: 'ガイドをスキップして開始',
     skipGuideDesc: 'すぐに操作を始めます（ガイドはいつでも再開できます）',
     dontShowAgain: '今後この画面を表示しない',
@@ -2611,7 +2611,7 @@ const TRANSLATIONS = {
     guideProgramSteps: 'プログラムステップ',
     guideProgramStepsDesc: 'これを有効にすると、時間指定のアクションシーケンスを作成できます。異なる速度、強度、時刻で複数のステップを定義できます。',
     guideProgramTimeline: 'プログラムステップタイムライン',
-    guideProgramTimelineDesc: 'タイムラインはプログラムステップを視覚化します。セグメントをドラッグしてタイミングを調整したり、ナビゲーションボタンでステップや日を移動できます。',
+    guideProgramTimelineDesc: 'タイムラインはプログラムステップを視覚化します。プログラムを準備する際はセグメントをドラッグしてタイミングを調整でき、プログラムが実行中の場合はナビゲーションボタンでステップや日を移動できます。',
     guideRecentProfiles: '最近のプロファイル',
     guideRecentProfilesDesc: '以前に保存したプロファイルにすばやくアクセスできます。星アイコンで頻繁に使用するプロファイルをピン留めできます。',
     guideDownloadProfile: 'プロファイルをダウンロード',
@@ -15991,6 +15991,7 @@ function clearHoldState(){
   let guideActive = false;
   let deviceConnected = false;
   let isPositioning = false; // Prevent positioning race conditions
+  let savedMode = null; // Store mode before guide starts
   
   // Expose initial state globally
   window.guideActive = false;
@@ -16105,6 +16106,21 @@ function clearHoldState(){
     currentSteps = path === 'full' ? FULL_TOUR_STEPS : QUICK_START_STEPS;
     currentStepIndex = 0;
     guideActive = true;
+    
+    // Save current mode before starting guide
+    if (typeof getCurrentMode === 'function') {
+      savedMode = getCurrentMode();
+      console.log('[FTUE] Saved current mode:', savedMode);
+      
+      // For Full Tour, switch to Advanced mode to ensure all elements are visible
+      if (path === 'full' && savedMode !== 'advanced') {
+        console.log('[FTUE] Switching to Advanced mode for Full Tour');
+        if (typeof setCurrentMode === 'function' && typeof applyVisibility === 'function') {
+          setCurrentMode('advanced');
+          applyVisibility();
+        }
+      }
+    }
     
     // Check device connection
     deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
@@ -16414,7 +16430,7 @@ function clearHoldState(){
     }
   }
   
-  // Skip guide
+  // Skip guide (finishGuide handles mode restoration)
   function skipGuide() {
     finishGuide();
   }
@@ -16424,6 +16440,20 @@ function clearHoldState(){
     spotlight.classList.remove('active');
     guideActive = false;
     cleanupSpotlightTracking(); // Clean up observers
+    
+    // Restore original mode if it was changed
+    if (savedMode && typeof getCurrentMode === 'function' && typeof setCurrentMode === 'function') {
+      const currentMode = getCurrentMode();
+      if (currentMode !== savedMode) {
+        console.log('[FTUE] Restoring original mode:', savedMode);
+        setCurrentMode(savedMode);
+        if (typeof applyVisibility === 'function') {
+          applyVisibility();
+        }
+      }
+      savedMode = null; // Clear saved mode
+    }
+    
     localStorage.setItem(FTUE_STORAGE_KEY, 'true');
     localStorage.removeItem(FTUE_PROGRESS_KEY);
   }
