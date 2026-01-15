@@ -1284,24 +1284,31 @@ select:not(#filename_tag):not(#filename_preview) {
     <h2 id="ftueWelcomeTitle">Welcome to SolaSim Studio! 🌞</h2>
     <p class="subtitle">Let's get you started with solar simulation</p>
     <div class="role-buttons">
-      <button class="role-btn" data-path="userguide">
-        <span class="icon">📖</span>
+      <button class="role-btn" data-path="quick" style="border: 2px solid #28a745; background: #f0fff4;">
+        <span class="icon">🎯</span>
         <div>
-          <div class="title">User Guide</div>
-          <div class="desc">Comprehensive instructions for installation, setup, and usage</div>
+          <div class="title">Quick Start Tour <span style="background:#28a745; color:#fff; padding:2px 8px; border-radius:12px; font-size:0.75em; margin-left:6px;">RECOMMENDED</span></div>
+          <div class="desc">Essential walkthrough in just 6 steps: connect device, set time & intensity, add program steps, and upload (5 minutes)</div>
         </div>
       </button>
       <button class="role-btn" data-path="full">
         <span class="icon">📚</span>
         <div>
           <div class="title">Full Tour</div>
-          <div class="desc">In-depth walkthrough of all features and capabilities<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span></div>
+          <div class="desc">Complete walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span></div>
+        </div>
+      </button>
+      <button class="role-btn" data-path="userguide">
+        <span class="icon">📖</span>
+        <div>
+          <div class="title">User Guide</div>
+          <div class="desc">Comprehensive text documentation for installation, setup, and usage</div>
         </div>
       </button>
       <button class="role-btn" data-path="skip">
         <span class="icon">⚡</span>
         <div>
-          <div class="title">Skip Guide - Start Working</div>
+          <div class="title">Skip - Start Working</div>
           <div class="desc">Jump straight to the interface (you can restart the guide anytime)</div>
         </div>
       </button>
