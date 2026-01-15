@@ -2444,11 +2444,14 @@ const TRANSLATIONS = {
     help: 'Help',
     welcomeTitle: 'Welcome to SolaSim Studio! 🌞',
     welcomeSubtitle: "Let's get you started with solar simulation",
-    userGuide: 'User Guide',
-    userGuideDesc: 'Comprehensive instructions for installation, setup, and usage',
+    quickStartTour: 'Quick Start Tour',
+    quickStartTourDesc: 'Essential walkthrough in just 6 steps: connect device, set time & intensity, add program steps, and upload (5 minutes)',
+    recommended: 'RECOMMENDED',
     fullTour: 'Full Tour',
-    fullTourDesc: 'In-depth walkthrough of all features and capabilities<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
-    skipGuide: 'Skip Guide - Start Working',
+    fullTourDesc: 'Complete 27-step walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
+    userGuide: 'User Guide',
+    userGuideDesc: 'Comprehensive text documentation for installation, setup, and usage',
+    skipGuide: 'Skip - Start Working',
     skipGuideDesc: 'Jump straight to the interface (you can restart the guide anytime)',
     dontShowAgain: "Don't show this again",
     exitGuide: 'Exit Guide',
@@ -2590,12 +2593,15 @@ const TRANSLATIONS = {
     help: 'ヘルプ',
     welcomeTitle: 'SolaSim Studio へようこそ！🌞',
     welcomeSubtitle: '太陽シミュレーションを始めましょう',
-    userGuide: 'ユーザーガイド',
-    userGuideDesc: 'インストール、セットアップ、使用方法の詳細な説明',
+    quickStartTour: 'クイックスタートツアー',
+    quickStartTourDesc: 'わずか6ステップで基本を習得：デバイス接続、時間と強度の設定、プログラムステップの追加、アップロード（5分）',
+    recommended: '推奨',
     fullTour: '全機能ツアー',
-    fullTourDesc: 'すべての機能と使い方を詳しく解説<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">注：ページは一時的に詳細モードに切り替わります</span>',
-    skipGuide: 'ガイドをスキップして開始',
-    skipGuideDesc: 'すぐに操作を始めます（ガイドはいつでも再開できます）',
+    fullTourDesc: 'すべての機能とセクションを詳しく解説する27ステップの完全なウォークスルー<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">注：ページは一時的に詳細モードに切り替わります</span>',
+    userGuide: 'ユーザーガイド',
+    userGuideDesc: 'インストール、セットアップ、使用方法に関する包括的なテキストドキュメント',
+    skipGuide: 'スキップ - すぐに開始',
+    skipGuideDesc: 'すぐにインターフェースに進みます（ガイドはいつでも再開できます）',
     dontShowAgain: '今後この画面を表示しない',
     exitGuide: 'ガイド終了',
     back: '◄ 戻る',
@@ -2806,13 +2812,24 @@ function setLanguage(lang) {
   if (welcomeSubtitle) welcomeSubtitle.textContent = TRANSLATIONS[lang].welcomeSubtitle;
   // FTUE role buttons
   const roleBtns = document.querySelectorAll('#ftueWelcomeModal .role-btn');
-  if (roleBtns.length === 3) {
-    roleBtns[0].querySelector('.title').textContent = TRANSLATIONS[lang].userGuide;
-    roleBtns[0].querySelector('.desc').textContent = TRANSLATIONS[lang].userGuideDesc;
+  if (roleBtns.length === 4) {
+    // Button 0: Quick Start Tour (with RECOMMENDED badge)
+    const quickStartTitle = roleBtns[0].querySelector('.title');
+    if (quickStartTitle) {
+      quickStartTitle.childNodes[0].textContent = TRANSLATIONS[lang].quickStartTour + ' ';
+      const badge = quickStartTitle.querySelector('span');
+      if (badge) badge.textContent = TRANSLATIONS[lang].recommended;
+    }
+    roleBtns[0].querySelector('.desc').textContent = TRANSLATIONS[lang].quickStartTourDesc;
+    // Button 1: Full Tour
     roleBtns[1].querySelector('.title').textContent = TRANSLATIONS[lang].fullTour;
     roleBtns[1].querySelector('.desc').innerHTML = TRANSLATIONS[lang].fullTourDesc;
-    roleBtns[2].querySelector('.title').textContent = TRANSLATIONS[lang].skipGuide;
-    roleBtns[2].querySelector('.desc').textContent = TRANSLATIONS[lang].skipGuideDesc;
+    // Button 2: User Guide
+    roleBtns[2].querySelector('.title').textContent = TRANSLATIONS[lang].userGuide;
+    roleBtns[2].querySelector('.desc').textContent = TRANSLATIONS[lang].userGuideDesc;
+    // Button 3: Skip
+    roleBtns[3].querySelector('.title').textContent = TRANSLATIONS[lang].skipGuide;
+    roleBtns[3].querySelector('.desc').textContent = TRANSLATIONS[lang].skipGuideDesc;
   }
   const skipLink = document.getElementById('ftueNeverShow');
   if (skipLink) skipLink.textContent = TRANSLATIONS[lang].dontShowAgain;
