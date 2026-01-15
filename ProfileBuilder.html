@@ -2011,7 +2011,7 @@ select:not(#filename_tag):not(#filename_preview) {
   <div class="guide-content">
     <button id="userGuideCloseBtn" type="button" aria-label="Close">&times;</button>
     <div class="guide-body">
-      <div id="guide-en">
+      <div id="guide-en" style="display:block">
         <!-- English guide content start -->
         <h1 id="userGuideTitle">Solar Simulator User Guide</h1>
         <p>Welcome to the <strong>SolaSim Studio</strong> user guide. This document provides everything you need to set up your solar simulation hardware and use the web interface to control lighting, rotation, and imaging for your experiments.</p>
@@ -2379,45 +2379,6 @@ select:not(#filename_tag):not(#filename_preview) {
           </tbody>
         </table>
       </div>
-        <li><strong>アドバンストモード</strong>: すべてのパラメータを表示します。</li>
-        <li>シンプルモード時に非表示にするセクションは、モード切替横の<strong>ギアアイコン（⚙）</strong>でカスタマイズできます。</li>
-      </ul>
-
-      <h3>デバイスラベリング</h3>
-      <p>複数のデバイスを接続している場合：</p>
-      <ol>
-        <li>上部ヘッダーの<strong>Device Badge</strong>（例：「Device 1」）をクリックします。</li>
-        <li>名前を変更します（例：「Experiment A」）。</li>
-        <li>右上の<strong>背景色スウォッチ</strong>（緑・青・赤）でタブを色分けできます。</li>
-      </ol>
-
-      <h3>トラブルシューティング</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>問題</th>
-            <th>解決策</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>デバイスが接続できない</strong></td>
-            <td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td>
-          </tr>
-          <tr>
-            <td><strong>設定が反映されない</strong></td>
-            <td>「アップロード」ボタンをクリックしましたか？フォームの変更だけではハードウェアに反映されません。</td>
-          </tr>
-          <tr>
-            <td><strong>起動時に違うプロファイルが読み込まれる</strong></td>
-            <td>デバイスは最新のタイムスタンプのプロファイルを自動で読み込みます。「Load from Device」で古いプロファイルを読み込んだ場合、再起動後は保持されません。古いプロファイルを常時使いたい場合は再度アップロードしてください。</td>
-          </tr>
-          <tr>
-            <td><strong>オレンジ色のハイライトが消えない</strong></td>
-            <td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」（バナー内）または「アップロード」で一致させてください。</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </div>
@@ -2775,9 +2736,9 @@ function setLanguage(lang) {
   if (guideEn && guideJa) {
     if (lang === 'ja') {
       guideEn.style.display = 'none';
-      guideJa.style.display = '';
+      guideJa.style.display = 'block';
     } else {
-      guideEn.style.display = '';
+      guideEn.style.display = 'block';
       guideJa.style.display = 'none';
     }
   }
@@ -2787,9 +2748,9 @@ function setLanguage(lang) {
   if (helpEn && helpJa) {
     if (lang === 'ja') {
       helpEn.style.display = 'none';
-      helpJa.style.display = '';
+      helpJa.style.display = 'block';
     } else {
-      helpEn.style.display = '';
+      helpEn.style.display = 'block';
       helpJa.style.display = 'none';
     }
   }
