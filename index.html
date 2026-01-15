@@ -2499,7 +2499,7 @@ const TRANSLATIONS = {
     guideDeviceProgramStatus: 'Device Program Status',
     guideDeviceProgramStatusDesc: 'When connected to a device running a program, this read-only display shows real-time progress. The red playhead arrow indicates the current position in the program sequence.',
     guideProfileManagement: 'Profile Management',
-    guideProfileManagementDesc: 'Save, load, and manage default profiles. Use "Save as Default" to set a profile that loads automatically on page startup.',
+    guideProfileManagementDesc: 'Save, load, and manage default profiles to define lighting parameters. Use "Save as Default" to set a profile that loads automatically on page startup.',
     guideAutoLoad: 'Auto-Load Control',
     guideAutoLoadDesc: 'The auto-load badge shows whether the device will automatically load the newest profile on startup. Use the lock button to enable/disable auto-load behavior on the device.',
     guidePrintSummary: 'Print Summary',
@@ -2615,7 +2615,7 @@ const TRANSLATIONS = {
     guideDeviceProgramStatus: 'デバイスプログラムステータス',
     guideDeviceProgramStatusDesc: 'プログラムを実行中のデバイスに接続すると、この読み取り専用ディスプレイにリアルタイムの進行状況が表示されます。赤い再生ヘッド矢印は、プログラムシーケンスの現在位置を示します。',
     guideProfileManagement: 'プロファイル管理',
-    guideProfileManagementDesc: 'デフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込まれるプロファイルを設定できます。',
+    guideProfileManagementDesc: '照明パラメータを定義するデフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込まれるプロファイルを設定できます。',
     guideAutoLoad: '自動ロード制御',
     guideAutoLoadDesc: '自動ロードバッジは、デバイスが起動時に最新のプロファイルを自動的に読み込むかどうかを示します。ロックボタンを使用して、デバイスの自動ロード動作を有効/無効にします。',
     guidePrintSummary: '概要を印刷',
@@ -15944,55 +15944,69 @@ function clearHoldState(){
       allowInteraction: true
     },
     {
-      target: 'fieldset[data-section="time-and-date"]',
-      titleKey: 'guideKeySettings',
-      contentKey: 'guideKeySettingsDesc',
-      position: 'bottom'
-    },
-    {
-      target: 'fieldset[data-section="program-control"]',
-      titleKey: 'guideProgramSteps',
-      contentKey: 'guideProgramStepsDesc',
-      position: 'right'
-    },
-    {
-      target: '#programSection',
-      titleKey: 'guideProgramTimeline',
-      contentKey: 'guideProgramTimelineDesc',
-      position: 'top',
-      rightTooltip: true,
+      target: 'h2[data-i18n="profileManagement"]',
+      titleKey: 'guideProfileManagement',
+      contentKey: 'guideProfileManagementDesc',
+      position: 'bottom',
+      tooltipOffsetX: 0.67,  // Shift tooltip right by 2/3 of its width
       adjustTarget: (el) => {
-        // Find the program steps table within the section
-        const table = el.querySelector('#programStepsTable');
-        if (table) {
-          // Create a temporary element that spans from section start to table end
-          const rect = el.getBoundingClientRect();
-          const tableRect = table.getBoundingClientRect();
-          const wrapper = document.createElement('div');
-          wrapper.style.position = 'absolute';
-          wrapper.style.top = rect.top + 'px';
-          wrapper.style.left = rect.left + 'px';
-          wrapper.style.width = rect.width + 'px';
-          wrapper.style.height = (tableRect.bottom - rect.top) + 'px';
-          wrapper.style.pointerEvents = 'none';
-          document.body.appendChild(wrapper);
-          // Store reference for cleanup
-          el._guideWrapper = wrapper;
-          return wrapper;
-        }
-        return el;
+        // Target the h2, buttons bar, and meta-options-container together
+        const metaContainer = document.querySelector('.meta-options-container');
+        if (!metaContainer) return el;
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+        wrapper.className = 'ftue-highlight-wrapper';
+        
+        const elRect = el.getBoundingClientRect();
+        const metaRect = metaContainer.getBoundingClientRect();
+        
+        wrapper.style.top = elRect.top + window.scrollY + 'px';
+        wrapper.style.left = Math.min(elRect.left, metaRect.left) + window.scrollX + 'px';
+        wrapper.style.width = Math.max(elRect.width, metaRect.width) + 'px';
+        wrapper.style.height = (metaRect.bottom - elRect.top) + 'px';
+        
+        document.body.appendChild(wrapper);
+        return wrapper;
       }
     },
     {
-      target: '#recentProfiles',
-      titleKey: 'guideRecentProfiles',
-      contentKey: 'guideRecentProfilesDesc',
+      target: 'fieldset[data-section="time-and-date"]',
+      titleKey: 'guideKeySettings',
+      contentKey: 'guideKeySettingsDesc',
+      position: 'top'
+    },
+    {
+      target: '#programStepsTable',
+      titleKey: 'guideProgramSteps',
+      contentKey: 'guideProgramStepsDesc',
       position: 'top',
-      offsetY: 7,
-      heightAdjust: -15,
+      tooltipOffsetX: 1.0  // Shift tooltip right by full width to avoid blocking title
+    },
+    {
+      target: '#programTimelineTitle',
+      titleKey: 'guideProgramTimeline',
+      contentKey: 'guideProgramTimelineDesc',
+      position: 'bottom',
       adjustTarget: (el) => {
-        // Target parent container to include both title and profiles
-        return el.parentElement;
+        // Create wrapper that extends to bottom of timeline container
+        const timelineContainer = document.getElementById('timelineContainer');
+        if (!timelineContainer) return el;
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+        wrapper.className = 'ftue-highlight-wrapper';
+        
+        const elRect = el.getBoundingClientRect();
+        const containerRect = timelineContainer.getBoundingClientRect();
+        
+        wrapper.style.top = elRect.top + window.scrollY + 'px';
+        wrapper.style.left = elRect.left + window.scrollX + 'px';
+        wrapper.style.width = Math.max(elRect.width, containerRect.width) + 'px';
+        wrapper.style.height = (containerRect.bottom - elRect.top) + 'px';
+        
+        document.body.appendChild(wrapper);
+        return wrapper;
       }
     },
     {
