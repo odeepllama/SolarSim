@@ -2409,7 +2409,7 @@ const TRANSLATIONS = {
     quickStartTourDesc: 'Essential walkthrough in just 6 steps: connect device, set time & intensity, add program steps, and upload (5 minutes)',
     recommended: 'RECOMMENDED',
     fullTour: 'Full Tour',
-    fullTourDesc: 'Complete 27-step walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
+    fullTourDesc: 'Complete walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
     userGuide: 'User Guide',
     userGuideDesc: 'Comprehensive text documentation for installation, setup, and usage',
     skipGuide: 'Skip - Start Working',
@@ -2502,6 +2502,8 @@ const TRANSLATIONS = {
     guideProfileManagementDesc: 'Save, load, and manage default profiles. Use "Save as Default" to set a profile that loads automatically on page startup.',
     guideAutoLoad: 'Auto-Load Control',
     guideAutoLoadDesc: 'The auto-load badge shows whether the device will automatically load the newest profile on startup. Use the lock button to enable/disable auto-load behavior on the device.',
+    guidePrintSummary: 'Print Summary',
+    guidePrintSummaryDesc: 'Generate a printer-friendly PDF summary of your current configuration. This includes a timeline visualization, key settings, and program steps - perfect for documentation or lab notes.',
     guideKeySettings: 'Basic Settings',
     guideKeySettingsDesc: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
     guideSolarMode: 'Solar Mode & Sun Color',
@@ -2616,6 +2618,8 @@ const TRANSLATIONS = {
     guideProfileManagementDesc: 'デフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込まれるプロファイルを設定できます。',
     guideAutoLoad: '自動ロード制御',
     guideAutoLoadDesc: '自動ロードバッジは、デバイスが起動時に最新のプロファイルを自動的に読み込むかどうかを示します。ロックボタンを使用して、デバイスの自動ロード動作を有効/無効にします。',
+    guidePrintSummary: '概要を印刷',
+    guidePrintSummaryDesc: '現在の構成の印刷用PDF概要を生成します。タイムライン可視化、主要設定、プログラムステップが含まれており、ドキュメントや実験ノートに最適です。',
     guideKeySettings: '基本設定',
     guideKeySettingsDesc: 'シミュレーション開始時刻、タイムスケール（速度）、光の強度を設定します。これらは最も頻繁に調整されるパラメータです。',
     guideSolarMode: 'ソーラーモードと太陽色',
@@ -16096,6 +16100,12 @@ function clearHoldState(){
       contentKey: 'guideUploadToDevice',
       position: 'bottom',
       highlight: true
+    },
+    {
+      target: '#printSummaryBtn',
+      titleKey: 'guidePrintSummary',
+      contentKey: 'guidePrintSummaryDesc',
+      position: 'bottom'
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
