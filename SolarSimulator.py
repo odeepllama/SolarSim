@@ -248,6 +248,11 @@ matrix_display_columns = [led_pins[4], led_pins[0], led_pins[1], led_pins[2], le
 # Rows (Physical Top to Bottom): GPIO 7, 8, 9, 21, 22
 matrix_display_rows = [led_pins[5], led_pins[6], led_pins[7], led_pins[8], led_pins[9]]
 
+# Camera shutter trigger pin (GP14) - active LOW, idle HIGH
+CAMERA_SHUTTER_PIN_NUM = 14
+camera_shutter_pin = machine.Pin(CAMERA_SHUTTER_PIN_NUM, machine.Pin.OUT)
+camera_shutter_pin.high()
+
 # 5x5 display buffer (5 rows, 5 columns)
 matrix_buffer = [[0] * 5 for _ in range(5)]
 
@@ -905,6 +910,7 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
             # Release camera trigger
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
             print(f"Initial camera trigger released")
+            trigger_camera_shutter()
             
             # Move to rotation state
             rotation_state = 'ROTATING'
@@ -996,6 +1002,7 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
         if ticks_diff(now_ms, camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
             print(f"STILLS mode: Camera trigger released")
+            trigger_camera_shutter()
             rotation_state = 'ROTATING'
             last_rotation_step_time_ms = now_ms  # Reset rotation timing
     
@@ -1097,6 +1104,7 @@ def update_standalone_servo2(now_ms):
             servo2_state = 'IDLE'
             set_servo_angle(servo_pwm_2, CAMERA_SERVO_REST_ANGLE)
             safe_print("Camera trigger released")
+            trigger_camera_shutter()
             last_servo2_trigger_ms = now_ms
             if camera_lighting_active and not rotation_lighting_active:
                 servo2_using_lighting = False
@@ -1279,6 +1287,13 @@ def get_sim_time(start_time_hhmm, real_time_ms, time_scale):
     abs_sim_time = sim_minutes_elapsed_pos
     tod = (start_time_minutes - int(sim_minutes_elapsed_pos)) % 1440
     return abs_sim_time, tod
+
+def trigger_camera_shutter():
+    """Pulse camera shutter pin LOW for 10ms (STILLS mode only)."""
+    if ROTATION_CAPTURE_MODE == "STILLS":
+        camera_shutter_pin.low()
+        sleep_ms(10)
+        camera_shutter_pin.high()
 
 def time_to_display_chars(minutes):
     """Convert minutes (0-1439) to displayable characters for all digits."""
