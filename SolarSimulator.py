@@ -248,7 +248,7 @@ matrix_display_columns = [led_pins[4], led_pins[0], led_pins[1], led_pins[2], le
 # Rows (Physical Top to Bottom): GPIO 7, 8, 9, 21, 22
 matrix_display_rows = [led_pins[5], led_pins[6], led_pins[7], led_pins[8], led_pins[9]]
 
-# Camera shutter trigger pin (GP14) - active LOW, idle HIGH
+# Camera shutter trigger pin (GP14) - active LOW, idle HIGH - used for Bluetooth triggering
 CAMERA_SHUTTER_PIN_NUM = 14 # corresponds to pin 6 on the Micro:bit breakout board
 camera_shutter_pin = machine.Pin(CAMERA_SHUTTER_PIN_NUM, machine.Pin.OUT)
 camera_shutter_pin.high()
