@@ -2011,7 +2011,7 @@ select:not(#filename_tag):not(#filename_preview) {
   <div class="guide-content">
     <button id="userGuideCloseBtn" type="button" aria-label="Close">&times;</button>
     <div class="guide-body">
-      <div id="guide-en" style="display:block">
+      <div id="guide-en">
         <!-- English guide content start -->
         <h1 id="userGuideTitle">Solar Simulator User Guide</h1>
         <p>Welcome to the <strong>SolaSim Studio</strong> user guide. This document provides everything you need to set up your solar simulation hardware and use the web interface to control lighting, rotation, and imaging for your experiments.</p>
@@ -2379,6 +2379,45 @@ select:not(#filename_tag):not(#filename_preview) {
           </tbody>
         </table>
       </div>
+        <li><strong>アドバンストモード</strong>: すべてのパラメータを表示します。</li>
+        <li>シンプルモード時に非表示にするセクションは、モード切替横の<strong>ギアアイコン（⚙）</strong>でカスタマイズできます。</li>
+      </ul>
+
+      <h3>デバイスラベリング</h3>
+      <p>複数のデバイスを接続している場合：</p>
+      <ol>
+        <li>上部ヘッダーの<strong>Device Badge</strong>（例：「Device 1」）をクリックします。</li>
+        <li>名前を変更します（例：「Experiment A」）。</li>
+        <li>右上の<strong>背景色スウォッチ</strong>（緑・青・赤）でタブを色分けできます。</li>
+      </ol>
+
+      <h3>トラブルシューティング</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>問題</th>
+            <th>解決策</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>デバイスが接続できない</strong></td>
+            <td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td>
+          </tr>
+          <tr>
+            <td><strong>設定が反映されない</strong></td>
+            <td>「アップロード」ボタンをクリックしましたか？フォームの変更だけではハードウェアに反映されません。</td>
+          </tr>
+          <tr>
+            <td><strong>起動時に違うプロファイルが読み込まれる</strong></td>
+            <td>デバイスは最新のタイムスタンプのプロファイルを自動で読み込みます。「Load from Device」で古いプロファイルを読み込んだ場合、再起動後は保持されません。古いプロファイルを常時使いたい場合は再度アップロードしてください。</td>
+          </tr>
+          <tr>
+            <td><strong>オレンジ色のハイライトが消えない</strong></td>
+            <td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」（バナー内）または「アップロード」で一致させてください。</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -2409,7 +2448,7 @@ const TRANSLATIONS = {
     quickStartTourDesc: 'Essential walkthrough in just 6 steps: connect device, set time & intensity, add program steps, and upload (5 minutes)',
     recommended: 'RECOMMENDED',
     fullTour: 'Full Tour',
-    fullTourDesc: 'Complete walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
+    fullTourDesc: 'Complete 27-step walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
     userGuide: 'User Guide',
     userGuideDesc: 'Comprehensive text documentation for installation, setup, and usage',
     skipGuide: 'Skip - Start Working',
@@ -2489,7 +2528,7 @@ const TRANSLATIONS = {
     finish: 'Finish ✓',
     // Guide step translations
     guideConnectDevice: 'Connect Your Device',
-    guideConnectDeviceDesc: 'Click "Connect" to establish a connection with your RP2040 device via USB.',
+    guideConnectDeviceDesc: 'Click "Connect" to establish a serial connection with your device via USB.',
     guideStatusTiles: 'Status Tiles',
     guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more. Click on a tile to quickly adjust its setting.',
     guideSolarArc: 'Solar Arc Simulation',
@@ -2499,29 +2538,27 @@ const TRANSLATIONS = {
     guideDeviceProgramStatus: 'Device Program Status',
     guideDeviceProgramStatusDesc: 'When connected to a device running a program, this read-only display shows real-time progress. The red playhead arrow indicates the current position in the program sequence.',
     guideProfileManagement: 'Profile Management',
-    guideProfileManagementDesc: 'Save, load, and manage default profiles to define lighting parameters. Use "Save as Default" to set a profile that can be loaded automatically on page startup.',
+    guideProfileManagementDesc: 'Save, load, and manage default profiles. Use "Save as Default" to set a profile that loads automatically on page startup.',
     guideAutoLoad: 'Auto-Load Control',
     guideAutoLoadDesc: 'The auto-load badge shows whether the device will automatically load the newest profile on startup. Use the lock button to enable/disable auto-load behavior on the device.',
-    guidePrintSummary: 'Print Summary',
-    guidePrintSummaryDesc: 'Generate a printer-friendly PDF summary of your current configuration. This includes a timeline visualization, key settings, and program steps - perfect for documentation or lab notes.',
     guideKeySettings: 'Basic Settings',
     guideKeySettingsDesc: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
     guideSolarMode: 'Solar Mode & Sun Color',
-    guideSolarModeDesc: 'Choose between BASIC (constant size and intensity) or SCIENTIFIC (astronomically accurate) solar simulation modes, and configure sun color settings.',
+    guideSolarModeDesc: 'Choose between BASIC (constant) or SCIENTIFIC (astronomical) solar simulation modes, and configure sun color settings.',
     guideImagingIllumination: 'Imaging Illumination',
-    guideImagingIlluminationDesc: 'Configure LED panel settings for standard and rotation image illumination. Customize RGB values for specialized imaging needs.',
+    guideImagingIlluminationDesc: 'Configure LED panel settings for camera and rotation illumination. Customize RGB values for specialized imaging needs.',
     guideImagingServos: 'Imaging Servos and Timing',
-    guideImagingServosDesc: 'Control servo activation and timing for automated image capture. Day and night intervals can be set independently for servos 2 and 3.',
+    guideImagingServosDesc: 'Control servo positions and timing for automated camera operations during your simula by dragging.tion.',
     guideRotationImaging: 'Rotation and Imaging',
-    guideRotationImagingDesc: 'Set up rotation parameters and imaging intervals for imaging the sample from different angles',
+    guideRotationImagingDesc: 'Set up rotation parameters and imaging intervals for time-lapse photography and plant growth monitoring.',
     guideProgramEnable: 'Program Enable/Disable',
-    guideProgramEnableDesc: 'Enable program mode to create a sequence of timed steps. When disabled, the device runs its default settings, but allows manual control.',
+    guideProgramEnableDesc: 'Enable program mode to create a sequence of timed steps. When disabled, the device runs in manual control mode.',
     guideProgramTimeline: 'Program Step Timeline Visualization',
     guideProgramTimelineDesc: 'The timeline visualizes your program steps. You can drag segments to adjust timing when preparing a program, and use navigation buttons to jump between steps and days when that program is running.',
     guideProgramSteps: 'Program Step Editing',
-    guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, and transition behaviors (RUN, JUMP, or HOLD). Step order can be changed using the Move buttons, or by dragging.',
+    guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, and transition behaviors (RUN, JUMP, or HOLD).',
     guideProfileTextWindow: 'Profile Text Window',
-    guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here and sending them to the form before uploading to the device.',
+    guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here before uploading to the device.',
     guideRecentProfiles: 'Recent Profiles',
     guideRecentProfilesDesc: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
     guideDownloadProfile: 'Download Profile',
@@ -2529,13 +2566,13 @@ const TRANSLATIONS = {
     guideImportProfile: 'Import Profile',
     guideImportProfileDesc: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
     guideLoadFromDevice: 'Load from Device',
-    guideLoadFromDeviceDesc: 'Browse and select/delete profiles stored on the device. Selected profiles run immediately but only temporarily (until device restart).',
+    guideLoadFromDeviceDesc: 'Browse and select profiles stored on the device. Selected profiles run immediately but are temporary (until device restart).',
     guideProfileDiff: 'Profile Diff Viewer',
     guideProfileDiffDesc: 'When your form differs from the device, you\'ll see yellow highlighting and this banner. It helps prevent accidentally overwriting device settings.',
     guideSimpleAdvanced: 'Simple vs Advanced Mode',
     guideSimpleAdvancedDesc: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
     guideDeviceIdentity: 'Device Identity',
-    guideDeviceIdentityDesc: 'Click this badge to name your device. Useful when working with multiple devices across different tabs. Changing the page theme color will also help distinguish between different devices.',
+    guideDeviceIdentityDesc: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
     guideHelpPanel: 'Help Panel',
     guideHelpPanelDesc: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
     guideUploadToDevice: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
@@ -2605,7 +2642,7 @@ const TRANSLATIONS = {
     understood: '了解',
     // Guide step translations
     guideConnectDevice: 'デバイスを接続',
-    guideConnectDeviceDesc: 'USBケーブル経由でデバイスとのシリアル接続を確立するには、「接続」をクリックしてください。',
+    guideConnectDeviceDesc: '接続」をクリックして、RP2040デバイスとUSB経由で接続してください。',
     guideStatusTiles: 'ステータスタイル',
     guideStatusTilesDesc: '接続状態、プログラム状態、時刻、強度など、主要なパラメータをひと目で確認できます。タイルをクリックすると設定をすばやく調整できます。',
     guideSolarArc: 'ソーラーアークシミュレーション',
@@ -2615,29 +2652,27 @@ const TRANSLATIONS = {
     guideDeviceProgramStatus: 'デバイスプログラムステータス',
     guideDeviceProgramStatusDesc: 'プログラムを実行中のデバイスに接続すると、この読み取り専用ディスプレイにリアルタイムの進行状況が表示されます。赤い再生ヘッド矢印は、プログラムシーケンスの現在位置を示します。',
     guideProfileManagement: 'プロファイル管理',
-    guideProfileManagementDesc: '照明パラメータを定義するデフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込まれるプロファイルを設定できます。',
+    guideProfileManagementDesc: 'デフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込むことができるプロファイルを設定できます。',
     guideAutoLoad: '自動ロード制御',
     guideAutoLoadDesc: '自動ロードバッジは、デバイスが起動時に最新のプロファイルを自動的に読み込むかどうかを示します。ロックボタンを使用して、デバイスの自動ロード動作を有効/無効にします。',
-    guidePrintSummary: '概要を印刷',
-    guidePrintSummaryDesc: '現在の構成の印刷用PDF概要を生成します。タイムライン可視化、主要設定、プログラムステップが含まれており、ドキュメントや実験ノートに最適です。',
     guideKeySettings: '基本設定',
     guideKeySettingsDesc: 'シミュレーション開始時刻、タイムスケール（速度）、光の強度を設定します。これらは最も頻繁に調整されるパラメータです。',
     guideSolarMode: 'ソーラーモードと太陽色',
-    guideSolarModeDesc: 'BASIC（一定）またはSCIENTIFIC（天文計算）ソーラーシミュレーションモードを選択し、太陽色の設定を行います。',
+    guideSolarModeDesc: 'BASIC（サイズと強度が一定）またはSCIENTIFIC（天文学的に正確）なソーラーシミュレーションモードを選択し、太陽色の設定を行います。',
     guideImagingIllumination: '撮像照明',
-    guideImagingIlluminationDesc: 'カメラと回転照明用のLEDパネル設定を構成します。専門的な撮像ニーズに合わせてRGB値をカスタマイズできます。',
+    guideImagingIlluminationDesc: '標準および回転撮像用のLEDパネル設定を構成します。専門的な撮像ニーズに合わせてRGB値をカスタマイズできます。',
     guideImagingServos: '撮像サーボとタイミング',
-    guideImagingServosDesc: 'シミュレーション中の自動カメラ操作のためのサーボ位置とタイミングを制御します。',
+    guideImagingServosDesc: '自動撮像のためのサーボの動作とタイミングを制御します。サーボ2と3は昼夜で個別に間隔を設定できます。',
     guideRotationImaging: '回転と撮像',
-    guideRotationImagingDesc: 'タイムラプス撮影と植物成長モニタリングのための回転パラメータと撮像間隔を設定します。',
+    guideRotationImagingDesc: 'サンプルを様々な角度から撮像するための回転パラメータと撮像間隔を設定します。',
     guideProgramEnable: 'プログラム有効/無効',
-    guideProgramEnableDesc: 'プログラムモードを有効にすると、タイミング付きステップのシーケンスを作成できます。無効の場合、デバイスは手動制御モードで動作します。',
+    guideProgramEnableDesc: 'プログラムモードを有効にすると、タイミング付きステップのシーケンスを作成できます。無効の場合、無効の場合、デバイスはデフォルト設定で動作しますが、手動制御も可能です。',
     guideProgramTimeline: 'プログラムステップタイムライン視覚化',
     guideProgramTimelineDesc: 'タイムラインはプログラムステップを視覚化します。プログラムを準備する際はセグメントをドラッグしてタイミングを調整でき、プログラムが実行中の場合はナビゲーションボタンでステップや日を移動できます。',
     guideProgramSteps: 'プログラムステップ編集',
-    guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、遷移動作（RUN、JUMP、またはHOLD）を持つことができます。',
+    guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、遷移動作（RUN、JUMP、またはHOLD）を持つことができ、移動ボタンやドラッグで順序を変更できます。',
     guideProfileTextWindow: 'プロファイルテキストウィンドウ',
-    guideProfileTextWindowDesc: '生のプロファイルテキストを表示・編集します。上級ユーザーはデバイスにアップロードする前にここでパラメータを直接変更できます。',
+    guideProfileTextWindowDesc: '生のプロファイルテキストを表示・編集します。上級ユーザーはここでパラメータを直接編集し、フォームに反映してからデバイスにアップロードできます。',
     guideRecentProfiles: '最近のプロファイル',
     guideRecentProfilesDesc: '以前に保存したプロファイルにすばやくアクセスできます。星アイコンで頻繁に使用するプロファイルをピン留めできます。',
     guideDownloadProfile: 'プロファイルをダウンロード',
@@ -2645,13 +2680,13 @@ const TRANSLATIONS = {
     guideImportProfile: 'プロファイルをインポート',
     guideImportProfileDesc: '以前に保存したプロファイルファイルを読み込みます。これはフォームのみを更新します—ハードウェアに変更を適用するには、デバイスにアップロードする必要があります。',
     guideLoadFromDevice: 'デバイスから読み込み',
-    guideLoadFromDeviceDesc: 'デバイスに保存されているプロファイルを閲覧して選択します。選択したプロファイルはすぐに実行されますが、一時的です（デバイス再起動まで）。',
+    guideLoadFromDeviceDesc: 'デバイスに保存されているプロファイルを閲覧・選択・削除できます。選択したプロファイルはすぐに実行されますが、一時的です（デバイス再起動まで）。',
     guideProfileDiff: 'プロファイル差分ビューア',
     guideProfileDiffDesc: 'フォームがデバイスと異なる場合、黄色のハイライトとこのバナーが表示されます。デバイス設定の誤った上書きを防ぐのに役立ちます。',
     guideSimpleAdvanced: 'シンプルモード vs 詳細モード',
     guideSimpleAdvancedDesc: 'シンプルモード（簡素化）と詳細モード（全機能）を切り替えます。歯車アイコンをクリックして、シンプルモードで表示するセクションをカスタマイズできます。',
     guideDeviceIdentity: 'デバイスID',
-    guideDeviceIdentityDesc: 'このバッジをクリックしてデバイスに名前を付けます。異なるタブで複数のデバイスを使用する場合に便利です。',
+    guideDeviceIdentityDesc: 'このバッジをクリックしてデバイスに名前を付けます。異なるタブで複数のデバイスを使用する場合に便利です。ページのテーマカラーを変更すると、デバイスの区別にも役立ちます。',
     guideHelpPanel: 'ヘルプパネル',
     guideHelpPanelDesc: 'ワークフローのヒントや機能の説明を含む詳細なヘルプドキュメントにいつでもアクセスできます。',
     guideUploadToDevice: '<strong>重要:</strong> このボタンは設定をデバイスにアップロードします。アップロードされたプロファイルは「最新」ファイルとなり、自動ロードが有効な場合はデバイス起動時に自動的にロードされます。',
@@ -2740,9 +2775,9 @@ function setLanguage(lang) {
   if (guideEn && guideJa) {
     if (lang === 'ja') {
       guideEn.style.display = 'none';
-      guideJa.style.display = 'block';
+      guideJa.style.display = '';
     } else {
-      guideEn.style.display = 'block';
+      guideEn.style.display = '';
       guideJa.style.display = 'none';
     }
   }
@@ -2752,9 +2787,9 @@ function setLanguage(lang) {
   if (helpEn && helpJa) {
     if (lang === 'ja') {
       helpEn.style.display = 'none';
-      helpJa.style.display = 'block';
+      helpJa.style.display = '';
     } else {
-      helpEn.style.display = 'block';
+      helpEn.style.display = '';
       helpJa.style.display = 'none';
     }
   }
@@ -15944,69 +15979,55 @@ function clearHoldState(){
       allowInteraction: true
     },
     {
-      target: 'h2[data-i18n="profileManagement"]',
-      titleKey: 'guideProfileManagement',
-      contentKey: 'guideProfileManagementDesc',
-      position: 'bottom',
-      tooltipOffsetX: 0.67,  // Shift tooltip right by 2/3 of its width
-      adjustTarget: (el) => {
-        // Target the h2, buttons bar, and meta-options-container together
-        const metaContainer = document.querySelector('.meta-options-container');
-        if (!metaContainer) return el;
-        
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
-        wrapper.className = 'ftue-highlight-wrapper';
-        
-        const elRect = el.getBoundingClientRect();
-        const metaRect = metaContainer.getBoundingClientRect();
-        
-        wrapper.style.top = elRect.top + window.scrollY + 'px';
-        wrapper.style.left = Math.min(elRect.left, metaRect.left) + window.scrollX + 'px';
-        wrapper.style.width = Math.max(elRect.width, metaRect.width) + 'px';
-        wrapper.style.height = (metaRect.bottom - elRect.top) + 'px';
-        
-        document.body.appendChild(wrapper);
-        return wrapper;
-      }
-    },
-    {
       target: 'fieldset[data-section="time-and-date"]',
       titleKey: 'guideKeySettings',
       contentKey: 'guideKeySettingsDesc',
-      position: 'top'
+      position: 'bottom'
     },
     {
-      target: '#programStepsTable',
+      target: 'fieldset[data-section="program-control"]',
       titleKey: 'guideProgramSteps',
       contentKey: 'guideProgramStepsDesc',
-      position: 'top',
-      tooltipOffsetX: 1.0  // Shift tooltip right by full width to avoid blocking title
+      position: 'right'
     },
     {
-      target: '#programTimelineTitle',
+      target: '#programSection',
       titleKey: 'guideProgramTimeline',
       contentKey: 'guideProgramTimelineDesc',
-      position: 'bottom',
+      position: 'top',
+      rightTooltip: true,
       adjustTarget: (el) => {
-        // Create wrapper that extends to bottom of timeline container
-        const timelineContainer = document.getElementById('timelineContainer');
-        if (!timelineContainer) return el;
-        
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:absolute; pointer-events:none;';
-        wrapper.className = 'ftue-highlight-wrapper';
-        
-        const elRect = el.getBoundingClientRect();
-        const containerRect = timelineContainer.getBoundingClientRect();
-        
-        wrapper.style.top = elRect.top + window.scrollY + 'px';
-        wrapper.style.left = elRect.left + window.scrollX + 'px';
-        wrapper.style.width = Math.max(elRect.width, containerRect.width) + 'px';
-        wrapper.style.height = (containerRect.bottom - elRect.top) + 'px';
-        
-        document.body.appendChild(wrapper);
-        return wrapper;
+        // Find the program steps table within the section
+        const table = el.querySelector('#programStepsTable');
+        if (table) {
+          // Create a temporary element that spans from section start to table end
+          const rect = el.getBoundingClientRect();
+          const tableRect = table.getBoundingClientRect();
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'absolute';
+          wrapper.style.top = rect.top + 'px';
+          wrapper.style.left = rect.left + 'px';
+          wrapper.style.width = rect.width + 'px';
+          wrapper.style.height = (tableRect.bottom - rect.top) + 'px';
+          wrapper.style.pointerEvents = 'none';
+          document.body.appendChild(wrapper);
+          // Store reference for cleanup
+          el._guideWrapper = wrapper;
+          return wrapper;
+        }
+        return el;
+      }
+    },
+    {
+      target: '#recentProfiles',
+      titleKey: 'guideRecentProfiles',
+      contentKey: 'guideRecentProfilesDesc',
+      position: 'top',
+      offsetY: 7,
+      heightAdjust: -15,
+      adjustTarget: (el) => {
+        // Target parent container to include both title and profiles
+        return el.parentElement;
       }
     },
     {
@@ -16114,12 +16135,6 @@ function clearHoldState(){
       contentKey: 'guideUploadToDevice',
       position: 'bottom',
       highlight: true
-    },
-    {
-      target: '#printSummaryBtn',
-      titleKey: 'guidePrintSummary',
-      contentKey: 'guidePrintSummaryDesc',
-      position: 'bottom'
     },
     {
       target: 'fieldset[data-section="time-and-date"]',
