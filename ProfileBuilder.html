@@ -2477,7 +2477,7 @@ const TRANSLATIONS = {
     quickStartTourDesc: 'Essential walkthrough in just 6 steps: connect device, set time & intensity, add program steps, and upload (5 minutes)',
     recommended: 'RECOMMENDED',
     fullTour: 'Full Tour',
-    fullTourDesc: 'Complete 27-step walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
+    fullTourDesc: 'Complete walkthrough showing every feature and section in detail<br><span style="font-size:0.85em; opacity:0.8; font-style:italic;">Note: Page will temporarily switch to Advanced mode</span>',
     userGuide: 'User Guide',
     userGuideDesc: 'Comprehensive text documentation for installation, setup, and usage',
     skipGuide: 'Skip - Start Working',
@@ -10011,11 +10011,21 @@ function downloadProfile(){
     const isLocked = localStorage.getItem('autoloadLocked') === 'true';
     
     if (window.__autoloadEnabled === null) {
-      // Status unknown - hide badge and lock button
-      $badge.style.display = 'none';
-      $badge.style.cursor = 'default';
+      // Status unknown - show greyed out badge and lock button (like Load from Device button)
+      $badge.style.display = 'inline-block';
+      $badge.style.background = '#ffffff';
+      $badge.style.color = '#333';
+      $badge.style.border = '1px solid #888';
+      $badge.style.opacity = '0.4';
+      $badge.textContent = '⏸ AUTO-LOAD';
+      $badge.style.cursor = 'not-allowed';
+      $badge.title = 'Auto-load status unknown (device not connected)';
       $badge.onclick = null;
-      if ($lockBtn) $lockBtn.style.display = 'none';
+      if ($lockBtn) {
+        $lockBtn.style.display = 'inline-block';
+        $lockBtn.disabled = true;
+        $lockBtn.title = 'Device not connected';
+      }
     } else if (window.__autoloadEnabled) {
       // Auto-load is ON
       $badge.style.display = 'inline-block';
@@ -10033,11 +10043,13 @@ function downloadProfile(){
         $badge.style.opacity = '0.9';
         $badge.title = 'Auto-load is LOCKED ON. Unlock to change.';
         $badge.onclick = null;
+        if ($lockBtn) $lockBtn.disabled = false;
       } else {
         // Unlocked - clickable to disable
         $badge.style.cursor = 'pointer';
         $badge.style.opacity = '1';
         $badge.title = 'Device will auto-load the latest profile on startup. Click to disable: set autoload off';
+        if ($lockBtn) $lockBtn.disabled = false;
         $badge.onclick = async () => {
           if (window.__sendLine) {
             try {
@@ -10066,11 +10078,13 @@ function downloadProfile(){
         $badge.style.opacity = '0.9';
         $badge.title = 'Auto-load is LOCKED OFF. Unlock to change.';
         $badge.onclick = null;
+        if ($lockBtn) $lockBtn.disabled = false;
       } else {
         // Unlocked - clickable to enable
         $badge.style.cursor = 'pointer';
         $badge.style.opacity = '1';
         $badge.title = 'Device will NOT auto-load profiles on startup. Click to enable: set autoload on';
+        if ($lockBtn) $lockBtn.disabled = false;
         $badge.onclick = async () => {
           if (window.__sendLine) {
             try {
@@ -10121,6 +10135,9 @@ function downloadProfile(){
 
   // Expose the update function so it can be called when autoload status changes
   window.updateAutoloadBadge = updateAutoloadBadge;
+  
+  // Initialize badge on page load (will show greyed out until device connects)
+  updateAutoloadBadge();
 
 function syncFormFromState(){
   Object.keys(FIELDS).forEach(k=>{
