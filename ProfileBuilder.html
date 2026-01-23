@@ -12116,7 +12116,8 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     `;
     
     notification.innerHTML = `
-      <div style="display: flex; align-items: start; gap: 10px;">
+      <button onclick="dismissDisconnectNotification()" style="position: absolute; top: 6px; right: 8px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666; line-height: 1; padding: 0;">&times;</button>
+      <div style="display: flex; align-items: start; gap: 10px; padding-right: 28px;">
         <div style="font-size: 24px;">⚠️</div>
         <div style="flex: 1;">
           <strong style="display: block; margin-bottom: 6px;">Device Connection Lost</strong>
@@ -12129,7 +12130,6 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
             <button onclick="dismissDisconnectNotification()" style="background: #e0e0e0; color: #333; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">Dismiss</button>
           </div>
         </div>
-        <button onclick="dismissDisconnectNotification()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666; line-height: 1;">&times;</button>
       </div>
     `;
     
