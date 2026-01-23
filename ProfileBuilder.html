@@ -839,9 +839,19 @@ select:not(#filename_tag):not(#filename_preview) {
   to { transform: translateX(0); opacity: 1; }
 }
 
+@keyframes slideInLeft {
+  from { transform: translateX(-400px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 @keyframes slideOut {
   from { transform: translateX(0); opacity: 1; }
   to { transform: translateX(400px); opacity: 0; }
+}
+
+@keyframes slideOutLeft {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-400px); opacity: 0; }
 }
 
 /* Connection log entry styling */
@@ -12069,18 +12079,23 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     // Create notification element
     const notification = document.createElement('div');
     notification.id = 'disconnectNotification';
+    
+    // Position below the Connect button, aligned with its left edge
+    const connectBtn = document.getElementById('monitorConnectBtn');
+    const leftPosition = connectBtn ? connectBtn.getBoundingClientRect().left + 'px' : '16px';
+    
     notification.style.cssText = `
       position: fixed;
-      top: 80px;
-      right: 24px;
+      top: 145px;
+      left: ${leftPosition};
       background: #ffebee;
       border: 2px solid #f44336;
       border-radius: 8px;
       padding: 16px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       z-index: 9998;
-      max-width: 350px;
-      animation: slideIn 0.3s ease;
+      max-width: 420px;
+      animation: slideInLeft 0.3s ease;
     `;
     
     notification.innerHTML = `
@@ -12110,15 +12125,47 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   window.dismissDisconnectNotification = function(){
     const notification = document.getElementById('disconnectNotification');
     if(notification){
-      notification.style.animation = 'slideOut 0.3s ease';
+      notification.style.animation = 'slideOutLeft 0.3s ease';
       setTimeout(() => notification.remove(), 300);
     }
   };
   
-  // View connection log by exporting it
+  // View connection log by displaying it in the monitor log window
   window.viewConnectionLog = function(){
-    dismissReconnectNotification();
-    exportCommandLog();
+    dismissDisconnectNotification();
+    
+    // Open monitor panel if not already open
+    const panel = document.getElementById('monitorPanel');
+    const toggleBtn = document.getElementById('toggleMonitorBtn');
+    if(panel && !panel.classList.contains('open')){
+      toggleBtn?.click();
+    }
+    
+    // Get connection log entries
+    const commandLog = loadCommandLog();
+    const connectionEntries = commandLog.filter(entry => entry.source === 'connection');
+    
+    if(connectionEntries.length === 0){
+      log('=== No connection history found ===', 'connection');
+      return;
+    }
+    
+    // Display in monitor log
+    log('=== Connection History ===', 'connection');
+    connectionEntries.forEach(entry => {
+      const date = new Date(entry.timestamp);
+      const timestamp = date.toLocaleTimeString();
+      
+      // Check DISCONNECTED first (since "DISCONNECTED" also contains "CONNECTED")
+      if(entry.command.includes('DISCONNECTED')){
+        const duration = entry.duration ? formatDuration(entry.duration) : 'unknown';
+        const reason = entry.reason || 'unknown';
+        log(`${timestamp} - Device disconnected (${reason}, connected for ${duration})`, 'error');
+      } else if(entry.command.includes('CONNECTED')){
+        log(`${timestamp} - Device connected`, 'connection');
+      }
+    });
+    log('=== End of connection history ===', 'connection');
   };
   function setConnected(c){
     const now = Date.now();
