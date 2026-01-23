@@ -832,6 +832,25 @@ select:not(#filename_tag):not(#filename_preview) {
   @keyframes lockPulse{ 0%, 100%{ opacity:1; color:#ff1744; } 50%{ opacity:0.5; color:#d32f2f; } }
 
 /* ============================================================================
+   CONNECTION NOTIFICATION ANIMATIONS
+   ============================================================================ */
+@keyframes slideIn {
+  from { transform: translateX(400px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(400px); opacity: 0; }
+}
+
+/* Connection log entry styling */
+#monitorLog .l.connection {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+/* ============================================================================
    TIMELINE VISUALIZATION
    ============================================================================ */
   .timeline-playhead{
@@ -10639,6 +10658,10 @@ function toggleHelpDetail(button) {
  function performDisconnect() {
    try {
      const state = window.__solarSimMonitorState;
+     // Mark as user-initiated for connection logging
+     if(state && state.connectionHistory){
+       state.connectionHistory.wasUserInitiated = true;
+     }
      if (state) {
        // Stop any active streaming first
        if (state.active) {
@@ -11753,10 +11776,15 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   function logCommand(command, source, metadata){
     const log = loadCommandLog();
     const entry = {
-      timestamp: Date.now(),
+      timestamp: metadata?.timestamp || Date.now(),
       command: command,
-      source: source // 'manual' or 'button' or 'auto'
+      source: source // 'manual' or 'button' or 'auto' or 'connection'
     };
+    // Add connection-specific metadata
+    if(source === 'connection' && metadata){
+      if(metadata.duration) entry.duration = metadata.duration;
+      if(metadata.reason) entry.reason = metadata.reason;
+    }
     // Add optional metadata (simtime, realtime, speed)
     if(metadata){
       if(metadata.simTime) entry.simTime = metadata.simTime;
@@ -11784,6 +11812,16 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
         String(date.getHours()).padStart(2, '0') + ':' +
         String(date.getMinutes()).padStart(2, '0') + ':' +
         String(date.getSeconds()).padStart(2, '0');
+      
+      // Format connection events specially
+      if(entry.source === 'connection'){
+        let line = timestamp + ' | ' + entry.command;
+        if(entry.command.includes('DISCONNECTED') && entry.duration){
+          const durationStr = formatDuration(entry.duration);
+          line += ' (' + (entry.reason || 'unknown') + ', connected for ' + durationStr + ')';
+        }
+        return line;
+      }
       
       // Shorten trigger messages for export
       let command = entry.command;
@@ -11853,7 +11891,13 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const state = { port:null, reader:null, writer:null, lineBuf:'', active:false, rate:1000,
     connStartTs:0,
     stats:{ jsonLines:0, textLines:0 }, scrollLock:false,
-    statusOutputAllowed: false // Only allow status output for explicit user requests
+    statusOutputAllowed: false, // Only allow status output for explicit user requests
+    connectionHistory: {
+      lastConnectTime: null,
+      lastDisconnectTime: null,
+      wasUserInitiated: false,
+      disconnectReason: null
+    }
   };
   // Expose serial state to window for program lock UI
   window.__serialState = state;
@@ -11992,7 +12036,129 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     }
   }
   function badge(text, cls){ if(connBadge){ connBadge.textContent=text; connBadge.className='pill '+cls; } }
+  
+  // Helper function to format duration in human-readable format
+  function formatDuration(ms){
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if(hours > 0){
+      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+    } else if(minutes > 0){
+      return `${minutes}m ${seconds % 60}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  }
+  
+  // Show notification when device unexpectedly disconnects (not user-initiated)
+  function showDisconnectNotification(disconnectTime, connectedDuration){
+    // Check user preference
+    if(localStorage.getItem('hideDisconnectNotification') === 'true'){
+      return;
+    }
+    
+    const disconnectStr = new Date(disconnectTime).toLocaleTimeString();
+    const durationStr = formatDuration(connectedDuration);
+    
+    // Remove any existing notification
+    const existing = document.getElementById('disconnectNotification');
+    if(existing) existing.remove();
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.id = 'disconnectNotification';
+    notification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      background: #ffebee;
+      border: 2px solid #f44336;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 9998;
+      max-width: 350px;
+      animation: slideIn 0.3s ease;
+    `;
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: start; gap: 10px;">
+        <div style="font-size: 24px;">⚠️</div>
+        <div style="flex: 1;">
+          <strong style="display: block; margin-bottom: 6px;">Device Connection Lost</strong>
+          <div style="font-size: 0.9rem; color: #666;">
+            <div>Disconnected at: ${disconnectStr}</div>
+            <div>Was connected for: ${durationStr}</div>
+          </div>
+          <div style="margin-top: 10px; display: flex; gap: 8px; font-size: 0.85rem;">
+            <button onclick="viewConnectionLog()" style="background: #3478f6; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">View Log</button>
+            <button onclick="dismissDisconnectNotification()" style="background: #e0e0e0; color: #333; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">Dismiss</button>
+          </div>
+        </div>
+        <button onclick="dismissDisconnectNotification()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // No auto-dismiss - stays visible until user dismisses or reconnects
+  }
+  
+  // Dismiss the disconnect notification
+  window.dismissDisconnectNotification = function(){
+    const notification = document.getElementById('disconnectNotification');
+    if(notification){
+      notification.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }
+  };
+  
+  // View connection log by exporting it
+  window.viewConnectionLog = function(){
+    dismissReconnectNotification();
+    exportCommandLog();
+  };
   function setConnected(c){
+    const now = Date.now();
+    
+    // Track connection state change
+    if(c && !state.connectionHistory.lastConnectTime){
+      // Just connected
+      state.connectionHistory.lastConnectTime = now;
+      logCommand('DEVICE CONNECTED', 'connection', {
+        timestamp: now
+      });
+      log('✓ Device connected', 'connection');
+      
+      // Dismiss disconnect notification if reconnecting
+      dismissDisconnectNotification();
+    } else if(!c && state.connectionHistory.lastConnectTime){
+      // Just disconnected
+      const connectDuration = now - state.connectionHistory.lastConnectTime;
+      state.connectionHistory.lastDisconnectTime = now;
+      
+      const reason = state.connectionHistory.wasUserInitiated ? 'user-initiated' : 'unexpected';
+      logCommand('DEVICE DISCONNECTED', 'connection', {
+        timestamp: now,
+        duration: connectDuration,
+        reason: reason
+      });
+      
+      const durationStr = formatDuration(connectDuration);
+      log(`✕ Device disconnected (${reason}, connected for ${durationStr})`, 'error');
+      
+      // Only show notification for unexpected disconnects (not user-initiated)
+      if(!state.connectionHistory.wasUserInitiated){
+        showDisconnectNotification(now, connectDuration);
+      }
+      
+      // Reset connection tracking
+      state.connectionHistory.lastConnectTime = null;
+      state.connectionHistory.wasUserInitiated = false;
+    }
+    
     badge(c?'CONNECTED':'DISCONNECTED', c?'green':'red');
     const loadFromDeviceBtn = document.getElementById('loadFromDeviceBtn');
     [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b=>{ if(b) b.disabled = !c; }); // helpBtn removed from disabling logic
@@ -13278,7 +13444,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   }, 900);
   async function startStream(){ await ensurePort(); await sendLine('jsonstatus rate '+state.rate); await sendLine('jsonstatus on'); state.active=true; if(rateInfo){ rateInfo.style.display='inline-block'; rateInfo.textContent=state.rate+'ms'; } startBtn.disabled=true; stopBtn.disabled=false; }
   async function stopStream(){ if(!state.active) return; await sendLine('jsonstatus off'); state.active=false; startBtn.disabled=false; stopBtn.disabled=true; }
-  async function startReader(){ if(!state.port || state.reader) return; (async()=>{ while(state.port && state.port.readable){ state.reader = state.port.readable.getReader(); try { while(true){ const {value,done}=await state.reader.read(); if(done) break; if(value) processIncoming(new TextDecoder().decode(value)); } } catch(e){ log('Connection not active','error'); break; } finally { try { state.reader.releaseLock(); }catch(_){} state.reader=null; } } setConnected(!!state.port); })(); }
+  async function startReader(){ if(!state.port || state.reader) return; (async()=>{ while(state.port && state.port.readable){ state.reader = state.port.readable.getReader(); try { while(true){ const {value,done}=await state.reader.read(); if(done) break; if(value) processIncoming(new TextDecoder().decode(value)); } } catch(e){ log('Connection not active','error'); state.port = null; setConnected(false); break; } finally { try { state.reader.releaseLock(); }catch(_){} state.reader=null; } } if(!state.port || !state.port.readable){ state.port = null; setConnected(false); } })(); }
   // Events
   (function initMonitorToggle(){
     const STORAGE_KEY = 'monitor_open_state_v1';
