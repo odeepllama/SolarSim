@@ -1,10 +1,22 @@
 """
-Solar Simulator for Phototropism Experiments
+*** Solar Simulator for Phototropism Experiments ***
+Version: 1.6.4
 
 This system simulates sun movement and controls imaging hardware
 for plant/algae phototropism experiments.
 
-Hardware: RP2040:bit board microcontroller with 3 servos, 1NeoPixel panel, and an internal 5x5 display matrix.
+Hardware: 
+RP2040:bit board microcontroller with 3 servos,
+1 NeoPixel panel,
+1 internal 5x5 display matrix.
+1 BT camera remote (mirrors servo2 triggers)
+
+PINS: RP2040:bit board (microbit breakout)
+Servo 1: GP6  - Platform rotation servo.        (output pin 3 on Micro:bit breakout board - 5V)
+Servo 2: GP10 - Primary camera trigger servo    (output pin 13 on Micro:bit breakout board - 5V)
+Servo 3: GP11 - Secondary camera trigger servo  (output pin 15 on Micro:bit breakout board - 5V)
+NeoPixel: GP15                                  (output pin 7 on Micro:bit breakout board - 3.3V)
+Camera shutter trigger: GP14 (active LOW)       (output pin 6 on Micro:bit breakout board - 3.3V)
 """
 import gc, machine, math, neopixel, os, select, sys
 try:
@@ -106,7 +118,7 @@ SERVO2_INTERVAL_NIGHT_SEC = 0         # Trigger camera every N seconds during ni
 SERVO2_TRIGGER_HOLD_MS = 1500         # Hold camera trigger for this duration (ms)
 
 # --- Servo3 (Secondary Camera - can capture a wider or closer view, or video) Parameters ---
-SERVO3_INTERVAL_DAY_SEC = 0         # Trigger camera every N seconds during daytime (real time, 0 = disabled)
+SERVO3_INTERVAL_DAY_SEC = 0           # Trigger camera every N seconds during daytime (real time, 0 = disabled)
 SERVO3_INTERVAL_NIGHT_SEC = 0         # Trigger camera every N seconds during nighttime (real time, 0 = disabled)
 SERVO3_TRIGGER_HOLD_MS = 1500         # Hold camera trigger for this duration (ms)
 
@@ -270,7 +282,7 @@ servo_pin_2 = machine.Pin(SERVO_2_PIN_NUM)
 servo_pwm_2 = PWM(servo_pin_2)
 servo_pwm_2.freq(PWM_FREQ)
 
-# Secondary camera trigger servo 3 (Can also physcially duplicate the servo2 signal)
+# Secondary camera trigger servo 3 (Can always physically duplicate the servo2 signal)
 servo_pin_3 = machine.Pin(SERVO_3_PIN_NUM)
 servo_pwm_3 = PWM(servo_pin_3)
 servo_pwm_3.freq(PWM_FREQ)
