@@ -11689,11 +11689,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
 })();
 
 (function(){
-  // Atomic check-and-set: if exists, bail; otherwise claim it immediately
-  if(window.__solarSimMonitorState || (window.__solarSimMonitorState = { initializing: true }, false)){ 
-    if(window.__solarSimMonitorState.initializing !== true) console.log('[Fallback] Primary monitor already present.'); 
-    return; 
-  }
+  if(window.__solarSimMonitorState){ console.log('[Fallback] Primary monitor already present.'); return; }
   const toggleBtn = document.getElementById('toggleMonitorBtn');
   const panel = document.getElementById('monitorPanel');
   if(!toggleBtn || !panel){ console.warn('[Fallback] Monitor markup not found.'); return; }
