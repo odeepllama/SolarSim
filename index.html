@@ -11689,10 +11689,12 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
 })();
 
 (function(){
-  if(window.__solarSimMonitorState || document.querySelector('#monitorStatusGrid .mon-kv')){ console.log('[Fallback] Primary monitor already present.'); return; }
+  if(window.__solarSimMonitorState){ console.log('[Fallback] Primary monitor already present.'); return; }
+  // Set marker immediately to prevent race conditions during file:// loading
+  window.__solarSimMonitorState = {};
   const toggleBtn = document.getElementById('toggleMonitorBtn');
   const panel = document.getElementById('monitorPanel');
-  if(!toggleBtn || !panel){ console.warn('[Fallback] Monitor markup not found.'); return; }
+  if(!toggleBtn || !panel){ console.warn('[Fallback] Monitor markup not found.'); delete window.__solarSimMonitorState; return; }
   console.log('[Fallback] Activating minimal monitor logic.');
   const connBadge = document.getElementById('monitorConnBadge');
   const connectBtn = document.getElementById('monitorConnectBtn');
