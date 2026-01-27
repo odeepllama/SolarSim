@@ -11689,21 +11689,15 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
 })();
 
 (function(){
+  // Atomic check-and-set flag to prevent duplicate execution during file:// loading
+  if(window.__monitorInitStarted){ console.log('[Monitor] Already initializing or initialized.'); return; }
+  window.__monitorInitStarted = true;
+  
   if(window.__solarSimMonitorState){ console.log('[Fallback] Primary monitor already present.'); return; }
-  // Set marker immediately to prevent race conditions during file:// loading
-  window.__solarSimMonitorState = {};
+  
   const toggleBtn = document.getElementById('toggleMonitorBtn');
   const panel = document.getElementById('monitorPanel');
-  if(!toggleBtn || !panel){ console.warn('[Fallback] Monitor markup not found.'); delete window.__solarSimMonitorState; return; }
-  
-  // Get statusGrid reference early for tile check and later use
-  const statusGrid = document.getElementById('monitorStatusGrid');
-  
-  // Check if status tiles already exist - if so, monitor is already initialized
-  if(statusGrid && statusGrid.querySelector('.mon-kv')){
-    console.log('[Fallback] Status tiles already present, skipping initialization.');
-    return;
-  }
+  if(!toggleBtn || !panel){ console.warn('[Fallback] Monitor markup not found.'); return; }
   console.log('[Fallback] Activating minimal monitor logic.');
   const connBadge = document.getElementById('monitorConnBadge');
   const connectBtn = document.getElementById('monitorConnectBtn');
@@ -11779,7 +11773,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
   const cmdInput = document.getElementById('monitorCmdInput');
   const sendBtn = document.getElementById('monitorSendBtn');
   const exportLogBtn = document.getElementById('monitorExportLogBtn');
-  // statusGrid already declared earlier for early tile check
+  const statusGrid = document.getElementById('monitorStatusGrid');
 
   // ==================== COMMAND LOG CONFIGURATION ====================
   // Command log with 7-day retention in localStorage
