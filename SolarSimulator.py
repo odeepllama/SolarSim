@@ -12,7 +12,7 @@ RP2040:bit board microcontroller with 3 servos,
 1 BT camera remote (mirrors servo2 triggers)
 
 PINS: RP2040:bit board (microbit breakout)
-Servo 1: GP6  - Platform rotation servo.        (output pin 3 on Micro:bit breakout board - 5V)
+Servo 1: GP6  - Platform rotation servo.        (output pin 3 on Micro:bit breakout board - 3.3V)
 Servo 2: GP10 - Primary camera trigger servo    (output pin 13 on Micro:bit breakout board - 5V)
 Servo 3: GP11 - Secondary camera trigger servo  (output pin 15 on Micro:bit breakout board - 5V)
 NeoPixel: GP15                                  (output pin 7 on Micro:bit breakout board - 3.3V)
