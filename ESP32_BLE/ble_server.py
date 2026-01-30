@@ -248,11 +248,8 @@ class BLEServer:
             0x11, 0x07  # Length=17, Type=Complete 128-bit Service UUIDs
         ]) + bytes(SOLAR_SIM_SERVICE_UUID)
         
-        # Combine payloads
-        payload = bytes(adv_data + service_data)
-        
-        # Start advertising
-        self._ble.gap_advertise(interval_us, adv_data=payload)
+        # Start advertising with just the name payload
+        self._ble.gap_advertise(interval_us, adv_data=adv_data)
         print(f"[BLE] Advertising as '{self.name}'")
     
     def is_connected(self):

@@ -13,10 +13,8 @@ from lcd_i2c import LCD1602
 # PIN DEFINITIONS - ESP32-S3 Configuration
 # ============================================================================
 
-# Servo Pins
-SERVO_1_PIN = 32      # Platform rotation servo (was GP6 on RP2040)
-SERVO_2_PIN = 33      # Primary camera trigger (was GP10 on RP2040)
-SERVO_3_PIN = 25      # Secondary camera trigger (was GP11 on RP2040)
+ # Servo Pin
+SERVO_1_PIN = 33      # Platform rotation servo (confirmed working)
 
 # NeoPixel Pin
 NEOPIXEL_PIN = 16     # LED panel data (was GP15 on RP2040)
@@ -30,7 +28,7 @@ BUTTON_A_PIN = 0      # Built-in BOOT button (was GP0 on RP2040)
 BUTTON_B_PIN = 35     # External button (was GP1 on RP2040)
 
 # Camera Shutter Trigger Pin
-CAMERA_SHUTTER_PIN = 26  # Active LOW, idle HIGH (was GP14 on RP2040)
+CAMERA_SHUTTER_PIN = 19  # Active LOW, idle HIGH (changed from 26)
 
 # ============================================================================
 # SERVO CONFIGURATION
@@ -81,7 +79,7 @@ class HardwareESP32:
         self.lcd_addr = lcd_addr
         
         # Initialize each subsystem
-        self._init_servos()
+        self._init_servo()
         self._init_neopixels()
         self._init_lcd()
         self._init_buttons()
@@ -89,31 +87,14 @@ class HardwareESP32:
         
         print("[HW] Hardware initialization complete!")
     
-    def _init_servos(self):
-        """Initialize servo motors"""
-        print("[HW] Initializing servos...")
-        
-        # Servo 1 - Platform rotation
+    def _init_servo(self):
+        """Initialize single servo motor"""
+        print("[HW] Initializing servo...")
         self.servo_pin_1 = Pin(SERVO_1_PIN)
         self.servo_pwm_1 = PWM(self.servo_pin_1)
         self.servo_pwm_1.freq(PWM_FREQ)
-        
-        # Servo 2 - Primary camera trigger
-        self.servo_pin_2 = Pin(SERVO_2_PIN)
-        self.servo_pwm_2 = PWM(self.servo_pin_2)
-        self.servo_pwm_2.freq(PWM_FREQ)
-        
-        # Servo 3 - Secondary camera trigger
-        self.servo_pin_3 = Pin(SERVO_3_PIN)
-        self.servo_pwm_3 = PWM(self.servo_pin_3)
-        self.servo_pwm_3.freq(PWM_FREQ)
-        
-        # Set initial servo positions
         self.set_servo_angle(self.servo_pwm_1, TABLE_SERVO_START_ANGLE)
-        self.set_servo_angle(self.servo_pwm_2, CAMERA_SERVO_REST_ANGLE)
-        self.set_servo_angle(self.servo_pwm_3, CAMERA_SERVO_REST_ANGLE)
-        
-        print(f"[HW] Servos initialized on GPIO{SERVO_1_PIN}, {SERVO_2_PIN}, {SERVO_3_PIN}")
+        print(f"[HW] Servo initialized on GPIO{SERVO_1_PIN}")
     
     def _init_neopixels(self):
         """Initialize NeoPixel LED panel"""
@@ -191,7 +172,7 @@ class HardwareESP32:
         
         # Active LOW, idle HIGH
         self.camera_shutter_pin = Pin(CAMERA_SHUTTER_PIN, Pin.OUT)
-        self.camera_shutter_pin.high()  # Idle state
+        self.camera_shutter_pin.value(1)  # Idle state
         
         print(f"[HW] Camera trigger initialized on GPIO{CAMERA_SHUTTER_PIN}")
     
@@ -321,10 +302,10 @@ class HardwareESP32:
     
     def trigger_camera_shutter(self):
         """Pulse camera shutter pin LOW for 10ms"""
-        self.camera_shutter_pin.low()
+        self.camera_shutter_pin.value(0)
         from time import sleep_ms
         sleep_ms(10)
-        self.camera_shutter_pin.high()
+        self.camera_shutter_pin.value(1)
     
     # ========================================================================
     # CLEANUP
