@@ -79,66 +79,34 @@ except Exception as e:
 gc.collect()
 
 # ============================================
-# Simple Command Handler (Temporary)
+# Initialize Solar Simulator
 # ============================================
 
-def simple_command_handler(cmd):
-    """
-    Simple command handler for testing
-    Will be replaced with full handler when solarsim_esp32.py is ready
-    """
-    print(f"[CMD] Received: {cmd}")
+try:
+    print("[MAIN] Initializing solar simulator...")
+    from solarsim_esp32 import SolarSimulator
     
-    parts = cmd.upper().strip().split()
-    if not parts:
-        return "ERROR: Empty command"
+    simulator = SolarSimulator()
+    print("[MAIN] Solar simulator initialized")
     
-    command = parts[0]
+    # Set BLE command handler to use simulator
+    if ble:
+        ble.command_handler = simulator.process_command
+        print("[MAIN] Command handler registered")
+        
+except Exception as e:
+    print(f"[MAIN] Simulator initialization error: {e}")
+    simulator = None
+    error_msg = str(e)  # Capture error message
     
-    # Echo test
-    if command == "ECHO":
-        return f"Echo: {' '.join(parts[1:])}"
+    # Fallback simple handler if simulator fails
+    def fallback_handler(cmd):
+        return f"ERROR: Simulator not initialized - {error_msg}"
     
-    # Status request
-    elif command == "STATUS":
-        mem_free = gc.mem_free() // 1024
-        return f"STATUS OK - Free RAM: {mem_free}KB"
-    
-    # Test LCD
-    elif command == "LCD" and len(parts) >= 2:
-        if lcd:
-            message = ' '.join(parts[1:])
-            lcd.clear()
-            lcd.print(message[:16], 0, 0)
-            lcd.print("Command OK", 0, 1)
-            return f"LCD: {message}"
-        else:
-            return "ERROR: LCD not initialized"
-    
-    # LED test (placeholder - will control NeoPixels later)
-    elif command == "LED":
-        return "LED: Not implemented yet"
-    
-    # Memory info
-    elif command == "MEM":
-        import gc
-        gc.collect()
-        free = gc.mem_free()
-        total = gc.mem_alloc() + free
-        return f"Memory: {free//1024}KB free / {total//1024}KB total"
-    
-    # Help
-    elif command == "HELP":
-        return "Commands: ECHO, STATUS, LCD, LED, MEM, HELP"
-    
-    # Unknown command
-    else:
-        return f"ERROR: Unknown command '{command}'"
+    if ble:
+        ble.command_handler = fallback_handler
 
-# Set command handler for BLE
-if ble:
-    ble.command_handler = simple_command_handler
-    print("[MAIN] Command handler registered")
+gc.collect()
 
 # ============================================
 # Main Loop
@@ -150,21 +118,30 @@ print("="*50)
 print("\nConnect via:")
 print("  1. USB Serial (115200 baud)")
 print("  2. Bluetooth LE: 'SolarSim-ESP32'")
-print("\nAvailable commands: ECHO, STATUS, LCD, MEM, HELP")
+print("\nAvailable commands: ECHO, STATUS, SPEED, TIME, FILL, ROTATE, CAMERA, MEM, HELP")
 print("\nPress Ctrl+C to stop\n")
 
 # Update LCD with ready status
 if lcd:
     time.sleep(1)
     lcd.clear()
-    lcd.display_status("--:--", "READY", 1.0, False)
+    lcd.print("SolarSim Ready", 0, 0)
+    lcd.print("BLE Active", 0, 1)
 
 # Status update counter
 status_counter = 0
 last_status_time = time.ticks_ms()
+last_sim_update = time.ticks_ms()
 
 try:
     while True:
+        # Update simulation if initialized
+        if simulator:
+            now = time.ticks_ms()
+            if time.ticks_diff(now, last_sim_update) >= 1000:  # Update every second
+                simulator.update()
+                last_sim_update = now
+        
         # Update status every 5 seconds if BLE connected
         if ble and ble.is_connected():
             now = time.ticks_ms()
@@ -188,6 +165,8 @@ try:
             
 except KeyboardInterrupt:
     print("\n[MAIN] Shutting down...")
+    if simulator:
+        simulator.shutdown()
     if ble:
         ble.stop()
     if lcd:
