@@ -40,7 +40,7 @@ TIME_SCALE = 1                 # Time scaling factor (0 (HOLD), 1, 6, 60, or 600
 CUSTOM_TIME_SCALE = 1.2        # Custom time scale factor (1.2 = 1.2X, etc.)
 
 # Program configuration
-PROGRAM_ENABLED = False        # Master switch for program functionality
+PROGRAM_ENABLED = True        # Master switch for program functionality
 PROGRAM_STEPS = [              # Non-program default: neutral single step
     {"sim_time_hhmm": 1200, "speed": 1, "intensity_scale": 1.0, "dual_sun": False}
 ]
