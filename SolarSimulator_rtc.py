@@ -240,11 +240,32 @@ pixels = neopixel.NeoPixel(np_pin, 448)
 button_a = machine.Pin(BUTTON_A_PIN_NUM, machine.Pin.IN, machine.Pin.PULL_UP)
 button_b = machine.Pin(BUTTON_B_PIN_NUM, machine.Pin.IN, machine.Pin.PULL_UP)
 
-# --- RTC/Sim Time Sync Logic ---
+"""
+RTC/Sim Time Sync Logic (refactored)
+Consolidates RTC initialization and time sync into reusable functions.
+"""
 # Uses I2C(1) GP18 (SDA), GP19 (SCL) for DS3231 RTC
 I2C_ID = 1
 I2C_SDA = 18  # GP18
 I2C_SCL = 19  # GP19
+
+def init_rtc():
+    """Initializes RTC and returns (rtc, rtc_present)."""
+    try:
+        i2c = machine.I2C(I2C_ID, scl=machine.Pin(I2C_SCL), sda=machine.Pin(I2C_SDA))
+        devices = i2c.scan()
+        if 0x68 in devices:
+            try:
+                from ds3231 import DS3231
+                rtc = DS3231(i2c)
+                return rtc, True
+            except Exception as e:
+                print("RTC import/init failed:", e)
+        else:
+            print("RTC not detected on I2C bus.")
+    except Exception as e:
+        print("RTC I2C init failed:", e)
+    return None, False
 
 def get_rtc_hhmm(rtc):
     """Returns RTC time as HHMM integer, or None if RTC not available or time is 00:00."""
@@ -258,39 +279,29 @@ def get_rtc_hhmm(rtc):
         print("RTC read failed:", e)
         return None
 
-# Only sync if Button A is pressed at startup
-try:
-    i2c = machine.I2C(I2C_ID, scl=machine.Pin(I2C_SCL), sda=machine.Pin(I2C_SDA))
-    devices = i2c.scan()
-    if 0x68 in devices:
-        try:
-            from ds3231 import DS3231
-            rtc = DS3231(i2c)
-            rtc_present = True
-        except Exception as e:
-            print("RTC import/init failed:", e)
-            rtc_present = False
+def set_sim_time_from_rtc(rtc, fallback=1400, label="Sim time"):
+    """Sets START_TIME_HHMM from RTC, with fallback if invalid."""
+    global START_TIME_HHMM
+    rtc_hhmm = get_rtc_hhmm(rtc)
+    if rtc_hhmm is not None:
+        START_TIME_HHMM = rtc_hhmm
+        print(f"{label} set from RTC: {START_TIME_HHMM:04d}")
     else:
-        rtc_present = False
-except Exception as e:
-    print("RTC I2C init failed:", e)
-    rtc_present = False
+        START_TIME_HHMM = fallback
+        print(f"{label}: RTC time invalid (00:00). Set to {fallback//100:02d}:{fallback%100:02d}.")
 
-if button_a.value() == 0:  # Button A pressed at startup (active low)
-    print("Button A detected at startup.")
-    if rtc_present:
-        rtc_hhmm = get_rtc_hhmm(rtc)
-        if rtc_hhmm is not None:
-            START_TIME_HHMM = rtc_hhmm
-            print(f"Sim time set from RTC: {START_TIME_HHMM:04d}")
+# --- RTC initialization and startup sync ---
+rtc, rtc_present = init_rtc()
+if 'button_a' in globals() and callable(getattr(button_a, 'value', None)):
+    if button_a.value() == 0:  # Button A pressed at startup (active low)
+        print("Button A detected at startup.")
+        if rtc_present:
+            set_sim_time_from_rtc(rtc, fallback=1400, label="Sim time")
         else:
             START_TIME_HHMM = 1400
-            print("RTC time invalid (00:00). Sim time set to 14:00.")
+            print("RTC not detected. Sim time set to 14:00.")
     else:
-        START_TIME_HHMM = 1400
-        print("RTC not detected. Sim time set to 14:00.")
-else:
-    print(f"Button A not pressed. Sim time set to default: {START_TIME_HHMM:04d}")
+        print(f"Button A not pressed. Sim time set to default: {START_TIME_HHMM:04d}")
 
 # --- Long Press Handler for Button A (example implementation) ---
 def check_button_a_long_press(duration_ms=1500):
@@ -299,18 +310,13 @@ def check_button_a_long_press(duration_ms=1500):
         press_start = ticks_ms()
         while button_a.value() == 0:
             if ticks_diff(ticks_ms(), press_start) > duration_ms:
-                global START_TIME_HHMM
                 if rtc_present:
-                    rtc_hhmm = get_rtc_hhmm(rtc)
-                    if rtc_hhmm is not None:
-                        START_TIME_HHMM = rtc_hhmm
-                        print(f"Long press: Sim time set from RTC: {START_TIME_HHMM:04d}")
-                    else:
-                        START_TIME_HHMM = 1200
-                        print("Long press: RTC time invalid (00:00). Sim time set to 12:00.")
+                    set_sim_time_from_rtc(rtc, fallback=1200, label="Long press: Sim time")
                 else:
+                    global START_TIME_HHMM
                     START_TIME_HHMM = 1200
                     print("Long press: RTC not detected. Sim time set to 12:00.")
+                # Wait for button release
                 while button_a.value() == 0:
                     sleep_ms(50)
                 return True
@@ -2847,9 +2853,10 @@ def run_simulation():
     global manual_panel_override_active, manual_panel_override_until_ms
     global button_a_pressed_last, button_a_long_press_detected
     global button_b_pressed_last, button_b_long_press_detected, camera_light_hold_until_ms
-
-    # If starting in HOLD mode (TIME_SCALE == 0), initialize frozen time to START_TIME_HHMM only once at true startup
     global frozen_time_initialized
+    global AUTO_LOAD_LATEST_PROFILE, START_TIME_HHMM
+    global frozen_sim_time_minutes, start_real_time_ms
+
     if TIME_SCALE == 0 and not frozen_time_initialized:
         start_hour = START_TIME_HHMM // 100
         start_minute = START_TIME_HHMM % 100
