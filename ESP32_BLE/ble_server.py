@@ -224,7 +224,7 @@ class BLEServer:
         except Exception as e:
             print(f"[BLE] Error sending status: {e}")
     
-    def _advertise(self, interval_us=500000):
+    def _advertise(self, interval_us=100000):
         """
         Start advertising BLE service
         
@@ -243,14 +243,10 @@ class BLEServer:
             len(name_bytes) + 1, 0x09  # Name length + type
         ]) + name_bytes
         
-        # Service UUID advertisement
-        service_data = bytearray([
-            0x11, 0x07  # Length=17, Type=Complete 128-bit Service UUIDs
-        ]) + bytes(SOLAR_SIM_SERVICE_UUID)
-        
-        # Start advertising with just the name payload
-        self._ble.gap_advertise(interval_us, adv_data=adv_data)
-        print(f"[BLE] Advertising as '{self.name}'")
+        # Start advertising with just the name (service UUID omitted to fit payload size)
+        payload = adv_data
+        self._ble.gap_advertise(interval_us, adv_data=payload)
+        print(f"[BLE] Advertising as '{self.name}' (service UUID omitted from adv)")
     
     def is_connected(self):
         """Check if any client is connected"""

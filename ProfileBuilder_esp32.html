@@ -12255,7 +12255,7 @@ document.querySelectorAll('#topExportBar [data-export-ref]').forEach(mb=>{
     try {
       // Request Bluetooth device
       state.device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [BLE_SERVICE_UUID] }],
+        acceptAllDevices: true,
         optionalServices: [BLE_SERVICE_UUID]
       });
       

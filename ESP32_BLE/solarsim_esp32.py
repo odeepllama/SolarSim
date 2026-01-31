@@ -11,6 +11,7 @@ import math
 import time
 from machine import Pin
 from lib import HardwareESP32, DisplayManager
+from ble_server import BLEServer
 
 # ============================================================================
 # I. CORE SIMULATION PARAMETERS
@@ -498,6 +499,13 @@ if __name__ == "__main__":
     print("SOLAR SIMULATOR ESP32-S3 - TEST MODE")
     print("="*60 + "\n")
     
+    # Start BLE server for wireless control
+    def test_command_handler(cmd):
+        # You can route this to your simulator's process_command if desired
+        print(f"[BLE] Command received: {cmd}")
+        return f"Echo: {cmd}"
+    ble = BLEServer(name="SolarSim-ESP32", command_handler=test_command_handler)
+
     # Create simulator
     sim = SolarSimulator()
     
