@@ -1,0 +1,20 @@
+name: Deploy SolarSim BT
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p docs/Bt
+          cp ESP32_Bluetooth/ProfileBuilderBt.html docs/Bt/index.html
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
