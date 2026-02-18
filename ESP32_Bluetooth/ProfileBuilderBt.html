@@ -14768,8 +14768,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   const firstStepFormatted = typeof formatHHMM === 'function' ? formatHHMM(typeof parseHHMM === 'function' ? parseHHMM(firstStepTime) : 0) : null;
 
                   if (firstStepFormatted) {
-                    const w = await getWriter();
-
                     // Check if program is enabled
                     let programIsEnabled = false;
                     if (window.kvCache && window.kvCache.get) {
@@ -14783,17 +14781,15 @@ https://github.com/odeepllama/SolarSim/tree/main
                       }
                     }
 
-                    // Set time to first step
+                    // Set time to first step (uses sendLine which handles both Serial and BLE)
                     console.log('[Jump Nextstep] Sending: set time', firstStepFormatted);
-                    await w.write(new TextEncoder().encode(`set time ${firstStepFormatted}\n`));
-                    if (!opts.silentEcho) { log(`> set time ${firstStepFormatted}`, 'cmd'); }
+                    await sendLine(`set time ${firstStepFormatted}`, { silentEcho: opts.silentEcho });
 
                     // Enable program if needed
                     if (!programIsEnabled) {
                       await new Promise(resolve => setTimeout(resolve, 100));
                       console.log('[Jump Nextstep] Enabling program');
-                      await w.write(new TextEncoder().encode('toggle program\n'));
-                      if (!opts.silentEcho) { log('> toggle program', 'cmd'); }
+                      await sendLine('toggle program', { silentEcho: opts.silentEcho });
                     }
 
                     // Update step counter and day
@@ -15819,157 +15815,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
         })();
-        // === Tile Popover (SimTime, Speed, Intensity) ===
-        (function initTilePopover() {
-          // Create popover once
-          let pop = document.getElementById('tilePopover');
-          if (!pop) { pop = document.createElement('div'); pop.id = 'tilePopover'; document.body.appendChild(pop); }
-          let currentKey = null; let outsideClickHandler = null;
-
-          function hide() {
-            if (!pop) return; pop.style.display = 'none'; currentKey = null; if (outsideClickHandler) { document.removeEventListener('mousedown', outsideClickHandler); outsideClickHandler = null; } try { state.__suppressDisabledUntil = 0; } catch (_) { }
-          }
-          function showForTile(tileEl, key, contentBuilder) {
-            if (!tileEl || !contentBuilder) return;
-            // Pause log suppression guard briefly while user interacts
-            try { state.__suppressDisabledUntil = performance.now() + 100000; } catch (_) { }
-            currentKey = key;
-            pop.innerHTML = '';
-            contentBuilder(pop);
-            // Position below tile left-aligned
-            const r = tileEl.getBoundingClientRect();
-            pop.style.left = Math.round(r.left + window.scrollX) + 'px';
-            pop.style.top = Math.round(r.bottom + window.scrollY + 6) + 'px';
-            pop.style.display = 'block';
-            // Outside click to close
-            outsideClickHandler = (e) => { if (!pop.contains(e.target) && e.target !== tileEl) hide(); };
-            document.addEventListener('mousedown', outsideClickHandler);
-          }
-
-          function canSend() { return !!(state && (state.port || (state.bleServer && state.bleServer.connected))); }
-          async function sendSilent(cmd) {
-            try { await sendLine(cmd, { silentEcho: true }); } catch (e) { log('Connection failure', 'error'); }
-          }
-
-          function hhmmInputRow() {
-            const row = document.createElement('div'); row.className = 'row';
-            const label = document.createElement('label'); label.textContent = 'HHMM:'; row.appendChild(label);
-            const input = document.createElement('input'); input.type = 'text'; input.placeholder = '0730'; input.maxLength = 4; row.appendChild(input);
-            input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4); });
-            return { row, get: () => input.value };
-          }
-
-          function buildSimTime(popEl) {
-            const title = document.createElement('h4'); title.textContent = 'Set SimTime'; popEl.appendChild(title);
-            const { row, get } = hhmmInputRow(); popEl.appendChild(row);
-            const btns = document.createElement('div'); btns.className = 'btn-row';
-            const bSunrise = document.createElement('button'); bSunrise.className = 'btn'; bSunrise.textContent = 'Sunrise';
-            const bNoon = document.createElement('button'); bNoon.className = 'btn'; bNoon.textContent = 'Noon';
-            const bNow = document.createElement('button'); bNow.className = 'btn'; bNow.textContent = 'Now';
-            const apply = document.createElement('button'); apply.className = 'btn primary'; apply.textContent = 'Apply'; apply.disabled = !canSend();
-            btns.appendChild(bSunrise); btns.appendChild(bNoon); btns.appendChild(bNow); btns.appendChild(apply); popEl.appendChild(btns);
-            bSunrise.addEventListener('click', () => {
-              // Use last known sunrise minutes if available, else 06:00
-              try {
-                const ns = window.__solarSimMonitorState || {};
-                const mins = (typeof ns.__sunArcSunrise === 'number') ? ns.__sunArcSunrise : 360;
-                const h = String(Math.floor(mins / 60)).padStart(2, '0');
-                const m = String(mins % 60).padStart(2, '0');
-                sendSilent('set time ' + h + m);
-              } catch (_) { sendSilent('set time 0600'); }
-              hide();
-            });
-            bNoon.addEventListener('click', () => sendSilent('set time 1200'));
-            bNow.addEventListener('click', () => {
-              try {
-                const d = new Date(); const hh = String(d.getHours()).padStart(2, '0'); const mm = String(d.getMinutes()).padStart(2, '0');
-                sendSilent('set time ' + hh + mm);
-              } catch (_) { /* fallback ignored */ }
-              hide();
-            });
-            apply.addEventListener('click', () => { let v = get(); v = (v || '').replace(/\D/g, ''); if (/^\d{3,4}$/.test(v)) { if (v.length === 3) v = '0' + v; sendSilent('set time ' + v); hide(); } });
-          }
-
-          function buildSpeed(popEl) {
-            const title = document.createElement('h4'); title.textContent = 'Set Speed'; popEl.appendChild(title);
-            const btns = document.createElement('div'); btns.className = 'btn-row';
-            // Display labels use 'x', but firmware expects a plain number (no 'x')
-            // Replaced 600x/-600x with 300x/-300x, kept 1x, 60x, -1x, -60x
-            const presets = ['1x', '60x', '300x', '-1x', '-60x', '-300x'];
-            presets.forEach(label => {
-              const b = document.createElement('button'); b.className = 'btn'; b.textContent = label.toUpperCase(); b.disabled = !canSend();
-              b.addEventListener('click', () => {
-                const numeric = label.replace(/x$/i, '');
-                sendSilent('set speed ' + numeric);
-                hide();
-              });
-              btns.appendChild(b);
-            });
-            popEl.appendChild(btns);
-            // Custom numeric input (factor), accepts e.g., 1, 60, -600; Enter-to-apply
-            const row = document.createElement('div'); row.className = 'row';
-            const lab = document.createElement('label'); lab.textContent = 'Custom (x):'; row.appendChild(lab);
-            const num = document.createElement('input'); num.type = 'number'; num.step = '1'; num.min = '-10000'; num.max = '10000'; num.placeholder = 'e.g., 120'; row.appendChild(num);
-            const apply = document.createElement('button'); apply.className = 'btn primary'; apply.textContent = 'Apply'; apply.disabled = !canSend();
-            const applyFn = () => { const v = parseFloat(num.value); if (!isNaN(v)) { sendSilent('set speed ' + v); hide(); } };
-            num.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyFn(); });
-            apply.addEventListener('click', applyFn);
-            popEl.appendChild(row); popEl.appendChild(apply);
-          }
-
-          function buildIntensity(popEl) {
-            const title = document.createElement('h4'); title.textContent = 'Set Intensity'; popEl.appendChild(title);
-            const btns = document.createElement('div'); btns.className = 'btn-row';
-            const presetVals = ['0.5', '1.0'];
-            presetVals.forEach(v => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = v; b.disabled = !canSend(); b.addEventListener('click', () => { sendSilent('set intensity ' + v); hide(); }); btns.appendChild(b); });
-            // Custom numeric input
-            const row = document.createElement('div'); row.className = 'row';
-            const label = document.createElement('label'); label.textContent = 'Custom:'; row.appendChild(label);
-            const num = document.createElement('input'); num.type = 'number'; num.step = '0.1'; num.min = '0'; num.max = '3'; num.placeholder = 'e.g., 0.8'; row.appendChild(num);
-            const apply = document.createElement('button'); apply.className = 'btn primary'; apply.textContent = 'Apply'; apply.disabled = !canSend();
-            apply.addEventListener('click', () => { const v = parseFloat(num.value); if (!isNaN(v)) { sendSilent('set intensity ' + v); hide(); } });
-            popEl.appendChild(btns); popEl.appendChild(row); popEl.appendChild(apply);
-          }
-
-          // Attach handlers after tiles exist
-          setTimeout(() => {
-            try {
-              // Mark tiles interactive to get pointer cursor
-              const grid = document.getElementById('monitorStatusGrid'); if (!grid) return;
-              const map = new Map();
-              map.set('sim', buildSimTime);
-              map.set('speed', buildSpeed);
-              map.set('intensity', buildIntensity);
-              for (const [k, box] of kvCache.entries()) {
-                if (!map.has(k)) continue;
-                box.classList.add('interactive');
-                box.addEventListener('click', (e) => { e.stopPropagation(); hide(); showForTile(box, k, map.get(k)); });
-              }
-              // Also wrap setKV so newly created tiles become interactive
-              if (typeof window.setKV === 'function' && !window.setKV.__tilePopoverWrapped) {
-                const orig = window.setKV;
-                window.setKV = function (k, label, val) {
-                  const res = orig.apply(this, arguments);
-                  try {
-                    if (map.has(k)) {
-                      const box = kvCache.get(k);
-                      if (box && !box.__tilePopoverBound) {
-                        box.classList.add('interactive');
-                        box.addEventListener('click', (e) => { e.stopPropagation(); hide(); showForTile(box, k, map.get(k)); });
-                        box.__tilePopoverBound = true;
-                      }
-                    }
-                  } catch (_) { }
-                  return res;
-                };
-                window.setKV.__tilePopoverWrapped = true;
-              }
-              // Global escape to close
-              document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
-              window.addEventListener('resize', hide);
-            } catch (_) { }
-          }, 600);
-        })();
+        // Note: Tile popover handlers are initialized by the comprehensive
+        // Global Tile Popover Init section in the next script block.
         function fmtHHMM(hhmm) { if (hhmm == null) return '--:--'; const h = Math.floor(hhmm / 100), m = hhmm % 100; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
         // Removed parse mode pill code as JSON is no longer used
         setInterval(() => {
@@ -16053,11 +15900,25 @@ https://github.com/odeepllama/SolarSim/tree/main
         });
         btConnectBtn && btConnectBtn.addEventListener('click', () => {
           ensureBLE().then(() => {
-            // Staggered status requests to reliably populate all tiles over BLE
+            // Smart staggered status requests: retry until key tiles are populated
             // (BLE at default MTU may drop some notifications in a burst)
-            setTimeout(() => { sendStatusSilent(); }, 500);
-            setTimeout(() => { sendStatusSilent(); }, 2000);
-            setTimeout(() => { sendStatusSilent(); }, 4000);
+            const expectedTiles = ['sim', 'speed', 'intensity', 'solarMode', 'sunColor'];
+            const retryDelays = [500, 2000, 4000, 6000, 8000];
+            const retryTimers = [];
+            function allTilesPopulated() {
+              if (!window.kvCache || !window.kvCache.get) return false;
+              return expectedTiles.every(k => {
+                const box = window.kvCache.get(k);
+                if (!box) return false;
+                const span = box.querySelector('span');
+                return span && span.textContent && span.textContent !== '—';
+              });
+            }
+            retryDelays.forEach(delay => {
+              retryTimers.push(setTimeout(() => {
+                if (!allTilesPopulated()) sendStatusSilent();
+              }, delay));
+            });
           }).catch(e => {
             const fullErr = (e.message || '').toLowerCase();
             let msg = 'BLE connection failure';

@@ -330,7 +330,11 @@ class SolarSimulator:
         }
 
     def print_status(self):
-        """Print full status report (RP2040-compatible format for HTML parser)."""
+        """Print full status report (RP2040-compatible format for HTML parser).
+
+        Collects all lines and sends as a single BLE batch to avoid
+        fragmenting ~30 lines into individual notifications.
+        """
         now = ticks_ms()
         et, tod = get_sim_time(START_TIME_HHMM, ticks_diff(now, self.start_real_time_ms), TIME_SCALE)
         if TIME_SCALE == 0:
@@ -338,7 +342,11 @@ class SolarSimulator:
         h = int(tod // 60) % 24
         m = int(tod % 60)
 
-        o = self.output
+        lines = []
+        def o(text):
+            print(text)
+            lines.append(text)
+
         o("--- System Status ---")
 
         o("-- Simulation & Time --")
@@ -425,6 +433,13 @@ class SolarSimulator:
 
         gc.collect()
         o(f"  Memory Free: {gc.mem_free()}")
+
+        # Send entire status dump as a single BLE batch
+        if self.ble and self.ble.connected and not self.ble.output_paused:
+            try:
+                self.ble.send_batch(lines)
+            except Exception:
+                pass
 
     # ==========================================================
     # Command Handler

@@ -47,7 +47,7 @@ STATUS_CHAR_UUID       = ubluetooth.UUID('6E400004-B5A3-F393-E0A9-E50E24DCCA9E')
 TARGET_MTU = 512          # Negotiated MTU target
 ATT_HEADER_SIZE = 3       # ATT notification header
 DEFAULT_PAYLOAD = 20      # Conservative fallback payload
-CHUNK_DELAY_MS = 5        # Delay between chunked notifications
+CHUNK_DELAY_MS = 20       # Delay between chunked notifications
 
 
 class BLEComms:
@@ -225,6 +225,25 @@ class BLEComms:
         if not self._conn_handle or self._output_paused:
             return False
         return self._send_chunked(self._status_handle, text)
+
+    def send_batch(self, lines):
+        """Send multiple lines as a single chunked BLE transmission.
+
+        Concatenates all lines (adding newlines) and sends in one
+        chunked operation. Far more efficient than per-line send_response()
+        for status dumps (~30 lines).
+
+        Args:
+            lines: list of text strings to send
+        Returns:
+            True on success, False if not connected or send failed
+        """
+        if not self._conn_handle or self._output_paused:
+            return False
+        text = '\n'.join(lines)
+        if text and not text.endswith('\n'):
+            text += '\n'
+        return self._send_chunked(self._resp_handle, text)
 
     def _send_chunked(self, char_handle, text):
         """Send text as chunked BLE notifications.
