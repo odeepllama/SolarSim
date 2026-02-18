@@ -1,11 +1,10 @@
 """
-Dual-Mode main.py - Supports both BLE and USB Serial
-=======================================================
-This version handles commands from both:
-1. BLE GATT characteristics (wireless, works on iPad)
-2. USB Serial (wired, works on desktop with Web Serial API)
-
-Drop-in replacement for current main.py to enable dual-mode support.
+Dual-Mode main.py - Supports both BLE and Dedicated UART Bridge
+===============================================================
+This version determines the node role:
+1. BLE Link Device (Bridge): Receives BLE commands -> Forwards to UART1 (Pins 17/18)
+2. UART1 listens for responses -> Forwards back to BLE
+3. USB Serial preserved for debugging
 """
 
 import time
@@ -14,15 +13,25 @@ import sys
 import select
 from ble_server import BLEServer
 from lcd_i2c import LCD1602
-from machine import Pin, I2C
+from machine import Pin, I2C, UART
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+# UART1 Configuration (Inter-device link)
+UART_ID = 1
+UART_BAUD = 115200
+TX_PIN = 17
+RX_PIN = 18
 
 # ============================================================================
 # HARDWARE INITIALIZATION
 # ============================================================================
 
 print("\n" + "="*50)
-print("Solar Simulator ESP32-S3 (DUAL-MODE)")
-print("BLE + USB Serial Support")
+print("Solar Simulator - BLE Link Device (Bridge)")
+print(f"Bridging BLE <-> UART{UART_ID} (TX={TX_PIN}, RX={RX_PIN})")
 print("="*50 + "\n")
 
 # Initialize I2C and LCD
@@ -32,11 +41,11 @@ try:
     devices = i2c.scan()
     
     if devices:
-        addr = 0x27 if 0x27 in devices else devices[0]
+        addr = 0x27 if 0x27 in devices else (0x3F if 0x3F in devices else devices[0])
         lcd = LCD1602(i2c, addr)
         lcd.clear()
-        lcd.print("SolarSim DUAL", 0, 0)
-        lcd.print("BLE + Serial", 0, 1)
+        lcd.print("BLE Bridge", 0, 0)
+        lcd.print("Init UART...", 0, 1)
         print(f"[INIT] LCD found at {hex(addr)}")
     else:
         print("[INIT] No LCD found")
@@ -45,207 +54,150 @@ except Exception as e:
     print(f"[INIT] LCD error: {e}")
     lcd = None
 
+# Initialize Dedicated UART for Inter-Device Communication
+print(f"[INIT] Initializing UART{UART_ID}...")
+try:
+    uart_link = UART(UART_ID, baudrate=UART_BAUD, tx=Pin(TX_PIN), rx=Pin(RX_PIN))
+    uart_link.init(bits=8, parity=None, stop=1)
+    print(f"[INIT] UART{UART_ID} started on TX={TX_PIN}, RX={RX_PIN}")
+except Exception as e:
+    print(f"[INIT] Error starting UART: {e}")
+    uart_link = None
+
 time.sleep(1)
 
 # ============================================================================
-# COMMAND HANDLER (Shared by both BLE and Serial)
+# COMMAND HANDLER
 # ============================================================================
 
-def handle_command(command):
+def handle_ble_command(command):
     """
-    Process command from either BLE or Serial
-    Returns response string
+    Callback for when a command is received via BLE.
+    Forwards the command to the Main Device via UART.
     """
-    try:
-        parts = command.strip().split()
-        if not parts:
-            return "ERROR: Empty command"
-        
-        cmd = parts[0].upper()
-        
-        # ECHO - Echo back the message
-        if cmd == "ECHO":
-            return " ".join(parts[1:]) if len(parts) > 1 else "ECHO"
-        
-        # STATUS - Return system status
-        elif cmd == "STATUS":
-            gc.collect()
-            free_kb = gc.mem_free() // 1024
-            return f"OK: ESP32-S3 running, {free_kb}KB free"
-        
-        # LCD - Display on LCD
-        elif cmd == "LCD":
-            if lcd:
-                line0 = " ".join(parts[1:3]) if len(parts) > 2 else "Test"
-                line1 = " ".join(parts[3:]) if len(parts) > 3 else "Message"
-                lcd.clear()
-                lcd.print(line0[:16], 0, 0)
-                lcd.print(line1[:16], 0, 1)
-                return f"OK: LCD updated"
-            else:
-                return "ERROR: No LCD available"
-        
-        # MEM - Memory info
-        elif cmd == "MEM":
-            gc.collect()
-            free = gc.mem_free()
-            allocated = gc.mem_alloc()
-            total = free + allocated
-            return f"OK: Free={free//1024}KB, Allocated={allocated//1024}KB, Total={total//1024}KB"
-        
-        # PING - Connection test
-        elif cmd == "PING":
-            return "PONG"
-        
-        # HELP - List commands
-        elif cmd == "HELP":
-            return "Commands: ECHO, STATUS, LCD, MEM, PING, HELP, MODE"
-        
-        # MODE - Report connection mode
-        elif cmd == "MODE":
-            return "OK: Dual-mode (BLE + Serial)"
-        
-        else:
-            return f"ERROR: Unknown command '{cmd}'"
+    cmd = command.strip()
+    if not cmd:
+        return "ERROR: Empty command"
+
+    print(f"[BLE->UART] Forwarding: {cmd}")
     
-    except Exception as e:
-        return f"ERROR: {e}"
-
+    # Forward to Main Device via UART if available
+    if uart_link:
+        try:
+            uart_link.write(f"{cmd}\n")  # Ensure newline for readline() on other end
+            return None  # Don't send immediate response, wait for UART reply
+            # Note: If we return a string here, BLEServer sends it immediately.
+            # We explicitly return None so we can send the *real* response from UART later.
+        except Exception as e:
+            return f"ERROR: UART write failed: {e}"
+    else:
+        return "ERROR: UART link down"
 
 # ============================================================================
-# BLE HANDLER
+# BLE INITIALIZATION
 # ============================================================================
 
 print("[INIT] Starting BLE server...")
-ble = BLEServer(name="SolarSim-ESP32", command_callback=handle_command)
-ble.start_advertising()
+# We pass handle_ble_command. Note: If it returns None, BLEServer won't send a reply immediately,
+# which allows us to send the asynchronous UART reply later.
+ble = BLEServer(name="SolarSim-ESP32", command_handler=handle_ble_command)
 print("[INIT] BLE advertising started")
-print(f"[INIT] Service UUID: {ble.service_uuid}")
 
 if lcd:
     lcd.clear()
-    lcd.print("BLE: Waiting", 0, 0)
-    lcd.print("Serial: Ready", 0, 1)
+    lcd.print("BLE: Ready", 0, 0)
+    lcd.print("Bridge Active", 0, 1)
 
 # ============================================================================
-# USB SERIAL HANDLER (Non-blocking)
+# USB SERIAL DEBUG HELPERS
 # ============================================================================
 
-def check_serial_input():
-    """
-    Check for commands from USB Serial (non-blocking)
-    Returns: command string or None
-    """
+def check_usb_serial():
+    """Check for debug commands on USB Serial"""
     try:
-        # Check if data available on stdin
         if select.select([sys.stdin], [], [], 0)[0]:
             line = sys.stdin.readline()
             if line:
                 return line.strip()
-    except Exception as e:
-        # select not available on all MicroPython builds
-        # Fallback to blocking read with timeout
+    except:
         pass
     return None
 
-
-# Alternative for platforms without select:
-def check_serial_input_alt():
-    """
-    Alternative serial check using sys.stdin.read() with small buffer
-    """
-    try:
-        if sys.stdin in sys.stdin:  # Check if readable
-            line = sys.stdin.readline()
-            return line.strip() if line else None
-    except:
-        return None
-
-
 # ============================================================================
-# MAIN LOOP - Handle both BLE and Serial
+# MAIN LOOP
 # ============================================================================
 
-print("\n[MAIN] Entering main loop...")
-print("[MAIN] Ready to accept commands via:")
-print("[MAIN]   - USB Serial (Web Serial API on desktop)")
-print("[MAIN]   - BLE (Web Bluetooth API on iPad/desktop)")
-print()
+print("\n[MAIN] Bridge Running...")
+print("[MAIN] 1. Connect BLE App")
+print("[MAIN] 2. Commands sent to BLE are forwarded to UART")
+print("[MAIN] 3. Responses from UART are forwarded to BLE")
 
-last_status_update = time.ticks_ms()
-status_interval = 5000  # Update status every 5 seconds
-
-connection_mode = "WAITING"  # "WAITING", "BLE", "SERIAL", "BOTH"
+buffer = ""
 
 try:
     while True:
-        # ====================================================================
-        # Process USB Serial Input
-        # ====================================================================
-        try:
-            serial_cmd = check_serial_input()
-            if serial_cmd:
-                print(f"[SERIAL] Received: {serial_cmd}")
-                response = handle_command(serial_cmd)
-                print(response)  # Send response back via Serial
-                
-                # Update connection mode
-                if connection_mode == "WAITING":
-                    connection_mode = "SERIAL"
-                elif connection_mode == "BLE":
-                    connection_mode = "BOTH"
-                
-                if lcd:
-                    lcd.clear()
-                    lcd.print("Serial CMD OK", 0, 0)
-                    lcd.print(serial_cmd[:16], 0, 1)
-        except Exception as e:
-            print(f"[SERIAL] Error: {e}")
+        # 1. Check UART for responses from Main Device
+        if uart_link and uart_link.any():
+            try:
+                # Read available data
+                data = uart_link.read()
+                if data:
+                    # Decode and handle potentially fragmented messages
+                    try:
+                        text = data.decode('utf-8')
+                        
+                        # Simple line buffering
+                        buffer += text
+                        
+                        if '\n' in buffer:
+                            lines = buffer.split('\n')
+                            # Process all complete lines
+                            for line in lines[:-1]:
+                                clean_line = line.strip()
+                                if clean_line:
+                                    print(f"[UART->BLE] Response: {clean_line}")
+                                    
+                                    # Forward to BLE
+                                    if ble.is_connected():
+                                        # Use send_response for generic messages or specific logic
+                                        ble.send_response(clean_line)
+                                        
+                                        # Update LCD with status if applicable
+                                        if lcd and "Time:" in clean_line:
+                                            # "Time:06:00 Speed:1X..."
+                                            parts = clean_line.split()
+                                            if len(parts) >= 2:
+                                                lcd.clear()
+                                                lcd.print(parts[0], 0, 0) # Time:HH:MM
+                                                lcd.print(parts[1], 0, 1) # Speed
+                            
+                            # Keep the remainder
+                            buffer = lines[-1]
+                            
+                    except UnicodeError:
+                        print("[Bridge] binary data ignored")
+                        
+            except Exception as e:
+                print(f"[Bridge] UART Read Error: {e}")
+
+        # 2. Check USB Serial (Local Debugging Override)
+        debug_cmd = check_usb_serial()
+        if debug_cmd:
+            print(f"[USB->UART] Debug Send: {debug_cmd}")
+            if uart_link:
+                uart_link.write(f"{debug_cmd}\n")
+
+        # 3. Frequent BLE housekeeping
+        # (BLEServer handles interrupts automatically)
         
-        # ====================================================================
-        # BLE Status Update (handled by callbacks, but update LCD)
-        # ====================================================================
-        now = time.ticks_ms()
-        if time.ticks_diff(now, last_status_update) > status_interval:
-            last_status_update = now
-            
-            # Send periodic status via BLE if connected
-            if ble.is_connected():
-                gc.collect()
-                status_msg = f"Mode:{connection_mode},Free:{gc.mem_free()//1024}KB"
-                ble.send_status(status_msg)
-                
-                # Update connection mode
-                if connection_mode == "WAITING":
-                    connection_mode = "BLE"
-                elif connection_mode == "SERIAL":
-                    connection_mode = "BOTH"
-                
-                if lcd and connection_mode != "WAITING":
-                    lcd.clear()
-                    lcd.print(f"Mode: {connection_mode}", 0, 0)
-                    lcd.print(f"{gc.mem_free()//1024}KB free", 0, 1)
-        
-        # ====================================================================
-        # Garbage Collection
-        # ====================================================================
-        gc.collect()
-        
-        # Small delay to prevent busy-waiting
+        # Small sleep to yield
         time.sleep_ms(10)
 
 except KeyboardInterrupt:
-    print("\n[MAIN] Keyboard interrupt - stopping...")
+    print("\n[MAIN] Stopping Bridge...")
+    if ble:
+        ble.stop()
     if lcd:
         lcd.clear()
-        lcd.print("System Stopped", 0, 0)
-
-except Exception as e:
-    print(f"\n[MAIN] Fatal error: {e}")
-    if lcd:
-        lcd.clear()
-        lcd.print("ERROR!", 0, 0)
-        lcd.print(str(e)[:16], 0, 1)
-
-finally:
-    print("[MAIN] Cleanup complete")
+        lcd.print("Bridge Stopped", 0, 0)
+    print("[MAIN] Done")
