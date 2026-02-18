@@ -4,7 +4,7 @@ BLE GATT Server for Solar Simulator
 Provides Bluetooth Low Energy communication interface for iPad/browser control
 using Web Bluetooth API.
 
-Service UUID: 12345678-1234-5678-1234-56789abcdef0
+Service UUID: 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
 
 Characteristics:
 - Command (Write): Receive commands from browser
@@ -25,10 +25,10 @@ _IRQ_GATTS_READ_REQUEST = const(4)
 _IRQ_GATTS_INDICATE_DONE = const(20)
 
 # Define Solar Simulator BLE Service UUIDs
-SOLAR_SIM_SERVICE_UUID = ubluetooth.UUID('12345678-1234-5678-1234-56789abcdef0')
-COMMAND_CHAR_UUID = ubluetooth.UUID('12345678-1234-5678-1234-56789abcdef1')
-RESPONSE_CHAR_UUID = ubluetooth.UUID('12345678-1234-5678-1234-56789abcdef2')
-STATUS_CHAR_UUID = ubluetooth.UUID('12345678-1234-5678-1234-56789abcdef3')
+SOLAR_SIM_SERVICE_UUID = ubluetooth.UUID('6E400001-B5A3-F393-E0A9-E50E24DCCA9E')
+COMMAND_CHAR_UUID = ubluetooth.UUID('6E400002-B5A3-F393-E0A9-E50E24DCCA9E')
+RESPONSE_CHAR_UUID = ubluetooth.UUID('6E400003-B5A3-F393-E0A9-E50E24DCCA9E')
+STATUS_CHAR_UUID = ubluetooth.UUID('6E400004-B5A3-F393-E0A9-E50E24DCCA9E')
 
 # GATT Characteristic Flags
 _FLAG_READ = const(0x0002)

@@ -12,6 +12,8 @@ Initializes:
 
 import gc
 import time
+import sys
+import select
 from machine import Pin, I2C
 
 print("\n[MAIN] Starting Solar Simulator...")
@@ -109,6 +111,26 @@ except Exception as e:
 gc.collect()
 
 # ============================================
+# Serial Input Handler
+# ============================================
+
+def check_serial_input():
+    """
+    Check for commands from USB Serial (non-blocking)
+    Returns: command string or None
+    """
+    try:
+        # Check if data available on stdin
+        if select.select([sys.stdin], [], [], 0)[0]:
+            line = sys.stdin.readline()
+            if line:
+                return line.strip()
+    except Exception:
+        # select not available on all MicroPython builds or error
+        pass
+    return None
+
+# ============================================
 # Main Loop
 # ============================================
 
@@ -135,14 +157,29 @@ last_sim_update = time.ticks_ms()
 
 try:
     while True:
-        # Update simulation if initialized
+        # 1. Update simulation if initialized
         if simulator:
             now = time.ticks_ms()
             if time.ticks_diff(now, last_sim_update) >= 1000:  # Update every second
                 simulator.update()
                 last_sim_update = now
         
-        # Update status every 5 seconds if BLE connected
+        # 2. Check for Serial Input
+        serial_cmd = check_serial_input()
+        if serial_cmd:
+            print(f"[SERIAL] Received: {serial_cmd}")
+            if simulator:
+                response = simulator.process_command(serial_cmd)
+                print(response)  # Send response back via Serial
+                
+                if lcd:
+                    lcd.clear()
+                    lcd.print("Serial CMD OK", 0, 0)
+                    lcd.print(serial_cmd[:16], 0, 1)
+            else:
+                print("ERROR: Simulator not initialized")
+
+        # 3. Update status every 5 seconds if BLE connected
         if ble and ble.is_connected():
             now = time.ticks_ms()
             if time.ticks_diff(now, last_status_time) >= 5000:
@@ -157,10 +194,10 @@ try:
                 last_status_time = now
         
         # Small delay to prevent tight loop
-        time.sleep_ms(100)
+        time.sleep_ms(10)
         
         # Periodic garbage collection
-        if status_counter % 10 == 0:
+        if status_counter % 100 == 0:  # Less frequent GC
             gc.collect()
             
 except KeyboardInterrupt:
