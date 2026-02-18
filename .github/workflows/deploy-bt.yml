@@ -6,9 +6,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pages: write
-      id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - run: |
