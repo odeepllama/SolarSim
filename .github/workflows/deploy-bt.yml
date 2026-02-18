@@ -10,9 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p docs/Bt
-          cp ESP32_Bluetooth/ProfileBuilderBt.html docs/Bt/index.html
+          mkdir -p deploy/Bt
+          cp ESP32_Bluetooth/ProfileBuilderBt.html deploy/Bt/index.html
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          publish_dir: ./deploy
+          keep_files: true
