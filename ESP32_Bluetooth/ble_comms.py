@@ -14,7 +14,7 @@ MTU: 512 bytes (509 payload per notification after 3-byte ATT header)
 
 import ubluetooth
 from micropython import const
-from time import sleep_ms
+from time import sleep_ms, ticks_ms, ticks_diff
 
 # ======================================================
 # BLE Event Constants
@@ -88,6 +88,13 @@ class BLEComms:
 
         # Output control
         self._output_paused = False  # True when serial takes priority
+
+        # Command queue: IRQ buffers commands here, main loop polls
+        self._cmd_queue = []
+
+        # Notification throttle: minimum ms between gatts_notify calls
+        self._last_notify_ms = 0
+        self._notify_min_gap_ms = 15
 
         # Characteristic handles (set during registration)
         self._cmd_handle = None
@@ -164,14 +171,32 @@ class BLEComms:
             print(f"[BLE] MTU exchanged: {mtu} (payload: {self._payload_size}B)")
 
     def _handle_incoming_command(self):
-        """Read and dispatch command from Command characteristic."""
+        """Read command from Command characteristic and buffer it.
+
+        Called from IRQ context — must NOT call gatts_notify or sleep.
+        Commands are processed by poll_command() from the main loop.
+        """
         try:
             raw = self._ble.gatts_read(self._cmd_handle)
             command = raw.decode('utf-8').strip()
-            if command and self.on_command:
-                self.on_command(command)
+            if command:
+                self._cmd_queue.append(command)
         except Exception as e:
             print(f"[BLE] Command parse error: {e}")
+
+    def poll_command(self):
+        """Process one buffered command. Call from main loop.
+
+        Returns True if a command was processed, False if queue empty.
+        """
+        if not self._cmd_queue or not self.on_command:
+            return False
+        cmd = self._cmd_queue.pop(0)
+        try:
+            self.on_command(cmd)
+        except Exception as e:
+            print(f"[BLE] Command error: {e}")
+        return True
 
     # ==========================================================
     # Advertising
@@ -250,19 +275,34 @@ class BLEComms:
 
         Splits data into payload-sized chunks and sends each with
         a small inter-chunk delay to prevent buffer overruns.
+        Includes inter-notification throttle and single retry on failure.
         """
         try:
             data = text.encode('utf-8')
             chunk_size = self._payload_size
 
-            if len(data) <= chunk_size:
-                self._ble.gatts_notify(self._conn_handle, char_handle, data)
-            else:
-                for i in range(0, len(data), chunk_size):
-                    chunk = data[i:i + chunk_size]
+            chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+            for idx, chunk in enumerate(chunks):
+                # Throttle: ensure minimum gap between notifications
+                now = ticks_ms()
+                gap = ticks_diff(now, self._last_notify_ms)
+                if gap < self._notify_min_gap_ms:
+                    sleep_ms(self._notify_min_gap_ms - gap)
+
+                try:
                     self._ble.gatts_notify(self._conn_handle, char_handle, chunk)
-                    if i + chunk_size < len(data):
-                        sleep_ms(CHUNK_DELAY_MS)
+                except Exception:
+                    # Single retry after a brief pause
+                    sleep_ms(50)
+                    try:
+                        self._ble.gatts_notify(self._conn_handle, char_handle, chunk)
+                    except Exception as e2:
+                        print(f"[BLE] Notify retry failed: {e2}")
+                        return False
+
+                self._last_notify_ms = ticks_ms()
+                if idx < len(chunks) - 1:
+                    sleep_ms(CHUNK_DELAY_MS)
             return True
         except Exception as e:
             print(f"[BLE] Send error: {e}")

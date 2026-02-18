@@ -23,7 +23,7 @@ from program_engine import ProgramEngine, ROTATION_SPEED_PRESET_TABLE
 # Default Simulation Parameters
 # ======================================================
 START_TIME_HHMM = 600
-TIME_SCALE = 60
+TIME_SCALE = 1                 # Time scaling factor (0=HOLD, 1=Real Time, 60, 600, etc.)
 INTENSITY_SCALE = 1.0
 SIMULATION_DATE = 20250621
 LATITUDE = 39.75
@@ -1107,6 +1107,10 @@ class SolarSimulator:
                 if not self.rotation_lighting_active:
                     self.hw.deactivate_lighting()
                     self.camera_lighting_active = False
+
+            # Process BLE commands (dequeued from IRQ buffer)
+            if self.ble:
+                self.ble.poll_command()
 
             # Process serial input
             self.process_serial_input()
