@@ -14292,10 +14292,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         // ==================================================================
 
         // BLE GATT Service UUIDs for ESP32 Solar Simulator
-        const BLE_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E';
-        const BLE_CHAR_COMMAND_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E';
-        const BLE_CHAR_RESPONSE_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
-        const BLE_CHAR_STATUS_UUID = '6E400004-B5A3-F393-E0A9-E50E24DCCA9E';
+        const BLE_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+        const BLE_CHAR_COMMAND_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+        const BLE_CHAR_RESPONSE_UUID = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+        const BLE_CHAR_STATUS_UUID = '6e400004-b5a3-f393-e0a9-e50e24dcca9e';
 
         const state = {
           // BLE objects (replacing serial port)
@@ -14919,15 +14919,51 @@ https://github.com/odeepllama/SolarSim/tree/main
             const ansiRe = /\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07|\x1b[PXTESC][^\x1b]*\x1b\\/g;
             const cleanedLine = rawLine.replace(ansiRe, '');
             const line = cleanedLine.trim(); if (!line) continue;
-            // Process all lines as plain text
-            state.stats.textLines++; handlePlainTextLine(cleanedLine);
-            // Detect first successful status population (sim + speed OR sunColor etc.)
-            if (!state.__statusPrimed) {
-              if (/sim\s*time/i.test(line) || /sun\s*color\s*mode/i.test(line) || /intensity\s*scale/i.test(line)) {
-                state.__statusPrimed = true;
-                // Cancel any pending retry timeouts
-                if (state.__statusRetryTimers) { state.__statusRetryTimers.forEach(id => clearTimeout(id)); state.__statusRetryTimers.length = 0; }
+            // Handle status line: Time:06:00 Speed:1X Int:0% Mem:97KB
+            const statusMatch = line.match(/Time:(\d{2}:\d{2})\s+Speed:(\d+X|HOLD)\s+Int:(\d+)%\s+Mem:(\d+)KB/i);
+            if (statusMatch) {
+              const timeStr = statusMatch[1];
+              const speedStr = statusMatch[2];
+              const intStr = statusMatch[3];
+              const memStr = statusMatch[4];
+
+              // Update Time Tile
+              const timeEl = document.getElementById('stat-sim-time');
+              if (timeEl) timeEl.textContent = timeStr;
+
+              // Update Speed Tile
+              const speedEl = document.getElementById('stat-speed');
+              if (speedEl) speedEl.textContent = speedStr;
+
+              // Update Intensity Tile
+              const intEl = document.getElementById('stat-intensity');
+              if (intEl) intEl.textContent = intStr + '%';
+
+              // Update Sun Position (approximate based on time)
+              // 06:00 = 360m, 18:00 = 1080m. Range 720m.
+              // We can reverse calculate minutes from HH:MM
+              const [hh, mm] = timeStr.split(':').map(Number);
+              const mins = hh * 60 + mm;
+              const sunrise = 360, sunset = 1080;
+              let sunX = -1; // Default night
+
+              if (mins >= sunrise && mins <= sunset) {
+                // Map to 0-55 range for existing UI logic
+                const dayProgress = (mins - sunrise) / (sunset - sunrise);
+                sunX = Math.round(dayProgress * 55);
               }
+
+              // Update internal state for sun marker
+              const ns = window.__solarSimMonitorState || {};
+              ns.__lastSunX = sunX;
+              // Pass through to existing marker update if function exists
+              if (typeof ns.__positionSunMarker === 'function') ns.__positionSunMarker();
+
+              // Only log if manual or not silent
+              if (!state.__silentStatusUntil || performance.now() > state.__silentStatusUntil) {
+                log(line, 'info');
+              }
+              return;
             }
           }
         }
@@ -16090,7 +16126,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const showCmdBtn = document.getElementById('monitorCmdHelpBtn');
           const scrollLockBtnEl = document.getElementById('monitorScrollLockBtn');
           // Auto refresh button and heartbeat visual removed
-          function apply(open) {
+          function apply(open, autoRestore = false) {
             panel.classList.toggle('open', open);
             panel.setAttribute('aria-hidden', open ? 'false' : 'true');
             toggleBtn.classList.toggle('monitor-open', open);
@@ -16103,26 +16139,28 @@ https://github.com/odeepllama/SolarSim/tree/main
             localStorage.setItem(STORAGE_KEY, open ? '1' : '0');
             if (open) {
               if (!state.port) {
-                ensurePort().then(() => {
-                  // slight delay to allow reader to attach
-                  setTimeout(() => { sendStatusSilent(); }, 150);
-                }).catch(e => {
-                  const fullErr = (e.message || '').toLowerCase();
-                  let msg = 'Connection not active';
-                  if (fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
-                    msg = 'Connection not active - port already open';
-                  } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
-                    msg = 'Connection not active - no device found';
-                  }
-                  log(msg, 'error');
-                });
+                if (!autoRestore) {
+                  ensurePort().then(() => {
+                    // slight delay to allow reader to attach
+                    setTimeout(() => { sendStatusSilent(); }, 150);
+                  }).catch(e => {
+                    const fullErr = (e.message || '').toLowerCase();
+                    let msg = 'Connection not active';
+                    if (fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
+                      msg = 'Connection not active - port already open';
+                    } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
+                      msg = 'Connection not active - no device found';
+                    }
+                    log(msg, 'error');
+                  });
+                }
               } else {
                 // Already connected; request status immediately
                 sendStatusSilent();
               }
             }
           }
-          apply(openInitially);
+          apply(openInitially, true);
           // Align initial layout once visible
           setTimeout(() => { try { scheduleVisLogAlign(); } catch (_) { } }, 120);
           // If monitor was already open on load and a port becomes available slightly later,
