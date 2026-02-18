@@ -16053,8 +16053,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         });
         btConnectBtn && btConnectBtn.addEventListener('click', () => {
           ensureBLE().then(() => {
-            // After BLE connects, send initial status to populate tiles
-            setTimeout(() => { sendStatusSilent(); }, 300);
+            // Staggered status requests to reliably populate all tiles over BLE
+            // (BLE at default MTU may drop some notifications in a burst)
+            setTimeout(() => { sendStatusSilent(); }, 500);
+            setTimeout(() => { sendStatusSilent(); }, 2000);
+            setTimeout(() => { sendStatusSilent(); }, 4000);
           }).catch(e => {
             const fullErr = (e.message || '').toLowerCase();
             let msg = 'BLE connection failure';
