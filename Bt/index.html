@@ -12947,80 +12947,13 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Raw REPL Upload (Stopgap Implementation)
       // -----------------------------
       async function uploadProfileToBoard(options = {}) {
+        if (!('serial' in navigator)) { alert('Web Serial not supported in this browser. Use recent Chrome / Edge desktop.'); return; }
         const profileText = document.getElementById('exportPreview').value;
         if (!profileText) { alert('No profile text to upload.'); return; }
         let fn = document.getElementById('filename_preview').value || 'profile.txt';
         fn = fn.replace(/[^a-zA-Z0-9_.-]/g, '_');
         if (!fn.toLowerCase().endsWith('.txt')) fn += '.txt';
         const fullPath = fn; // write in root
-
-        // ------- BLE Upload Path -------
-        const monState = window.__solarSimMonitorState;
-        if (monState && monState.transport === 'ble') {
-          try {
-            const send = window.__sendLine;
-            if (!send) throw new Error('sendLine not available');
-
-            const lines = profileText.split('\n');
-            const totalLines = lines.length;
-
-            // Set up a listener for WRITE_OK confirmation
-            let writeOk = false;
-            const origLog = monState.log || console.log;
-            const checkWriteOk = (text) => { if (text.includes('WRITE_OK')) writeOk = true; };
-            // Temporarily hook into notification stream
-            const prevHandler = monState._bleUploadCheck;
-            monState._bleUploadCheck = checkWriteOk;
-
-            // Send writeprofile command
-            await send('writeprofile ' + fullPath);
-            await new Promise(r => setTimeout(r, 150));
-
-            // Send each profile line with small delay
-            for (let i = 0; i < totalLines; i++) {
-              await send(lines[i]);
-              // Small delay every line to avoid BLE congestion
-              if (i % 5 === 4) await new Promise(r => setTimeout(r, 100));
-              else await new Promise(r => setTimeout(r, 30));
-            }
-
-            // Send sentinel
-            await new Promise(r => setTimeout(r, 100));
-            await send('ENDPROFILE');
-
-            // Wait for WRITE_OK (up to 5 seconds)
-            const deadline = performance.now() + 5000;
-            while (!writeOk && performance.now() < deadline) {
-              await new Promise(r => setTimeout(r, 200));
-            }
-
-            monState._bleUploadCheck = null;
-
-            if (!writeOk) {
-              // Device likely rebooted before we got WRITE_OK — still probably succeeded
-              console.warn('[BLE Upload] No WRITE_OK received (device may have rebooted)');
-            }
-
-            // Show upload success modal
-            if (typeof showUploadSuccessModal === 'function') {
-              showUploadSuccessModal(fullPath, true);
-            } else {
-              alert('Profile uploaded successfully via BLE!');
-            }
-            if (typeof recordRecentProfile === 'function') {
-              try { recordRecentProfile(fullPath, profileText, { uploaded: true }); } catch (e) { }
-            }
-            if (typeof clearDiffHighlights === 'function') clearDiffHighlights();
-            return; // Done — BLE path complete
-          } catch (err) {
-            console.error('[BLE Upload]', err);
-            alert('BLE Upload failed: ' + err.message);
-            return;
-          }
-        }
-
-        // ------- Serial Upload Path (Raw REPL) -------
-        if (!('serial' in navigator)) { alert('Web Serial not supported in this browser. Use recent Chrome / Edge desktop.'); return; }
 
         const encoder = new TextEncoder();
         const useBase64 = profileText.length > 6000 || options.forceBase64; // heuristic threshold
@@ -14762,8 +14695,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               const text = new TextDecoder().decode(e.target.value);
               console.log('[BLE RX]', text.length, 'bytes:', text.substring(0, 80));
               processIncoming(text);
-              // Hook for BLE upload WRITE_OK detection
-              if (state._bleUploadCheck) state._bleUploadCheck(text);
             });
             state.bleDevice = device;
             state.bleServer = server;
