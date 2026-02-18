@@ -431,8 +431,6 @@ class SolarSimulator:
             o("  Program Steps: (none - program disabled)")
         o("-----------------------")
 
-        gc.collect()
-        o(f"  Memory Free: {gc.mem_free()}")
 
         # Send entire status dump as a single BLE batch
         if self.ble and self.ble.connected and not self.ble.output_paused:
@@ -945,14 +943,12 @@ class SolarSimulator:
                 char = sys.stdin.read(1)
                 if char in ('\n', '\r'):
                     if self.serial_buffer:
-                        print(f"[DEBUG] Serial cmd received: '{self.serial_buffer}'")
                         self.handle_command(self.serial_buffer)
                         self.serial_buffer = ""
                 elif char is not None:
                     self.serial_buffer += char
-        except Exception as e:
-            print(f"[DEBUG] Serial input error: {e}")
-
+        except Exception:
+            pass
     # ==========================================================
     # Servo State Machines
     # ==========================================================

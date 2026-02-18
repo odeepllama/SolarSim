@@ -76,7 +76,7 @@ class BLEComms:
         try:
             self._ble.config(gap_name=name, mtu=TARGET_MTU)
         except Exception as e:
-            print(f"[BLE] config warning: {e}")
+            pass
 
         # Connection state
         self._connections = set()
@@ -107,8 +107,6 @@ class BLEComms:
         # Start advertising
         self._advertise()
 
-        print(f"[BLE] Server initialized: {self.name}")
-        print(f"[BLE] Target MTU: {TARGET_MTU}, default payload: {self._payload_size}B")
 
     def _register_services(self):
         """Register GATT service with three characteristics."""
@@ -136,8 +134,6 @@ class BLEComms:
         # (profiles can be sent as large multi-line strings)
         self._ble.gatts_set_buffer(self._cmd_handle, 1024)
 
-        print(f"[BLE] GATT registered — cmd={self._cmd_handle}, "
-              f"resp={self._resp_handle}, status={self._status_handle}")
 
     def _irq_handler(self, event, data):
         """BLE interrupt request handler."""
@@ -168,7 +164,7 @@ class BLEComms:
             conn_handle, mtu = data
             self._mtu = mtu
             self._payload_size = mtu - ATT_HEADER_SIZE
-            print(f"[BLE] MTU exchanged: {mtu} (payload: {self._payload_size}B)")
+
 
     def _handle_incoming_command(self):
         """Read command from Command characteristic and buffer it.
@@ -213,7 +209,7 @@ class BLEComms:
         """
         try:
             self._ble.gap_advertise(interval_us)
-            print(f"[BLE] Advertising as '{self.name}'")
+
         except Exception as e:
             print(f"[BLE] Advertise error: {e}")
 
