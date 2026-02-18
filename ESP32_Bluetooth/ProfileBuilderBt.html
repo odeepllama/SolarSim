@@ -16835,8 +16835,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           outsideClickHandler = (e) => { if (!pop.contains(e.target) && e.target !== tileEl) hide(); }; document.addEventListener('mousedown', outsideClickHandler);
         }
-        function canSend() { const s = ns(); return !!(s && s.port); }
-        async function sendSilent(line) { const s = ns(); if (!s || !s.port) return; try { let w = s.writer; if (!w) { s.writer = s.port.writable.getWriter(); w = s.writer; } await w.write(new TextEncoder().encode(line + '\n')); } catch (e) { try { (s.log || console.log)('Send fail ' + e); } catch (_) { } } }
+        function canSend() { const s = ns(); return !!(s && (s.port || (s.bleServer && s.bleServer.connected))); }
+        async function sendSilent(line) { try { await sendLine(line, { silentEcho: true }); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
         function hhmmRow() { const row = document.createElement('div'); row.className = 'row'; const lab = document.createElement('label'); lab.textContent = 'HHMM:'; row.appendChild(lab); const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = '0730'; inp.maxLength = 4; inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9]/g, '').slice(0, 4); }); row.appendChild(inp); return { row, input: inp, get: () => inp.value }; }
         function wireEnterApply(inputEl, applyBtn, validateAndFormatFn) { if (!inputEl || !applyBtn) return; inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const v = validateAndFormatFn(); if (v != null) { if (!applyBtn.disabled) applyBtn.click(); } } }); }
         function buildSimTime(el) {
