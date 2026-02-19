@@ -10171,7 +10171,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Check if device is connected and running (same logic as lock UI)
         const serialState = window.__serialState || null;
-        const hasConnection = serialState && serialState.port;
+        const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
 
         if (!hasConnection || !hasLoadedProfile) return;
@@ -16984,7 +16984,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Check if device is connected
         const serialState = window.__serialState || null;
-        const hasConnection = serialState && serialState.port;
+        const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
         const isDeviceConnected = !!(hasConnection && hasLoadedProfile);
 
@@ -17038,7 +17038,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Check if serial port is connected (state.port exists in serial monitor scope)
           // and if there's a profile loaded on the device
           const serialState = window.__serialState || null;
-          const hasConnection = serialState && serialState.port;
+          const hasConnection = serialState && (serialState.port || serialState.bleDevice);
           const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
           return !!(hasConnection && hasLoadedProfile);
         }
@@ -17198,7 +17198,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Auto-expand on device connect (if user hasn't manually toggled)
         function checkAndAutoExpand() {
           const serialState = window.__serialState || null;
-          const hasConnection = serialState && serialState.port;
+          const hasConnection = serialState && (serialState.port || serialState.bleDevice);
           const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
           const deviceRunning = hasConnection && hasLoadedProfile;
 
@@ -17272,7 +17272,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Helper function to send command to device
       async function __sendDeviceCommand(cmd) {
         const serialState = window.__serialState || null;
-        if (!serialState || !serialState.port) {
+        if (!serialState || !(serialState.port || serialState.bleDevice)) {
           console.log('[__sendDeviceCommand] No serial connection');
           return false;
         }
@@ -17576,7 +17576,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Check if device is connected
         const serialState = window.__serialState || null;
-        const isConnected = serialState && serialState.port;
+        const isConnected = serialState && (serialState.port || serialState.bleDevice);
         console.log('[Step Nav] Device connected:', isConnected);
 
         if (isConnected && targetStepIndex >= 0) {
@@ -17681,7 +17681,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Check if device is connected
         const serialState = window.__serialState || null;
-        const isConnected = serialState && serialState.port;
+        const isConnected = serialState && (serialState.port || serialState.bleDevice);
         console.log('[Step Nav] Device connected:', isConnected);
 
         if (isConnected && targetStepIndex <= programSteps.length) {
