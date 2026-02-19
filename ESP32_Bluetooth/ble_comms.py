@@ -209,17 +209,35 @@ class BLEComms:
     # Advertising
     # ==========================================================
 
-    def _advertise(self, interval_us=250000):
-        """Start BLE advertising.
+    @staticmethod
+    def _adv_payload(adv_type, data):
+        """Encode a single AD structure: length + type + data."""
+        return bytes((len(data) + 1, adv_type)) + data
 
-        MicroPython v1.27+ auto-generates the advertising payload from
-        the gap_name set via config(). No custom adv_data needed.
+    def _advertise(self, interval_us=250000):
+        """Start BLE advertising with iOS-compatible payloads.
+
+        iOS requires explicit AD flags and the service UUID in
+        advertising / scan-response data. Without them the device
+        is invisible to CoreBluetooth (Safari, Bluefy, LightBlue…).
 
         Args:
             interval_us: Advertising interval in microseconds (default 250ms)
         """
         try:
-            self._ble.gap_advertise(interval_us)
+            # --- Primary advertising data ---
+            # AD Flags: LE General Discoverable (0x02) | BR/EDR Not Supported (0x04) = 0x06
+            adv_data = self._adv_payload(0x01, b'\x06')
+            # Complete Local Name (type 0x09)
+            adv_data += self._adv_payload(0x09, self.name.encode())
+
+            # --- Scan-response data ---
+            # 128-bit service UUID (type 0x07) in little-endian
+            # 6E400001-B5A3-F393-E0A9-E50E24DCCA9E reversed:
+            _SVC_UUID_LE = b'\x9E\xCA\xDC\x24\x0E\xE5\xA9\xE0\x93\xF3\xA3\xB5\x01\x00\x40\x6E'
+            resp_data = self._adv_payload(0x07, _SVC_UUID_LE)
+
+            self._ble.gap_advertise(interval_us, adv_data=adv_data, resp_data=resp_data)
 
         except Exception as e:
             print(f"[BLE] Advertise error: {e}")
