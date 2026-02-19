@@ -134,7 +134,10 @@ class Hardware:
         # --- NeoPixel Panel ---
         self._np_pin = Pin(NEOPIXEL_PIN, Pin.OUT)
         self.pixels = neopixel.NeoPixel(self._np_pin, NEOPIXEL_COUNT)
-        self.panel_buffer = [(0, 0, 0)] * NEOPIXEL_COUNT
+        # Flat bytearray: 3 bytes per pixel (R,G,B) — ~1.3 KB contiguous
+        # vs. old tuple-list which was ~20 KB of fragmented heap objects
+        self.panel_buffer = bytearray(NEOPIXEL_COUNT * 3)
+        self._next_frame = bytearray(NEOPIXEL_COUNT * 3)  # reusable scratch buffer
         print(f"[HW] NeoPixel panel initialized: {NEOPIXEL_COUNT} LEDs on GPIO {NEOPIXEL_PIN}")
 
         # --- Camera Shutter ---
@@ -249,31 +252,29 @@ class Hardware:
 
         Returns the override expiry time in ticks_ms.
         """
-        color = (r, g, b)
-        self.pixels.fill(color)
+        self.pixels.fill((r, g, b))
         self.pixels.write()
-        self.panel_buffer = [color] * NEOPIXEL_COUNT
+        buf = self.panel_buffer
+        for i in range(NEOPIXEL_COUNT):
+            off = i * 3
+            buf[off] = r
+            buf[off + 1] = g
+            buf[off + 2] = b
         return ticks_ms() + int(duration_sec * 1000)
 
     def clear_panel(self):
         """Turn off all NeoPixels."""
         self.pixels.fill((0, 0, 0))
         self.pixels.write()
-        self.panel_buffer = [(0, 0, 0)] * NEOPIXEL_COUNT
+        for i in range(len(self.panel_buffer)):
+            self.panel_buffer[i] = 0
 
     # ==========================================================
     # NeoPixel Panel — Sun Drawing
     # ==========================================================
 
     def draw_sun_to_buffer(self, buffer, x, y, size, r, g, b):
-        """Draw a single square sun onto a buffer without writing to hardware.
-
-        Args:
-            buffer: List of (r,g,b) tuples, length = NEOPIXEL_COUNT
-            x, y: Float center position of the sun
-            size: Integer size (width/height) of the sun square
-            r, g, b: Color components (0-255)
-        """
+        """Draw a single square sun onto a bytearray buffer."""
         x_int = int(x + 0.5)
         y_int = int(y)
         size_int = int(size)
@@ -285,6 +286,7 @@ class Hardware:
         half_size = size_int // 2
         start_x = x_int - half_size
         start_y = max(0, y_int - half_size)
+        buf_len = len(buffer) // 3
 
         for y_offset in range(size_int):
             for x_offset in range(size_int):
@@ -293,26 +295,25 @@ class Hardware:
                 if not (0 <= pos_x < 56 and 0 <= pos_y < 8):
                     continue
                 idx = self.xy_to_index(pos_x, pos_y)
-                if idx < len(buffer):
-                    buffer[idx] = (r_base, g_base, b_base)
+                if idx < buf_len:
+                    off = idx * 3
+                    buffer[off] = r_base
+                    buffer[off + 1] = g_base
+                    buffer[off + 2] = b_base
 
     def update_sun_display(self, minute_of_day, get_sun_position_fn, dual_sun_enabled):
-        """Calculate sun positions and update only changed pixels using delta-buffer.
-
-        Args:
-            minute_of_day: Current simulation time in minutes
-            get_sun_position_fn: Callable returning (x, y, size, r, g, b)
-            dual_sun_enabled: Whether dual sun mode is active
-        """
-        next_frame = [(0, 0, 0)] * NEOPIXEL_COUNT
+        """Calculate sun positions and update only changed pixels using delta-buffer."""
+        # Reuse pre-allocated scratch buffer instead of creating new list
+        nf = self._next_frame
+        for i in range(len(nf)):
+            nf[i] = 0
 
         x, y, size, r, g, b = get_sun_position_fn(minute_of_day)
 
         if size > 0:
-            self.draw_sun_to_buffer(next_frame, x, y, size, r, g, b)
+            self.draw_sun_to_buffer(nf, x, y, size, r, g, b)
 
             if dual_sun_enabled:
-                # Mirror sun symmetrically across the panel center
                 x_int = int(x + 0.5)
                 size_int = int(size)
                 half_size = size_int // 2
@@ -320,14 +321,19 @@ class Hardware:
                 end_x_primary = start_x_primary + size_int - 1
                 start_x_mirrored = 55 - end_x_primary
                 x_mirrored = float(start_x_mirrored + half_size)
-                self.draw_sun_to_buffer(next_frame, x_mirrored, y, size, r, g, b)
+                self.draw_sun_to_buffer(nf, x_mirrored, y, size, r, g, b)
 
         # Delta update: only write changed pixels
+        buf = self.panel_buffer
         pixels_changed = False
         for i in range(NEOPIXEL_COUNT):
-            if self.panel_buffer[i] != next_frame[i]:
-                self.panel_buffer[i] = next_frame[i]
-                self.pixels[i] = next_frame[i]
+            off = i * 3
+            nr, ng, nb = nf[off], nf[off + 1], nf[off + 2]
+            if buf[off] != nr or buf[off + 1] != ng or buf[off + 2] != nb:
+                buf[off] = nr
+                buf[off + 1] = ng
+                buf[off + 2] = nb
+                self.pixels[i] = (nr, ng, nb)
                 pixels_changed = True
 
         if pixels_changed:
@@ -350,29 +356,31 @@ class Hardware:
         return modes.get(panels_mode, list(range(7)))
 
     def apply_lighting(self, r, g, b, panels_mode="ALL"):
-        """Activate uniform lighting on selected panels.
-
-        Used for both camera and rotation lighting.
-        """
-        color = (r, g, b)
+        """Activate uniform lighting on selected panels."""
         self.pixels.fill((0, 0, 0))
         panel_indices = self.get_camera_panel_indices(panels_mode)
         for panel in panel_indices:
             for y in range(8):
                 for x in range(8):
                     idx = self.xy_to_index(panel * 8 + x, y)
-                    self.pixels[idx] = color
+                    self.pixels[idx] = (r, g, b)
         self.pixels.write()
         # Sync state buffer
+        buf = self.panel_buffer
         for i in range(NEOPIXEL_COUNT):
-            self.panel_buffer[i] = self.pixels[i]
+            c = self.pixels[i]
+            off = i * 3
+            buf[off] = c[0]
+            buf[off + 1] = c[1]
+            buf[off + 2] = c[2]
         return panel_indices
 
     def deactivate_lighting(self):
         """Turn off all panel lighting and sync buffer."""
         self.pixels.fill((0, 0, 0))
         self.pixels.write()
-        self.panel_buffer = [(0, 0, 0)] * NEOPIXEL_COUNT
+        for i in range(len(self.panel_buffer)):
+            self.panel_buffer[i] = 0
 
     # ==========================================================
     # Button Reading

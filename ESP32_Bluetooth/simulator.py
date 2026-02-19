@@ -1028,6 +1028,7 @@ class SolarSimulator:
         self.start_real_time_ms = ticks_ms()
         last_update_ms = self.start_real_time_ms
         update_interval_ms = 1000
+        gc_counter = 0  # periodic GC to prevent fragmentation
 
         self.output("Solar Simulator Starting!   **** Type \"help all\" for commands. ****")
 
@@ -1116,6 +1117,12 @@ class SolarSimulator:
 
             # Brief sleep to prevent tight loop
             sleep_ms(1)
+
+            # Periodic GC to prevent heap fragmentation
+            gc_counter += 1
+            if gc_counter >= 30:
+                gc.collect()
+                gc_counter = 0
 
     def _handle_buttons(self, now_ms):
         """Process button A and B presses."""

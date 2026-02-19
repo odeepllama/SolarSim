@@ -67,16 +67,23 @@ class BLEComms:
         self.name = name
         self.on_command = on_command
 
+        print("[BLE] Step A: Creating BLE object...")
         self._ble = ubluetooth.BLE()
+
+        print("[BLE] Step B: Activating BLE radio...")
         self._ble.active(True)
+        print("[BLE] Step B: BLE radio active.")
+
+        print("[BLE] Step C: Setting IRQ handler...")
         self._ble.irq(self._irq_handler)
 
         # Set GAP device name and MTU — gap_name is required in
         # MicroPython v1.27+ where custom adv_data name is ignored
+        print("[BLE] Step D: Configuring gap_name and MTU...")
         try:
             self._ble.config(gap_name=name, mtu=TARGET_MTU)
         except Exception as e:
-            pass
+            print(f"[BLE] Step D: config warning: {e}")
 
         # Connection state
         self._connections = set()
@@ -102,10 +109,14 @@ class BLEComms:
         self._status_handle = None
 
         # Register GATT services
+        print("[BLE] Step E: Registering GATT services...")
         self._register_services()
+        print("[BLE] Step E: GATT services registered.")
 
         # Start advertising
+        print("[BLE] Step F: Starting advertising...")
         self._advertise()
+        print(f"[BLE] Init complete. Advertising as '{self.name}'.")
 
 
     def _register_services(self):
