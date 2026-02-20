@@ -183,8 +183,8 @@ def get_scientific_sun_position(minute):
             g = int(230 * brightness)
             b = int(200 * brightness)
     elif SUN_COLOR_MODE == "BLUE":
-        r = int(100 * brightness)
-        g = int(150 * brightness)
+        r = 0
+        g = 0
         b = int(255 * brightness)
     else:
         r = int(CUSTOM_SUN_R * brightness)

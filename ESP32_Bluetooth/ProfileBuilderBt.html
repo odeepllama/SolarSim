@@ -1945,6 +1945,15 @@ https://github.com/odeepllama/SolarSim/tree/main
       max-width: 420px;
       padding: 8px;
       display: none;
+      box-sizing: border-box;
+    }
+
+    /* Constrain popover width on small screens */
+    @media (max-width: 480px) {
+      #tilePopover {
+        max-width: calc(100vw - 20px);
+        min-width: 200px;
+      }
     }
 
     #tilePopover h4 {
@@ -1972,9 +1981,15 @@ https://github.com/odeepllama/SolarSim/tree/main
     #tilePopover input[type="number"] {
       border: 1px solid #c9d1dc;
       border-radius: 6px;
-      padding: 4px 6px;
-      font-size: .9rem;
-      min-width: 80px;
+      padding: 6px 8px;
+      font-size: 16px;
+      /* >= 16px prevents iOS Safari auto-zoom on focus */
+      min-width: 60px;
+      max-width: 100%;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      /* consistent styling on iOS */
+      appearance: none;
     }
 
     #tilePopover .btn {
@@ -16806,35 +16821,50 @@ https://github.com/odeepllama/SolarSim/tree/main
         let pop = document.getElementById('tilePopover');
         if (!pop) { pop = document.createElement('div'); pop.id = 'tilePopover'; document.body.appendChild(pop); }
         let outsideClickHandler = null;
-        function hide() { if (!pop) return; pop.style.display = 'none'; if (outsideClickHandler) { document.removeEventListener('mousedown', outsideClickHandler); outsideClickHandler = null; } }
+        let outsideTouchHandler = null;
+        function hide() {
+          if (!pop) return; pop.style.display = 'none';
+          if (outsideClickHandler) { document.removeEventListener('mousedown', outsideClickHandler); outsideClickHandler = null; }
+          if (outsideTouchHandler) { document.removeEventListener('touchstart', outsideTouchHandler); outsideTouchHandler = null; }
+        }
         function show(tileEl, builder) {
           if (!tileEl || !builder) return; pop.innerHTML = ''; builder(pop); const r = tileEl.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+
           // Calculate initial position (below tile, aligned left)
           let leftPos = Math.round(r.left + window.scrollX);
-          const topPos = Math.round(r.bottom + window.scrollY + 6);
+          let topPos = Math.round(r.bottom + window.scrollY + 6);
 
-          // Set initial position to measure popover width
+          // Set initial position to measure popover dimensions
           pop.style.left = leftPos + 'px';
           pop.style.top = topPos + 'px';
           pop.style.display = 'block';
 
-          // Check if popover extends beyond right edge of viewport
           const popRect = pop.getBoundingClientRect();
-          const viewportWidth = window.innerWidth;
-          const popRight = popRect.right;
 
-          // If popover goes off screen, adjust to right-align with tile (or left edge if needed)
-          if (popRight > viewportWidth - 10) { // 10px margin from edge
-            // Try right-aligning with the tile
+          // If popover goes off right edge, shift left
+          if (popRect.right > viewportWidth - 10) {
             leftPos = Math.round(r.right + window.scrollX - popRect.width);
-            // If that pushes it off the left edge, align with left viewport edge
-            if (leftPos < 10) {
-              leftPos = 10;
-            }
+            if (leftPos < 10) leftPos = 10;
             pop.style.left = leftPos + 'px';
           }
 
-          outsideClickHandler = (e) => { if (!pop.contains(e.target) && e.target !== tileEl) hide(); }; document.addEventListener('mousedown', outsideClickHandler);
+          // If popover goes off bottom edge, show above the tile instead
+          if (popRect.bottom > viewportHeight - 10) {
+            topPos = Math.round(r.top + window.scrollY - popRect.height - 6);
+            if (topPos < window.scrollY + 10) topPos = window.scrollY + 10;
+            pop.style.top = topPos + 'px';
+          }
+
+          // Outside-click dismiss: mousedown for desktop, touchstart for mobile
+          const dismissHandler = (e) => {
+            if (!pop.contains(e.target) && !tileEl.contains(e.target)) hide();
+          };
+          outsideClickHandler = dismissHandler;
+          outsideTouchHandler = dismissHandler;
+          document.addEventListener('mousedown', outsideClickHandler);
+          document.addEventListener('touchstart', outsideTouchHandler, { passive: true });
         }
         function canSend() { return true; /* popover only opens when connected */ }
         async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
