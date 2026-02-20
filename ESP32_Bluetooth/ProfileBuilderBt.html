@@ -2640,6 +2640,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       flex: 1;
       padding: 12px 10px;
       font-size: 0.95rem;
+      font-weight: 600;
+      color: #222;
       border-radius: 8px;
       cursor: pointer;
       border: 1px solid #c9d1dc;
@@ -13083,6 +13085,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           return uploadProfileViaBLE(options);
         }
         if (!('serial' in navigator)) { alert('Web Serial not supported in this browser. Use recent Chrome / Edge desktop.'); return; }
+        // Force-refresh the export preview so it reflects current state (including PROGRAM_STEPS)
+        if (typeof updatePreview === 'function') updatePreview(true);
         const profileText = document.getElementById('exportPreview').value;
         if (!profileText) { alert('No profile text to upload.'); return; }
         let fn = document.getElementById('filename_preview').value || 'profile.txt';
@@ -13269,6 +13273,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       // BLE Profile Upload (via writeprofile command)
       // -----------------------------
       async function uploadProfileViaBLE(options = {}) {
+        // Force-refresh the export preview so it reflects current state (including PROGRAM_STEPS)
+        if (typeof updatePreview === 'function') updatePreview(true);
         const profileText = document.getElementById('exportPreview').value;
         if (!profileText) { alert('No profile text to upload.'); return; }
         let fn = document.getElementById('filename_preview').value || 'profile.txt';
