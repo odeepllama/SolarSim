@@ -2591,6 +2591,76 @@ https://github.com/odeepllama/SolarSim/tree/main
       margin-top: 12px;
     }
 
+    /* Upload connection picker modal (shown when Upload clicked while disconnected) */
+    #uploadConnPickerOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100000;
+    }
+
+    #uploadConnPickerOverlay.open {
+      display: flex;
+    }
+
+    #uploadConnPickerDialog {
+      background: #ffffff !important;
+      color: #111;
+      border: 1px solid #c9d1dc;
+      border-radius: 10px;
+      width: min(92vw, 420px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      padding: 18px 20px;
+      text-align: center;
+    }
+
+    #uploadConnPickerDialog h4 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+    }
+
+    #uploadConnPickerDialog p {
+      margin: 0 0 14px;
+      line-height: 1.35;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    #uploadConnPickerDialog .picker-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    #uploadConnPickerDialog .picker-btns button {
+      flex: 1;
+      padding: 12px 10px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid #c9d1dc;
+      background: #f5f7fa;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    #uploadConnPickerDialog .picker-btns button:hover {
+      background: #e8ecf1;
+      border-color: #9aa5b4;
+    }
+
+    #uploadConnPickerDialog .picker-cancel {
+      font-size: 0.85rem;
+      color: #666;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 4px 12px;
+    }
+
     /* Load from Device confirm modal (same styling as upload confirm) */
     #loadConfirmOverlay {
       position: fixed;
@@ -3317,8 +3387,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 <body>
   <h1 id="appTitle"></h1>
   <div class="monitor-toggle-bar">
-    <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" title=""><span
-        class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
+    <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" style="display:none"
+      title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
     <span id="monitorConnBadge" class="pill red" title=""></span>
     <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
     <button id="monitorBTConnectBtn" type="button" class="secondary" title=""></button>
@@ -4287,6 +4357,19 @@ https://github.com/odeepllama/SolarSim/tree/main
           <button type="button" class="secondary" id="uploadCancelBtn" data-i18n="cancel">Cancel</button>
           <button type="button" class="upload-green" id="uploadProceedBtn" data-i18n="yesUpload">Yes, Upload</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Upload connection picker modal (shown when Upload clicked while disconnected) -->
+    <div id="uploadConnPickerOverlay" aria-hidden="true" role="dialog" aria-labelledby="uploadConnPickerTitle">
+      <div id="uploadConnPickerDialog">
+        <h4 id="uploadConnPickerTitle">Connect to Upload</h4>
+        <p>No device connected. Choose a connection method to upload your profile.</p>
+        <div class="picker-btns">
+          <button type="button" id="uploadPickerBLE">📡 Bluetooth</button>
+          <button type="button" id="uploadPickerCable">🔌 Cable</button>
+        </div>
+        <button type="button" class="picker-cancel" id="uploadPickerCancel">Cancel</button>
       </div>
     </div>
 
@@ -13105,6 +13188,72 @@ https://github.com/odeepllama/SolarSim/tree/main
       }
 
       // -----------------------------
+      // Upload Connection Picker (shown when Upload clicked while disconnected)
+      // -----------------------------
+      function showUploadConnectionPicker() {
+        const overlay = document.getElementById('uploadConnPickerOverlay');
+        if (!overlay) { alert('Connection picker not found.'); return; }
+        const bleBtn = document.getElementById('uploadPickerBLE');
+        const cableBtn = document.getElementById('uploadPickerCable');
+        const cancelBtn = document.getElementById('uploadPickerCancel');
+
+        function closePicker() {
+          overlay.classList.remove('open');
+          overlay.setAttribute('aria-hidden', 'true');
+          // Remove listeners to avoid stacking
+          bleBtn.onclick = null;
+          cableBtn.onclick = null;
+          cancelBtn.onclick = null;
+        }
+
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+
+        bleBtn.onclick = async () => {
+          closePicker();
+          try {
+            await window.__ensureBLE();
+            // Brief delay for connection to stabilise
+            await new Promise(r => setTimeout(r, 300));
+            uploadProfileViaBLE();
+          } catch (e) {
+            const msg = e.message || String(e);
+            if (typeof log === 'function') log('BLE connection failed: ' + msg, 'error');
+            else alert('BLE connection failed: ' + msg);
+          }
+        };
+
+        cableBtn.onclick = async () => {
+          closePicker();
+          try {
+            const monitorState = window.__solarSimMonitorState;
+            if (monitorState) monitorState.transport = 'serial';
+            await window.__ensurePort();
+            // Proceed with Serial upload (may show RESET dialog for RP2040)
+            uploadProfileToBoard();
+          } catch (e) {
+            const monitorState = window.__solarSimMonitorState;
+            if (monitorState) monitorState.transport = null;
+            const msg = e.message || String(e);
+            if (typeof log === 'function') log('Cable connection failed: ' + msg, 'error');
+            else alert('Cable connection failed: ' + msg);
+          }
+        };
+
+        cancelBtn.onclick = closePicker;
+
+        // Close on background click or Escape
+        overlay.onclick = (e) => { if (e.target === overlay) closePicker(); };
+        const escHandler = (e) => {
+          if (e.key === 'Escape' && overlay.classList.contains('open')) {
+            closePicker();
+            document.removeEventListener('keydown', escHandler);
+          }
+        };
+        document.addEventListener('keydown', escHandler);
+      }
+
+      // -----------------------------
       // BLE Profile Upload (via writeprofile command)
       // -----------------------------
       async function uploadProfileViaBLE(options = {}) {
@@ -13322,13 +13471,21 @@ https://github.com/odeepllama/SolarSim/tree/main
         uploadBtn.addEventListener('click', (e) => {
           if (uploadBtn.disabled) return;
           e.preventDefault();
-          // BLE uploads skip the "press RESET" confirmation (not applicable)
           const monitorState = window.__solarSimMonitorState;
+          const isConnected = monitorState && (monitorState.transport === 'ble' || monitorState.port);
+
+          // Not connected — show connection picker, then auto-upload after connecting
+          if (!isConnected) {
+            showUploadConnectionPicker();
+            return;
+          }
+
+          // BLE uploads skip the "press RESET" confirmation (not applicable)
           if (monitorState && monitorState.transport === 'ble') {
             uploadProfileViaBLE();
             return;
           }
-          // If user opted to skip and isn't forcing prompt with Option/Alt, bypass dialog
+          // Serial: If user opted to skip and isn't forcing prompt with Option/Alt, bypass dialog
           if (shouldSkip() && !e.altKey) { uploadProfileToBoard(); return; }
           if (dontAsk) dontAsk.checked = false; // reset default on open
           open();
@@ -14972,8 +15129,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
         }
-        // Expose sendLine and log to window scope for Load from Device functionality
+        // Expose sendLine, log, and connection helpers to window scope
         window.__sendLine = sendLine;
+        window.__ensureBLE = ensureBLE;
+        window.__ensurePort = ensurePort;
         window.log = log;
 
         function processIncoming(t) {
@@ -15939,57 +16098,20 @@ https://github.com/odeepllama/SolarSim/tree/main
         async function startReader() { if (!state.port || state.reader) return; (async () => { while (state.port && state.port.readable) { state.reader = state.port.readable.getReader(); try { while (true) { const { value, done } = await state.reader.read(); if (done) break; if (value) processIncoming(new TextDecoder().decode(value)); } } catch (e) { log('Connection not active', 'error'); state.port = null; setConnected(false); break; } finally { try { state.reader.releaseLock(); } catch (_) { } state.reader = null; } } if (!state.port || !state.port.readable) { state.port = null; setConnected(false); } })(); }
         // Events
         (function initMonitorToggle() {
-          const STORAGE_KEY = 'monitor_open_state_v1';
-          const openInitially = localStorage.getItem(STORAGE_KEY) === '1';
-          const iconOpen = toggleBtn.querySelector('.icon.open');
-          const iconClose = toggleBtn.querySelector('.icon.close');
-          const labelSpan = toggleBtn.querySelector('.txt');
           const showCmdBtn = document.getElementById('monitorCmdHelpBtn');
           const scrollLockBtnEl = document.getElementById('monitorScrollLockBtn');
-          // Auto refresh button and heartbeat visual removed
-          function apply(open) {
-            panel.classList.toggle('open', open);
-            panel.setAttribute('aria-hidden', open ? 'false' : 'true');
-            toggleBtn.classList.toggle('monitor-open', open);
-            if (iconOpen && iconClose) { iconOpen.style.opacity = open ? 0 : 1; iconClose.style.opacity = open ? 1 : 0; }
-            if (labelSpan) { labelSpan.textContent = open ? 'Close Monitor' : 'Monitor / Interact'; }
-            if (showCmdBtn) { showCmdBtn.classList.toggle('hidden-collapsed', !open); }
-            if (scrollLockBtnEl) { scrollLockBtnEl.classList.toggle('hidden-collapsed', !open); }
-            if (showStatusBtn) { showStatusBtn.classList.toggle('hidden-collapsed', !open); }
-            // Auto refresh UI removed; functionality continues in background
-            localStorage.setItem(STORAGE_KEY, open ? '1' : '0');
-            if (open) {
-              if (!state.port && !state.transport) {
-                ensurePort().then(() => {
-                  // slight delay to allow reader to attach
-                  setTimeout(() => { sendStatusSilent(); }, 150);
-                }).catch(e => {
-                  const fullErr = (e.message || '').toLowerCase();
-                  let msg = 'Connection not active';
-                  if (fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
-                    msg = 'Connection not active - port already open';
-                  } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
-                    msg = 'Connection not active - no device found';
-                  }
-                  log(msg, 'error');
-                });
-              } else if (state.port || state.transport === 'ble') {
-                // Already connected (serial or BLE); request status immediately
-                sendStatusSilent();
-              }
-            }
-          }
-          apply(openInitially);
+          // Always open the monitor panel (toggle button removed)
+          panel.classList.add('open');
+          panel.setAttribute('aria-hidden', 'false');
+          if (showCmdBtn) { showCmdBtn.classList.remove('hidden-collapsed'); }
+          if (scrollLockBtnEl) { scrollLockBtnEl.classList.remove('hidden-collapsed'); }
+          if (showStatusBtn) { showStatusBtn.classList.remove('hidden-collapsed'); }
           // Align initial layout once visible
           setTimeout(() => { try { scheduleVisLogAlign(); } catch (_) { } }, 120);
-          // If monitor was already open on load and a port becomes available slightly later,
-          // schedule a redundant status request to ensure tiles populate.
-          if (openInitially) {
-            state.__statusRetryTimers = [];
-            state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 600));
-            state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 1500));
-          }
-          toggleBtn.addEventListener('click', () => { apply(!panel.classList.contains('open')); });
+          // Staggered status requests to populate tiles once a connection is available
+          state.__statusRetryTimers = [];
+          state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 600));
+          state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 1500));
         })();
         connectBtn && connectBtn.addEventListener('click', () => {
           state.transport = 'serial';
