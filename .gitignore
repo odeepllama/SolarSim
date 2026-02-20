@@ -1,2 +1,4 @@
 # Ignore VS Code workspace files
 Workspace_202511.code-workspace
+ESP32_Bluetooth/pyrightconfig.json
+__pycache__/

@@ -17,7 +17,7 @@ try:
 except ImportError:
     import json
 
-from hardware import Hardware, clamp, CAMERA_SERVO_REST_ANGLE, CAMERA_SERVO_TRIGGER_ANGLE
+from hardware import Hardware, clamp, MAX_BRIGHTNESS, CAMERA_SERVO_REST_ANGLE, CAMERA_SERVO_TRIGGER_ANGLE
 from program_engine import ProgramEngine, ROTATION_SPEED_PRESET_TABLE
 
 # ======================================================
@@ -148,7 +148,8 @@ def get_scientific_sun_position(minute):
         return 0, 0, 0, 0, 0, 0
     day_length = max(1, SUNSET_MINUTES - SUNRISE_MINUTES)
     progress = (minute - SUNRISE_MINUTES) / day_length
-    x = progress * 55
+    # Symmetrical x path from 0.5 to 54.5
+    x = 0.5 + progress * 54
     lat_r = math.radians(LATITUDE)
     dec_r = math.radians(DAY_DECLINATION)
     hour_angle = (minute - SOLAR_NOON_MINUTES) * 0.25
@@ -161,9 +162,11 @@ def get_scientific_sun_position(minute):
     max_alt = math.degrees(math.asin(max(-1, min(1,
         math.sin(lat_r)*math.sin(dec_r) + math.cos(lat_r)*math.cos(dec_r)))))
     if max_alt <= 0: max_alt = 45
-    y_norm = altitude / max_alt
-    y = 7 - int(y_norm * 6)
-    size = max(1, min(5, int(y_norm * 4) + 1))
+    # Sun size based on elevation: 2-8 pixels, rounded to even
+    size = 2 + 6 * min(1, altitude / 45)
+    size = round(size / 2) * 2  # round to even (2, 4, 6, 8)
+    # Vertically centered on the 8-pixel panel
+    y = (8 - size) // 2 + size // 2
     brightness = min(1.0, altitude / max_alt) * INTENSITY_SCALE
     if SUN_COLOR_MODE == "NATURAL":
         if altitude < 10:
@@ -191,31 +194,41 @@ def get_scientific_sun_position(minute):
 
 
 def get_basic_sun_position(minute):
-    if minute < 360 or minute > 1080:
-        return 0, 0, 0, 0, 0, 0
-    progress = (minute - 360) / 720.0
-    x = progress * 55
-    y = int(7 - math.sin(progress * math.pi) * 6)
-    size = max(1, min(4, int(math.sin(progress * math.pi) * 3) + 1))
-    brightness = math.sin(progress * math.pi) * INTENSITY_SCALE
-    if SUN_COLOR_MODE == "NATURAL":
-        if progress < 0.15 or progress > 0.85:
-            r = int(255 * brightness)
-            g = int(140 * brightness)
-            b = int(40 * brightness)
-        else:
-            r = int(255 * brightness)
-            g = int(240 * brightness)
-            b = int(200 * brightness)
-    elif SUN_COLOR_MODE == "BLUE":
-        r = int(100 * brightness)
-        g = int(150 * brightness)
-        b = int(255 * brightness)
-    else:
-        r = int(CUSTOM_SUN_R * brightness)
-        g = int(CUSTOM_SUN_G * brightness)
-        b = int(CUSTOM_SUN_B * brightness)
-    return x, y, size, clamp(r), clamp(g), clamp(b)
+    """Calculate sun position using the basic model with constant 8x8 square."""
+    # Default values for nighttime
+    x, y = -10, 0  # Off-screen
+    size = 8        # Always 8x8 when visible
+
+    # Basic RGB values (255, 255, 255)
+    r = 255
+    g = 255
+    b = 255
+
+    # Apply intensity scaling and cap at MAX_BRIGHTNESS
+    r = clamp(int(r * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+    g = clamp(int(g * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+    b = clamp(int(b * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+
+    # Fixed sunrise at 6:00 AM (360 min), sunset at 6:00 PM (1080 min)
+    sunrise_time = 360
+    sunset_complete_time = 1080
+    total_day_minutes = 720  # 12 hours
+
+    minutes_since_sunrise = minute - sunrise_time
+
+    if sunrise_time <= minute <= sunset_complete_time:
+        # Position sun from x=-4 (sunrise) to x=59 (sunset)
+        # Total travel: 63 positions over 720 minutes
+        travel_range = 63
+        x = -4 + (minutes_since_sunrise / (total_day_minutes - 1)) * travel_range
+
+    if SUN_COLOR_MODE == "CUSTOM":
+        r, g, b = CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+    if SUN_COLOR_MODE == "BLUE":
+        r = 0
+        g = 0
+        # Keep the calculated b value unchanged
+    return x, y, size, r, g, b
 
 
 def get_sun_position(minute):
