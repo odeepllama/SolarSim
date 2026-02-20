@@ -43,7 +43,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 <head>
   <meta charset="UTF-8" />
   <title>SolaSim Studio</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,interactive-widget=resizes-content" />
   <style>
     /* Ensure language toggle button is always visible and styled */
     #langToggleBtn {
@@ -1946,6 +1946,29 @@ https://github.com/odeepllama/SolarSim/tree/main
       padding: 8px;
       display: none;
       box-sizing: border-box;
+    }
+
+    /* Touch-device modal mode: fixed centered popover */
+    #tilePopover.touch-modal {
+      position: fixed;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: min(420px, calc(100vw - 32px));
+      min-width: min(300px, calc(100vw - 32px));
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Backdrop for touch-modal popover */
+    #tilePopoverBackdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 99998;
     }
 
     /* Constrain popover width on small screens */
@@ -16820,51 +16843,61 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Ensure popover element exists
         let pop = document.getElementById('tilePopover');
         if (!pop) { pop = document.createElement('div'); pop.id = 'tilePopover'; document.body.appendChild(pop); }
+        // Create backdrop for touch-modal mode
+        let backdrop = document.getElementById('tilePopoverBackdrop');
+        if (!backdrop) { backdrop = document.createElement('div'); backdrop.id = 'tilePopoverBackdrop'; document.body.appendChild(backdrop); }
+        // Detect touch device (iPad, iPhone, Android)
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         let outsideClickHandler = null;
-        let outsideTouchHandler = null;
         function hide() {
-          if (!pop) return; pop.style.display = 'none';
+          if (!pop) return;
+          pop.style.display = 'none';
+          pop.classList.remove('touch-modal');
+          pop.style.left = ''; pop.style.top = ''; pop.style.transform = '';
+          backdrop.style.display = 'none';
           if (outsideClickHandler) { document.removeEventListener('mousedown', outsideClickHandler); outsideClickHandler = null; }
-          if (outsideTouchHandler) { document.removeEventListener('touchstart', outsideTouchHandler); outsideTouchHandler = null; }
         }
         function show(tileEl, builder) {
-          if (!tileEl || !builder) return; pop.innerHTML = ''; builder(pop); const r = tileEl.getBoundingClientRect();
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
+          if (!tileEl || !builder) return;
+          pop.innerHTML = ''; builder(pop);
 
-          // Calculate initial position (below tile, aligned left)
-          let leftPos = Math.round(r.left + window.scrollX);
-          let topPos = Math.round(r.bottom + window.scrollY + 6);
-
-          // Set initial position to measure popover dimensions
-          pop.style.left = leftPos + 'px';
-          pop.style.top = topPos + 'px';
-          pop.style.display = 'block';
-
-          const popRect = pop.getBoundingClientRect();
-
-          // If popover goes off right edge, shift left
-          if (popRect.right > viewportWidth - 10) {
-            leftPos = Math.round(r.right + window.scrollX - popRect.width);
-            if (leftPos < 10) leftPos = 10;
+          if (isTouchDevice) {
+            // ---- Touch device: fixed centered modal ----
+            pop.classList.add('touch-modal');
+            pop.style.left = '50%';
+            pop.style.top = '15%';
+            pop.style.transform = 'translateX(-50%)';
+            pop.style.display = 'block';
+            backdrop.style.display = 'block';
+            // Tap backdrop to dismiss
+            backdrop.onclick = () => hide();
+          } else {
+            // ---- Desktop: absolute positioned near tile ----
+            pop.classList.remove('touch-modal');
+            const r = tileEl.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            let leftPos = Math.round(r.left + window.scrollX);
+            let topPos = Math.round(r.bottom + window.scrollY + 6);
             pop.style.left = leftPos + 'px';
-          }
-
-          // If popover goes off bottom edge, show above the tile instead
-          if (popRect.bottom > viewportHeight - 10) {
-            topPos = Math.round(r.top + window.scrollY - popRect.height - 6);
-            if (topPos < window.scrollY + 10) topPos = window.scrollY + 10;
             pop.style.top = topPos + 'px';
+            pop.style.display = 'block';
+            const popRect = pop.getBoundingClientRect();
+            if (popRect.right > viewportWidth - 10) {
+              leftPos = Math.round(r.right + window.scrollX - popRect.width);
+              if (leftPos < 10) leftPos = 10;
+              pop.style.left = leftPos + 'px';
+            }
+            if (popRect.bottom > viewportHeight - 10) {
+              topPos = Math.round(r.top + window.scrollY - popRect.height - 6);
+              if (topPos < window.scrollY + 10) topPos = window.scrollY + 10;
+              pop.style.top = topPos + 'px';
+            }
+            outsideClickHandler = (e) => {
+              if (!pop.contains(e.target) && !tileEl.contains(e.target)) hide();
+            };
+            document.addEventListener('mousedown', outsideClickHandler);
           }
-
-          // Outside-click dismiss: mousedown for desktop, touchstart for mobile
-          const dismissHandler = (e) => {
-            if (!pop.contains(e.target) && !tileEl.contains(e.target)) hide();
-          };
-          outsideClickHandler = dismissHandler;
-          outsideTouchHandler = dismissHandler;
-          document.addEventListener('mousedown', outsideClickHandler);
-          document.addEventListener('touchstart', outsideTouchHandler, { passive: true });
         }
         function canSend() { return true; /* popover only opens when connected */ }
         async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
@@ -16971,8 +17004,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             } else {
               // Input-bearing tiles: open immediately (preserves iOS user gesture chain for keyboard)
               e.stopPropagation(); hide(); show(box, builder);
-              // Auto-focus the first text/number input for keyboard accessibility
-              setTimeout(() => { const inp = pop.querySelector('input[type="text"], input[type="number"]'); if (inp) inp.focus(); }, 10);
             }
           });
           grid.addEventListener('dblclick', (e) => {
