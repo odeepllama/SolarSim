@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 hardware.py — ESP32-S3 WROOM Hardware Abstraction Layer
 ========================================================

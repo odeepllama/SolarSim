@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 ble_comms.py — BLE GATT Server for ESP32-S3 Solar Simulator
 =============================================================

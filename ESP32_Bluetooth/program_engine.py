@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 program_engine.py — Program Step Engine & Profile Management
 ==============================================================

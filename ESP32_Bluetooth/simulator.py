@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 simulator.py — Core Solar Simulator Engine for ESP32-S3
 ========================================================
