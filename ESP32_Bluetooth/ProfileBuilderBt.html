@@ -12982,6 +12982,11 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Raw REPL Upload (Stopgap Implementation)
       // -----------------------------
       async function uploadProfileToBoard(options = {}) {
+        // Route to BLE upload if connected via Bluetooth
+        const monitorState = window.__solarSimMonitorState;
+        if (monitorState && monitorState.transport === 'ble') {
+          return uploadProfileViaBLE(options);
+        }
         if (!('serial' in navigator)) { alert('Web Serial not supported in this browser. Use recent Chrome / Edge desktop.'); return; }
         const profileText = document.getElementById('exportPreview').value;
         if (!profileText) { alert('No profile text to upload.'); return; }
@@ -13096,6 +13101,66 @@ https://github.com/odeepllama/SolarSim/tree/main
           console.error(err);
           alert('Upload failed: ' + err.message);
           try { if (port) await port.close(); } catch (e) { }
+        }
+      }
+
+      // -----------------------------
+      // BLE Profile Upload (via writeprofile command)
+      // -----------------------------
+      async function uploadProfileViaBLE(options = {}) {
+        const profileText = document.getElementById('exportPreview').value;
+        if (!profileText) { alert('No profile text to upload.'); return; }
+        let fn = document.getElementById('filename_preview').value || 'profile.txt';
+        fn = fn.replace(/[^a-zA-Z0-9_.-]/g, '_');
+        if (!fn.toLowerCase().endsWith('.txt')) fn += '.txt';
+
+        const sendLine = window.__sendLine;
+        if (!sendLine) { alert('BLE connection not available.'); return; }
+
+        try {
+          if (typeof log === 'function') log('Uploading profile via BLE...', 'update');
+
+          // 1. Begin write session
+          await sendLine('writeprofile ' + fn, { silentEcho: true });
+          await new Promise(r => setTimeout(r, 100));
+
+          // 2. Send profile lines with inter-line delay to avoid BLE congestion
+          const lines = profileText.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            await sendLine('WP:' + lines[i], { silentEcho: true });
+            // Small delay every 5 lines to let BLE write queue drain
+            if (i % 5 === 4) await new Promise(r => setTimeout(r, 50));
+          }
+
+          // 3. Commit — device writes file and loads profile in-place
+          await new Promise(r => setTimeout(r, 100));
+          await sendLine('writeprofile commit', { silentEcho: true });
+
+          // 4. Wait for WRITE_OK confirmation via processIncoming
+          //    The device sends "[SERIAL CMD] WRITE_OK <filename>" which appears in the log.
+          //    We use a simple timeout-based check since processIncoming handles all incoming data.
+          await new Promise(r => setTimeout(r, 2000));
+
+          if (typeof log === 'function') log('✓ Profile uploaded via BLE: ' + fn, 'update');
+
+          // Record in recent profiles
+          if (typeof recordRecentProfile === 'function') {
+            try { recordRecentProfile(fn, profileText, { uploaded: true }); } catch (e) { console.warn('recent upload record failed', e); }
+          }
+
+          // Clear diff highlights after successful upload
+          if (typeof clearDiffHighlights === 'function') {
+            clearDiffHighlights();
+          }
+
+          // Show a simple success alert (no reboot needed for BLE)
+          showUploadSuccessModal(fn, true);
+
+        } catch (err) {
+          console.error('[BLE Upload]', err);
+          // Attempt to abort on error
+          try { await sendLine('writeprofile abort', { silentEcho: true }); } catch (_) { }
+          alert('BLE upload failed: ' + err.message);
         }
       }
 
@@ -13257,6 +13322,12 @@ https://github.com/odeepllama/SolarSim/tree/main
         uploadBtn.addEventListener('click', (e) => {
           if (uploadBtn.disabled) return;
           e.preventDefault();
+          // BLE uploads skip the "press RESET" confirmation (not applicable)
+          const monitorState = window.__solarSimMonitorState;
+          if (monitorState && monitorState.transport === 'ble') {
+            uploadProfileViaBLE();
+            return;
+          }
           // If user opted to skip and isn't forcing prompt with Option/Alt, bypass dialog
           if (shouldSkip() && !e.altKey) { uploadProfileToBoard(); return; }
           if (dontAsk) dontAsk.checked = false; // reset default on open

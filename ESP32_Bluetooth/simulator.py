@@ -472,6 +472,12 @@ class SolarSimulator:
         global ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B
         global CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
 
+        # Fast path for profile upload data lines (avoid lowering/splitting large data)
+        if command_str.startswith('WP:'):
+            if hasattr(self, '_wp_lines') and self._wp_lines is not None:
+                self._wp_lines.append(command_str[3:])
+            return
+
         parts = command_str.lower().strip().split()
         if not parts:
             return
@@ -541,6 +547,16 @@ class SolarSimulator:
                     self.program.delete_profile(parts[1])
                 else:
                     self.output("[SERIAL CMD] Usage: profiledelete <name>")
+
+            elif command == "writeprofile":
+                if len(parts) >= 2 and parts[1] == "commit":
+                    self._writeprofile_commit()
+                elif len(parts) >= 2 and parts[1] == "abort":
+                    self._writeprofile_abort()
+                elif len(parts) >= 2:
+                    self._writeprofile_begin(command_str.strip().split()[1])
+                else:
+                    self.output("[SERIAL CMD] Usage: writeprofile <name> | commit | abort")
 
             elif command == "savelog":
                 self._handle_savelog(parts)
@@ -919,6 +935,51 @@ class SolarSimulator:
             init_solar_day()
             self.start_real_time_ms = ticks_ms()
             self.output("[SERIAL CMD] Simulation restarted.")
+
+    # --- WRITEPROFILE (BLE profile upload) ---
+    def _writeprofile_begin(self, filename):
+        """Start a profile write session. Initialises line buffer."""
+        import re
+        fn = re.sub(r'[^a-zA-Z0-9_.-]', '_', filename)
+        if not fn.lower().endswith('.txt'):
+            fn += '.txt'
+        self._wp_filename = fn
+        self._wp_lines = []
+        self.output(f"[SERIAL CMD] writeprofile: ready for '{fn}'")
+
+    def _writeprofile_commit(self):
+        """Write buffered profile lines to file, then load in-place."""
+        global AUTO_LOAD_LATEST_PROFILE
+        if not hasattr(self, '_wp_lines') or self._wp_lines is None:
+            self.output("[SERIAL CMD] writeprofile: no active session")
+            return
+        fn = self._wp_filename
+        lines = self._wp_lines
+        self._wp_lines = None
+        self._wp_filename = None
+        try:
+            with open(fn, 'w') as f:
+                for line in lines:
+                    f.write(line + '\n')
+            del lines
+            gc.collect()
+            self.output(f"[SERIAL CMD] WRITE_OK {fn}")
+            # Re-enable auto-load so this profile persists across reboots
+            AUTO_LOAD_LATEST_PROFILE = True
+            ProgramEngine.save_autoload_preference(True)
+            # Load the new profile in-place (no reboot needed — keeps BLE alive)
+            base = fn[:-4] if fn.endswith('.txt') else fn
+            self._do_load_profile(base)
+        except Exception as e:
+            self.output(f"[SERIAL CMD] writeprofile error: {e}")
+            gc.collect()
+
+    def _writeprofile_abort(self):
+        """Cancel an active profile write session."""
+        self._wp_lines = None
+        self._wp_filename = None
+        gc.collect()
+        self.output("[SERIAL CMD] writeprofile: aborted")
 
     # --- SAVELOG ---
     def _handle_savelog(self, parts):
