@@ -6399,6 +6399,18 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!window.__loadingFromDevice) {
           console.log('[FORM] Status update - updating program steps for visualization only (preserving form edits)');
 
+          // Sync PROGRAM_ENABLED and PROGRAM_REPEATS from device so timeline rendering works
+          if (cfg.PROGRAM_ENABLED !== undefined) {
+            state.PROGRAM_ENABLED = cfg.PROGRAM_ENABLED;
+            const programCheckbox = document.getElementById('PROGRAM_ENABLED');
+            if (programCheckbox) programCheckbox.checked = state.PROGRAM_ENABLED;
+          }
+          if (cfg.PROGRAM_REPEATS !== undefined) {
+            state.PROGRAM_REPEATS = cfg.PROGRAM_REPEATS;
+            const programRepeatsField = document.getElementById('PROGRAM_REPEATS');
+            if (programRepeatsField) programRepeatsField.value = state.PROGRAM_REPEATS;
+          }
+
           // Only update program steps for the timeline/visualization
           if (cfg.PROGRAM_STEPS && Array.isArray(cfg.PROGRAM_STEPS)) {
             programSteps.length = 0;
@@ -15219,7 +15231,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Parsers for tracking currently loaded profile
         const reProfileValidated = /\[SERIAL CMD\]\s*Profile\s*'([^']+)'\s*validated/i;
-        const reAutoloadProfile = /\[AUTOLOAD\]\s*Loading latest profile\s*'([^']+)'/i;
+        const reAutoloadProfile = /\[AUTOLOAD\]\s*Loading(?:\s+latest\s+profile)?\s*'([^']+)'/i;
         const reLoadedProfileStatus = /loaded\s+profile\s*[:=]\s*([^\s(]+\.txt|\(none)/i;
 
         // Parser for auto-load status
