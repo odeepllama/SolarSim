@@ -13329,8 +13329,19 @@ https://github.com/odeepllama/SolarSim/tree/main
             clearDiffHighlights();
           }
 
-          // Show a simple success alert (no reboot needed for BLE)
-          showUploadSuccessModal(fn, true);
+          // BLE uploads load the profile in-place (no reboot), so no reconnect needed.
+          // Just log success and request a status refresh to update the UI with new settings.
+          if (typeof log === 'function') log('✓ Profile uploaded and applied: ' + fn, 'success');
+
+          // Request status so the form/timeline updates with the newly loaded profile
+          const statusSendLine = window.__sendLine;
+          if (statusSendLine) {
+            window.__loadingFromDevice = true;
+            window.__deviceConfig = {};
+            try {
+              await statusSendLine('status', { silentEcho: true });
+            } catch (_) { }
+          }
 
         } catch (err) {
           console.error('[BLE Upload]', err);
