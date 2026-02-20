@@ -11443,19 +11443,39 @@ https://github.com/odeepllama/SolarSim/tree/main
       // ============ End Print Summary Functions ============
 
       function downloadProfile() {
-        const blob = new Blob([generateProfileText() + "\n"], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        const previewEl = document.getElementById('filename_preview');
+        const text = generateProfileText() + "\n";
+        const blob = new Blob([text], { type: 'text/plain' });
         let name = buildFilename();
         if (!/\.txt$/i.test(name)) name += '.txt';
-        // sanitize filename quickly (keep existing path features out)
         name = name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+
+        // Try Web Share API first (works reliably on iOS/iPad)
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], name, { type: 'text/plain' });
+          if (navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: name }).then(() => {
+              if (typeof recordRecentProfile === 'function') {
+                try { recordRecentProfile(name, text.trimEnd(), { downloaded: true }); } catch (e) { console.warn('recent save failed', e); }
+              }
+            }).catch(err => {
+              // User cancelled the share sheet — not an error
+              if (err.name !== 'AbortError') console.warn('Share failed, trying fallback', err);
+            });
+            return;
+          }
+        }
+
+        // Fallback: classic <a download> (attach to DOM for broader compatibility)
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
         a.download = name;
+        a.style.display = 'none';
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(a.href);
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+
         if (typeof recordRecentProfile === 'function') {
-          try { recordRecentProfile(name, generateProfileText(), { downloaded: true }); } catch (e) { console.warn('recent save failed', e); }
+          try { recordRecentProfile(name, text.trimEnd(), { downloaded: true }); } catch (e) { console.warn('recent save failed', e); }
         }
       }
 
