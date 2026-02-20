@@ -16954,10 +16954,26 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Event delegation as a safety net: capture clicks from any matching tile even if not individually bound
         function keyFromBox(box) { const b = box && box.querySelector && box.querySelector('b'); if (!b) return null; const name = (b.textContent || '').trim().toUpperCase(); if (name === 'SIMTIME') return 'sim'; if (name === 'SPEED') return 'speed'; if (name === 'INTENSITY') return 'intensity'; if (name === 'SUNCOLOR') return 'sunColor'; if (name === 'PROGRAM') return 'program'; if (name === 'SOLARMODE') return 'solarMode'; if (name === 'DUALSUN') return 'dualSun'; if (name === 'ROTATIONIMAGING') return 'rotation'; if (name === 'SERVO2DAYINT') return 'servo2DayInt'; if (name === 'SERVO2NIGHTINT') return 'servo2NightInt'; return null; }
         (function attachDelegation() {
-          const grid = document.getElementById('monitorStatusGrid'); if (!grid || grid.__tilePopoverDelegated) return; let clickTimer = null; grid.addEventListener('click', (e) => {
-            const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if (!box) return; const k = keyFromBox(box); if (!k) return; // Delay to see if a dblclick arrives
+          const grid = document.getElementById('monitorStatusGrid'); if (!grid || grid.__tilePopoverDelegated) return;
+          // Tiles that support dblclick toggle — these need the click delay to distinguish click vs dblclick
+          const toggleKeys = new Set(['program', 'rotation', 'dualSun', 'solarMode']);
+          let clickTimer = null;
+          grid.addEventListener('click', (e) => {
+            // Don't re-trigger if user tapped inside the open popover
+            if (pop && pop.style.display === 'block' && pop.contains(e.target)) return;
+            const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if (!box) return; const k = keyFromBox(box); if (!k) return;
             clearTimeout(clickTimer);
-            clickTimer = setTimeout(() => { e.stopPropagation(); hide(); const builders = { sim: buildSimTime, speed: buildSpeed, intensity: buildIntensity, sunColor: buildSunColor, program: buildProgram, solarMode: buildSolarMode, dualSun: buildDualSun, rotation: buildRotation, servo2DayInt: buildServo2Day, servo2NightInt: buildServo2Night }; const builder = builders[k]; if (builder) { show(box, builder); } }, 180);
+            const builders = { sim: buildSimTime, speed: buildSpeed, intensity: buildIntensity, sunColor: buildSunColor, program: buildProgram, solarMode: buildSolarMode, dualSun: buildDualSun, rotation: buildRotation, servo2DayInt: buildServo2Day, servo2NightInt: buildServo2Night };
+            const builder = builders[k]; if (!builder) return;
+            if (toggleKeys.has(k)) {
+              // Toggle-capable tiles: delay to allow dblclick detection
+              clickTimer = setTimeout(() => { e.stopPropagation(); hide(); show(box, builder); }, 180);
+            } else {
+              // Input-bearing tiles: open immediately (preserves iOS user gesture chain for keyboard)
+              e.stopPropagation(); hide(); show(box, builder);
+              // Auto-focus the first text/number input for keyboard accessibility
+              setTimeout(() => { const inp = pop.querySelector('input[type="text"], input[type="number"]'); if (inp) inp.focus(); }, 10);
+            }
           });
           grid.addEventListener('dblclick', (e) => {
             const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if (!box) return; const k = keyFromBox(box); if (!k) return; clearTimeout(clickTimer); e.stopPropagation(); hide(); // Confirm for toggle-capable tiles
