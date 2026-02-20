@@ -2641,11 +2641,11 @@ https://github.com/odeepllama/SolarSim/tree/main
       padding: 12px 10px;
       font-size: 0.95rem;
       font-weight: 600;
-      color: #222;
+      color: #222 !important;
       border-radius: 8px;
       cursor: pointer;
       border: 1px solid #c9d1dc;
-      background: #f5f7fa;
+      background: #f5f7fa !important;
       transition: background 0.15s, border-color 0.15s;
     }
 
@@ -13227,11 +13227,16 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         bleBtn.onclick = async () => {
           closePicker();
+          // CRITICAL: Snapshot profile text BEFORE connecting.
+          // BLE status updates can overwrite programSteps with device data (which may have no steps),
+          // so we must capture the form state before the connection triggers any data exchange.
+          if (typeof updatePreview === 'function') updatePreview(true);
+          const preConnectProfileText = document.getElementById('exportPreview').value;
           try {
             await window.__ensureBLE();
             // Brief delay for connection to stabilise
             await new Promise(r => setTimeout(r, 300));
-            uploadProfileViaBLE();
+            uploadProfileViaBLE({ _preSnapshotText: preConnectProfileText });
           } catch (e) {
             const msg = e.message || String(e);
             if (typeof log === 'function') log('BLE connection failed: ' + msg, 'error');
@@ -13273,9 +13278,13 @@ https://github.com/odeepllama/SolarSim/tree/main
       // BLE Profile Upload (via writeprofile command)
       // -----------------------------
       async function uploadProfileViaBLE(options = {}) {
-        // Force-refresh the export preview so it reflects current state (including PROGRAM_STEPS)
-        if (typeof updatePreview === 'function') updatePreview(true);
-        const profileText = document.getElementById('exportPreview').value;
+        // Use pre-snapshotted text if provided (from connect-then-upload flow),
+        // otherwise force-refresh and read from textarea
+        let profileText = options._preSnapshotText || null;
+        if (!profileText) {
+          if (typeof updatePreview === 'function') updatePreview(true);
+          profileText = document.getElementById('exportPreview').value;
+        }
         if (!profileText) { alert('No profile text to upload.'); return; }
         let fn = document.getElementById('filename_preview').value || 'profile.txt';
         fn = fn.replace(/[^a-zA-Z0-9_.-]/g, '_');
