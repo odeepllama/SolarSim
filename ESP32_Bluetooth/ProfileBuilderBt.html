@@ -2869,6 +2869,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
       pointer-events: auto;
       z-index: 100;
+      transition: left 0.3s linear;
     }
 
     /* Timeline hold progress indicator */
@@ -10359,6 +10360,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const playhead = document.createElement('div');
           playhead.className = 'timeline-playhead';
           playhead.style.left = posPct + '%';
+          playhead.dataset.windowStart = WINDOW_START_MIN;
+          playhead.dataset.windowSpan = WINDOW_SPAN;
           playhead.style.cursor = 'default'; // Normal cursor - detailed info is on orange bar
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})\n[HOLD in progress - hover over orange bar for details]`;
 
@@ -10373,6 +10376,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const playhead = document.createElement('div');
           playhead.className = 'timeline-playhead';
           playhead.style.left = posPct + '%';
+          playhead.dataset.windowStart = WINDOW_START_MIN;
+          playhead.dataset.windowSpan = WINDOW_SPAN;
           playhead.style.cursor = 'help'; // Help cursor for tooltip
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})`;
 
@@ -18388,11 +18393,88 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
             }
           }
+
+          // ── Store interpolation metadata every poll (even if time hasn't changed)
+          // Parse speed multiplier from kvCache
+          let speed = 1;
+          if (window.kvCache && window.kvCache.get) {
+            const speedTile = window.kvCache.get('speed');
+            if (speedTile) {
+              const speedEl = speedTile.querySelector('span');
+              if (speedEl) {
+                const speedText = speedEl.textContent.trim();
+                if (speedText.toLowerCase() === 'hold') {
+                  speed = 0;
+                } else {
+                  const m = speedText.match(/([\d.]+)/);
+                  if (m) speed = parseFloat(m[1]) || 1;
+                }
+              }
+            }
+          }
+          window.__playheadInterp = {
+            simMinutes: currentSimMinutes,
+            timestamp: Date.now(),
+            speed: speed,
+            isHold: !!(window.__holdState)
+          };
         }
 
         // Check for sim time updates every second
         // (will only re-render when time actually changes, which is once per minute)
         setInterval(updatePlayhead, 1000);
+      })();
+
+      // ============================================================
+      // Playhead Interpolation — smooth rAF animation between polls
+      // ============================================================
+      (function initPlayheadInterpolation() {
+        let rafId = null;
+
+        function interpolatePlayheads() {
+          const interp = window.__playheadInterp;
+          if (!interp || interp.speed === 0 || interp.isHold) {
+            // Not moving — skip interpolation, schedule next check
+            rafId = requestAnimationFrame(interpolatePlayheads);
+            return;
+          }
+
+          // How many real-world ms have elapsed since we last got a sim time report?
+          const elapsedMs = Date.now() - interp.timestamp;
+          // Convert to sim-minutes: speed × (elapsed real minutes)
+          const elapsedSimMin = interp.speed * (elapsedMs / 60000);
+          // Interpolated sim time (fractional minutes)
+          const interpMin = interp.simMinutes + elapsedSimMin;
+
+          // Move all visible playheads
+          const heads = document.querySelectorAll('.timeline-playhead');
+          for (let i = 0; i < heads.length; i++) {
+            const ph = heads[i];
+            const wStart = parseFloat(ph.dataset.windowStart);
+            const wSpan = parseFloat(ph.dataset.windowSpan);
+            if (isNaN(wStart) || isNaN(wSpan) || wSpan === 0) continue;
+
+            // Clamp: don't move more than 1 extra minute past last known
+            // (prevents runaway extrapolation if polls are delayed)
+            const clampedMin = Math.min(interpMin, interp.simMinutes + 1);
+            const pct = ((clampedMin - wStart) / wSpan) * 100;
+            ph.style.left = pct + '%';
+          }
+
+          rafId = requestAnimationFrame(interpolatePlayheads);
+        }
+
+        // Start interpolation loop
+        rafId = requestAnimationFrame(interpolatePlayheads);
+
+        // Stop when page is hidden (save battery) and restart when visible
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) {
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+          } else {
+            if (!rafId) { rafId = requestAnimationFrame(interpolatePlayheads); }
+          }
+        });
       })();
 
       // Background Color Chooser Logic
