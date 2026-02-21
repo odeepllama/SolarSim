@@ -4299,7 +4299,6 @@ https://github.com/odeepllama/SolarSim/tree/main
       <div id="programSummaryNote"
         style="margin-top:8px; font-size:1.09rem; line-height:1.5; max-width:720px; color:#333; opacity:.92; background:#f8f9fa; padding:10px 12px; border-left:3px solid #3478f6; border-radius:4px;">
         <strong data-i18n="programStepBehavior">Program Step Behavior:</strong>
-        <strong data-i18n="programStepBehavior">Program Step Behavior:</strong>
         <ul style="margin:6px 0 0 18px; padding:0;">
           <li><strong data-i18n="speed">Speed:</strong> <span data-i18n="speedDesc">Applies from step's start until next
               speed change</span></li>
@@ -11851,21 +11850,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           try { renderRecentProfiles(); } catch (_) { }
           // Initialize Load from Device functionality after sendLine is available
           try {
-            console.log('[INIT] Calling __initLoadFromDevice...');
-            if (window.__initLoadFromDevice) {
-              window.__initLoadFromDevice();
-            } else {
-              console.warn('[INIT] __initLoadFromDevice not found on window');
-            }
+            if (window.__initLoadFromDevice) window.__initLoadFromDevice();
           } catch (e) { console.error('[INIT] Error initializing Load from Device:', e); }
-          // Initialize Load Current Profile button
           try {
-            console.log('[INIT] Calling __initLoadCurrentProfile...');
-            if (window.__initLoadCurrentProfile) {
-              window.__initLoadCurrentProfile();
-            } else {
-              console.warn('[INIT] __initLoadCurrentProfile not found on window');
-            }
+            if (window.__initLoadCurrentProfile) window.__initLoadCurrentProfile();
           } catch (e) { console.error('[INIT] Error initializing Load Current Profile:', e); }
         }, 80));
 
@@ -11973,7 +11961,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Load from Device functionality - Store setup function to call later when sendLine is available
       window.__initLoadFromDevice = function () {
-        console.log('[INIT] Initializing Load from Device functionality...');
+
         const $loadBtn = document.getElementById('loadFromDeviceBtn');
         const $modal = document.getElementById('loadProfileModal');
         const $modalClose = document.getElementById('loadProfileModalClose');
@@ -11982,11 +11970,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         const $list = document.getElementById('loadProfileList');
 
         if (!$loadBtn || !$modal) {
-          console.warn('[INIT] Load from Device: Required elements not found, will retry in 100ms...', { $loadBtn, $modal });
+          console.warn('[INIT] Load from Device: Required elements not found, retrying...');
           setTimeout(() => window.__initLoadFromDevice(), 100);
           return;
         }
-        console.log('[INIT] Load from Device elements found, setting up handlers...');
+
 
         // Disable button until form is ready
         if (!window.__formIsReady) {
@@ -12002,7 +11990,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               $loadBtn.title = 'Load profile from device';
               $loadBtn.style.opacity = '1';
               $loadBtn.style.cursor = 'pointer';
-              console.log('[INIT] Form is ready, Load from Device button enabled');
+
             }
           }, 100);
         }
@@ -12011,18 +11999,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         let canCloseOnBackgroundClick = false;
 
         function openModal() {
-          console.log('[MODAL] Opening modal, element:', $modal);
           $modal.classList.add('open');
           $modal.setAttribute('aria-hidden', 'false');
-          console.log('[MODAL] Modal classes:', $modal.className);
-          console.log('[MODAL] Modal display style:', window.getComputedStyle($modal).display);
           // Prevent immediate close from stray clicks
           canCloseOnBackgroundClick = false;
           setTimeout(() => { canCloseOnBackgroundClick = true; }, 300);
         }
 
         function closeModal() {
-          console.log('[MODAL] Closing modal');
+
           // Move focus away from modal before hiding it (accessibility fix)
           if (document.activeElement && $modal.contains(document.activeElement)) {
             // Move focus back to the button that opened the modal, or document.body as fallback
@@ -12411,26 +12396,24 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Close on background click only
         $modal.addEventListener('click', (e) => {
           if (!canCloseOnBackgroundClick) {
-            console.log('[MODAL] Background click ignored (too soon after open)');
+
             return;
           }
           if (e.target === $modal) {
-            console.log('[MODAL] Background clicked, closing');
+
             closeModal();
           }
         });
 
-        console.log('[INIT] Load from Device initialization complete');
+
       }; // End of __initLoadFromDevice
 
       // Load Current Profile functionality - Quick load the currently running profile
       window.__initLoadCurrentProfile = function () {
-        console.log('[INIT] Initializing Load Current Profile button...');
         const $btn = document.getElementById('loadCurrentProfileBtn');
 
         if (!$btn) {
-          console.warn('[INIT] Load Current Profile button not found, will retry in 100ms...');
-          setTimeout(() => window.__initLoadCurrentProfile(), 100);
+          // Button is not in the DOM (commented out); skip silently
           return;
         }
 
@@ -12448,7 +12431,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               $btn.title = 'Load the profile currently running on the device';
               $btn.style.opacity = '1';
               $btn.style.cursor = 'pointer';
-              console.log('[INIT] Form is ready, Load Current Profile button enabled');
+
             }
           }, 100);
         }
@@ -12483,7 +12466,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
 
-        console.log('[INIT] Load Current Profile initialization complete');
+
       }; // End of __initLoadCurrentProfile
 
       // Helper function to update Load Current button state based on loaded profile
@@ -12496,13 +12479,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           $btn.title = `Load currently running profile: ${window.__loadedProfile}`;
           $btn.style.opacity = '1';
           $btn.style.cursor = 'pointer';
-          console.log('[BTN] Load Current button enabled for:', window.__loadedProfile);
+
         } else {
           $btn.disabled = true;
           $btn.title = 'No profile currently loaded on device';
           $btn.style.opacity = '0.5';
           $btn.style.cursor = 'not-allowed';
-          console.log('[BTN] Load Current button disabled - no profile loaded');
+
         }
 
         // Update recent profiles display to show current profile highlight
@@ -15251,6 +15234,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reProgramSteps = /program\s*steps\s*[:=]\s*(\[.*\])/i;
         const reProgramStepsChunk = /program\s*steps\s*\((\d+)-(\d+)\)\s*[:=]\s*(\[.*\])/i;
         const reNumberOfSteps = /number\s*of\s*steps\s*[:=]\s*(\d+)/i;
+        const reProgramCurrentStep = /program\s*current\s*step\s*[:=]\s*(\d+)\s*\/\s*(\d+)/i;
+        const reProgramRunning = /program\s*running\s*[:=]\s*(true|false)/i;
 
         // Additional parsers for Load from Device functionality
         const reStartTime = /\(re\)?start\s*time\s*[:=]\s*(\d{3,4})/i;
@@ -15265,7 +15250,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reAutoloadStatusCmd = /\[SERIAL CMD\]\s*Auto-load\s+latest\s+profile\s+set\s+to\s*:\s*(true|false)/i;
 
         // Parser for program jump events: "[SERIAL CMD] Jumping program to step 3 at 1000"
-        const reProgramJump = /\[SERIAL CMD\]\s*Jumping\s+program\s+to\s+step\s+(\d+)\s+at\s+(\d{3,4})/i;
+        const reProgramJump = /\[SERIAL CMD\]\s*Jumped\s+to\s+step\s+(\d+)\s+at\s+(\d{3,4})/i;
 
         // Global state for capturing device configuration
         window.__deviceConfig = window.__deviceConfig || {};
@@ -15407,66 +15392,46 @@ https://github.com/odeepllama/SolarSim/tree/main
             updateAutoloadBadge();
           }
 
+          // Sync current step index from device status (runs every status poll)
+          const mCurrentStep = line.match(reProgramCurrentStep);
+          if (mCurrentStep) {
+            const deviceStep = parseInt(mCurrentStep[1], 10); // 1-based
+            if (deviceStep > 0 && !window.__playheadManuallySet) {
+              window.__currentStepIndex = deviceStep;
+            }
+          }
+
           // Parse program jump events to update playhead position
           const mJump = line.match(reProgramJump);
           if (mJump) {
             const stepNum = parseInt(mJump[1], 10);
             const simTimeHHMM = parseInt(mJump[2], 10);
-            // Convert HHMM format (e.g., 1000) to hours and minutes
             const hours = Math.floor(simTimeHHMM / 100);
             const minutes = simTimeHHMM % 100;
             const simTimeStr = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
 
-            console.log('[JUMP] ===== JUMP DETECTED =====');
-            console.log('[JUMP] Step:', stepNum, 'Time:', simTimeStr);
-            console.log('[JUMP] Current day BEFORE update:', window.__playheadCurrentDay);
-            console.log('[JUMP] Manual flag BEFORE:', window.__playheadManuallySet);
-
             // Update step tracking
             window.__currentStepIndex = stepNum;
 
-            // Only recalculate day if NOT manually set (i.e., this is an automatic jump, not user-initiated)
-            // If __playheadManuallySet is true, the day was already set by the navigation function
+            // Only recalculate day if NOT manually set (nav button already set it)
             if (!window.__playheadManuallySet) {
-              // Determine which day this step is on
-              const programIndex = stepNum - 1; // Convert to programSteps array index
-              console.log('[JUMP] Program index (0-based):', programIndex);
-
+              const programIndex = stepNum - 1;
               if (programIndex >= 0 && typeof __getDayForStep === 'function') {
                 const dayForStep = __getDayForStep(programIndex);
-                console.log('[JUMP] __getDayForStep returned:', dayForStep);
-                console.log('[JUMP] Setting playhead day to:', dayForStep);
                 window.__playheadCurrentDay = dayForStep;
-
-                // Update wrap count to match the day
                 window.__dayWrapCount = dayForStep - 1;
-                console.log('[JUMP] Set wrap count to:', window.__dayWrapCount);
-              } else {
-                console.log('[JUMP] WARNING: Could not determine day for step', stepNum);
               }
-            } else {
-              console.log('[JUMP] Skipping day recalculation - day was manually set to:', window.__playheadCurrentDay);
             }
 
             // Update last sim minutes to prevent false midnight crossing detection
             window.__lastSimMinutesForDayDetection = hours * 60 + minutes;
-            console.log('[JUMP] Set last sim minutes to:', window.__lastSimMinutesForDayDetection);
 
-            console.log('[JUMP] Current day AFTER update:', window.__playheadCurrentDay);
-
-            // Set manual flag to prevent automatic day detection from overriding
             __setPlayheadManualFlag();
-            console.log('[JUMP] Manual flag set to TRUE');
-
-            // Update the sim time display to show the jump position
             setKV('sim', 'SimTime', simTimeStr);
 
-            // Trigger timeline update to move playhead
             if (typeof renderTimelineStrip === 'function') {
-              try { renderTimelineStrip(); } catch (e) { console.error('[JUMP] Timeline update error:', e); }
+              try { renderTimelineStrip(); } catch (e) { }
             }
-
-            console.log('[JUMP] ===== JUMP COMPLETE =====');
           }
 
           // Detect HOLD step entry from [PROGRAM] messages
@@ -16123,14 +16088,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Global Tile Popover Init section in the next script block.
         function fmtHHMM(hhmm) { if (hhmm == null) return '--:--'; const h = Math.floor(hhmm / 100), m = hhmm % 100; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
         // Removed parse mode pill code as JSON is no longer used
-        setInterval(() => {
-          if (state.parseMode === 'AUTO') {
-            if (!state.port) { parseModePill.className = 'pill amber'; return; }
-            if (state.jsonDetected) parseModePill.className = 'pill green';
-            else if (state.connStartTs && performance.now() - state.connStartTs > 3000) parseModePill.className = 'pill red';
-            else parseModePill.className = 'pill amber';
-          }
-        }, 900);
+        // Removed: parseModePill interval (element no longer exists)
         async function startStream() { if (state.transport !== 'ble') await ensurePort(); await sendLine('jsonstatus rate ' + state.rate); await sendLine('jsonstatus on'); state.active = true; if (rateInfo) { rateInfo.style.display = 'inline-block'; rateInfo.textContent = state.rate + 'ms'; } startBtn.disabled = true; stopBtn.disabled = false; }
         async function stopStream() { if (!state.active) return; await sendLine('jsonstatus off'); state.active = false; startBtn.disabled = false; stopBtn.disabled = true; }
         async function startReader() { if (!state.port || state.reader) return; (async () => { while (state.port && state.port.readable) { state.reader = state.port.readable.getReader(); try { while (true) { const { value, done } = await state.reader.read(); if (done) break; if (value) processIncoming(new TextDecoder().decode(value)); } } catch (e) { log('Connection not active', 'error'); state.port = null; setConnected(false); break; } finally { try { state.reader.releaseLock(); } catch (_) { } state.reader = null; } } if (!state.port || !state.port.readable) { state.port = null; setConnected(false); } })(); }
@@ -17821,221 +17779,54 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Function to scroll to previous step
       window.__scrollToPrevStep = async function () {
-        console.log('[Step Nav] scrollToPrevStep called');
-        console.log('[Step Nav] Current step index:', window.__currentStepIndex);
+        if (!programSteps || programSteps.length === 0) return;
+        const currentStep = window.__currentStepIndex || 0;
+        const prevStep = currentStep - 1;
+        if (prevStep < 1) return;
 
-        // Get current sim time to check if we can go backwards
-        let currentSimMinutes = null;
-        if (window.kvCache && window.kvCache.get) {
-          const simTimeValue = window.kvCache.get('sim');
-          if (simTimeValue) {
-            const valueEl = simTimeValue.querySelector('span');
-            if (valueEl) {
-              const simTimeStr = valueEl.textContent.trim();
-              if (simTimeStr && simTimeStr.includes(':')) {
-                const parts = simTimeStr.split(':');
-                const h = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10);
-                if (!isNaN(h) && !isNaN(m)) {
-                  currentSimMinutes = h * 60 + m;
-                }
-              }
-            }
-          }
-        }
-
-        // Check if there are any previous steps available
-        if (typeof programSteps === 'undefined' || !programSteps || programSteps.length === 0) {
-          console.log('[Step Nav] No program steps defined');
-          return;
-        }
-
-        // Enhanced logic: If at first step of a day, jump to last step of previous day
-        let prevStepIndex = window.__currentStepIndex - 1;
-        if (currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function') {
-          const currentDay = window.__playheadCurrentDay || 1;
-          // Find all step indices for current day
-          let currentDayStepIndices = [];
-          for (let i = 0; i < programSteps.length; i++) {
-            if (__getDayForStep(i) === currentDay) currentDayStepIndices.push(i);
-          }
-          // If at first step of the day, jump to last step of previous day
-          if (currentDayStepIndices.length && window.__currentStepIndex - 1 === currentDayStepIndices[0]) {
-            // Find all step indices for previous day
-            const prevDay = currentDay - 1;
-            let prevDayStepIndices = [];
-            for (let i = 0; i < programSteps.length; i++) {
-              if (__getDayForStep(i) === prevDay) prevDayStepIndices.push(i);
-            }
-            if (prevDayStepIndices.length) {
-              prevStepIndex = prevDayStepIndices[prevDayStepIndices.length - 1] + 1; // 1-based index
-            }
-          } else {
-            // Otherwise, search backward for last step with time < current time AND on the same day
-            for (let i = programSteps.length - 1; i >= 0; i--) {
-              const stepDay = __getDayForStep(i);
-              const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
-              if (stepDay === currentDay && stepMinutes < currentSimMinutes) {
-                prevStepIndex = i + 1; // 1-based index
-                break;
-              }
-            }
-          }
-        }
-
-        const targetStepIndex = prevStepIndex;
-        console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
-
-        // Allow jump to previous day's final step (no abort)
-
-        // Check if device is connected
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        console.log('[Step Nav] Device connected:', isConnected);
+        if (!isConnected) return;
 
-        if (isConnected && targetStepIndex >= 0) {
-          const stepNumber = targetStepIndex;
-          console.log('[Step Nav] Sending command: jump step', stepNumber);
-
-          // Update state and day tracking
-          window.__currentStepIndex = targetStepIndex;
-
-          // Determine which day this step is on
-          const programIndex = targetStepIndex - 1; // Convert to programSteps array index
-          if (programIndex >= 0 && typeof __getDayForStep === 'function') {
-            const dayForStep = __getDayForStep(programIndex);
-            console.log('[Step Nav] Step', targetStepIndex, 'is on day', dayForStep);
-            window.__playheadCurrentDay = dayForStep;
-            // Sync wrap count to match the day so day navigation works correctly
-            window.__dayWrapCount = dayForStep - 1;
-          } else if (targetStepIndex === 0) {
-            // Step 0 is before program starts, default to day 1
-            window.__playheadCurrentDay = 1;
-            window.__dayWrapCount = 0;
-          }
-
-          __setPlayheadManualFlag();
-
-          // Suppress verbose status output for 2 seconds after jump command
-          state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
-
-          // Send the command - device will respond and update playhead
-          await __sendDeviceCommand(`jump step ${stepNumber}`);
-          // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
-
-          // Update UI
-          if (typeof renderTimelineStrip === 'function') {
-            try { renderTimelineStrip(); } catch (e) { }
-          }
-          if (typeof window.__updateProgramTitles === 'function') {
-            try { window.__updateProgramTitles(); } catch (e) { }
-          }
-        } else {
-          console.log('[Step Nav] Device not connected or invalid step index');
+        window.__currentStepIndex = prevStep;
+        const programIndex = prevStep - 1;
+        if (programIndex >= 0 && typeof __getDayForStep === 'function') {
+          window.__playheadCurrentDay = __getDayForStep(programIndex);
+          window.__dayWrapCount = window.__playheadCurrentDay - 1;
         }
+        __setPlayheadManualFlag();
+        state.__navSuppressionActive = true;
+        state.__silentStatusUntil = performance.now() + 2000;
+        await __sendDeviceCommand(`jump step ${prevStep}`);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+        if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
 
       // Function to scroll to next step
       window.__scrollToNextStep = async function () {
-        console.log('[Step Nav] scrollToNextStep called');
-        console.log('[Step Nav] Current step index:', window.__currentStepIndex);
+        if (!programSteps || programSteps.length === 0) return;
+        const currentStep = window.__currentStepIndex || 0;
+        const nextStep = currentStep + 1;
+        if (nextStep > programSteps.length) return;
 
-        // Check if we're at or beyond the last step
-        if (typeof programSteps === 'undefined' || !programSteps || programSteps.length === 0) {
-          console.log('[Step Nav] No program steps defined');
-          return;
-        }
-
-        if (window.__currentStepIndex >= programSteps.length) {
-          console.log('[Step Nav] Already at or beyond last step, returning');
-          return;
-        }
-
-        // Get current sim time to find the next step after it
-        let currentSimMinutes = null;
-        if (window.kvCache && window.kvCache.get) {
-          const simTimeValue = window.kvCache.get('sim');
-          if (simTimeValue) {
-            const valueEl = simTimeValue.querySelector('span');
-            if (valueEl) {
-              const simTimeStr = valueEl.textContent.trim();
-              if (simTimeStr && simTimeStr.includes(':')) {
-                const parts = simTimeStr.split(':');
-                const h = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10);
-                if (!isNaN(h) && !isNaN(m)) {
-                  currentSimMinutes = h * 60 + m;
-                }
-              }
-            }
-          }
-        }
-
-        // Find the next step after current time (search forward)
-        // IMPORTANT: Only search within the current day's steps to avoid jumping to wrong day
-        let nextStepIndex = window.__currentStepIndex + 1;
-        if (currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function') {
-          const currentDay = window.__playheadCurrentDay || 1;
-          // Search for first step with time > current time AND on the same day
-          for (let i = 0; i < programSteps.length; i++) {
-            const stepDay = __getDayForStep(i);
-            const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
-            // Only consider steps on the current day
-            if (stepDay === currentDay && stepMinutes > currentSimMinutes) {
-              nextStepIndex = i + 1; // Convert to 1-based index
-              break;
-            }
-          }
-        }
-
-        const targetStepIndex = nextStepIndex;
-        console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
-
-        // Check if device is connected
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        console.log('[Step Nav] Device connected:', isConnected);
+        if (!isConnected) return;
 
-        if (isConnected && targetStepIndex <= programSteps.length) {
-          const stepNumber = targetStepIndex;
-          console.log('[Step Nav] Sending command: jump step', stepNumber);
-
-          // Update state and day tracking
-          window.__currentStepIndex = targetStepIndex;
-
-          // Determine which day this step is on
-          const programIndex = targetStepIndex - 1; // Convert to programSteps array index
-          if (programIndex >= 0 && typeof __getDayForStep === 'function') {
-            const dayForStep = __getDayForStep(programIndex);
-            console.log('[Step Nav] Step', targetStepIndex, 'is on day', dayForStep);
-            window.__playheadCurrentDay = dayForStep;
-            // Sync wrap count to match the day so day navigation works correctly
-            window.__dayWrapCount = dayForStep - 1;
-          }
-
-          __setPlayheadManualFlag();
-
-          // Suppress verbose status output for 2 seconds after jump command
-          state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
-
-          // Send the command - device will respond and update playhead
-          await __sendDeviceCommand(`jump step ${stepNumber}`);
-          // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
-
-          // Update UI
-          if (typeof renderTimelineStrip === 'function') {
-            try { renderTimelineStrip(); } catch (e) { }
-          }
-          if (typeof window.__updateProgramTitles === 'function') {
-            try { window.__updateProgramTitles(); } catch (e) { }
-          }
-        } else {
-          console.log('[Step Nav] Device not connected or invalid step index');
+        window.__currentStepIndex = nextStep;
+        const programIndex = nextStep - 1;
+        if (programIndex >= 0 && typeof __getDayForStep === 'function') {
+          window.__playheadCurrentDay = __getDayForStep(programIndex);
+          window.__dayWrapCount = window.__playheadCurrentDay - 1;
         }
+        __setPlayheadManualFlag();
+        state.__navSuppressionActive = true;
+        state.__silentStatusUntil = performance.now() + 2000;
+        await __sendDeviceCommand(`jump step ${nextStep}`);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+        if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
 
       // Function to scroll to next day
@@ -18413,15 +18204,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
                 // Update playhead day if we found a match
                 if (foundDay !== null && foundDay !== window.__playheadCurrentDay) {
-                  console.log('[DEBUG] Day detection: moving from Day', window.__playheadCurrentDay, 'to Day', foundDay, 'based on time', currentSimTime);
                   window.__playheadCurrentDay = foundDay;
-                } else if (foundDay === null) {
-                  // Couldn't determine day from time alone (ambiguous)
-                  // Just stay on current day - don't change it
-                  console.log('[DEBUG] Day detection: ambiguous time', currentSimTime, '- staying on Day', window.__playheadCurrentDay);
-                } else {
-                  console.log('[DEBUG] Day detection: staying on Day', window.__playheadCurrentDay, 'foundDay was', foundDay);
                 }
+                // If foundDay is null (ambiguous) or same as current, stay on current day
               }
             }
           } catch (e) {
