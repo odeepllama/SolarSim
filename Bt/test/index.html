@@ -2867,12 +2867,6 @@ https://github.com/odeepllama/SolarSim/tree/main
       filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
       pointer-events: auto;
       z-index: 100;
-      transition: left 1s linear;
-    }
-
-    /* Disable transition for instant jumps (Prev/Next step navigation) */
-    .timeline-playhead.no-transition {
-      transition: none !important;
     }
 
     /* Timeline hold progress indicator */
@@ -10249,97 +10243,81 @@ https://github.com/odeepllama/SolarSim/tree/main
       function formatHHMM(min) { const h = Math.floor(min / 60); const m = min % 60; return (h < 10 ? '' + h : ('' + h).padStart(2, '0')) + ('' + m).padStart(2, '0'); }
 
       // Render playhead indicator on timeline showing current sim time
-      // Uses persistent DOM element + CSS transition for smooth interpolation between polling updates
       function renderTimelinePlayhead(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN) {
         if (!host) return;
+
+        // Remove any existing playhead
+        const existingPlayhead = host.querySelector('.timeline-playhead');
+        if (existingPlayhead) existingPlayhead.remove();
 
         // Check if this timeline is for the current playhead day
         const currentPlayheadDay = window.__playheadCurrentDay || 1;
         const timelineDayNumber = dayInfo && dayInfo.dayNumber !== undefined ? dayInfo.dayNumber : 1;
 
-        // If wrong day, remove playhead and bail
         if (timelineDayNumber !== currentPlayheadDay) {
-          const existing = host.querySelector('.timeline-playhead');
-          if (existing) existing.remove();
-          return;
+          return; // Only show playhead on the current day
         }
 
         // Get current sim time from kvCache (same source as SimTime status tile)
         const simTimeValue = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
-        if (!simTimeValue) {
-          const existing = host.querySelector('.timeline-playhead');
-          if (existing) existing.remove();
-          return;
-        }
+        if (!simTimeValue) return;
 
         // Extract the value from span element (tile structure: <b>label</b><span>value</span>)
         const valueEl = simTimeValue.querySelector('span');
-        if (!valueEl) {
-          const existing = host.querySelector('.timeline-playhead');
-          if (existing) existing.remove();
-          return;
-        }
+        if (!valueEl) return;
 
         const simTimeStr = valueEl.textContent.trim(); // Format: "HH:MM"
-        if (!simTimeStr || !simTimeStr.includes(':')) {
-          const existing = host.querySelector('.timeline-playhead');
-          if (existing) existing.remove();
-          return;
-        }
+        if (!simTimeStr || !simTimeStr.includes(':')) return;
 
         // Parse HH:MM to minutes
         const parts = simTimeStr.split(':');
         const hours = parseInt(parts[0], 10);
         const minutes = parseInt(parts[1], 10);
-        if (isNaN(hours) || isNaN(minutes)) {
-          const existing = host.querySelector('.timeline-playhead');
-          if (existing) existing.remove();
-          return;
-        }
+        if (isNaN(hours) || isNaN(minutes)) return;
 
         const simTimeMinutes = hours * 60 + minutes;
 
         // Check if sim time is within the visible range of this timeline
-        if (simTimeMinutes < WINDOW_START_MIN || simTimeMinutes > WINDOW_END_MIN) {
-          const existing = host.querySelector('.timeline-playhead');
-          if (existing) existing.remove();
-          return;
-        }
+        if (simTimeMinutes < WINDOW_START_MIN || simTimeMinutes > WINDOW_END_MIN) return;
 
         // Check if device is connected and running (same logic as lock UI)
         const serialState = window.__serialState || null;
         const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
 
-        if (!hasConnection || !hasLoadedProfile) {
-          const existing = host.querySelector('.timeline-playhead');
-          if (existing) existing.remove();
-          return;
-        }
+        if (!hasConnection || !hasLoadedProfile) return;
 
         // Calculate playhead position as percentage
         const posPct = ((simTimeMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
 
         // Check if we're in a HOLD state and should render hold progress
         const holdState = window.__holdState;
+        // Check if we're in an active hold on the current day
+        // The hold state stores the simTime when the hold STARTED, but we should show progress
+        // as long as we're on the right day and there's an active hold segment at current time
         const isActiveHold = holdState && holdState.dayNumber === currentPlayheadDay;
 
-        // --- HOLD progress rendering (recreated each time, no transition needed) ---
         if (isActiveHold) {
+          // Remove any existing hold progress indicator
           const existingHoldProgress = host.querySelector('.timeline-hold-progress');
           if (existingHoldProgress) existingHoldProgress.remove();
 
+          // Calculate hold progress (0 to 1)
           const elapsedMs = Date.now() - holdState.startTime;
           const elapsedMinutes = elapsedMs / 60000;
           const totalMinutes = holdState.durationMinutes;
           const progressFraction = Math.min(1, elapsedMinutes / totalMinutes);
 
+          // Find the HOLD segment in the timeline to determine its visual extent
+          // Look for segment at current sim time with speed=0 or hold class
           const segments = host.querySelectorAll('.tl-seg');
           let holdSegment = null;
           for (let seg of segments) {
             const segStart = parseInt(seg.dataset.segStartMin, 10);
             const segEnd = parseInt(seg.dataset.segEndMin, 10);
             const hasHoldClass = seg.classList.contains('hold');
+
+            // Check if this segment contains the current sim time and has hold styling
             if (simTimeMinutes >= segStart && simTimeMinutes <= segEnd && hasHoldClass) {
               holdSegment = seg;
               break;
@@ -10347,73 +10325,52 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           if (holdSegment) {
+            // Get the segment's position and width
             const segStart = parseInt(holdSegment.dataset.segStartMin, 10);
             const segEnd = parseInt(holdSegment.dataset.segEndMin, 10);
             const segStartPct = ((segStart - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
             const segWidthPct = ((segEnd - segStart) / WINDOW_SPAN) * 100;
 
+            // Create hold progress element with detailed tooltip
             const holdProgress = document.createElement('div');
             holdProgress.className = 'timeline-hold-progress';
             holdProgress.style.left = segStartPct + '%';
             holdProgress.style.width = (segWidthPct * progressFraction) + '%';
 
+            // Detailed tooltip showing progress, elapsed, total, and remaining time
             const remaining = totalMinutes - elapsedMinutes;
-            const segDuration = segEnd - segStart;
+            const segDuration = segEnd - segStart; // Actual segment duration in minutes
             holdProgress.title = `HOLD Progress: ${(progressFraction * 100).toFixed(1)}%\nElapsed: ${elapsedMinutes.toFixed(1)} min\nTotal: ${totalMinutes.toFixed(1)} min\nRemaining: ${remaining.toFixed(1)} min\nSegment: ${formatHHMM(segStart)} → ${formatHHMM(segEnd)} (${segDuration} min)`;
+
+            // Make the progress bar interactive for tooltip (override pointer-events:none for tooltip)
             holdProgress.style.pointerEvents = 'auto';
             holdProgress.style.cursor = 'help';
+
             host.appendChild(holdProgress);
           }
+
+          // Playhead tooltip - simplified during HOLD (detailed info now on progress bar)
+          const playhead = document.createElement('div');
+          playhead.className = 'timeline-playhead';
+          playhead.style.left = posPct + '%';
+          playhead.style.cursor = 'default'; // Normal cursor - detailed info is on orange bar
+          playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})\n[HOLD in progress - hover over orange bar for details]`;
+
+          host.appendChild(playhead);
         } else {
+          // Normal playhead (not in HOLD)
+          // Remove any existing hold progress indicator if present
           const existingHoldProgress = host.querySelector('.timeline-hold-progress');
           if (existingHoldProgress) existingHoldProgress.remove();
-        }
 
-        // --- PLAYHEAD rendering (smooth CSS transition between polling updates) ---
-        // We store playhead DOM elements in a global map keyed by readOnly+dayNumber
-        // so the same element survives innerHTML wipes and multi-day container rebuilds.
-        // CSS transition on 'left' produces smooth gliding between 1Hz polling updates.
-        if (!window.__playheadStore) window.__playheadStore = new Map();
-        const readOnly = host.classList.contains('readonly');
-        const storeKey = (readOnly ? 'mirror' : 'main') + '_day' + currentPlayheadDay;
-        const isJump = window.__playheadJumped;
-
-        let playhead = window.__playheadStore.get(storeKey);
-
-        if (!playhead) {
-          // First time — create the element
-          playhead = document.createElement('div');
+          // Create playhead element
+          const playhead = document.createElement('div');
           playhead.className = 'timeline-playhead';
-          window.__playheadStore.set(storeKey, playhead);
-        }
-
-        // Handle jump commands: disable CSS transition for instant teleport
-        if (isJump) {
-          playhead.classList.add('no-transition');
-        }
-
-        // Update position — CSS transition animates smoothly (unless jumped)
-        playhead.style.left = posPct + '%';
-
-        // Update tooltip and cursor
-        if (isActiveHold) {
-          playhead.style.cursor = 'default';
-          playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})\n[HOLD in progress - hover over orange bar for details]`;
-        } else {
-          playhead.style.cursor = 'help';
+          playhead.style.left = posPct + '%';
+          playhead.style.cursor = 'help'; // Help cursor for tooltip
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})`;
-        }
 
-        // Append (re-attach) the saved playhead element to the current host
-        host.appendChild(playhead);
-
-        // If jumped, re-enable transition after position is painted
-        if (isJump) {
-          // rAF ensures the no-transition position is painted first
-          requestAnimationFrame(() => {
-            if (playhead) playhead.classList.remove('no-transition');
-          });
-          window.__playheadJumped = false;
+          host.appendChild(playhead);
         }
       }
 
@@ -15470,7 +15427,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__lastSimMinutesForDayDetection = hours * 60 + minutes;
 
             __setPlayheadManualFlag();
-            window.__playheadJumped = true; // Disable CSS transition for this jump
             setKV('sim', 'SimTime', simTimeStr);
 
             if (typeof renderTimelineStrip === 'function') {
@@ -17796,7 +17752,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Suppress verbose status output for 2 seconds after jump command
           state.__navSuppressionActive = true;
           state.__silentStatusUntil = performance.now() + 2000;
-          window.__playheadJumped = true; // Disable CSS transition for instant teleport
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
           setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
@@ -17846,7 +17801,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         __setPlayheadManualFlag();
         state.__navSuppressionActive = true;
         state.__silentStatusUntil = performance.now() + 2000;
-        window.__playheadJumped = true; // Disable CSS transition for instant teleport
         await __sendDeviceCommand(`jump step ${prevStep}`);
         setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
@@ -17873,7 +17827,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         __setPlayheadManualFlag();
         state.__navSuppressionActive = true;
         state.__silentStatusUntil = performance.now() + 2000;
-        window.__playheadJumped = true; // Disable CSS transition for instant teleport
         await __sendDeviceCommand(`jump step ${nextStep}`);
         setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
@@ -17913,7 +17866,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Suppress verbose status output for 2 seconds after jump command
           state.__navSuppressionActive = true;
           state.__silentStatusUntil = performance.now() + 2000;
-          window.__playheadJumped = true; // Disable CSS transition for instant teleport
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
           setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
