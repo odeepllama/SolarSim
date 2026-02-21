@@ -474,6 +474,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       background: #dc3545;
       border-color: #c82333;
       color: #fff;
+      min-height: 44px;
     }
 
     .playhead-nav-btn.nav-prev:disabled {
@@ -486,6 +487,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       background: #28a745;
       border-color: #218838;
       color: #fff;
+      min-height: 44px;
     }
 
     .playhead-nav-btn.nav-next:disabled {
@@ -4086,12 +4088,12 @@ https://github.com/odeepllama/SolarSim/tree/main
     <div id="modeConfigModal" aria-hidden="true">
       <div class="modal-content">
         <header>
-          <h3>Simple Mode Section Visibility</h3>
+          <h3>Simple Mode — Sections & Tiles</h3>
           <button id="modeConfigModalClose" type="button" class="secondary" aria-label="Close">&times;</button>
         </header>
         <div class="modal-body">
           <p style="font-size:0.95rem; margin-bottom:16px; color:#666;">
-            Choose which sections are visible in Simple mode. Advanced mode always shows all sections.
+            Choose which sections and status tiles are visible in Simple mode. Advanced mode always shows everything.
           </p>
           <div id="sectionConfigList"></div>
         </div>
@@ -16003,7 +16005,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (k === 'program') isActive = /\bON\b/i.test(newText);
             else if (k === 'dualSun') isActive = /\bON\b/i.test(newText);
             else if (k === 'rotation') isActive = /\bON\b/i.test(newText);
-            else if (k === 'solarMode') isActive = true; // always highlight Solar Mode tile for visibility
+            else if (k === 'solarMode') isActive = /\bBASIC\b/i.test(newText); // green only for BASIC mode
             if (isActive) box.classList.add('kv-active'); else box.classList.remove('kv-active');
             // Solar Mode specific palette: BASIC=green (kv-active), SIMPLE=amber, ADVANCED/SCIENTIFIC=red
             if (k === 'solarMode') {
@@ -16020,6 +16022,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Only reorder tiles when a new one was created to avoid duplicate rendering
           if (isNewBox) {
             reorderTiles();
+            // Apply tile visibility for newly created tiles (Simple mode may hide some)
+            if (typeof window.applyVisibility === 'function') {
+              try { window.applyVisibility(); } catch (_) { }
+            }
             // Set CSS variable for staggered animation delay based on child index (after reordering)
             const tileIndex = Array.from(statusGrid.children).indexOf(box);
             box.style.setProperty('--tile-index', tileIndex);
@@ -17422,25 +17428,48 @@ https://github.com/odeepllama/SolarSim/tree/main
         let isExpanded = localStorage.getItem('deviceProgramStatusExpanded') === 'true';
 
         // Initialize state
-        function updateDisplay(expanded) {
+        function updateDisplay(expanded, forceRebuild) {
+          const expandedChanged = (isExpanded !== expanded);
           isExpanded = expanded;
 
           // Get navigation controls
           const navControls = window.__generateNavControlsHtml();
           const navHtml = navControls.html;
 
-          if (expanded) {
-            contentEl.style.display = 'block';
-            titleEl.innerHTML = `<span style="display:inline-flex; align-items:center; width:100%;">
-        <span style="flex:0 0 auto;">▼ Device Program Status</span>
-        ${navHtml}
-      </span>`;
+          // Dual-path: only rebuild innerHTML when structure changes,
+          // otherwise just update disabled attributes on existing buttons.
+          const hasNavBtns = titleEl.querySelector('.playhead-nav-btn');
+          const shouldShowNav = navControls.shouldShow;
+
+          if (!forceRebuild && !expandedChanged && hasNavBtns && shouldShowNav) {
+            // Path A: buttons exist and structure unchanged — update disabled state only
+            const stepNav = titleEl.querySelector('.playhead-step-nav');
+            if (stepNav) {
+              const btns = stepNav.querySelectorAll('.playhead-nav-btn');
+              if (btns.length === 2) {
+                btns[0].disabled = (navControls.currentStep <= 0);
+                btns[1].disabled = (navControls.currentStep >= navControls.totalSteps);
+              }
+            }
+            const dayNav = titleEl.querySelector('.playhead-day-nav');
+            if (dayNav) {
+              const btns = dayNav.querySelectorAll('.playhead-nav-btn');
+              if (btns.length === 2) {
+                btns[0].disabled = (navControls.currentDay <= 1);
+                btns[1].disabled = (navControls.currentDay >= navControls.maxDay);
+              }
+            }
           } else {
-            contentEl.style.display = 'none';
+            // Path B: structure changed — full rebuild
+            contentEl.style.display = expanded ? 'block' : 'none';
+            const arrow = expanded ? '▼' : '▶';
             titleEl.innerHTML = `<span style="display:inline-flex; align-items:center; width:100%;">
-        <span style="flex:0 0 auto;">▶ Device Program Status</span>
+        <span style="flex:0 0 auto;">${arrow} Device Program Status</span>
         ${navHtml}
       </span>`;
+          }
+          if (expandedChanged) {
+            contentEl.style.display = expanded ? 'block' : 'none';
           }
           localStorage.setItem('deviceProgramStatusExpanded', expanded ? 'true' : 'false');
         }
@@ -17455,14 +17484,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         // Initialize from localStorage
-        updateDisplay(isExpanded);
+        updateDisplay(isExpanded, true);
 
         // Manual toggle by user
         titleEl.addEventListener('click', function (e) {
           // Don't toggle if clicking on navigation buttons
           if (e.target.closest('.playhead-nav-btn')) return;
 
-          updateDisplay(!isExpanded);
+          updateDisplay(!isExpanded, true);
           userHasManuallyToggled = true;
           localStorage.setItem('deviceProgramStatusUserToggled', 'true');
         });
@@ -17476,14 +17505,14 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Only auto-expand if device is running AND user hasn't manually set preference
           if (deviceRunning && !userHasManuallyToggled && !isExpanded) {
-            updateDisplay(true);
+            updateDisplay(true, true);
           }
         }
 
         // Check periodically for device connection and update nav buttons
         setInterval(function () {
           checkAndAutoExpand();
-          // Update nav button states without changing expanded state
+          // Update nav button states without replacing DOM
           updateDisplay(isExpanded);
         }, 1000);
 
@@ -17745,12 +17774,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Sync the wrap count to match the target day so auto-detection doesn't override
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
-          // Suppress verbose status output for 2 seconds after jump command
+          // Suppress verbose status output for 1 second after jump command
           state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
+          state.__silentStatusUntil = performance.now() + 1000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+          setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
@@ -17796,9 +17825,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         __setPlayheadManualFlag();
         state.__navSuppressionActive = true;
-        state.__silentStatusUntil = performance.now() + 2000;
+        state.__silentStatusUntil = performance.now() + 1000;
         await __sendDeviceCommand(`jump step ${prevStep}`);
-        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -17822,9 +17851,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         __setPlayheadManualFlag();
         state.__navSuppressionActive = true;
-        state.__silentStatusUntil = performance.now() + 2000;
+        state.__silentStatusUntil = performance.now() + 1000;
         await __sendDeviceCommand(`jump step ${nextStep}`);
-        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -17859,12 +17888,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Sync the wrap count to match the target day so auto-detection doesn't override
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
-          // Suppress verbose status output for 2 seconds after jump command
+          // Suppress verbose status output for 1 second after jump command
           state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
+          state.__silentStatusUntil = performance.now() + 1000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+          setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
@@ -18393,25 +18422,46 @@ https://github.com/odeepllama/SolarSim/tree/main
           { id: 'profile-text-window', name: 'Profile Text Window', defaultSimple: false }
         ];
 
+        // Individual status-tile visibility toggles (Simple mode only)
+        const TILE_VISIBILITY_DEFS = [
+          { key: 'solarMode', name: 'Solar Mode', defaultVisible: true },
+          { key: 'dualSun', name: 'Dual Sun', defaultVisible: true },
+          { key: 'servo2DayInt', name: 'Servo2 Day Interval', defaultVisible: true },
+          { key: 'servo2NightInt', name: 'Servo2 Night Interval', defaultVisible: true },
+          { key: 'rotation', name: 'Rotation & Imaging', defaultVisible: true }
+        ];
+
         // Load configuration from localStorage
         function loadConfig() {
           const stored = localStorage.getItem('modeConfig');
+          let config = null;
           if (stored) {
             try {
               const parsed = JSON.parse(stored);
               // Migrate old format if needed (had both simple and advanced)
               if (parsed.simple) {
-                return { simple: parsed.simple };
+                config = { simple: parsed.simple };
+                if (parsed.tileVisibility) config.tileVisibility = parsed.tileVisibility;
+              } else {
+                config = parsed;
               }
-              return parsed;
             } catch (e) {
               console.warn('[Mode] Failed to parse stored config:', e);
             }
           }
-          // Return default configuration (only Simple mode needs config)
-          const config = { simple: {} };
-          SECTIONS.forEach(section => {
-            config.simple[section.id] = section.defaultSimple;
+          if (!config) {
+            // Return default configuration (only Simple mode needs config)
+            config = { simple: {} };
+            SECTIONS.forEach(section => {
+              config.simple[section.id] = section.defaultSimple;
+            });
+          }
+          // Ensure tileVisibility exists with defaults for any missing keys
+          if (!config.tileVisibility) config.tileVisibility = {};
+          TILE_VISIBILITY_DEFS.forEach(def => {
+            if (config.tileVisibility[def.key] === undefined) {
+              config.tileVisibility[def.key] = def.defaultVisible;
+            }
           });
           return config;
         }
@@ -18475,6 +18525,19 @@ https://github.com/odeepllama/SolarSim/tree/main
             });
           });
 
+          // Apply per-tile visibility (Simple mode only; Advanced shows all)
+          if (window.kvCache && window.kvCache.size > 0) {
+            TILE_VISIBILITY_DEFS.forEach(def => {
+              const box = window.kvCache.get(def.key);
+              if (!box) return;
+              if (mode === 'advanced' || config.tileVisibility[def.key] !== false) {
+                box.style.display = '';
+              } else {
+                box.style.display = 'none';
+              }
+            });
+          }
+
           // Special handling: Monitor/Interact toggle controls all monitor sub-sections globally
           // If monitor panel is closed, hide all monitor sub-sections regardless of individual settings
           const monitorPanel = document.getElementById('monitorPanel');
@@ -18534,16 +18597,47 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             container.appendChild(item);
           });
+
+          // ── Status Tile visibility toggles ──
+          const tileDivider = document.createElement('div');
+          tileDivider.style.cssText = 'display:grid; grid-template-columns: 3fr 1fr; gap: 12px; padding: 10px 12px; background: #dfe6ed; border-radius: 6px; margin: 16px 0 12px; font-weight: 600; font-size: 1.05rem;';
+          tileDivider.innerHTML = '<div>Status Tiles</div><div style="text-align: center; white-space: nowrap;">Show in Simple Mode</div>';
+          container.appendChild(tileDivider);
+
+          TILE_VISIBILITY_DEFS.forEach(def => {
+            const item = document.createElement('div');
+            item.className = 'section-item';
+
+            const header = document.createElement('div');
+            header.className = 'section-header';
+            header.textContent = def.name;
+            item.appendChild(header);
+
+            const group = document.createElement('div');
+            group.className = 'check-group';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.id = `config-tile-${def.key}`;
+            cb.checked = config.tileVisibility[def.key] !== false;
+            cb.dataset.tileKey = def.key;
+            group.appendChild(cb);
+            item.appendChild(group);
+
+            container.appendChild(item);
+          });
         }
 
         // Save configuration from modal UI
         function saveConfigFromUI() {
-          const config = { simple: {} };
+          const config = { simple: {}, tileVisibility: {} };
 
-          const checkboxes = document.querySelectorAll('#sectionConfigList input[type="checkbox"]');
-          checkboxes.forEach(checkbox => {
-            const section = checkbox.dataset.section;
-            config.simple[section] = checkbox.checked;
+          // Section checkboxes
+          document.querySelectorAll('#sectionConfigList input[data-section]').forEach(cb => {
+            config.simple[cb.dataset.section] = cb.checked;
+          });
+          // Tile visibility checkboxes
+          document.querySelectorAll('#sectionConfigList input[data-tile-key]').forEach(cb => {
+            config.tileVisibility[cb.dataset.tileKey] = cb.checked;
           });
 
           saveConfig(config);
@@ -18552,9 +18646,12 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Reset to default configuration
         function resetToDefaults() {
-          const config = { simple: {} };
+          const config = { simple: {}, tileVisibility: {} };
           SECTIONS.forEach(section => {
             config.simple[section.id] = section.defaultSimple;
+          });
+          TILE_VISIBILITY_DEFS.forEach(def => {
+            config.tileVisibility[def.key] = def.defaultVisible;
           });
           saveConfig(config);
           buildConfigUI();
