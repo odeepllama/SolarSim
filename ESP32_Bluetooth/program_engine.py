@@ -401,7 +401,15 @@ class ProgramEngine:
                 next_hhmm = self.program_steps[self.current_step + 1]["sim_time_hhmm"]
                 target_minutes = (next_hhmm // 100) * 60 + (next_hhmm % 100)
             else:
-                target_minutes = step_time_minutes
+                # Last step: if program repeats, target the first step's
+                # time on the next cycle so this step actually runs.
+                will_repeat = (self.program_repeats == -1 or
+                               self.current_program_repeat < self.program_repeats - 1)
+                if will_repeat and len(self.program_steps) > 0:
+                    first_hhmm = self.program_steps[0]["sim_time_hhmm"]
+                    target_minutes = (first_hhmm // 100) * 60 + (first_hhmm % 100)
+                else:
+                    target_minutes = step_time_minutes
 
             step_speed = step.get("speed", time_scale)
             direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
