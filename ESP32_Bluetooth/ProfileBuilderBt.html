@@ -18416,6 +18416,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Migrate old format if needed (had both simple and advanced)
               if (parsed.simple) {
                 config = { simple: parsed.simple };
+                if (parsed.tileVisibility) config.tileVisibility = parsed.tileVisibility;
               } else {
                 config = parsed;
               }
@@ -18500,9 +18501,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
 
           // Apply per-tile visibility (Simple mode only; Advanced shows all)
-          if (window.kvCache && kvCache.entries) {
+          if (window.kvCache && window.kvCache.size > 0) {
             TILE_VISIBILITY_DEFS.forEach(def => {
-              const box = kvCache.get(def.key);
+              const box = window.kvCache.get(def.key);
               if (!box) return;
               if (mode === 'advanced' || config.tileVisibility[def.key] !== false) {
                 box.style.display = '';
