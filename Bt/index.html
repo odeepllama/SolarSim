@@ -18798,31 +18798,30 @@ https://github.com/odeepllama/SolarSim/tree/main
             position: 'right'
           },
           {
-            target: '#programSection',
+            target: '#programTimelineTitle',
             titleKey: 'guideProgramTimeline',
             contentKey: 'guideProgramTimelineDesc',
-            position: 'top',
+            position: 'bottom',
             rightTooltip: true,
             adjustTarget: (el) => {
-              // Find the program steps table within the section
-              const table = el.querySelector('#programStepsTable');
-              if (table) {
-                // Create a temporary element that spans from section start to table end
-                const rect = el.getBoundingClientRect();
-                const tableRect = table.getBoundingClientRect();
-                const wrapper = document.createElement('div');
-                wrapper.style.position = 'absolute';
-                wrapper.style.top = rect.top + 'px';
-                wrapper.style.left = rect.left + 'px';
-                wrapper.style.width = rect.width + 'px';
-                wrapper.style.height = (tableRect.bottom - rect.top) + 'px';
-                wrapper.style.pointerEvents = 'none';
-                document.body.appendChild(wrapper);
-                // Store reference for cleanup
-                el._guideWrapper = wrapper;
-                return wrapper;
-              }
-              return el;
+              // Wrap the timeline title + timeline container strip together
+              const container = document.getElementById('timelineContainer');
+              if (!container) return el;
+
+              const titleRect = el.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              wrapper.style.top = titleRect.top + window.scrollY + 'px';
+              wrapper.style.left = Math.min(titleRect.left, containerRect.left) + window.scrollX + 'px';
+              wrapper.style.width = Math.max(titleRect.width, containerRect.width) + 'px';
+              wrapper.style.height = (containerRect.bottom - titleRect.top) + 'px';
+
+              document.body.appendChild(wrapper);
+              el._guideWrapper = wrapper;
+              return wrapper;
             }
           },
           {
@@ -19114,6 +19113,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         let isPositioning = false; // Prevent positioning race conditions
         let savedMode = null; // Store mode before guide starts
         let savedImagingIlluminationState = null; // Store imaging illumination collapsed state
+        let savedProgramState = null; // Store program steps and enabled state before guide
 
         // Expose initial state globally
         window.guideActive = false;
@@ -19276,20 +19276,36 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (typeof setCurrentMode === 'function' && typeof applyVisibility === 'function') {
                 setCurrentMode('advanced');
                 applyVisibility();
-                // Wait for visibility changes to apply before starting guide
-                setTimeout(() => {
-                  deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
-                  showStep(0);
-                }, 100);
-                return;
               }
             }
           }
 
-          // Check device connection
-          deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
+          // Save current program state and inject demo program for guide
+          savedProgramState = {
+            steps: JSON.parse(JSON.stringify(programSteps)),
+            enabled: !!state.PROGRAM_ENABLED
+          };
+          console.log('[FTUE] Saved program state:', savedProgramState.steps.length, 'steps, enabled:', savedProgramState.enabled);
 
-          showStep(0);
+          // Inject demo program so guide steps show meaningful content
+          programSteps.length = 0;
+          programSteps.push(
+            { sim_time_hhmm: '06:00', speed: 1, transition: 'RUN' },
+            { sim_time_hhmm: '07:00', speed: 2, transition: 'RUN' },
+            { sim_time_hhmm: '09:00', speed: 3, transition: 'RUN' }
+          );
+          state.PROGRAM_ENABLED = true;
+          const programCheckbox = document.getElementById('PROGRAM_ENABLED');
+          if (programCheckbox) programCheckbox.checked = true;
+          if (typeof refreshConditionalVisibility === 'function') refreshConditionalVisibility();
+          if (typeof renderProgramSteps === 'function') renderProgramSteps();
+          if (typeof updatePreview === 'function') updatePreview(true);
+
+          // Wait for all layout changes (mode, program, visibility) to settle
+          setTimeout(() => {
+            deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
+            showStep(0);
+          }, 150);
         }
 
         // Show specific guide step
@@ -19681,7 +19697,21 @@ https://github.com/odeepllama/SolarSim/tree/main
                 applyVisibility();
               }
             }
-            savedMode = null; // Clear saved mode
+            savedMode = null;
+          }
+
+          // Restore original program state
+          if (savedProgramState) {
+            programSteps.length = 0;
+            savedProgramState.steps.forEach(s => programSteps.push(s));
+            state.PROGRAM_ENABLED = savedProgramState.enabled;
+            const programCheckbox = document.getElementById('PROGRAM_ENABLED');
+            if (programCheckbox) programCheckbox.checked = savedProgramState.enabled;
+            if (typeof refreshConditionalVisibility === 'function') refreshConditionalVisibility();
+            if (typeof renderProgramSteps === 'function') renderProgramSteps();
+            if (typeof updatePreview === 'function') updatePreview(true);
+            console.log('[FTUE] Restored program state:', savedProgramState.steps.length, 'steps, enabled:', savedProgramState.enabled);
+            savedProgramState = null;
           }
 
           localStorage.setItem(FTUE_STORAGE_KEY, 'true');
