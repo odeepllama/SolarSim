@@ -15234,6 +15234,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reProgramSteps = /program\s*steps\s*[:=]\s*(\[.*\])/i;
         const reProgramStepsChunk = /program\s*steps\s*\((\d+)-(\d+)\)\s*[:=]\s*(\[.*\])/i;
         const reNumberOfSteps = /number\s*of\s*steps\s*[:=]\s*(\d+)/i;
+        const reProgramCurrentStep = /program\s*current\s*step\s*[:=]\s*(\d+)\s*\/\s*(\d+)/i;
+        const reProgramRunning = /program\s*running\s*[:=]\s*(true|false)/i;
 
         // Additional parsers for Load from Device functionality
         const reStartTime = /\(re\)?start\s*time\s*[:=]\s*(\d{3,4})/i;
@@ -15248,7 +15250,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reAutoloadStatusCmd = /\[SERIAL CMD\]\s*Auto-load\s+latest\s+profile\s+set\s+to\s*:\s*(true|false)/i;
 
         // Parser for program jump events: "[SERIAL CMD] Jumping program to step 3 at 1000"
-        const reProgramJump = /\[SERIAL CMD\]\s*Jumping\s+program\s+to\s+step\s+(\d+)\s+at\s+(\d{3,4})/i;
+        const reProgramJump = /\[SERIAL CMD\]\s*Jumped\s+to\s+step\s+(\d+)\s+at\s+(\d{3,4})/i;
 
         // Global state for capturing device configuration
         window.__deviceConfig = window.__deviceConfig || {};
@@ -15390,66 +15392,46 @@ https://github.com/odeepllama/SolarSim/tree/main
             updateAutoloadBadge();
           }
 
+          // Sync current step index from device status (runs every status poll)
+          const mCurrentStep = line.match(reProgramCurrentStep);
+          if (mCurrentStep) {
+            const deviceStep = parseInt(mCurrentStep[1], 10); // 1-based
+            if (deviceStep > 0) {
+              window.__currentStepIndex = deviceStep;
+            }
+          }
+
           // Parse program jump events to update playhead position
           const mJump = line.match(reProgramJump);
           if (mJump) {
             const stepNum = parseInt(mJump[1], 10);
             const simTimeHHMM = parseInt(mJump[2], 10);
-            // Convert HHMM format (e.g., 1000) to hours and minutes
             const hours = Math.floor(simTimeHHMM / 100);
             const minutes = simTimeHHMM % 100;
             const simTimeStr = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
 
-            console.log('[JUMP] ===== JUMP DETECTED =====');
-            console.log('[JUMP] Step:', stepNum, 'Time:', simTimeStr);
-            console.log('[JUMP] Current day BEFORE update:', window.__playheadCurrentDay);
-            console.log('[JUMP] Manual flag BEFORE:', window.__playheadManuallySet);
-
             // Update step tracking
             window.__currentStepIndex = stepNum;
 
-            // Only recalculate day if NOT manually set (i.e., this is an automatic jump, not user-initiated)
-            // If __playheadManuallySet is true, the day was already set by the navigation function
+            // Only recalculate day if NOT manually set (nav button already set it)
             if (!window.__playheadManuallySet) {
-              // Determine which day this step is on
-              const programIndex = stepNum - 1; // Convert to programSteps array index
-              console.log('[JUMP] Program index (0-based):', programIndex);
-
+              const programIndex = stepNum - 1;
               if (programIndex >= 0 && typeof __getDayForStep === 'function') {
                 const dayForStep = __getDayForStep(programIndex);
-                console.log('[JUMP] __getDayForStep returned:', dayForStep);
-                console.log('[JUMP] Setting playhead day to:', dayForStep);
                 window.__playheadCurrentDay = dayForStep;
-
-                // Update wrap count to match the day
                 window.__dayWrapCount = dayForStep - 1;
-                console.log('[JUMP] Set wrap count to:', window.__dayWrapCount);
-              } else {
-                console.log('[JUMP] WARNING: Could not determine day for step', stepNum);
               }
-            } else {
-              console.log('[JUMP] Skipping day recalculation - day was manually set to:', window.__playheadCurrentDay);
             }
 
             // Update last sim minutes to prevent false midnight crossing detection
             window.__lastSimMinutesForDayDetection = hours * 60 + minutes;
-            console.log('[JUMP] Set last sim minutes to:', window.__lastSimMinutesForDayDetection);
 
-            console.log('[JUMP] Current day AFTER update:', window.__playheadCurrentDay);
-
-            // Set manual flag to prevent automatic day detection from overriding
             __setPlayheadManualFlag();
-            console.log('[JUMP] Manual flag set to TRUE');
-
-            // Update the sim time display to show the jump position
             setKV('sim', 'SimTime', simTimeStr);
 
-            // Trigger timeline update to move playhead
             if (typeof renderTimelineStrip === 'function') {
-              try { renderTimelineStrip(); } catch (e) { console.error('[JUMP] Timeline update error:', e); }
+              try { renderTimelineStrip(); } catch (e) { }
             }
-
-            console.log('[JUMP] ===== JUMP COMPLETE =====');
           }
 
           // Detect HOLD step entry from [PROGRAM] messages
@@ -17797,221 +17779,54 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Function to scroll to previous step
       window.__scrollToPrevStep = async function () {
-        console.log('[Step Nav] scrollToPrevStep called');
-        console.log('[Step Nav] Current step index:', window.__currentStepIndex);
+        if (!programSteps || programSteps.length === 0) return;
+        const currentStep = window.__currentStepIndex || 0;
+        if (currentStep < 1) return; // Not yet synced from device
+        const prevStep = Math.max(currentStep - 1, 1); // Clamp to step 1 (restarts current step if already on step 1)
 
-        // Get current sim time to check if we can go backwards
-        let currentSimMinutes = null;
-        if (window.kvCache && window.kvCache.get) {
-          const simTimeValue = window.kvCache.get('sim');
-          if (simTimeValue) {
-            const valueEl = simTimeValue.querySelector('span');
-            if (valueEl) {
-              const simTimeStr = valueEl.textContent.trim();
-              if (simTimeStr && simTimeStr.includes(':')) {
-                const parts = simTimeStr.split(':');
-                const h = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10);
-                if (!isNaN(h) && !isNaN(m)) {
-                  currentSimMinutes = h * 60 + m;
-                }
-              }
-            }
-          }
-        }
-
-        // Check if there are any previous steps available
-        if (typeof programSteps === 'undefined' || !programSteps || programSteps.length === 0) {
-          console.log('[Step Nav] No program steps defined');
-          return;
-        }
-
-        // Enhanced logic: If at first step of a day, jump to last step of previous day
-        let prevStepIndex = window.__currentStepIndex - 1;
-        if (currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function') {
-          const currentDay = window.__playheadCurrentDay || 1;
-          // Find all step indices for current day
-          let currentDayStepIndices = [];
-          for (let i = 0; i < programSteps.length; i++) {
-            if (__getDayForStep(i) === currentDay) currentDayStepIndices.push(i);
-          }
-          // If at first step of the day, jump to last step of previous day
-          if (currentDayStepIndices.length && window.__currentStepIndex - 1 === currentDayStepIndices[0]) {
-            // Find all step indices for previous day
-            const prevDay = currentDay - 1;
-            let prevDayStepIndices = [];
-            for (let i = 0; i < programSteps.length; i++) {
-              if (__getDayForStep(i) === prevDay) prevDayStepIndices.push(i);
-            }
-            if (prevDayStepIndices.length) {
-              prevStepIndex = prevDayStepIndices[prevDayStepIndices.length - 1] + 1; // 1-based index
-            }
-          } else {
-            // Otherwise, search backward for last step with time < current time AND on the same day
-            for (let i = programSteps.length - 1; i >= 0; i--) {
-              const stepDay = __getDayForStep(i);
-              const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
-              if (stepDay === currentDay && stepMinutes < currentSimMinutes) {
-                prevStepIndex = i + 1; // 1-based index
-                break;
-              }
-            }
-          }
-        }
-
-        const targetStepIndex = prevStepIndex;
-        console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
-
-        // Allow jump to previous day's final step (no abort)
-
-        // Check if device is connected
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        console.log('[Step Nav] Device connected:', isConnected);
+        if (!isConnected) return;
 
-        if (isConnected && targetStepIndex >= 0) {
-          const stepNumber = targetStepIndex;
-          console.log('[Step Nav] Sending command: jump step', stepNumber);
-
-          // Update state and day tracking
-          window.__currentStepIndex = targetStepIndex;
-
-          // Determine which day this step is on
-          const programIndex = targetStepIndex - 1; // Convert to programSteps array index
-          if (programIndex >= 0 && typeof __getDayForStep === 'function') {
-            const dayForStep = __getDayForStep(programIndex);
-            console.log('[Step Nav] Step', targetStepIndex, 'is on day', dayForStep);
-            window.__playheadCurrentDay = dayForStep;
-            // Sync wrap count to match the day so day navigation works correctly
-            window.__dayWrapCount = dayForStep - 1;
-          } else if (targetStepIndex === 0) {
-            // Step 0 is before program starts, default to day 1
-            window.__playheadCurrentDay = 1;
-            window.__dayWrapCount = 0;
-          }
-
-          __setPlayheadManualFlag();
-
-          // Suppress verbose status output for 2 seconds after jump command
-          state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
-
-          // Send the command - device will respond and update playhead
-          await __sendDeviceCommand(`jump step ${stepNumber}`);
-          // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
-
-          // Update UI
-          if (typeof renderTimelineStrip === 'function') {
-            try { renderTimelineStrip(); } catch (e) { }
-          }
-          if (typeof window.__updateProgramTitles === 'function') {
-            try { window.__updateProgramTitles(); } catch (e) { }
-          }
-        } else {
-          console.log('[Step Nav] Device not connected or invalid step index');
+        window.__currentStepIndex = prevStep;
+        const programIndex = prevStep - 1;
+        if (programIndex >= 0 && typeof __getDayForStep === 'function') {
+          window.__playheadCurrentDay = __getDayForStep(programIndex);
+          window.__dayWrapCount = window.__playheadCurrentDay - 1;
         }
+        __setPlayheadManualFlag();
+        state.__navSuppressionActive = true;
+        state.__silentStatusUntil = performance.now() + 2000;
+        await __sendDeviceCommand(`jump step ${prevStep}`);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+        if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
 
       // Function to scroll to next step
       window.__scrollToNextStep = async function () {
-        console.log('[Step Nav] scrollToNextStep called');
-        console.log('[Step Nav] Current step index:', window.__currentStepIndex);
+        if (!programSteps || programSteps.length === 0) return;
+        const currentStep = window.__currentStepIndex || 0;
+        const nextStep = currentStep + 1;
+        if (nextStep > programSteps.length) return;
 
-        // Check if we're at or beyond the last step
-        if (typeof programSteps === 'undefined' || !programSteps || programSteps.length === 0) {
-          console.log('[Step Nav] No program steps defined');
-          return;
-        }
-
-        if (window.__currentStepIndex >= programSteps.length) {
-          console.log('[Step Nav] Already at or beyond last step, returning');
-          return;
-        }
-
-        // Get current sim time to find the next step after it
-        let currentSimMinutes = null;
-        if (window.kvCache && window.kvCache.get) {
-          const simTimeValue = window.kvCache.get('sim');
-          if (simTimeValue) {
-            const valueEl = simTimeValue.querySelector('span');
-            if (valueEl) {
-              const simTimeStr = valueEl.textContent.trim();
-              if (simTimeStr && simTimeStr.includes(':')) {
-                const parts = simTimeStr.split(':');
-                const h = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10);
-                if (!isNaN(h) && !isNaN(m)) {
-                  currentSimMinutes = h * 60 + m;
-                }
-              }
-            }
-          }
-        }
-
-        // Find the next step after current time (search forward)
-        // IMPORTANT: Only search within the current day's steps to avoid jumping to wrong day
-        let nextStepIndex = window.__currentStepIndex + 1;
-        if (currentSimMinutes !== null && typeof parseHHMM === 'function' && typeof __getDayForStep === 'function') {
-          const currentDay = window.__playheadCurrentDay || 1;
-          // Search for first step with time > current time AND on the same day
-          for (let i = 0; i < programSteps.length; i++) {
-            const stepDay = __getDayForStep(i);
-            const stepMinutes = parseHHMM(programSteps[i].sim_time_hhmm);
-            // Only consider steps on the current day
-            if (stepDay === currentDay && stepMinutes > currentSimMinutes) {
-              nextStepIndex = i + 1; // Convert to 1-based index
-              break;
-            }
-          }
-        }
-
-        const targetStepIndex = nextStepIndex;
-        console.log('[Step Nav] Target step index:', targetStepIndex, '(based on current time)');
-
-        // Check if device is connected
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        console.log('[Step Nav] Device connected:', isConnected);
+        if (!isConnected) return;
 
-        if (isConnected && targetStepIndex <= programSteps.length) {
-          const stepNumber = targetStepIndex;
-          console.log('[Step Nav] Sending command: jump step', stepNumber);
-
-          // Update state and day tracking
-          window.__currentStepIndex = targetStepIndex;
-
-          // Determine which day this step is on
-          const programIndex = targetStepIndex - 1; // Convert to programSteps array index
-          if (programIndex >= 0 && typeof __getDayForStep === 'function') {
-            const dayForStep = __getDayForStep(programIndex);
-            console.log('[Step Nav] Step', targetStepIndex, 'is on day', dayForStep);
-            window.__playheadCurrentDay = dayForStep;
-            // Sync wrap count to match the day so day navigation works correctly
-            window.__dayWrapCount = dayForStep - 1;
-          }
-
-          __setPlayheadManualFlag();
-
-          // Suppress verbose status output for 2 seconds after jump command
-          state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
-
-          // Send the command - device will respond and update playhead
-          await __sendDeviceCommand(`jump step ${stepNumber}`);
-          // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
-
-          // Update UI
-          if (typeof renderTimelineStrip === 'function') {
-            try { renderTimelineStrip(); } catch (e) { }
-          }
-          if (typeof window.__updateProgramTitles === 'function') {
-            try { window.__updateProgramTitles(); } catch (e) { }
-          }
-        } else {
-          console.log('[Step Nav] Device not connected or invalid step index');
+        window.__currentStepIndex = nextStep;
+        const programIndex = nextStep - 1;
+        if (programIndex >= 0 && typeof __getDayForStep === 'function') {
+          window.__playheadCurrentDay = __getDayForStep(programIndex);
+          window.__dayWrapCount = window.__playheadCurrentDay - 1;
         }
+        __setPlayheadManualFlag();
+        state.__navSuppressionActive = true;
+        state.__silentStatusUntil = performance.now() + 2000;
+        await __sendDeviceCommand(`jump step ${nextStep}`);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+        if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
 
       // Function to scroll to next day
