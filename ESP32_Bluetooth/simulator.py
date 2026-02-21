@@ -129,6 +129,11 @@ def init_solar_day():
         ha = math.degrees(math.acos(cos_ha))
         SUNRISE_MINUTES = SOLAR_NOON_MINUTES - (ha * 4)
         SUNSET_MINUTES = SOLAR_NOON_MINUTES + (ha * 4)
+    # In BASIC mode, override with fixed 06:00–18:00 to match get_basic_sun_position()
+    if SOLAR_MODE == "BASIC":
+        SUNRISE_MINUTES = 360
+        SUNSET_MINUTES = 1080
+        SOLAR_NOON_MINUTES = 720
     print(f"[SOLAR] Date={SIMULATION_DATE} Lat={LATITUDE} Dec={DAY_DECLINATION:.1f}"
           f" Noon={int(SOLAR_NOON_MINUTES//60):02d}:{int(SOLAR_NOON_MINUTES%60):02d}"
           f" Rise={int(max(0,SUNRISE_MINUTES)//60):02d}:{int(max(0,SUNRISE_MINUTES)%60):02d}"
