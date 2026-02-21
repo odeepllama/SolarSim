@@ -19028,7 +19028,27 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideProgramSteps',
             contentKey: 'guideProgramStepsDesc',
             position: 'top',
-            tooltipOffsetX: 1.0  // Shift tooltip right by full width to avoid blocking title
+            tooltipOffsetX: 1.0,  // Shift tooltip right by full width to avoid blocking title
+            adjustTarget: (el) => {
+              // Wrap from editing title through toolbar down to the table
+              const editTitle = document.getElementById('programEditingTitle');
+              if (!editTitle) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const titleRect = editTitle.getBoundingClientRect();
+              const tableRect = el.getBoundingClientRect();
+
+              wrapper.style.top = titleRect.top + window.scrollY + 'px';
+              wrapper.style.left = Math.min(titleRect.left, tableRect.left) + window.scrollX + 'px';
+              wrapper.style.width = Math.max(titleRect.width, tableRect.width) + 'px';
+              wrapper.style.height = (tableRect.bottom - titleRect.top) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '[data-section="profile-text-window"]',
@@ -19081,7 +19101,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             position: 'top'
           },
           {
-            target: '#diffBanner',
+            target: 'h2[data-section="program-settings-header"]',
             titleKey: 'guideProfileDiff',
             contentKey: 'guideProfileDiffDesc',
             position: 'bottom'
@@ -19090,7 +19110,26 @@ https://github.com/odeepllama/SolarSim/tree/main
             target: '#simpleModeBtn',
             titleKey: 'guideSimpleAdvanced',
             contentKey: 'guideSimpleAdvancedDesc',
-            position: 'bottom'
+            position: 'bottom',
+            adjustTarget: (el) => {
+              // Wrap both Simple + Advanced mode toggle buttons
+              const container = document.getElementById('modeToggleContainer');
+              if (!container) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const containerRect = container.getBoundingClientRect();
+
+              wrapper.style.top = containerRect.top + window.scrollY + 'px';
+              wrapper.style.left = containerRect.left + window.scrollX + 'px';
+              wrapper.style.width = containerRect.width + 'px';
+              wrapper.style.height = containerRect.height + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '#deviceIdentityBadge',
