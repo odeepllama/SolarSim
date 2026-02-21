@@ -15396,7 +15396,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const mCurrentStep = line.match(reProgramCurrentStep);
           if (mCurrentStep) {
             const deviceStep = parseInt(mCurrentStep[1], 10); // 1-based
-            if (deviceStep > 0 && !window.__playheadManuallySet) {
+            if (deviceStep > 0) {
               window.__currentStepIndex = deviceStep;
             }
           }
