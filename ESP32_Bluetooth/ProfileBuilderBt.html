@@ -16003,7 +16003,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (k === 'program') isActive = /\bON\b/i.test(newText);
             else if (k === 'dualSun') isActive = /\bON\b/i.test(newText);
             else if (k === 'rotation') isActive = /\bON\b/i.test(newText);
-            else if (k === 'solarMode') isActive = true; // always highlight Solar Mode tile for visibility
+            else if (k === 'solarMode') isActive = /\bBASIC\b/i.test(newText); // green only for BASIC mode
             if (isActive) box.classList.add('kv-active'); else box.classList.remove('kv-active');
             // Solar Mode specific palette: BASIC=green (kv-active), SIMPLE=amber, ADVANCED/SCIENTIFIC=red
             if (k === 'solarMode') {
