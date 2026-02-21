@@ -18786,6 +18786,37 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           },
           {
+            target: '.mini-sect-title[data-section="monitor-status-tiles"]',
+            titleKey: 'guideStatusTiles',
+            contentKey: 'guideStatusTilesDesc',
+            position: 'bottom',
+            adjustTarget: (el) => {
+              const grid = document.getElementById('monitorStatusGrid');
+              if (!grid) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const gridRect = grid.getBoundingClientRect();
+
+              wrapper.style.top = elRect.top + window.scrollY + 'px';
+              wrapper.style.left = Math.min(elRect.left, gridRect.left) + window.scrollX + 'px';
+              wrapper.style.width = Math.max(elRect.width, gridRect.width) + 'px';
+              wrapper.style.height = (gridRect.bottom - elRect.top) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
+          },
+          {
+            target: '.vis-col[data-section="monitor-solar-arc"]',
+            titleKey: 'guideSolarArc',
+            contentKey: 'guideSolarArcDesc',
+            position: 'bottom'
+          },
+          {
             target: 'fieldset[data-section="time-and-date"]',
             titleKey: 'guideKeySettings',
             contentKey: 'guideKeySettingsDesc',
@@ -19153,6 +19184,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         let savedMode = null; // Store mode before guide starts
         let savedImagingIlluminationState = null; // Store imaging illumination collapsed state
         let savedProgramState = null; // Store program steps and enabled state before guide
+        let savedTileState = null; // Store tile/arc state before guide demo injection
 
         // Expose initial state globally
         window.guideActive = false;
@@ -19340,11 +19372,50 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (typeof renderProgramSteps === 'function') renderProgramSteps();
           if (typeof updatePreview === 'function') updatePreview(true);
 
+          // Inject demo status tiles and solar arc if not connected
+          const tilesAlreadyPopulated = window.kvCache && window.kvCache.size > 0;
+          if (!tilesAlreadyPopulated) {
+            // Save current tile/arc state for restoration
+            savedTileState = {
+              hadTiles: false,
+              arcWasVisible: false
+            };
+            const arcWrapper = document.getElementById('sunArcWrapper');
+            if (arcWrapper) savedTileState.arcWasVisible = arcWrapper.style.display !== 'none';
+
+            // Inject demo tiles via setKV
+            console.log('[FTUE] Injecting demo status tiles');
+            if (typeof setKV === 'function') {
+              setKV('sim', 'SimTime', '10:30');
+              setKV('speed', 'Speed', '2');
+              setKV('intensity', 'Intensity', '1');
+              setKV('sunColor', 'SunColor', 'NATURAL');
+              setKV('program', 'Program', 'ON');
+              setKV('solarMode', 'SolarMode', 'BASIC');
+              if (typeof reorderTiles === 'function') reorderTiles();
+            }
+
+            // Show the solar arc
+            if (arcWrapper) {
+              arcWrapper.style.display = '';
+              console.log('[FTUE] Showing solar arc with demo data');
+            }
+
+            // Trigger arc redraw and layout alignment
+            setTimeout(() => {
+              window.dispatchEvent(new Event('resize'));
+              if (typeof scheduleVisLogAlign === 'function') scheduleVisLogAlign();
+            }, 50);
+          } else {
+            savedTileState = { hadTiles: true, arcWasVisible: true };
+            console.log('[FTUE] Tiles already populated from device, skipping demo injection');
+          }
+
           // Wait for all layout changes (mode, program, visibility) to settle
           setTimeout(() => {
             deviceConnected = document.getElementById('monitorConnBadge')?.textContent === 'CONNECTED';
             showStep(0);
-          }, 150);
+          }, 250);
         }
 
         // Show specific guide step
@@ -19752,6 +19823,25 @@ https://github.com/odeepllama/SolarSim/tree/main
             console.log('[FTUE] Restored program state:', savedProgramState.steps.length, 'steps, enabled:', savedProgramState.enabled);
             savedProgramState = null;
           }
+
+          // Restore tile/arc state if demo data was injected
+          if (savedTileState && !savedTileState.hadTiles) {
+            console.log('[FTUE] Clearing demo status tiles');
+            if (window.kvCache) {
+              const grid = document.getElementById('monitorStatusGrid');
+              for (const [k, box] of window.kvCache.entries()) {
+                if (box.parentNode) box.parentNode.removeChild(box);
+              }
+              window.kvCache.clear();
+            }
+            // Re-hide the solar arc if it wasn't visible before
+            if (!savedTileState.arcWasVisible) {
+              const arcWrapper = document.getElementById('sunArcWrapper');
+              if (arcWrapper) arcWrapper.style.display = 'none';
+            }
+            if (typeof scheduleVisLogAlign === 'function') scheduleVisLogAlign();
+          }
+          savedTileState = null;
 
           localStorage.setItem(FTUE_STORAGE_KEY, 'true');
           localStorage.removeItem(FTUE_PROGRESS_KEY);
