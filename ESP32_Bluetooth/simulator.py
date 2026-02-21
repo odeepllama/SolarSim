@@ -432,6 +432,9 @@ class SolarSimulator:
         if self.program.program_enabled:
             o("-- Program Configuration --")
             o(f"  Program Repeats: {self.program.program_repeats}")
+            o(f"  Program Running: {self.program.program_running}")
+            if self.program.program_running:
+                o(f"  Program Current Step: {self.program.current_step + 1}/{len(self.program.program_steps)}")
             o(f"  Number of Steps: {len(self.program.program_steps)}")
             if self.program.program_steps:
                 try:
