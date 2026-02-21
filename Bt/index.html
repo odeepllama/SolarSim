@@ -5037,7 +5037,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           finish: 'Finish ✓',
           // Guide step translations
           guideConnectDevice: 'Connect Your Device',
-          guideConnectDeviceDesc: 'Click "Connect" to establish a serial connection with your device via USB.',
+          guideConnectDeviceDesc: 'Click <strong>Cable</strong> to connect via USB, or <strong>BT</strong> to connect wirelessly via Bluetooth.',
           guideStatusTiles: 'Status Tiles',
           guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more. Click on a tile to quickly adjust its setting.',
           guideSolarArc: 'Solar Arc Simulation',
@@ -5152,7 +5152,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           understood: '了解',
           // Guide step translations
           guideConnectDevice: 'デバイスを接続',
-          guideConnectDeviceDesc: '接続」をクリックして、RP2040デバイスとUSB経由で接続してください。',
+          guideConnectDeviceDesc: '<strong>ケーブル</strong>をクリックしてUSBで接続するか、<strong>BT</strong>をクリックしてBluetooth経由でワイヤレス接続してください。',
           guideStatusTiles: 'ステータスタイル',
           guideStatusTilesDesc: '接続状態、プログラム状態、時刻、強度など、主要なパラメータをひと目で確認できます。タイルをクリックすると設定をすばやく調整できます。',
           guideSolarArc: 'ソーラーアークシミュレーション',
@@ -18764,7 +18764,26 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideConnectDevice',
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
-            allowInteraction: true
+            allowInteraction: true,
+            adjustTarget: (el) => {
+              const btBtn = document.getElementById('monitorBTConnectBtn');
+              if (!btBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const btRect = btBtn.getBoundingClientRect();
+
+              wrapper.style.top = Math.min(elRect.top, btRect.top) + window.scrollY + 'px';
+              wrapper.style.left = Math.min(elRect.left, btRect.left) + window.scrollX + 'px';
+              wrapper.style.width = (Math.max(elRect.right, btRect.right) - Math.min(elRect.left, btRect.left)) + 'px';
+              wrapper.style.height = (Math.max(elRect.bottom, btRect.bottom) - Math.min(elRect.top, btRect.top)) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: 'fieldset[data-section="time-and-date"]',
@@ -18832,7 +18851,26 @@ https://github.com/odeepllama/SolarSim/tree/main
             target: '#monitorConnectBtn',
             titleKey: 'guideConnectDevice',
             contentKey: 'guideConnectDeviceDesc',
-            position: 'bottom'
+            position: 'bottom',
+            adjustTarget: (el) => {
+              const btBtn = document.getElementById('monitorBTConnectBtn');
+              if (!btBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const btRect = btBtn.getBoundingClientRect();
+
+              wrapper.style.top = Math.min(elRect.top, btRect.top) + window.scrollY + 'px';
+              wrapper.style.left = Math.min(elRect.left, btRect.left) + window.scrollX + 'px';
+              wrapper.style.width = (Math.max(elRect.right, btRect.right) - Math.min(elRect.left, btRect.left)) + 'px';
+              wrapper.style.height = (Math.max(elRect.bottom, btRect.bottom) - Math.min(elRect.top, btRect.top)) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '.mini-sect-title[data-section="monitor-status-tiles"]',
