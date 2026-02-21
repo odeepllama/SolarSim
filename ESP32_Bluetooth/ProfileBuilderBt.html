@@ -17781,8 +17781,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       window.__scrollToPrevStep = async function () {
         if (!programSteps || programSteps.length === 0) return;
         const currentStep = window.__currentStepIndex || 0;
-        const prevStep = currentStep - 1;
-        if (prevStep < 1) return;
+        if (currentStep < 1) return; // Not yet synced from device
+        const prevStep = Math.max(currentStep - 1, 1); // Clamp to step 1 (restarts current step if already on step 1)
 
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
