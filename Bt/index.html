@@ -11851,21 +11851,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           try { renderRecentProfiles(); } catch (_) { }
           // Initialize Load from Device functionality after sendLine is available
           try {
-            console.log('[INIT] Calling __initLoadFromDevice...');
-            if (window.__initLoadFromDevice) {
-              window.__initLoadFromDevice();
-            } else {
-              console.warn('[INIT] __initLoadFromDevice not found on window');
-            }
+            if (window.__initLoadFromDevice) window.__initLoadFromDevice();
           } catch (e) { console.error('[INIT] Error initializing Load from Device:', e); }
-          // Initialize Load Current Profile button
           try {
-            console.log('[INIT] Calling __initLoadCurrentProfile...');
-            if (window.__initLoadCurrentProfile) {
-              window.__initLoadCurrentProfile();
-            } else {
-              console.warn('[INIT] __initLoadCurrentProfile not found on window');
-            }
+            if (window.__initLoadCurrentProfile) window.__initLoadCurrentProfile();
           } catch (e) { console.error('[INIT] Error initializing Load Current Profile:', e); }
         }, 80));
 
@@ -11973,7 +11962,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Load from Device functionality - Store setup function to call later when sendLine is available
       window.__initLoadFromDevice = function () {
-        console.log('[INIT] Initializing Load from Device functionality...');
+
         const $loadBtn = document.getElementById('loadFromDeviceBtn');
         const $modal = document.getElementById('loadProfileModal');
         const $modalClose = document.getElementById('loadProfileModalClose');
@@ -11982,11 +11971,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         const $list = document.getElementById('loadProfileList');
 
         if (!$loadBtn || !$modal) {
-          console.warn('[INIT] Load from Device: Required elements not found, will retry in 100ms...', { $loadBtn, $modal });
+          console.warn('[INIT] Load from Device: Required elements not found, retrying...');
           setTimeout(() => window.__initLoadFromDevice(), 100);
           return;
         }
-        console.log('[INIT] Load from Device elements found, setting up handlers...');
+
 
         // Disable button until form is ready
         if (!window.__formIsReady) {
@@ -12002,7 +11991,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               $loadBtn.title = 'Load profile from device';
               $loadBtn.style.opacity = '1';
               $loadBtn.style.cursor = 'pointer';
-              console.log('[INIT] Form is ready, Load from Device button enabled');
+
             }
           }, 100);
         }
@@ -12011,18 +12000,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         let canCloseOnBackgroundClick = false;
 
         function openModal() {
-          console.log('[MODAL] Opening modal, element:', $modal);
           $modal.classList.add('open');
           $modal.setAttribute('aria-hidden', 'false');
-          console.log('[MODAL] Modal classes:', $modal.className);
-          console.log('[MODAL] Modal display style:', window.getComputedStyle($modal).display);
           // Prevent immediate close from stray clicks
           canCloseOnBackgroundClick = false;
           setTimeout(() => { canCloseOnBackgroundClick = true; }, 300);
         }
 
         function closeModal() {
-          console.log('[MODAL] Closing modal');
+
           // Move focus away from modal before hiding it (accessibility fix)
           if (document.activeElement && $modal.contains(document.activeElement)) {
             // Move focus back to the button that opened the modal, or document.body as fallback
@@ -12411,26 +12397,24 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Close on background click only
         $modal.addEventListener('click', (e) => {
           if (!canCloseOnBackgroundClick) {
-            console.log('[MODAL] Background click ignored (too soon after open)');
+
             return;
           }
           if (e.target === $modal) {
-            console.log('[MODAL] Background clicked, closing');
+
             closeModal();
           }
         });
 
-        console.log('[INIT] Load from Device initialization complete');
+
       }; // End of __initLoadFromDevice
 
       // Load Current Profile functionality - Quick load the currently running profile
       window.__initLoadCurrentProfile = function () {
-        console.log('[INIT] Initializing Load Current Profile button...');
         const $btn = document.getElementById('loadCurrentProfileBtn');
 
         if (!$btn) {
-          console.warn('[INIT] Load Current Profile button not found, will retry in 100ms...');
-          setTimeout(() => window.__initLoadCurrentProfile(), 100);
+          // Button is not in the DOM (commented out); skip silently
           return;
         }
 
@@ -12448,7 +12432,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               $btn.title = 'Load the profile currently running on the device';
               $btn.style.opacity = '1';
               $btn.style.cursor = 'pointer';
-              console.log('[INIT] Form is ready, Load Current Profile button enabled');
+
             }
           }, 100);
         }
@@ -12483,7 +12467,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
 
-        console.log('[INIT] Load Current Profile initialization complete');
+
       }; // End of __initLoadCurrentProfile
 
       // Helper function to update Load Current button state based on loaded profile
@@ -12496,13 +12480,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           $btn.title = `Load currently running profile: ${window.__loadedProfile}`;
           $btn.style.opacity = '1';
           $btn.style.cursor = 'pointer';
-          console.log('[BTN] Load Current button enabled for:', window.__loadedProfile);
+
         } else {
           $btn.disabled = true;
           $btn.title = 'No profile currently loaded on device';
           $btn.style.opacity = '0.5';
           $btn.style.cursor = 'not-allowed';
-          console.log('[BTN] Load Current button disabled - no profile loaded');
+
         }
 
         // Update recent profiles display to show current profile highlight
@@ -16123,14 +16107,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Global Tile Popover Init section in the next script block.
         function fmtHHMM(hhmm) { if (hhmm == null) return '--:--'; const h = Math.floor(hhmm / 100), m = hhmm % 100; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
         // Removed parse mode pill code as JSON is no longer used
-        setInterval(() => {
-          if (state.parseMode === 'AUTO') {
-            if (!state.port) { parseModePill.className = 'pill amber'; return; }
-            if (state.jsonDetected) parseModePill.className = 'pill green';
-            else if (state.connStartTs && performance.now() - state.connStartTs > 3000) parseModePill.className = 'pill red';
-            else parseModePill.className = 'pill amber';
-          }
-        }, 900);
+        // Removed: parseModePill interval (element no longer exists)
         async function startStream() { if (state.transport !== 'ble') await ensurePort(); await sendLine('jsonstatus rate ' + state.rate); await sendLine('jsonstatus on'); state.active = true; if (rateInfo) { rateInfo.style.display = 'inline-block'; rateInfo.textContent = state.rate + 'ms'; } startBtn.disabled = true; stopBtn.disabled = false; }
         async function stopStream() { if (!state.active) return; await sendLine('jsonstatus off'); state.active = false; startBtn.disabled = false; stopBtn.disabled = true; }
         async function startReader() { if (!state.port || state.reader) return; (async () => { while (state.port && state.port.readable) { state.reader = state.port.readable.getReader(); try { while (true) { const { value, done } = await state.reader.read(); if (done) break; if (value) processIncoming(new TextDecoder().decode(value)); } } catch (e) { log('Connection not active', 'error'); state.port = null; setConnected(false); break; } finally { try { state.reader.releaseLock(); } catch (_) { } state.reader = null; } } if (!state.port || !state.port.readable) { state.port = null; setConnected(false); } })(); }
