@@ -1053,13 +1053,13 @@ https://github.com/odeepllama/SolarSim/tree/main
     #ftueSpotlight .overlay {
       position: absolute;
       inset: 0;
-      background: rgba(0, 0, 0, 0.25);
+      background: transparent;
       transition: opacity 0.6s ease;
     }
 
     #ftueSpotlight .spotlight-hole {
       position: absolute;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25), 0 0 40px 8px rgba(255, 215, 0, 0.9), 0 0 80px 16px rgba(255, 215, 0, 0.5);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 40px 8px rgba(255, 215, 0, 0.9), 0 0 80px 16px rgba(255, 215, 0, 0.5);
       border-radius: 8px;
       transition: all 0.6s ease;
       pointer-events: none;
@@ -3631,6 +3631,18 @@ https://github.com/odeepllama/SolarSim/tree/main
             </li>
             <li><strong>Solar Arc</strong>: Visual sun path showing current time and day/night shading. Also models sun
               position, colour, and intensity.</li>
+            <li><strong>Device Program Status</strong>: Live program progress when connected. <button
+                class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>When the device is connected and running a program, a collapsible <strong>Device Program
+                    Status</strong>
+                  panel appears below the monitor bar. It shows a timeline visualisation of the running program with a
+                  playhead indicating the current simulation time.</p>
+                <p>Use the <strong>Step</strong> and <strong>Day</strong> navigation buttons (◀ / ▶) above the timeline
+                  to move between individual program steps or jump between days. The panel auto-expands when a program
+                  is first detected and remembers your expand/collapse preference.</p>
+              </div>
+            </li>
             <li><strong>Command Console</strong>: Type commands with autocomplete support. <button
                 class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
@@ -3640,12 +3652,20 @@ https://github.com/odeepllama/SolarSim/tree/main
               </div>
             </li>
             <li><strong>Show All Commands</strong>: Displays full list of available commands in the log.</li>
-            <li><strong>Device Connection</strong>: Web Serial API connects directly to your device via USB. <button
+            <li><strong>Device Connection</strong>: Connect via USB cable or Bluetooth (ESP32 only). <button
                 class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
-                <p>Requires a compatible browser (Chrome, Edge, Opera). Click the "Connect" button and select your
-                  device from the list. Ensure proper USB driver installation if connection fails. The status shows
-                  "Connected" when active and "Disconnected" otherwise.</p>
+                <p>Two connection methods are available:</p>
+                <ul>
+                  <li><strong>Connect (Cable)</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
+                    ESP32-S3 devices. Requires Chrome, Edge, or Opera on a desktop computer.</li>
+                  <li><strong>Connect BT (Bluetooth)</strong>: Uses Web Bluetooth for wireless connection. Available
+                    only with ESP32-S3 hardware. Works on desktop Chrome and also on tablets and phones, so you can
+                    monitor and control the device without a USB cable.</li>
+                </ul>
+                <p>Both connection methods support full status monitoring, command console, status tiles, solar arc,
+                  and profile upload. The status badge shows "Connected" when active. If connection fails, try
+                  unplugging/replugging (Cable) or power-cycling the device (Bluetooth).</p>
               </div>
             </li>
           </ul>
@@ -3674,6 +3694,19 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <p>Creates a new timestamped profile file on the device and immediately runs it. This becomes the
                   "newest" profile for future auto-load on startup. Use this when you've made changes to a profile and
                   want them to persist.</p>
+                <p><strong>Connection Picker:</strong> When you click Upload, a dialog lets you choose between
+                  <strong>BT</strong> (Bluetooth) and <strong>Cable</strong> (USB Serial). Bluetooth upload is
+                  available only with ESP32-S3 hardware. Cable upload works with both RP2040 and ESP32-S3. If you are
+                  already connected, the upload will use the active connection automatically.
+                </p>
+              </div>
+            </li>
+            <li><strong>Print Summary</strong>: Generate a printer-friendly PDF-style summary. <button
+                class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>Opens a print-ready page showing a summary of key settings, program steps, and the timeline
+                  visualisation. Useful for documentation, lab notebooks, or sharing experiment configurations with
+                  collaborators. Available from both the Profile Management toolbar and the Program Steps toolbar.</p>
               </div>
             </li>
             <li><strong>Download Profile</strong>: Save the current form as a .txt file to your computer. <button
@@ -3861,7 +3894,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <ol style="padding-left:18px;">
             <li>Configure core settings and enable Program if using steps</li>
             <li>Add/edit steps; review timeline and validation</li>
-            <li>Upload to Device (Web Serial) or Download to save locally</li>
+            <li>Upload to Device (via Cable or Bluetooth) or Download to save locally</li>
             <li>Optionally Save as Default for quick restore</li>
           </ol>
 
@@ -4039,6 +4072,16 @@ https://github.com/odeepllama/SolarSim/tree/main
               </div>
             </li>
             <li><strong>太陽アーク</strong>: 現在の時刻と昼夜のシェーディングを示す視覚的な太陽の経路。太陽の位置、色、強度もモデル化します。</li>
+            <li><strong>デバイスプログラムステータス</strong>: 接続中のプログラム実行状況をリアルタイム表示。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  デバイスが接続されプログラムを実行中のとき、モニターバーの下に折りたたみ式の<strong>デバイスプログラムステータス</strong>パネルが表示されます。実行中のプログラムのタイムライン表示と、現在のシミュレーション時刻を示すプレイヘッドが含まれます。
+                </p>
+                <p>タイムライン上部の<strong>ステップ</strong>・<strong>Day</strong>ナビゲーションボタン（◀ /
+                  ▶）で個別のプログラムステップ間の移動や、日をまたぐジャンプが可能です。パネルはプログラムが最初に検出されたときに自動展開され、展開/折りたたみの設定を記憶します。</p>
+              </div>
+            </li>
             <li><strong>コマンドコンソール</strong>: オートコンプリートサポート付きのコマンドを入力します。<button class="help-expand-btn"
                 onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
               <div class="help-detail" style="display:none;">
@@ -4048,30 +4091,191 @@ https://github.com/odeepllama/SolarSim/tree/main
               </div>
             </li>
             <li><strong>すべてのコマンドを表示</strong>: 利用可能なすべてのコマンドの完全なリストをログウィンドウに表示します（詳細モードで表示）。</li>
-            <li><strong>デバイス接続</strong>: Web Serial APIがUSB経由でデバイスに直接接続します。<button class="help-expand-btn"
+            <li><strong>デバイス接続</strong>: USBケーブルまたはBluetooth（ESP32のみ）で接続。<button class="help-expand-btn"
                 onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
               <div class="help-detail" style="display:none;">
+                <p>2つの接続方法があります：</p>
+                <ul>
+                  <li><strong>接続（ケーブル）</strong>: USB経由のWeb Serial
+                    APIを使用します。RP2040とESP32-S3の両方のデバイスで動作します。デスクトップのChrome、Edge、Operaが必要です。</li>
+                  <li><strong>接続 BT（Bluetooth）</strong>: Web
+                    Bluetoothによるワイヤレス接続。ESP32-S3ハードウェアでのみ利用可能です。デスクトップChromeのほか、タブレットやスマートフォンでも動作し、USBケーブルなしでデバイスの監視・制御ができます。
+                  </li>
+                </ul>
                 <p>
-                  互換性のあるブラウザ（Chrome、Edge、Opera）が必要です。「接続」ボタンをクリックして、リストからデバイスを選択します。接続に失敗した場合は、適切なUSBドライバがインストールされていることを確認してください。アクティブな場合はステータスが「接続済み」と表示され、それ以外の場合は「未接続」と表示されます。
+                  どちらの接続方法でも、ステータス監視、コマンドコンソール、ステータスタイル、太陽アーク、プロファイルアップロードのすべての機能を利用できます。ステータスバッジはアクティブ時に「接続済み」と表示されます。接続に失敗した場合は、ケーブルの抜き差し（ケーブル）またはデバイスの電源の入れ直し（Bluetooth）をお試しください。
                 </p>
               </div>
             </li>
           </ul>
 
           <h4>プロファイル管理</h4>
-          <p>主要な機能の詳細については、英語版のヘルプを参照してください。</p>
+          <ul>
+            <li><strong>最近のプロファイル</strong>: 以前使用したプロファイルへのクイックアクセス。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  ダウンロード、アップロード、インポート、またはプロファイル選択時に自動保存されます。グレーのボタンをクリックしてフォームに読み込み、★をクリックして上部に固定（固定されたプロファイルはブラウザデータのクリア後も保持）、✕をクリックして削除できます。
+                </p>
+              </div>
+            </li>
+            <li><strong>デバイスから読み込み</strong>: デバイスに保存されたプロファイルを参照・選択します。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  プロファイルを選択すると、そのセッション中のみデバイスで即座に実行されます。電源再投入後も使用するには、読み込み後に「デバイスにアップロード」をクリックしてください。デバイスは起動時に最新のタイムスタンプ付きプロファイルを自動読み込みします（自動読み込みを無効にしていない限り）。
+                </p>
+              </div>
+            </li>
+            <li><strong>デバイスにアップロード</strong>: 現在のフォーム設定をデバイスに送信します。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>デバイスに新しいタイムスタンプ付きプロファイルファイルを作成し、即座に実行します。起動時の自動読み込み対象の「最新」プロファイルになります。</p>
+                <p><strong>接続方式の選択：</strong>アップロードをクリックすると、<strong>BT</strong>（Bluetooth）と<strong>ケーブル</strong>（USB
+                  Serial）のどちらかを選択するダイアログが表示されます。Bluetoothアップロードは
+                  ESP32-S3ハードウェアでのみ利用可能です。ケーブルアップロードはRP2040とESP32-S3の両方で動作します。すでに接続中の場合は、アクティブな接続が自動的に使用されます。</p>
+              </div>
+            </li>
+            <li><strong>印刷用サマリー</strong>: 印刷用のPDFスタイルサマリーを生成します。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  主要な設定、プログラムステップ、タイムライン可視化を含む印刷用ページを開きます。ドキュメンテーション、実験ノート、共同研究者との実験設定の共有に便利です。プロファイル管理ツールバーとプログラムステップツールバーの両方から利用できます。
+                </p>
+              </div>
+            </li>
+            <li><strong>プロファイルのダウンロード</strong>: 現在のフォームを.txtファイルとしてコンピュータに保存します。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  デバイスと互換性のある形式で全設定を含む.txtファイルを作成します。バックアップ、共有、手動編集に便利です。後でインポートして設定を復元できます。ダウンロードしたファイルは最近のプロファイルにも自動的に追加されます。
+                </p>
+              </div>
+            </li>
+            <li><strong>プロファイルのインポート</strong>: 保存済みの.txtプロファイルファイルを読み込みます。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>フォームのみを更新します—「デバイスにアップロード」をクリックするまでデバイスの動作は変わりません。インポートされたプロファイルはクイックアクセスのため最近のプロファイルに追加されます。</p>
+              </div>
+            </li>
+            <li><strong>プロファイル差分ビューア</strong>: フォームとデバイスの差分を視覚的にハイライト表示。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  フォームにプロファイルを読み込むと、デバイスの現在の状態と異なるフィールドが黄色の背景とオレンジの枠でハイライトされます。フィールドラベルの横にある小さなオレンジのバッジは、デバイスの現在値を表示します。
+                </p>
+                <p><strong>差分バナー：</strong>差分が検出されると、変更されたフィールド数とアクションボタンを含むバナーが表示されます：</p>
+                <ul>
+                  <li><strong>最初の差分を表示：</strong>最初の変更フィールドにスクロールしてハイライトします</li>
+                  <li><strong>デバイスに同期：</strong>現在のフォーム設定をアップロードするためのショートカット</li>
+                  <li><strong>非表示：</strong>バナーを一時的に非表示にします（新しい変更があると再表示）</li>
+                </ul>
+              </div>
+            </li>
+            <li><strong>プロファイル比較モーダル</strong>: プロファイルを読み込む前に差分をプレビュー。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>最近のプロファイルボタンをクリックすると、現在のフォーム設定と読み込もうとしているプロファイルの横並び比較を表示する比較モーダルが表示されます。適用前に何が変わるかを確認できます。</p>
+                <p><strong>アクション：</strong></p>
+                <ul>
+                  <li><strong>プロファイルを適用：</strong>選択したプロファイルをフォームに読み込み、現在の設定を置き換えます</li>
+                  <li><strong>キャンセル：</strong>変更せずにモーダルを閉じます</li>
+                </ul>
+              </div>
+            </li>
+            <li><strong>デフォルトの保存/適用/クリア</strong>: 基本構成を管理します。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  <strong>デフォルトとして保存：</strong>現在のフォームを標準構成として保存します。<strong>デフォルトを適用：</strong>保存した標準構成にフォームを戻します。<strong>デフォルトをクリア：</strong>標準構成を削除します。デフォルトはブラウザにローカルで保存されます。
+                </p>
+              </div>
+            </li>
+            <li><strong>ダイアログのリセット</strong>: 「今後表示しない」の設定をクリアします。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>読み込みやアップロードのダイアログで「今後表示しない」にチェックを入れた場合、このボタンで確認ダイアログを再表示できます。</p>
+              </div>
+            </li>
+          </ul>
 
           <h4>設定と構成</h4>
-          <p>設定の詳細については、英語版のヘルプを参照してください。</p>
+          <ul>
+            <li><strong>コア設定</strong>: 太陽シミュレーションの基本パラメータ。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  <strong>開始時刻：</strong>シミュレーション開始時刻（HHMM、24時間形式）。<strong>タイムスケール：</strong>時間進行の速度倍率。<strong>強度スケール：</strong>グローバル光量倍率（0.0～1.0）。<strong>シミュレーション日付・緯度：</strong>太陽経路計算のための地理パラメータ。<strong>ソーラーモード：</strong>BASIC（一定）またはSCIENTIFIC（天文学的計算）。<strong>太陽色モード：</strong>色温度設定（BLUE、NATURAL、またはCUSTOM
+                  RGB）。
+                </p>
+              </div>
+            </li>
+            <li><strong>プログラム設定</strong>: ステップベースのシーケンスを有効化。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  <strong>PROGRAM_ENABLED：</strong>ステップシーケンスのON/OFF切替。<strong>PROGRAM_REPEATS：</strong>-1（無限ループ）、1（1回実行）、またはN（N回実行）。<strong>プログラムの自動開始：</strong>デバイス起動時に自動実行するか、手動コマンドを待つかを設定します。
+                </p>
+              </div>
+            </li>
+            <li><strong>元に戻す/やり直し</strong>: 最近の変更を元に戻すまたは再適用。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>
+                  <code>Ctrl-Z</code>（Windows/Linux）または<code>Cmd-Z</code>（Mac）で変更を元に戻します。<code>Ctrl-Y</code>または<code>Cmd-Y</code>でやり直します。すべてのフォームフィールドとプログラムステップの編集に対応しています。設定変更、ステップの追加・削除・並び替えの最近10件の履歴を保持します。
+                </p>
+              </div>
+            </li>
+            <li><strong>バリデーションと安全性</strong>: デバイスの損傷を防ぐためのルール。<button class="help-expand-btn"
+                onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>エラーはインラインで赤色表示され、解決するまでエクスポートが無効になります。高強度でのDual
+                  Sunは過熱防止のためブロックされます。強度1.0以上は許可されません。研究での推奨範囲：強度0.8～1.0、速度1x～4x。</p>
+              </div>
+            </li>
+          </ul>
 
           <h4>プログラムステップ</h4>
-          <p>プログラムステップの詳細については、英語版のヘルプを参照してください。</p>
+          <p>タイミングを指定した太陽位置と光量変化のシーケンスを定義します。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示
+              ▼</button></p>
+          <div class="help-detail" style="display:none;">
+            <p>プログラムステップにより、太陽シミュレーションとデバイスアクションを時間経過とともに自動化できます。テーブルの各行は特定のパラメータを持つステップです：</p>
+            <ul>
+              <li><code>sim_time_hhmm</code>: 目標シミュレーション時刻（HHMM、24時間形式）</li>
+              <li><code>transition</code>: <strong>RUN</strong>（時間を進める）または<strong>JUMP</strong>（瞬間移動、所要時間なし）</li>
+              <li><code>speed</code>: タイムスケール（負の値=逆再生、0=ホールド）。空欄で現在の速度を維持</li>
+              <li><code>intensity_scale</code>: このステップの光量倍率（0.0～1.0）。空欄でグローバル設定を使用</li>
+              <li><code>dual_sun</code>: ミラーリングされた太陽を有効化</li>
+              <li><code>hold_minutes</code>: 実時間の一時停止時間（speed=0の場合のみ適用）</li>
+              <li><code>repeat</code>: 次に進む前にこのステップをN回繰り返す</li>
+            </ul>
+            <p><strong>ステップとDayのナビゲーション：</strong></p>
+            <ul>
+              <li><strong>ステップ</strong>ナビゲーションボタンでタイムライン内の個別ステップ間を移動</li>
+              <li><strong>Day</strong>ナビゲーションボタンでプログラムが複数の模擬日にまたがる場合にDay間をジャンプ</li>
+              <li><span style="user-select:none;">⠿</span>ハンドルをドラッグしてステップの並び替えが可能</li>
+            </ul>
+            <p>バリデーションにより正しい形式と安全なデバイス操作が保証されます。エラーはインラインで表示され、エクスポートやアップロード前に解決する必要があります。</p>
+          </div>
+
+          <h4>タイムライン可視化</h4>
+          <p>色分けされたステップによるプログラムシーケンスのビジュアルプレビュー。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示
+              ▼</button></p>
+          <div class="help-detail" style="display:none;">
+            <p>タイムラインは、シミュレーション時間とデバイスアクションの進行を示すプログラムステップのグラフィカルな概要を提供します：</p>
+            <ul>
+              <li><strong>色の凡例：</strong>青≤1x、緑≤2x、黄≤6x、オレンジ7x以上。彩度は強度を示します（淡い=低、鮮やか=高）</li>
+              <li><strong>マーカー：</strong>⚡（JUMPトランジション）、ハッチングバー（HOLDセグメント）、↺（日付変更/新しいDay）</li>
+              <li><strong>ステップナビゲーション：</strong>ナビゲーションボタンでステップ間およびDay間のプレイヘッド移動</li>
+              <li><strong>サマリー：</strong>タイムラインはプログラムの合計シミュレーション時間と推定実行時間を表示</li>
+            </ul>
+          </div>
 
           <h4>ワークフロー</h4>
           <ol style="padding-left:18px;">
             <li>コア設定を構成し、ステップを使用する場合はプログラムを有効にします</li>
             <li>ステップを追加/編集します。タイムラインと検証を確認します</li>
-            <li>デバイスにアップロード（Web Serial）またはダウンロードしてローカルに保存します</li>
+            <li>デバイスにアップロード（ケーブルまたはBluetooth経由）またはダウンロードしてローカルに保存します</li>
             <li>オプションでデフォルトとして保存し、すばやく復元します</li>
           </ol>
 
@@ -4450,10 +4654,17 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             <h2>🚀 Quick Start: Installation & Setup</h2>
 
-            <h3>1. Prepare the Device (RP2040:bit)</h3>
-            <p>The Solar Simulator runs on a Raspberry Pi Pico-based board called the <strong>RP2040:bit</strong>. You
-              need to install the custom firmware (a single <code>.uf2</code> file) which contains both the operating
-              system (MicroPython) and the Solar Simulator software.</p>
+            <h3>1. Prepare the Device</h3>
+            <p>The Solar Simulator supports two hardware platforms:</p>
+            <ul>
+              <li><strong>RP2040:bit</strong> (Raspberry Pi Pico-based): Install the custom firmware by dragging a
+                <code>.uf2</code> file onto the device in bootloader mode.
+              </li>
+              <li><strong>ESP32-S3</strong>: Flash the MicroPython firmware using <code>esptool</code>, then upload the
+                Solar Simulator Python files. The ESP32-S3 also supports wireless Bluetooth (BLE) connections.</li>
+            </ul>
+
+            <h4>RP2040:bit Firmware Installation</h4>
             <ol>
               <li><strong>Download the Firmware</strong>: Obtain the latest <code>SolarSimulator_YYYYMMDD.uf2</code>
                 file from the SolaSim GitHub repository.</li>
@@ -4485,14 +4696,27 @@ https://github.com/odeepllama/SolarSim/tree/main
             </ul>
 
             <h3>3. Connect</h3>
+            <p>There are two ways to connect to your device:</p>
+            <h4>Option A: USB Cable (all devices)</h4>
             <ol>
-              <li>After connecting the RP2040 board to your computer, click the green <strong>Connect</strong> button in
-                the top "Monitor / Interact" bar.</li>
+              <li>Connect the device to your computer via USB cable.</li>
+              <li>Click the green <strong>Connect</strong> button in the top "Monitor / Interact" bar.</li>
               <li>A browser window will pop up asking permission to connect to a serial device.</li>
               <li>Select your device (often listed as "Board in FS node") and click <strong>Connect</strong>.</li>
               <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
               <li>If the device does not immediately connect, press the <strong>RESET</strong> button on the edge of the
                 board and try connecting again.</li>
+            </ol>
+            <h4>Option B: Bluetooth (ESP32-S3 only)</h4>
+            <ol>
+              <li>Ensure the ESP32-S3 device is powered on (USB or external power). No cable to the computer is needed.
+              </li>
+              <li>Click the blue <strong>Connect BT</strong> button in the top "Monitor / Interact" bar.</li>
+              <li>A browser dialog will appear showing nearby Bluetooth devices. Select <strong>SolarSim-BT</strong>.
+              </li>
+              <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
+              <li>Bluetooth also works on tablets and phones with Chrome, so you can monitor and control the device
+                wirelessly.</li>
             </ol>
 
             <h2>💡 Core Concepts</h2>
@@ -4612,7 +4836,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             <p>If you want to see or edit the profile currently running on the hardware:</p>
             <ol>
               <li>Click <strong>Load / Delete from Device</strong>.</li>
-              <li>A list of files stored on the RP2040 will appear.</li>
+              <li>A list of profiles stored on the device will appear.</li>
               <li>Select a profile to load it into the web form.
                 <br><em>Note: Selecting a profile here also tells the device to run it immediately, but it does not make
                   it the "default" for the next startup unless you re-upload it or it is already the most recent
@@ -4669,9 +4893,14 @@ https://github.com/odeepllama/SolarSim/tree/main
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>Device not connecting</strong></td>
+                  <td><strong>Device not connecting (Cable)</strong></td>
                   <td>Ensure no other tab or program (like Thonny or VS Code) is using the USB port. Unplug and replug
                     the device.</td>
+                </tr>
+                <tr>
+                  <td><strong>Device not connecting (Bluetooth)</strong></td>
+                  <td>Ensure the ESP32-S3 is powered on and not connected to another device. Try power-cycling the
+                    device. BLE is only available on ESP32-S3 hardware, not RP2040.</td>
                 </tr>
                 <tr>
                   <td><strong>Settings didn't change</strong></td>
@@ -4701,8 +4930,16 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             <h2>🚀 クイックスタート：インストールとセットアップ</h2>
             <ol>
-              <li><strong>デバイスの準備（RP2040:bit）</strong><br>
-                ソーラーシミュレーターはRP2040:bitというRaspberry Pi Picoベースのボード上で動作します。カスタムファームウェア（.uf2ファイル）をインストールする必要があります。<br>
+              <li><strong>デバイスの準備</strong><br>
+                ソーラーシミュレーターは2つのハードウェアプラットフォームに対応しています：<br>
+                <ul>
+                  <li><strong>RP2040:bit</strong>（Raspberry Pi
+                    Picoベース）：ブートローダーモードで.uf2ファイルをドラッグ＆ドロップしてファームウェアをインストールします。</li>
+                  <li>
+                    <strong>ESP32-S3</strong>：<code>esptool</code>を使用してMicroPythonファームウェアをフラッシュし、ソーラーシミュレーターのPythonファイルをアップロードします。ESP32-S3はワイヤレスBluetooth（BLE）接続にも対応しています。
+                  </li>
+                </ul>
+                <strong>RP2040:bit ファームウェアのインストール：</strong><br>
                 <ol>
                   <li><strong>ファームウェアのダウンロード：</strong> SolaSim GitHubリポジトリから最新のSolarSimulator_YYYYMMDD.uf2ファイルを取得します。
                   </li>
@@ -4732,12 +4969,23 @@ https://github.com/odeepllama/SolarSim/tree/main
                 </ul>
               </li>
               <li><strong>接続</strong><br>
-                RP2040ボードをPCに接続後、画面上部の「Monitor / Interact」バーの緑色の「接続」ボタンをクリックします。<br>
+                デバイスへの2つの接続方法があります：<br>
+                <strong>方法A：USBケーブル（全デバイス）</strong><br>
                 <ol>
+                  <li>USBケーブルでデバイスをPCに接続します。</li>
+                  <li>画面上部の「Monitor / Interact」バーの緑色の「接続」ボタンをクリックします。</li>
                   <li>ブラウザのウィンドウが開き、シリアルデバイスへの接続許可を求められます。</li>
                   <li>デバイス（多くの場合「Board in FS node」等）を選択し、「接続」をクリックします。</li>
                   <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
                   <li>すぐに接続できない場合は、基板のRESETボタンを押して再度お試しください。</li>
+                </ol>
+                <strong>方法B：Bluetooth（ESP32-S3のみ）</strong><br>
+                <ol>
+                  <li>ESP32-S3デバイスの電源が入っていることを確認します（USBまたは外部電源）。PCへのケーブル接続は不要です。</li>
+                  <li>画面上部の「Monitor / Interact」バーの青色の「接続 BT」ボタンをクリックします。</li>
+                  <li>近くのBluetoothデバイスを表示するブラウザダイアログが表示されます。<strong>SolarSim-BT</strong>を選択します。</li>
+                  <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
+                  <li>Bluetoothはタブレットやスマートフォンのクロームでも動作するため、ワイヤレスでデバイスを監視・制御できます。</li>
                 </ol>
               </li>
             </ol>
@@ -4824,7 +5072,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             <ol>
               <li>現在ハードウェアで動作中のプロファイルを確認・編集したい場合：</li>
               <li>「Load / Delete from Device」をクリックします。</li>
-              <li>RP2040上のファイル一覧が表示されます。</li>
+              <li>デバイスのプロファイル一覧が表示されます。</li>
               <li>プロファイルを選択するとウェブフォームに読み込まれます。<br>
                 <em>※ここで選択したプロファイルは即時実行されますが、再起動後もデフォルトにしたい場合は再度アップロードしてください。</em>
               </li>
@@ -4867,8 +5115,14 @@ https://github.com/odeepllama/SolarSim/tree/main
               </thead>
               <tbody>
                 <tr>
-                  <td>デバイスが接続できない</td>
+                  <td>デバイスが接続できない（ケーブル）</td>
                   <td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td>
+                </tr>
+                <tr>
+                  <td>デバイスが接続できない（Bluetooth）</td>
+                  <td>
+                    ESP32-S3の電源が入っていること、他のデバイスに接続されていないことを確認してください。デバイスの電源を入れ直してみてください。BLEはESP32-S3ハードウェアでのみ利用可能で、RP2040では使用できません。
+                  </td>
                 </tr>
                 <tr>
                   <td>設定が反映されない</td>
