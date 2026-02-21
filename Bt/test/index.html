@@ -10370,55 +10370,32 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         // --- PLAYHEAD rendering (smooth CSS transition between polling updates) ---
-        // The host element's innerHTML gets wiped on each rebuild, destroying the playhead.
-        // We store the last known position on the host so we can recreate the playhead
-        // at the OLD position, then animate to the NEW position via CSS transition.
-        let playhead = host.querySelector('.timeline-playhead');
-        const lastPct = host.__lastPlayheadPct;  // previous position (survives innerHTML wipe)
+        // We store playhead DOM elements in a global map keyed by readOnly+dayNumber
+        // so the same element survives innerHTML wipes and multi-day container rebuilds.
+        // CSS transition on 'left' produces smooth gliding between 1Hz polling updates.
+        if (!window.__playheadStore) window.__playheadStore = new Map();
+        const readOnly = host.classList.contains('readonly');
+        const storeKey = (readOnly ? 'mirror' : 'main') + '_day' + currentPlayheadDay;
         const isJump = window.__playheadJumped;
 
+        let playhead = window.__playheadStore.get(storeKey);
+
         if (!playhead) {
-          // Playhead was destroyed (by innerHTML wipe) — recreate it
+          // First time — create the element
           playhead = document.createElement('div');
           playhead.className = 'timeline-playhead';
-
-          if (!isJump && lastPct !== undefined && lastPct !== posPct) {
-            // Start at the OLD position with no transition, then animate to new
-            playhead.classList.add('no-transition');
-            playhead.style.left = lastPct + '%';
-            host.appendChild(playhead);
-            // Force reflow so browser renders at old position before animating
-            void playhead.offsetWidth;
-            // Re-enable transition and set new position
-            playhead.classList.remove('no-transition');
-            playhead.style.left = posPct + '%';
-          } else {
-            // First appearance or jump — just place it directly (no animation)
-            if (isJump) playhead.classList.add('no-transition');
-            playhead.style.left = posPct + '%';
-            host.appendChild(playhead);
-            if (isJump) {
-              void playhead.offsetWidth;
-              playhead.classList.remove('no-transition');
-            }
-          }
-        } else {
-          // Playhead element survived (rare — element wasn't wiped)
-          if (isJump) {
-            playhead.classList.add('no-transition');
-            void playhead.offsetWidth;
-          }
-          playhead.style.left = posPct + '%';
-          if (isJump) {
-            void playhead.offsetWidth;
-            playhead.classList.remove('no-transition');
-          }
+          window.__playheadStore.set(storeKey, playhead);
         }
 
-        // Remember position for next rebuild
-        host.__lastPlayheadPct = posPct;
+        // Handle jump commands: disable CSS transition for instant teleport
+        if (isJump) {
+          playhead.classList.add('no-transition');
+        }
 
-        // Update tooltip and cursor based on hold state
+        // Update position — CSS transition animates smoothly (unless jumped)
+        playhead.style.left = posPct + '%';
+
+        // Update tooltip and cursor
         if (isActiveHold) {
           playhead.style.cursor = 'default';
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})\n[HOLD in progress - hover over orange bar for details]`;
@@ -10427,8 +10404,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})`;
         }
 
-        // Clear jump flag (shared across all timeline hosts)
+        // Append (re-attach) the saved playhead element to the current host
+        host.appendChild(playhead);
+
+        // If jumped, re-enable transition after position is painted
         if (isJump) {
+          // rAF ensures the no-transition position is painted first
+          requestAnimationFrame(() => {
+            if (playhead) playhead.classList.remove('no-transition');
+          });
           window.__playheadJumped = false;
         }
       }
