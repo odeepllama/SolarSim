@@ -474,7 +474,6 @@ https://github.com/odeepllama/SolarSim/tree/main
       background: #dc3545;
       border-color: #c82333;
       color: #fff;
-      min-height: 44px;
     }
 
     .playhead-nav-btn.nav-prev:disabled {
@@ -487,7 +486,6 @@ https://github.com/odeepllama/SolarSim/tree/main
       background: #28a745;
       border-color: #218838;
       color: #fff;
-      min-height: 44px;
     }
 
     .playhead-nav-btn.nav-next:disabled {
@@ -17428,48 +17426,25 @@ https://github.com/odeepllama/SolarSim/tree/main
         let isExpanded = localStorage.getItem('deviceProgramStatusExpanded') === 'true';
 
         // Initialize state
-        function updateDisplay(expanded, forceRebuild) {
-          const expandedChanged = (isExpanded !== expanded);
+        function updateDisplay(expanded) {
           isExpanded = expanded;
 
           // Get navigation controls
           const navControls = window.__generateNavControlsHtml();
           const navHtml = navControls.html;
 
-          // Dual-path: only rebuild innerHTML when structure changes,
-          // otherwise just update disabled attributes on existing buttons.
-          const hasNavBtns = titleEl.querySelector('.playhead-nav-btn');
-          const shouldShowNav = navControls.shouldShow;
-
-          if (!forceRebuild && !expandedChanged && hasNavBtns && shouldShowNav) {
-            // Path A: buttons exist and structure unchanged — update disabled state only
-            const stepNav = titleEl.querySelector('.playhead-step-nav');
-            if (stepNav) {
-              const btns = stepNav.querySelectorAll('.playhead-nav-btn');
-              if (btns.length === 2) {
-                btns[0].disabled = (navControls.currentStep <= 0);
-                btns[1].disabled = (navControls.currentStep >= navControls.totalSteps);
-              }
-            }
-            const dayNav = titleEl.querySelector('.playhead-day-nav');
-            if (dayNav) {
-              const btns = dayNav.querySelectorAll('.playhead-nav-btn');
-              if (btns.length === 2) {
-                btns[0].disabled = (navControls.currentDay <= 1);
-                btns[1].disabled = (navControls.currentDay >= navControls.maxDay);
-              }
-            }
-          } else {
-            // Path B: structure changed — full rebuild
-            contentEl.style.display = expanded ? 'block' : 'none';
-            const arrow = expanded ? '▼' : '▶';
+          if (expanded) {
+            contentEl.style.display = 'block';
             titleEl.innerHTML = `<span style="display:inline-flex; align-items:center; width:100%;">
-        <span style="flex:0 0 auto;">${arrow} Device Program Status</span>
+        <span style="flex:0 0 auto;">▼ Device Program Status</span>
         ${navHtml}
       </span>`;
-          }
-          if (expandedChanged) {
-            contentEl.style.display = expanded ? 'block' : 'none';
+          } else {
+            contentEl.style.display = 'none';
+            titleEl.innerHTML = `<span style="display:inline-flex; align-items:center; width:100%;">
+        <span style="flex:0 0 auto;">▶ Device Program Status</span>
+        ${navHtml}
+      </span>`;
           }
           localStorage.setItem('deviceProgramStatusExpanded', expanded ? 'true' : 'false');
         }
@@ -17484,14 +17459,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         // Initialize from localStorage
-        updateDisplay(isExpanded, true);
+        updateDisplay(isExpanded);
 
         // Manual toggle by user
         titleEl.addEventListener('click', function (e) {
           // Don't toggle if clicking on navigation buttons
           if (e.target.closest('.playhead-nav-btn')) return;
 
-          updateDisplay(!isExpanded, true);
+          updateDisplay(!isExpanded);
           userHasManuallyToggled = true;
           localStorage.setItem('deviceProgramStatusUserToggled', 'true');
         });
@@ -17505,14 +17480,14 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Only auto-expand if device is running AND user hasn't manually set preference
           if (deviceRunning && !userHasManuallyToggled && !isExpanded) {
-            updateDisplay(true, true);
+            updateDisplay(true);
           }
         }
 
         // Check periodically for device connection and update nav buttons
         setInterval(function () {
           checkAndAutoExpand();
-          // Update nav button states without replacing DOM
+          // Update nav button states without changing expanded state
           updateDisplay(isExpanded);
         }, 1000);
 
@@ -17774,12 +17749,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Sync the wrap count to match the target day so auto-detection doesn't override
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
-          // Suppress verbose status output for 1 second after jump command
+          // Suppress verbose status output for 2 seconds after jump command
           state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 1000;
+          state.__silentStatusUntil = performance.now() + 2000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
+          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
@@ -17825,9 +17800,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         __setPlayheadManualFlag();
         state.__navSuppressionActive = true;
-        state.__silentStatusUntil = performance.now() + 1000;
+        state.__silentStatusUntil = performance.now() + 2000;
         await __sendDeviceCommand(`jump step ${prevStep}`);
-        setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -17851,9 +17826,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         __setPlayheadManualFlag();
         state.__navSuppressionActive = true;
-        state.__silentStatusUntil = performance.now() + 1000;
+        state.__silentStatusUntil = performance.now() + 2000;
         await __sendDeviceCommand(`jump step ${nextStep}`);
-        setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
+        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -17888,12 +17863,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Sync the wrap count to match the target day so auto-detection doesn't override
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
-          // Suppress verbose status output for 1 second after jump command
+          // Suppress verbose status output for 2 seconds after jump command
           state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 1000;
+          state.__silentStatusUntil = performance.now() + 2000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 1000);
+          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
