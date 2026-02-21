@@ -4299,7 +4299,6 @@ https://github.com/odeepllama/SolarSim/tree/main
       <div id="programSummaryNote"
         style="margin-top:8px; font-size:1.09rem; line-height:1.5; max-width:720px; color:#333; opacity:.92; background:#f8f9fa; padding:10px 12px; border-left:3px solid #3478f6; border-radius:4px;">
         <strong data-i18n="programStepBehavior">Program Step Behavior:</strong>
-        <strong data-i18n="programStepBehavior">Program Step Behavior:</strong>
         <ul style="margin:6px 0 0 18px; padding:0;">
           <li><strong data-i18n="speed">Speed:</strong> <span data-i18n="speedDesc">Applies from step's start until next
               speed change</span></li>
@@ -18390,15 +18389,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
                 // Update playhead day if we found a match
                 if (foundDay !== null && foundDay !== window.__playheadCurrentDay) {
-                  console.log('[DEBUG] Day detection: moving from Day', window.__playheadCurrentDay, 'to Day', foundDay, 'based on time', currentSimTime);
                   window.__playheadCurrentDay = foundDay;
-                } else if (foundDay === null) {
-                  // Couldn't determine day from time alone (ambiguous)
-                  // Just stay on current day - don't change it
-                  console.log('[DEBUG] Day detection: ambiguous time', currentSimTime, '- staying on Day', window.__playheadCurrentDay);
-                } else {
-                  console.log('[DEBUG] Day detection: staying on Day', window.__playheadCurrentDay, 'foundDay was', foundDay);
                 }
+                // If foundDay is null (ambiguous) or same as current, stay on current day
               }
             }
           } catch (e) {

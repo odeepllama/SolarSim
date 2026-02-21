@@ -13,9 +13,11 @@ jobs:
           if [ "${{ github.ref_name }}" = "main" ]; then
             mkdir -p deploy/Bt
             cp ESP32_Bluetooth/ProfileBuilderBt.html deploy/Bt/index.html
+            cp -f planty.svg planty_b\&w.svg deploy/Bt/ 2>/dev/null || true
           else
             mkdir -p deploy/Bt/test
             cp ESP32_Bluetooth/ProfileBuilderBt.html deploy/Bt/test/index.html
+            cp -f planty.svg planty_b\&w.svg deploy/Bt/test/ 2>/dev/null || true
           fi
       - uses: peaceiris/actions-gh-pages@v4
         with:
