@@ -5403,6 +5403,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             el.placeholder = TRANSLATIONS[lang][key];
           }
         });
+        // Update persistent title text spans (data-i18n removed from those elements)
+        if (typeof window.__updateProgramTitleLang === 'function') {
+          window.__updateProgramTitleLang(TRANSLATIONS[lang]);
+        }
       }
 
       document.addEventListener('DOMContentLoaded', function () {
@@ -17252,52 +17256,27 @@ https://github.com/odeepllama/SolarSim/tree/main
       })();
 
       // ============================================================
-      // Navigation Controls HTML Generator
+      // Navigation Controls — Stable DOM (no innerHTML rebuilds)
       // ============================================================
-      window.__generateNavControlsHtml = function () {
+
+      // Return current navigation state (pure data, no DOM)
+      window.__getNavState = function () {
         const currentDay = window.__playheadCurrentDay || 1;
         const maxDay = window.__maxProgramDays || 1;
         const currentStep = window.__currentStepIndex || 0;
         const totalSteps = (typeof programSteps !== 'undefined' && programSteps) ? programSteps.length : 0;
 
-        // Check if device is connected
         const serialState = window.__serialState || null;
         const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
         const isDeviceConnected = !!(hasConnection && hasLoadedProfile);
 
-        // Step navigation: show when device is connected and we have program steps
         const shouldShowStepNav = (isDeviceConnected && totalSteps > 0);
-        const stepNavHtml = shouldShowStepNav ?
-          `<span class="playhead-step-nav" style="margin-left:12px; display:inline-flex; align-items:center;">
-      <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
-        onclick="window.__scrollToPrevStep()"
-        title="Jump device to previous step (sends 'jump step' command)"
-        ${currentStep <= 0 ? 'disabled' : ''}>◄ Prev</button>
-      <span style="font-size:0.85rem; color:#000; margin:0 3.6px;">Step Jump</span>
-      <button class="playhead-nav-btn nav-next" style="font-size:0.8rem; padding:4px 8px; margin-left:2.4px;"
-        onclick="window.__scrollToNextStep()"
-        title="Jump device to next step (sends 'jump step' command)"
-        ${currentStep >= totalSteps ? 'disabled' : ''}>Next ►</button>
-    </span>` : '';
-
-        // Day navigation: show when device is connected AND program has multiple days
         const shouldShowDayNav = (maxDay > 1 && isDeviceConnected);
-        const dayNavHtml = shouldShowDayNav ?
-          `<span class="playhead-day-nav" style="margin-left:24px; display:inline-flex; align-items:center;">
-      <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
-        onclick="window.__scrollToPrevDay()"
-        title="Jump device to previous day (sends 'jump step' command)"
-        ${currentDay <= 1 ? 'disabled' : ''}>◄ Prev</button>
-      <span style="font-size:0.85rem; color:#000; margin:0 3.6px;">Day Jump</span>
-      <button class="playhead-nav-btn nav-next" style="font-size:0.8rem; padding:4px 8px; margin-left:2.4px;"
-        onclick="window.__scrollToNextDay()"
-        title="Jump device to next day (sends 'jump step' command)"
-        ${currentDay >= maxDay ? 'disabled' : ''}>Next ►</button>
-    </span>` : '';
 
         return {
-          html: stepNavHtml + dayNavHtml,
+          shouldShowStepNav,
+          shouldShowDayNav,
           shouldShow: shouldShowStepNav || shouldShowDayNav,
           isConnected: isDeviceConnected,
           currentStep,
@@ -17307,87 +17286,206 @@ https://github.com/odeepllama/SolarSim/tree/main
         };
       };
 
+      // Kept for backward-compat (returns same shape as before)
+      window.__generateNavControlsHtml = function () {
+        return window.__getNavState();
+      };
+
+      // Create persistent nav button elements inside a container.
+      // Returns a refs object for later state updates.
+      window.__createNavControls = function (container) {
+        // -- Step Nav --
+        const stepNav = document.createElement('span');
+        stepNav.className = 'playhead-step-nav';
+        stepNav.style.cssText = 'margin-left:12px; display:inline-flex; align-items:center;';
+
+        const stepPrev = document.createElement('button');
+        stepPrev.className = 'playhead-nav-btn nav-prev';
+        stepPrev.style.cssText = 'font-size:0.8rem; padding:4px 8px; margin-right:2.4px;';
+        stepPrev.title = 'Jump device to previous step (sends \'jump step\' command)';
+        stepPrev.textContent = '◄ Prev';
+        stepPrev.addEventListener('click', function (e) { e.stopPropagation(); window.__scrollToPrevStep && window.__scrollToPrevStep(); });
+
+        const stepLabel = document.createElement('span');
+        stepLabel.style.cssText = 'font-size:0.85rem; color:#000; margin:0 3.6px;';
+        stepLabel.textContent = 'Step Jump';
+
+        const stepNext = document.createElement('button');
+        stepNext.className = 'playhead-nav-btn nav-next';
+        stepNext.style.cssText = 'font-size:0.8rem; padding:4px 8px; margin-left:2.4px;';
+        stepNext.title = 'Jump device to next step (sends \'jump step\' command)';
+        stepNext.textContent = 'Next ►';
+        stepNext.addEventListener('click', function (e) { e.stopPropagation(); window.__scrollToNextStep && window.__scrollToNextStep(); });
+
+        stepNav.appendChild(stepPrev);
+        stepNav.appendChild(stepLabel);
+        stepNav.appendChild(stepNext);
+
+        // -- Day Nav --
+        const dayNav = document.createElement('span');
+        dayNav.className = 'playhead-day-nav';
+        dayNav.style.cssText = 'margin-left:24px; display:inline-flex; align-items:center;';
+
+        const dayPrev = document.createElement('button');
+        dayPrev.className = 'playhead-nav-btn nav-prev';
+        dayPrev.style.cssText = 'font-size:0.8rem; padding:4px 8px; margin-right:2.4px;';
+        dayPrev.title = 'Jump device to previous day (sends \'jump step\' command)';
+        dayPrev.textContent = '◄ Prev';
+        dayPrev.addEventListener('click', function (e) { e.stopPropagation(); window.__scrollToPrevDay && window.__scrollToPrevDay(); });
+
+        const dayLabel = document.createElement('span');
+        dayLabel.style.cssText = 'font-size:0.85rem; color:#000; margin:0 3.6px;';
+        dayLabel.textContent = 'Day Jump';
+
+        const dayNext = document.createElement('button');
+        dayNext.className = 'playhead-nav-btn nav-next';
+        dayNext.style.cssText = 'font-size:0.8rem; padding:4px 8px; margin-left:2.4px;';
+        dayNext.title = 'Jump device to next day (sends \'jump step\' command)';
+        dayNext.textContent = 'Next ►';
+        dayNext.addEventListener('click', function (e) { e.stopPropagation(); window.__scrollToNextDay && window.__scrollToNextDay(); });
+
+        dayNav.appendChild(dayPrev);
+        dayNav.appendChild(dayLabel);
+        dayNav.appendChild(dayNext);
+
+        container.appendChild(stepNav);
+        container.appendChild(dayNav);
+
+        return {
+          stepNav, stepPrev, stepNext,
+          dayNav, dayPrev, dayNext
+        };
+      };
+
+      // Update existing nav button refs to match current state (no DOM rebuilds)
+      window.__updateNavControlsState = function (refs, navState) {
+        if (!refs) return;
+        // Step nav visibility
+        refs.stepNav.style.display = navState.shouldShowStepNav ? 'inline-flex' : 'none';
+        refs.stepPrev.disabled = (navState.currentStep <= 0);
+        refs.stepNext.disabled = (navState.currentStep >= navState.totalSteps);
+        // Day nav visibility
+        refs.dayNav.style.display = navState.shouldShowDayNav ? 'inline-flex' : 'none';
+        refs.dayPrev.disabled = (navState.currentDay <= 1);
+        refs.dayNext.disabled = (navState.currentDay >= navState.maxDay);
+      };
+
       // ============================================================
       // Program Editing Lock UI - Show lock when device is running
       // ============================================================
       (function initProgramLockUI() {
         // Check if device is connected and actively running a program
         function isDeviceRunning() {
-          // Check if serial port is connected (state.port exists in serial monitor scope)
-          // and if there's a profile loaded on the device
           const serialState = window.__serialState || null;
           const hasConnection = serialState && (serialState.port || serialState.bleDevice);
           const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
           return !!(hasConnection && hasLoadedProfile);
         }
 
-        // Update section titles based on device state
-        function updateProgramTitles() {
+        // Build persistent DOM structure for timeline title (done once)
+        let timelineTitleRefs = null;  // { titleText, lockSpan, navRefs }
+        let editingTitleRefs = null;   // { titleText, lockSpan }
+
+        // i18n: read translation from an element just before we take it over.
+        // We grab whatever text setLanguage() already applied via innerHTML.
+        function readI18nText(el) {
+          // The element may have HTML children (from a previous setLanguage pass)
+          // or plain text. Either way, its textContent gives us the translated string.
+          return (el.textContent || '').trim();
+        }
+
+        function ensurePersistentStructure() {
           const timelineTitle = document.getElementById('programTimelineTitle');
           const editingTitle = document.getElementById('programEditingTitle');
+          if (!timelineTitle || !editingTitle) return false;
 
-          if (!timelineTitle || !editingTitle) return;
+          if (!timelineTitleRefs) {
+            // Capture the already-translated text before we clear the element
+            const translatedText = readI18nText(timelineTitle) || 'Program Step Timeline';
+            // Store the i18n key for language-switch updates, then remove the attribute
+            // so setLanguage's universal sweep won't clobber our persistent children.
+            const i18nKey = timelineTitle.getAttribute('data-i18n') || 'programStepTimeline';
+            timelineTitle.removeAttribute('data-i18n');
+            timelineTitle.textContent = '';
+
+            const titleText = document.createElement('span');
+            titleText.textContent = translatedText;
+            timelineTitle.appendChild(titleText);
+
+            const lockSpan = document.createElement('span');
+            lockSpan.className = 'program-lock-text';
+            lockSpan.textContent = '!!!Running on Device!!!';
+            lockSpan.style.display = 'none';
+            lockSpan.style.marginLeft = '12px';
+            timelineTitle.appendChild(lockSpan);
+
+            const navRefs = window.__createNavControls(timelineTitle);
+
+            timelineTitleRefs = { titleText, lockSpan, navRefs, i18nKey };
+          }
+
+          if (!editingTitleRefs) {
+            const translatedText = readI18nText(editingTitle) || 'Program Step Editing';
+            const i18nKey = editingTitle.getAttribute('data-i18n') || 'programStepEditing';
+            editingTitle.removeAttribute('data-i18n');
+            editingTitle.textContent = '';
+
+            const titleText = document.createElement('span');
+            titleText.textContent = translatedText;
+            editingTitle.appendChild(titleText);
+
+            const lockSpan = document.createElement('span');
+            lockSpan.className = 'program-lock-text';
+            lockSpan.textContent = '!!!Running on Device!!!';
+            lockSpan.style.display = 'none';
+            lockSpan.style.marginLeft = '12px';
+            editingTitle.appendChild(lockSpan);
+
+            editingTitleRefs = { titleText, lockSpan, i18nKey };
+          }
+          return true;
+        }
+
+        // Called from setLanguage() to update title text after language switch.
+        // We re-read the translated text from the DOM by temporarily restoring
+        // data-i18n, letting the sweep apply the translation, then re-removing it.
+        // Simpler approach: setLanguage passes the full translations map via a
+        // global so we can look up the key. Since we can't access the const
+        // TRANSLATIONS from this script block, we expose a minimal hook.
+        window.__updateProgramTitleLang = function (translationsForLang) {
+          if (timelineTitleRefs && translationsForLang) {
+            const t = translationsForLang[timelineTitleRefs.i18nKey];
+            if (t) timelineTitleRefs.titleText.textContent = t;
+          }
+          if (editingTitleRefs && translationsForLang) {
+            const t = translationsForLang[editingTitleRefs.i18nKey];
+            if (t) editingTitleRefs.titleText.textContent = t;
+          }
+          // Also update Device Program Status title
+          const dr = typeof window.__dpsRefs === 'function' ? window.__dpsRefs() : null;
+          if (dr && translationsForLang) {
+            const t = translationsForLang[dr.i18nKey];
+            if (t) {
+              dr.translatedText = t;
+              const arrow = dr.arrowSpan.textContent.charAt(0);
+              dr.arrowSpan.textContent = arrow + ' ' + t;
+            }
+          }
+        };
+
+        // Update section titles based on device state (called every 1s)
+        function updateProgramTitles() {
+          if (!ensurePersistentStructure()) return;
 
           const locked = isDeviceRunning();
+          const navState = window.__getNavState();
 
-          // Get navigation controls HTML from generator
-          const navControls = window.__generateNavControlsHtml();
-          const hasNavBtns = timelineTitle.querySelector('.playhead-day-nav');
-          const navBtnHtml = navControls.html;
-          const shouldShowNav = navControls.shouldShow;
+          // Toggle lock badge visibility
+          timelineTitleRefs.lockSpan.style.display = locked ? 'inline' : 'none';
+          editingTitleRefs.lockSpan.style.display = locked ? 'inline' : 'none';
 
-          // DUAL-PATH LOGIC: Update existing button states OR recreate structure
-          // Path A: If navigation already exists and should be visible, just update button disabled states
-          if (hasNavBtns && shouldShowNav) {
-            // Update step navigation buttons
-            const stepNavContainer = timelineTitle.querySelector('.playhead-step-nav');
-            if (stepNavContainer) {
-              const stepButtons = stepNavContainer.querySelectorAll('.playhead-nav-btn');
-              if (stepButtons.length === 2) {
-                // Update "Prev Step" button disabled state
-                stepButtons[0].disabled = (navControls.currentStep <= 0);
-                // Update "Next Step" button disabled state
-                stepButtons[1].disabled = (navControls.currentStep >= navControls.totalSteps);
-              }
-            }
-
-            // Update day navigation buttons
-            const dayNavContainer = timelineTitle.querySelector('.playhead-day-nav');
-            if (dayNavContainer) {
-              const dayButtons = dayNavContainer.querySelectorAll('.playhead-nav-btn');
-              if (dayButtons.length === 2) {
-                // Update "Prev Day" button disabled state
-                dayButtons[0].disabled = (navControls.currentDay <= 1);
-                // Update "Next Day" button disabled state
-                dayButtons[1].disabled = (navControls.currentDay >= navControls.maxDay);
-              }
-            }
-          }
-          // Path B: Recreate structure when connection state changes or navigation visibility changes
-          else {
-            const hasLockIcon = timelineTitle.querySelector('.program-lock-icon');
-
-            if (locked) {
-              // Need to recreate if: lock icon missing OR nav button visibility changed
-              if (!hasLockIcon || (hasNavBtns !== shouldShowNav)) {
-                timelineTitle.innerHTML = 'Program Step Timeline &nbsp;&nbsp; <span class="program-lock-text">!!!Running on Device!!!</span>' + navBtnHtml;
-              }
-            } else {
-              // Need to recreate if: lock icon present OR nav button visibility changed
-              if (hasLockIcon || (hasNavBtns !== shouldShowNav)) {
-                timelineTitle.innerHTML = 'Program Step Timeline' + navBtnHtml;
-              }
-            }
-          }
-
-          // Update editing/table title
-          if (locked) {
-            if (!editingTitle.querySelector('.program-lock-icon')) {
-              editingTitle.innerHTML = 'Program Step Editing &nbsp;&nbsp; <span class="program-lock-text">!!!Running on Device!!!</span>';
-            }
-          } else {
-            editingTitle.innerHTML = 'Program Step Editing';
-          }
+          // Update nav button disabled/visible state (no DOM rebuild)
+          window.__updateNavControlsState(timelineTitleRefs.navRefs, navState);
         }
 
         // Flash the lock icon to alert user
@@ -17395,7 +17493,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           const icons = document.querySelectorAll('.program-lock-icon');
           icons.forEach(icon => {
             icon.classList.remove('flash');
-            // Force reflow to restart animation
             void icon.offsetWidth;
             icon.classList.add('flash');
           });
@@ -17406,8 +17503,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         window.__flashProgramLock = flashLockIcon;
         window.__updateProgramTitles = updateProgramTitles;
 
-        // Update titles when page loads
-        updateProgramTitles();
+        // DON'T call updateProgramTitles() here — we're in an inline <script>
+        // that runs BEFORE DOMContentLoaded. The i18n system's setLanguage() runs
+        // on DOMContentLoaded and would wipe our children via innerHTML on [data-i18n].
+        // Instead, the first setInterval tick (1s later) builds the persistent structure
+        // after setLanguage has already applied translations.
 
         // Update titles periodically to reflect connection state changes
         setInterval(updateProgramTitles, 1000);
@@ -17427,52 +17527,58 @@ https://github.com/odeepllama/SolarSim/tree/main
         let userHasManuallyToggled = localStorage.getItem('deviceProgramStatusUserToggled') === 'true';
         let isExpanded = localStorage.getItem('deviceProgramStatusExpanded') === 'true';
 
-        // Initialize state
-        function updateDisplay(expanded, forceRebuild) {
+        // Build persistent DOM structure for title (done once)
+        let dpsRefs = null; // { arrowSpan, titleTextNode, navRefs, i18nKey }
+
+        function ensurePersistentTitle() {
+          if (dpsRefs) return;
+          // Capture translated text before we clear the element
+          const rawText = (titleEl.textContent || '').trim();
+          // Strip any existing arrow character from the text
+          const translatedText = rawText.replace(/^[▶▼]\s*/, '') || 'Device Program Status';
+          const i18nKey = titleEl.getAttribute('data-i18n') || 'deviceProgramStatus';
+          titleEl.removeAttribute('data-i18n');
+          titleEl.textContent = '';
+
+          const wrapper = document.createElement('span');
+          wrapper.style.cssText = 'display:inline-flex; align-items:center; width:100%;';
+
+          const arrowSpan = document.createElement('span');
+          arrowSpan.style.cssText = 'flex:0 0 auto;';
+          arrowSpan.textContent = (isExpanded ? '▼' : '▶') + ' ' + translatedText;
+          wrapper.appendChild(arrowSpan);
+
+          // Persistent nav buttons
+          const navRefs = window.__createNavControls(wrapper);
+
+          titleEl.appendChild(wrapper);
+          dpsRefs = { arrowSpan, navRefs, i18nKey, translatedText };
+        }
+
+        // Update display state (no innerHTML rebuilds)
+        function updateDisplay(expanded) {
           const expandedChanged = (isExpanded !== expanded);
           isExpanded = expanded;
 
-          // Get navigation controls
-          const navControls = window.__generateNavControlsHtml();
-          const navHtml = navControls.html;
+          ensurePersistentTitle();
 
-          // Dual-path: only rebuild innerHTML when structure changes,
-          // otherwise just update disabled attributes on existing buttons.
-          const hasNavBtns = titleEl.querySelector('.playhead-nav-btn');
-          const shouldShowNav = navControls.shouldShow;
-
-          if (!forceRebuild && !expandedChanged && hasNavBtns && shouldShowNav) {
-            // Path A: buttons exist and structure unchanged — update disabled state only
-            const stepNav = titleEl.querySelector('.playhead-step-nav');
-            if (stepNav) {
-              const btns = stepNav.querySelectorAll('.playhead-nav-btn');
-              if (btns.length === 2) {
-                btns[0].disabled = (navControls.currentStep <= 0);
-                btns[1].disabled = (navControls.currentStep >= navControls.totalSteps);
-              }
-            }
-            const dayNav = titleEl.querySelector('.playhead-day-nav');
-            if (dayNav) {
-              const btns = dayNav.querySelectorAll('.playhead-nav-btn');
-              if (btns.length === 2) {
-                btns[0].disabled = (navControls.currentDay <= 1);
-                btns[1].disabled = (navControls.currentDay >= navControls.maxDay);
-              }
-            }
-          } else {
-            // Path B: structure changed — full rebuild
-            contentEl.style.display = expanded ? 'block' : 'none';
-            const arrow = expanded ? '▼' : '▶';
-            titleEl.innerHTML = `<span style="display:inline-flex; align-items:center; width:100%;">
-        <span style="flex:0 0 auto;">${arrow} Device Program Status</span>
-        ${navHtml}
-      </span>`;
+          // Update arrow (use stored translated text)
+          if (dpsRefs) {
+            dpsRefs.arrowSpan.textContent = (isExpanded ? '▼' : '▶') + ' ' + dpsRefs.translatedText;
           }
+
+          // Update nav button state
+          const navState = window.__getNavState();
+          window.__updateNavControlsState(dpsRefs.navRefs, navState);
+
           if (expandedChanged) {
             contentEl.style.display = expanded ? 'block' : 'none';
           }
           localStorage.setItem('deviceProgramStatusExpanded', expanded ? 'true' : 'false');
         }
+
+        // Expose DPS refs for language updates
+        window.__dpsRefs = function () { return dpsRefs; };
 
         // Function to show/hide fieldset based on presence of program steps
         function updateFieldsetVisibility() {
@@ -17483,15 +17589,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           fieldset.style.display = hasProgramSteps ? '' : 'none';
         }
 
-        // Initialize from localStorage
-        updateDisplay(isExpanded, true);
+        // DON'T call updateDisplay() here — defer to first setInterval tick
+        // so setLanguage on DOMContentLoaded applies translations first.
 
         // Manual toggle by user
         titleEl.addEventListener('click', function (e) {
           // Don't toggle if clicking on navigation buttons
           if (e.target.closest('.playhead-nav-btn')) return;
 
-          updateDisplay(!isExpanded, true);
+          updateDisplay(!isExpanded);
           userHasManuallyToggled = true;
           localStorage.setItem('deviceProgramStatusUserToggled', 'true');
         });
@@ -17505,7 +17611,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Only auto-expand if device is running AND user hasn't manually set preference
           if (deviceRunning && !userHasManuallyToggled && !isExpanded) {
-            updateDisplay(true, true);
+            updateDisplay(true);
           }
         }
 
