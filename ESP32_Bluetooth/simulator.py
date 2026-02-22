@@ -38,12 +38,12 @@ ROTATION_CYCLE_INTERVAL_MINUTES = 60
 ROTATION_CAPTURE_MODE = "STILLS"
 ROTATION_CAMERA_SERVO = 2
 ROTATION_AT_NIGHT = False
-SERVO2_INTERVAL_DAY_SEC = 0
+SERVO2_INTERVAL_DAY_SEC = 120
 SERVO2_INTERVAL_NIGHT_SEC = 0
 SERVO3_INTERVAL_DAY_SEC = 0
 SERVO3_INTERVAL_NIGHT_SEC = 0
 STILLS_IMAGING_INTERVAL_SEC = 2.0
-CAMERA_TRIGGER_HOLD_MS = 150
+CAMERA_TRIGGER_HOLD_MS = 1500
 ROTATION_SPEED_PRESET = "medium"
 IMAGES_PER_ROTATION = 36
 DEGREES_PER_IMAGE = 10.0
@@ -1038,11 +1038,13 @@ class SolarSimulator:
 
     def update_servo2(self, now_ms, is_daytime):
         """Standalone servo 2 state machine."""
-        interval = SERVO2_INTERVAL_DAY_SEC if is_daytime else SERVO2_INTERVAL_NIGHT_SEC
-        if interval <= 0 or self.servo2_controlled_by_rotation:
+        if self.servo2_controlled_by_rotation:
             return
 
         if self.servo2_state == 'IDLE':
+            interval = SERVO2_INTERVAL_DAY_SEC if is_daytime else SERVO2_INTERVAL_NIGHT_SEC
+            if interval <= 0:
+                return
             if ticks_diff(now_ms, self.last_servo2_trigger_ms) >= interval * 1000:
                 self.servo2_state = 'TRIGGERED'
                 self.servo2_trigger_start_ms = now_ms
@@ -1058,11 +1060,10 @@ class SolarSimulator:
 
     def update_servo3(self, now_ms, is_daytime):
         """Standalone servo 3 state machine."""
-        interval = SERVO3_INTERVAL_DAY_SEC if is_daytime else SERVO3_INTERVAL_NIGHT_SEC
-        if interval <= 0:
-            return
-
         if self.servo3_state == 'IDLE':
+            interval = SERVO3_INTERVAL_DAY_SEC if is_daytime else SERVO3_INTERVAL_NIGHT_SEC
+            if interval <= 0:
+                return
             if ticks_diff(now_ms, self.last_servo3_trigger_ms) >= interval * 1000:
                 self.servo3_state = 'TRIGGERED'
                 self.servo3_trigger_start_ms = now_ms

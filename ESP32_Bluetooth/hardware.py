@@ -185,11 +185,15 @@ class Display:
             # ── Intensity + Step (2x font, side by side, below time) ──
             if isinstance(intensity, float):
                 if intensity == int(intensity):
-                    int_str = f"I:{int(intensity)}"
+                    int_str = f"I{int(intensity)}"
                 else:
-                    int_str = f"I:{intensity:.1f}"
+                    raw = f"{intensity:.1f}"
+                    # Strip leading zero for <1 values to save display space
+                    if raw.startswith("0."):
+                        raw = raw[1:]
+                    int_str = f"I{raw}"
             else:
-                int_str = f"I:{intensity}"
+                int_str = f"I{intensity}"
 
             if step_total > 0:
                 info_str = f"{int_str} {step_cur}/{step_total}"
