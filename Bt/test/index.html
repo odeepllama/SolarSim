@@ -3442,7 +3442,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
         <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
           <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)"
-            autocomplete="off" style="flex:1;" />
+            autocomplete="off" autocapitalize="off" style="flex:1;" />
           <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
           <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
         </div>
@@ -10546,8 +10546,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         const serialState = window.__serialState || null;
         const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
+        const hasActiveProgram = state.PROGRAM_ENABLED && programSteps.length > 0;
 
-        if (!hasConnection || !hasLoadedProfile) return;
+        if (!hasConnection || (!hasLoadedProfile && !hasActiveProgram)) return;
 
         // Calculate playhead position as percentage
         const posPct = ((simTimeMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
@@ -11807,8 +11808,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!/\.txt$/i.test(name)) name += '.txt';
         name = name.replace(/[^a-zA-Z0-9_.-]/g, '_');
 
-        // Try Web Share API first (works reliably on iOS/iPad)
-        if (navigator.share && navigator.canShare) {
+        // Use Web Share API only on iOS/iPadOS (where <a download> doesn't work).
+        // On desktop (Mac/Win/Linux), skip straight to <a download> for direct save.
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS && navigator.share && navigator.canShare) {
           const file = new File([blob], name, { type: 'text/plain' });
           if (navigator.canShare({ files: [file] })) {
             navigator.share({ files: [file], title: name }).then(() => {
@@ -14159,10 +14163,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Candidate base: limit by first token if user completed it
           let base = COMMAND_TEMPLATES;
           if (tokens.length === 1 && first.length) {
-            base = COMMAND_TEMPLATES.filter(c => c.startsWith(first));
-          } else if (tokens.length >= 2 && firstTokenMap[first]) {
+            base = COMMAND_TEMPLATES.filter(c => c.toLowerCase().startsWith(first.toLowerCase()));
+          } else if (tokens.length >= 2 && firstTokenMap[first.toLowerCase()]) {
             // Narrow to commands whose second token matches what user started typing
-            base = COMMAND_TEMPLATES.filter(c => c.startsWith(first + ' '));
+            base = COMMAND_TEMPLATES.filter(c => c.toLowerCase().startsWith(first.toLowerCase() + ' '));
           }
 
           // Per-token prefix match: every typed token must be prefix of corresponding command token
@@ -14171,7 +14175,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             for (let i = 0; i < tokens.length; i++) {
               if (!tokens[i]) return true;
               if (!parts[i]) return false;
-              if (!parts[i].startsWith(tokens[i])) return false;
+              if (!parts[i].toLowerCase().startsWith(tokens[i].toLowerCase())) return false;
             }
             return true;
           });
@@ -14825,16 +14829,30 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
 
           const text = lines.join('\n');
-          const blob = new Blob([text], { type: 'text/plain' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
           const now = new Date();
           const filename = 'command_log_' + now.getFullYear() +
             String(now.getMonth() + 1).padStart(2, '0') +
             String(now.getDate()).padStart(2, '0') + '_' +
             String(now.getHours()).padStart(2, '0') +
             String(now.getMinutes()).padStart(2, '0') + '.txt';
+
+          // iOS/iPadOS: <a download> doesn't work; use Web Share API or open in new tab
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+          if (isIOS && navigator.canShare) {
+            const file = new File([text], filename, { type: 'text/plain' });
+            if (navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file], title: 'Command Log' }).catch(() => { });
+              return;
+            }
+          }
+
+          // Desktop: standard blob download
+          const blob = new Blob([text], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
           a.download = filename;
           document.body.appendChild(a);
           a.click();
@@ -17536,7 +17554,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const serialState = window.__serialState || null;
         const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
-        const isDeviceConnected = !!(hasConnection && hasLoadedProfile);
+        const hasActiveProgram = (typeof state !== 'undefined' && state.PROGRAM_ENABLED && typeof programSteps !== 'undefined' && programSteps.length > 0);
+        const isDeviceConnected = !!(hasConnection && (hasLoadedProfile || hasActiveProgram));
 
         // Step navigation: show when device is connected and we have program steps
         const shouldShowStepNav = (isDeviceConnected && totalSteps > 0);
@@ -17590,7 +17609,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const serialState = window.__serialState || null;
           const hasConnection = serialState && (serialState.port || serialState.bleDevice);
           const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
-          return !!(hasConnection && hasLoadedProfile);
+          const hasActiveProgram = (typeof state !== 'undefined' && state.PROGRAM_ENABLED && typeof programSteps !== 'undefined' && programSteps.length > 0);
+          return !!(hasConnection && (hasLoadedProfile || hasActiveProgram));
         }
 
         // Update section titles based on device state
@@ -17750,7 +17770,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const serialState = window.__serialState || null;
           const hasConnection = serialState && (serialState.port || serialState.bleDevice);
           const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
-          const deviceRunning = hasConnection && hasLoadedProfile;
+          const hasActiveProgram = (typeof state !== 'undefined' && state.PROGRAM_ENABLED && typeof programSteps !== 'undefined' && programSteps.length > 0);
+          const deviceRunning = hasConnection && (hasLoadedProfile || hasActiveProgram);
 
           // Only auto-expand if device is running AND user hasn't manually set preference
           if (deviceRunning && !userHasManuallyToggled && !isExpanded) {
