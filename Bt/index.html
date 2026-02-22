@@ -14800,9 +14800,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Shorten trigger messages for export
             let command = entry.command;
             if (entry.source === 'auto') {
-              if (/^Standalone camera on servo2 trigger activated/i.test(command)) {
+              if (/^Standalone camera on servo2 trigger activated/i.test(command) || /^\[CAMERA\]\s*Servo2\s*auto-trigger/i.test(command)) {
                 command = 'servo2';
-              } else if (/^(Second camera on servo3 trigger activated|Standalone camera on servo3 trigger activated)/i.test(command)) {
+              } else if (/^(Second camera on servo3 trigger activated|Standalone camera on servo3 trigger activated)/i.test(command) || /^\[CAMERA\]\s*Servo3\s*auto-trigger/i.test(command)) {
                 command = 'servo3';
               } else if (/^(STILLS mode: Camera trigger|Initial camera trigger|Rotation complete, triggering camera)/i.test(command)) {
                 command = 'rotation';
@@ -14937,8 +14937,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Check for essential status updates that should always show
             const isSimTime = typeof msg === 'string' && /^SimTime:/i.test(msg.trim());
             const isSpeed = typeof msg === 'string' && /^Speed:/i.test(msg.trim());
-            // Check for servo trigger activation messages (includes shortened versions)
-            const isServoTrigger = typeof msg === 'string' && (/servo[23].*trigger.*activated/i.test(msg) || /^(servo2|servo3|rotation)$/i.test(msg.trim()));
+            // Check for servo trigger activation messages (includes shortened versions and ESP32 [CAMERA] format)
+            const isServoTrigger = typeof msg === 'string' && (/servo[23].*trigger.*activated/i.test(msg) || /^(servo2|servo3|rotation)$/i.test(msg.trim()) || /\[CAMERA\]\s*Servo[23]\s*auto-trigger/i.test(msg));
             // Multi-line command output: indented lines following [SERIAL CMD]
             const isIndentedFollowup = typeof msg === 'string' && /^\s{2,}/.test(msg);
             // Track [SERIAL CMD] to allow subsequent indented lines through
@@ -15558,7 +15558,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (parts[1]) log('[SERIAL CMD]' + parts[1], 'cmd');
           } else {
             // Check if this is an automated camera trigger message
-            const isTriggerMsg = /^(Standalone camera on servo[23] trigger activated|Second camera on servo3 trigger activated|STILLS mode: Camera trigger|Initial camera trigger|Rotation complete, triggering camera)/i.test(line);
+            const isTriggerMsg = /^(Standalone camera on servo[23] trigger activated|Second camera on servo3 trigger activated|STILLS mode: Camera trigger|Initial camera trigger|Rotation complete, triggering camera|\[CAMERA\]\s*Servo[23]\s*auto-trigger)/i.test(line);
 
             if (isTriggerMsg) {
               // Display full message on screen
