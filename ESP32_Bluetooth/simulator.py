@@ -49,6 +49,14 @@ IMAGES_PER_ROTATION = 36
 DEGREES_PER_IMAGE = 10.0
 ROTATION_INCREMENT_DEGREES = 1.0
 ROTATION_STEP_INTERVAL_MS = 20
+ROTATION_CAMERA_ENABLED = True
+ROTATION_LIGHTING_ENABLED = True
+DWELL_TIME_MS = 1500
+RETURN_STEP_DEGREES = 2
+RETURN_STEP_INTERVAL_MS = 30
+FINE_ROTATION_INCREMENT_DEGREES = 0.3
+FINE_ROTATION_STEP_INTERVAL_MS = 90
+MIN_FINE_ROTATION_STEP_INTERVAL_MS = 40
 RESTART_AFTER_LOAD = True
 SERVO_1TO1_RATIO = False
 AUTO_LOAD_LATEST_PROFILE = True
@@ -244,10 +252,21 @@ def get_sun_position(minute):
 
 def update_rotation_parameters():
     global DEGREES_PER_IMAGE, ROTATION_INCREMENT_DEGREES, ROTATION_STEP_INTERVAL_MS
+    global FINE_ROTATION_INCREMENT_DEGREES, FINE_ROTATION_STEP_INTERVAL_MS
+    global STILLS_IMAGING_INTERVAL_SEC
     DEGREES_PER_IMAGE = 360.0 / max(1, IMAGES_PER_ROTATION)
     total_time = ROTATION_SPEED_PRESET_TABLE.get(ROTATION_SPEED_PRESET, 60.0)
-    steps_per_rev = 360.0 / max(0.01, ROTATION_INCREMENT_DEGREES)
-    ROTATION_STEP_INTERVAL_MS = max(1, int((total_time * 1000) / steps_per_rev))
+    # Fine-grained rotation for smooth movement
+    num_fine_steps = int(360.0 / FINE_ROTATION_INCREMENT_DEGREES)
+    fine_step_interval = (total_time * 1000) / num_fine_steps
+    if fine_step_interval < MIN_FINE_ROTATION_STEP_INTERVAL_MS:
+        fine_step_interval = MIN_FINE_ROTATION_STEP_INTERVAL_MS
+        FINE_ROTATION_INCREMENT_DEGREES = 360.0 / (total_time * 1000 / fine_step_interval)
+    FINE_ROTATION_STEP_INTERVAL_MS = int(fine_step_interval)
+    # Legacy coarse parameters
+    ROTATION_INCREMENT_DEGREES = DEGREES_PER_IMAGE
+    ROTATION_STEP_INTERVAL_MS = int((total_time / max(1, IMAGES_PER_ROTATION)) * 1000)
+    STILLS_IMAGING_INTERVAL_SEC = ROTATION_STEP_INTERVAL_MS / 1000.0
 
 
 # ======================================================
@@ -286,7 +305,12 @@ class SolarSimulator:
         self.rotation_in_progress = False
         self.current_rotation_angle = 0.0
         self.last_rotation_absolute_time = 0
+        self.last_rotation_real_ms = 0           # Real-time tracking for cycle scheduling
         self.manual_rotation_triggered = False
+        self.last_rotation_step_time_ms = 0
+        self.camera_trigger_started_ms = 0
+        self.return_angle = 0.0
+        self.last_stills_trigger_ms = 0
 
         # Lighting state
         self.camera_lighting_active = False
@@ -1037,6 +1061,157 @@ class SolarSimulator:
         except Exception:
             pass
     # ==========================================================
+    # Rotation Imaging State Machine
+    # ==========================================================
+
+    def update_rotation(self, now_ms, display_minutes):
+        """Update the rotation cycle state machine.
+
+        Drives a 360° imaging cycle: camera trigger → smooth rotation
+        with periodic stills → dwell → smooth return.
+
+        Cycle scheduling uses real-time intervals (ROTATION_CYCLE_INTERVAL_MINUTES
+        converted to ms), so cycles start regardless of simulation speed.
+        """
+        # Skip if rotation disabled and not mid-cycle and no manual trigger
+        if not ROTATION_ENABLED and self.rotation_state == 'IDLE' and not self.manual_rotation_triggered:
+            return
+
+        # --- Check if it's time for a new cycle (real-time based) ---
+        interval_ms = ROTATION_CYCLE_INTERVAL_MINUTES * 60 * 1000
+        time_for_new = (ticks_diff(now_ms, self.last_rotation_real_ms) >= interval_ms
+                        or self.last_rotation_real_ms == 0)  # First run
+
+        if self.rotation_state == 'IDLE' and time_for_new:
+            # Night check
+            sun_x, _, sun_size, _, _, _ = get_sun_position(display_minutes)
+            half = sun_size // 2
+            sun_visible = (sun_x + half > 0) and (sun_x - half < 56)
+            if not sun_visible and not ROTATION_AT_NIGHT:
+                self.output("Skipping rotation cycle - nighttime and ROTATION_AT_NIGHT is False")
+                self.last_rotation_real_ms = now_ms
+                return
+
+            self.output(f"Starting new 360° imaging cycle")
+            self.manual_rotation_triggered = False
+            self.rotation_state = 'INITIAL_CAMERA_TRIGGER' if ROTATION_CAMERA_ENABLED else 'ROTATING'
+            self.rotation_in_progress = True
+            self.current_rotation_angle = 0
+
+            if ROTATION_CAPTURE_MODE == "STILLS":
+                self.last_stills_trigger_ms = now_ms
+
+            if ROTATION_CAMERA_ENABLED:
+                self.servo2_controlled_by_rotation = (ROTATION_CAMERA_SERVO == 2)
+                self.camera_trigger_started_ms = now_ms
+                cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
+                self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_TRIGGER_ANGLE)
+                self.output(f"Initial camera trigger at {CAMERA_SERVO_TRIGGER_ANGLE} deg")
+                if ROTATION_CAPTURE_MODE == "STILLS" and ROTATION_LIGHTING_ENABLED and not self.rotation_lighting_active:
+                    self.rotation_lighting_active = True
+                    self.hw.apply_lighting(ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B, CAMERA_LIGHTING_PANELS)
+            else:
+                self.last_rotation_step_time_ms = now_ms
+                self.hw.set_servo1_angle(0, SERVO_1TO1_RATIO)
+                self.output("Starting rotation (camera trigger disabled)")
+                if ROTATION_LIGHTING_ENABLED and not self.rotation_lighting_active:
+                    self.rotation_lighting_active = True
+                    self.hw.apply_lighting(ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B, CAMERA_LIGHTING_PANELS)
+
+        # --- State handlers ---
+        if self.rotation_state == 'INITIAL_CAMERA_TRIGGER':
+            if ticks_diff(now_ms, self.camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
+                cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
+                self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_REST_ANGLE)
+                self.output("Initial camera trigger released")
+                self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
+                self.rotation_state = 'ROTATING'
+                self.last_rotation_step_time_ms = now_ms
+                self.hw.set_servo1_angle(self.current_rotation_angle, SERVO_1TO1_RATIO)
+                if ROTATION_CAPTURE_MODE == "VIDEO" and ROTATION_LIGHTING_ENABLED and not self.rotation_lighting_active:
+                    self.rotation_lighting_active = True
+                    self.hw.apply_lighting(ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B, CAMERA_LIGHTING_PANELS)
+
+        elif self.rotation_state == 'ROTATING':
+            image_angle = DEGREES_PER_IMAGE
+            next_trigger_idx = int(self.current_rotation_angle // image_angle)
+            next_trigger_angle = (next_trigger_idx + 1) * image_angle
+
+            if self.current_rotation_angle < 360:
+                next_angle = self.current_rotation_angle + FINE_ROTATION_INCREMENT_DEGREES
+                if next_angle > next_trigger_angle - 1e-6:
+                    self.current_rotation_angle = min(next_trigger_angle, 360)
+                    self.hw.set_servo1_angle(self.current_rotation_angle, SERVO_1TO1_RATIO)
+                    # STILLS trigger at image angle
+                    if (ROTATION_CAPTURE_MODE == "STILLS" and ROTATION_CAMERA_ENABLED
+                            and self.current_rotation_angle < 360):
+                        if ticks_diff(now_ms, self.last_stills_trigger_ms) >= STILLS_IMAGING_INTERVAL_SEC * 1000:
+                            self.last_stills_trigger_ms = now_ms
+                            self.last_rotation_step_time_ms = now_ms
+                            self.rotation_state = 'ROTATION_CAMERA_TRIGGER'
+                            self.camera_trigger_started_ms = now_ms
+                            cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
+                            self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_TRIGGER_ANGLE)
+                            self.output(f"STILLS mode: Camera trigger at {self.current_rotation_angle:.1f} deg")
+                            return
+                elif ticks_diff(now_ms, self.last_rotation_step_time_ms) >= FINE_ROTATION_STEP_INTERVAL_MS:
+                    self.current_rotation_angle = min(next_angle, 360)
+                    self.hw.set_servo1_angle(self.current_rotation_angle, SERVO_1TO1_RATIO)
+                    self.last_rotation_step_time_ms = now_ms
+
+            if self.current_rotation_angle >= 360:
+                if ROTATION_CAPTURE_MODE == "VIDEO" and self.rotation_lighting_active:
+                    self.rotation_lighting_active = False
+                    self.hw.deactivate_lighting()
+                if ROTATION_CAMERA_ENABLED and ROTATION_CAPTURE_MODE == "VIDEO":
+                    self.rotation_state = 'FINAL_CAMERA_TRIGGER'
+                    self.camera_trigger_started_ms = now_ms
+                    cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
+                    self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_TRIGGER_ANGLE)
+                    self.output(f"Rotation complete, triggering camera at {CAMERA_SERVO_TRIGGER_ANGLE} deg")
+                else:
+                    self.rotation_state = 'DWELL'
+                    self.last_rotation_step_time_ms = now_ms
+
+        elif self.rotation_state == 'ROTATION_CAMERA_TRIGGER':
+            if ticks_diff(now_ms, self.camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
+                cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
+                self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_REST_ANGLE)
+                self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
+                self.rotation_state = 'ROTATING'
+                self.last_rotation_step_time_ms = now_ms
+
+        elif self.rotation_state == 'FINAL_CAMERA_TRIGGER':
+            if ticks_diff(now_ms, self.camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
+                cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
+                self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_REST_ANGLE)
+                self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
+                self.rotation_state = 'RETURNING'
+                self.return_angle = self.current_rotation_angle
+                self.last_rotation_step_time_ms = now_ms
+
+        elif self.rotation_state == 'DWELL':
+            if ticks_diff(now_ms, self.last_rotation_step_time_ms) >= DWELL_TIME_MS:
+                if ROTATION_CAPTURE_MODE == "STILLS" and self.rotation_lighting_active:
+                    self.rotation_lighting_active = False
+                    self.hw.deactivate_lighting()
+                self.rotation_state = 'RETURNING'
+                self.return_angle = self.current_rotation_angle
+                self.last_rotation_step_time_ms = now_ms
+
+        elif self.rotation_state == 'RETURNING':
+            if ticks_diff(now_ms, self.last_rotation_step_time_ms) >= RETURN_STEP_INTERVAL_MS:
+                self.return_angle = max(0, self.return_angle - RETURN_STEP_DEGREES)
+                self.hw.set_servo1_angle(self.return_angle, SERVO_1TO1_RATIO)
+                self.last_rotation_step_time_ms = now_ms
+                if self.return_angle <= 0:
+                    self.last_rotation_real_ms = now_ms
+                    self.rotation_state = 'IDLE'
+                    self.rotation_in_progress = False
+                    self.servo2_controlled_by_rotation = False
+                    self.output("Imaging cycle complete, table returned to start position")
+
+    # ==========================================================
     # Servo State Machines
     # ==========================================================
 
@@ -1183,6 +1358,9 @@ class SolarSimulator:
 
             # Daytime check for servo intervals
             is_day = SUNRISE_MINUTES <= display_minutes <= SUNSET_MINUTES
+
+            # Update rotation imaging cycle
+            self.update_rotation(now_ms, display_minutes)
 
             # Update servo state machines
             self.update_servo2(now_ms, is_day)
