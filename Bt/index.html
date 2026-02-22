@@ -14826,16 +14826,30 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
 
           const text = lines.join('\n');
-          const blob = new Blob([text], { type: 'text/plain' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
           const now = new Date();
           const filename = 'command_log_' + now.getFullYear() +
             String(now.getMonth() + 1).padStart(2, '0') +
             String(now.getDate()).padStart(2, '0') + '_' +
             String(now.getHours()).padStart(2, '0') +
             String(now.getMinutes()).padStart(2, '0') + '.txt';
+
+          // iOS/iPadOS: <a download> doesn't work; use Web Share API or open in new tab
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+          if (isIOS && navigator.canShare) {
+            const file = new File([text], filename, { type: 'text/plain' });
+            if (navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file], title: 'Command Log' }).catch(() => { });
+              return;
+            }
+          }
+
+          // Desktop: standard blob download
+          const blob = new Blob([text], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
           a.download = filename;
           document.body.appendChild(a);
           a.click();
