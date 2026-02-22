@@ -13344,7 +13344,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         let port;
         try {
-          port = await navigator.serial.requestPort();
+          port = await navigator.serial.requestPort({
+            filters: [
+              { usbVendorId: 0x303A },  // Espressif (ESP32-S3 "Board in FS mode")
+              { usbVendorId: 0x2E8A },  // Raspberry Pi (RP2040)
+              { usbVendorId: 0x1A86 },  // WCH (CH340 "USB Single Serial")
+            ]
+          });
           await port.open({ baudRate: 115200 });
           const writer = port.writable.getWriter();
           const reader = port.readable.getReader();
@@ -13596,7 +13602,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
       }
 
-      // Helper function to perform disconnect and page refresh
+      // Helper function to perform disconnect and refresh
       // Used by both the Disconnect & Refresh button and the upload success modal
       // Disconnect serial connection without refreshing the page
       function performDisconnect() {
@@ -15197,7 +15203,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!navigator.serial) { log('Web Serial unsupported in this browser', 'error'); throw new Error('No navigator.serial'); }
           badge('CONNECTING', 'amber');
           try {
-            state.port = await navigator.serial.requestPort();
+            state.port = await navigator.serial.requestPort({
+              filters: [
+                { usbVendorId: 0x303A },  // Espressif (ESP32-S3 "Board in FS mode")
+                { usbVendorId: 0x2E8A },  // Raspberry Pi (RP2040)
+                { usbVendorId: 0x1A86 },  // WCH (CH340 "USB Single Serial")
+              ]
+            });
             await state.port.open({ baudRate: 115200 });
             state.connStartTs = performance.now();
             setConnected(true); startReader(); log('Port opened');
