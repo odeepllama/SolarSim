@@ -3442,7 +3442,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
         <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
           <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)"
-            autocomplete="off" style="flex:1;" />
+            autocomplete="off" autocapitalize="off" style="flex:1;" />
           <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
           <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
         </div>
@@ -14159,10 +14159,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Candidate base: limit by first token if user completed it
           let base = COMMAND_TEMPLATES;
           if (tokens.length === 1 && first.length) {
-            base = COMMAND_TEMPLATES.filter(c => c.startsWith(first));
-          } else if (tokens.length >= 2 && firstTokenMap[first]) {
+            base = COMMAND_TEMPLATES.filter(c => c.toLowerCase().startsWith(first.toLowerCase()));
+          } else if (tokens.length >= 2 && firstTokenMap[first.toLowerCase()]) {
             // Narrow to commands whose second token matches what user started typing
-            base = COMMAND_TEMPLATES.filter(c => c.startsWith(first + ' '));
+            base = COMMAND_TEMPLATES.filter(c => c.toLowerCase().startsWith(first.toLowerCase() + ' '));
           }
 
           // Per-token prefix match: every typed token must be prefix of corresponding command token
@@ -14171,7 +14171,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             for (let i = 0; i < tokens.length; i++) {
               if (!tokens[i]) return true;
               if (!parts[i]) return false;
-              if (!parts[i].startsWith(tokens[i])) return false;
+              if (!parts[i].toLowerCase().startsWith(tokens[i].toLowerCase())) return false;
             }
             return true;
           });
