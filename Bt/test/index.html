@@ -18055,12 +18055,46 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
       };
 
+      // Helper: determine which 1-based step the current sim time falls in/after
+      function __stepIndexFromSimTime() {
+        if (!programSteps || programSteps.length === 0) return 0;
+        // Read current sim time from kvCache
+        let currentMinutes = null;
+        if (window.kvCache && window.kvCache.get) {
+          const simBox = window.kvCache.get('sim');
+          if (simBox) {
+            const span = simBox.querySelector('span');
+            if (span) {
+              const txt = span.textContent.trim();
+              if (txt.includes(':')) {
+                const parts = txt.split(':');
+                const h = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10);
+                if (!isNaN(h) && !isNaN(m)) currentMinutes = h * 60 + m;
+              }
+            }
+          }
+        }
+        if (currentMinutes === null) return window.__currentStepIndex || 0; // fallback
+
+        // Find which step we're in: the last step whose sim_time_hhmm <= current time
+        let bestStep = 0; // 0 = before any step
+        for (let i = 0; i < programSteps.length; i++) {
+          const hhmm = programSteps[i].sim_time_hhmm;
+          const stepMin = Math.floor(hhmm / 100) * 60 + (hhmm % 100);
+          if (currentMinutes >= stepMin) {
+            bestStep = i + 1; // 1-based
+          }
+        }
+        return bestStep;
+      }
+
       // Function to scroll to previous step
       window.__scrollToPrevStep = async function () {
         if (!programSteps || programSteps.length === 0) return;
-        const currentStep = window.__currentStepIndex || 0;
-        if (currentStep < 1) return; // Not yet synced from device
-        const prevStep = Math.max(currentStep - 1, 1); // Clamp to step 1 (restarts current step if already on step 1)
+        const currentStep = __stepIndexFromSimTime();
+        if (currentStep < 1) return;
+        const prevStep = Math.max(currentStep - 1, 1);
 
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
@@ -18084,7 +18118,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Function to scroll to next step
       window.__scrollToNextStep = async function () {
         if (!programSteps || programSteps.length === 0) return;
-        const currentStep = window.__currentStepIndex || 0;
+        const currentStep = __stepIndexFromSimTime();
         const nextStep = currentStep + 1;
         if (nextStep > programSteps.length) return;
 
