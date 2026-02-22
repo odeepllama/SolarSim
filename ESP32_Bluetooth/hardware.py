@@ -75,29 +75,137 @@ I2C_FREQ = 400000            # I2C bus frequency
 
 
 class Display:
-    """Stub display class for future SSD1306 128x64 OLED.
+    """SSD1306 128x64 OLED display driver for Solar Simulator dashboard.
 
-    All methods are no-ops. The simulator calls these at runtime;
-    the real SSD1306 driver will be swapped in later.
+    Layout (mixed font sizes):
+      Row 1 (y=0-23):  Time HH:MM (3x font)
+      Row 2 (y=28-43): Intensity + Program step (2x font)
+      Right column:    Speed tier bar (4 squares)
+
+    Updates are throttled to max 1/sec and only when data changes.
+    All methods are safe no-ops if the display is unavailable.
     """
 
     def __init__(self, i2c=None):
-        self._i2c = i2c
         self._available = False
+        self._oled = None
+        self._last_update_ms = 0
+        self._last_hash = 0
         if i2c:
             try:
                 devices = i2c.scan()
-                if devices:
+                if 0x3C in devices or 0x3D in devices:
+                    from ssd1306 import SSD1306_I2C
+                    addr = 0x3C if 0x3C in devices else 0x3D
+                    self._oled = SSD1306_I2C(128, 64, i2c, addr=addr)
                     self._available = True
-                    print(f"[DISPLAY] I2C devices found: {[hex(d) for d in devices]}")
+                    print(f"[DISPLAY] SSD1306 found at 0x{addr:02X}")
+                    self.show_message("Solar Sim", "Booting...")
                 else:
-                    print("[DISPLAY] No I2C devices found (stub mode)")
+                    print(f"[DISPLAY] No SSD1306 at 0x3C/0x3D (found: {[hex(d) for d in devices]})")
             except Exception as e:
-                print(f"[DISPLAY] I2C scan error: {e}")
+                print(f"[DISPLAY] Init error: {e}")
+
+    def _text_scaled(self, s, x, y, scale=2):
+        """Draw text at Nx scale by rendering char-by-char then pixel-scaling."""
+        oled = self._oled
+        char_w = 8  # standard framebuf char width
+        for ci, ch in enumerate(s):
+            # Render char in scratch area (bottom 8 rows)
+            oled.fill_rect(0, 56, 8, 8, 0)
+            oled.text(ch, 0, 56, 1)
+            # Copy pixels at Nx scale
+            for py in range(8):
+                for px in range(char_w):
+                    if oled.pixel(px, 56 + py):
+                        x2 = x + ci * char_w * scale + px * scale
+                        y2 = y + py * scale
+                        oled.fill_rect(x2, y2, scale, scale, 1)
+        # Clear scratch area
+        oled.fill_rect(0, 56, 8, 8, 0)
+
+    def _speed_to_tier(self, speed):
+        """Map speed to tier 0-4 for bar display."""
+        s = abs(speed)
+        if s == 0:
+            return 0   # HOLD → flash
+        elif s <= 1:
+            return 1   # 1x
+        elif s <= 6:
+            return 2   # 6x
+        elif s <= 60:
+            return 3   # 60x
+        else:
+            return 4   # 600x
+
+    def show_dashboard(self, h, m, speed, intensity, step_cur=0, step_total=0):
+        """Update dashboard display. Throttled: max 1 update/sec, skip if unchanged."""
+        if not self._available:
+            return
+        try:
+            # Include seconds-parity so 0x flash toggles each update
+            parity = (ticks_ms() // 1000) % 2
+            data_hash = hash((h, m, speed, intensity, step_cur, step_total, parity))
+            now = ticks_ms()
+            if data_hash == self._last_hash and ticks_diff(now, self._last_update_ms) < 1000:
+                return
+            self._last_hash = data_hash
+            self._last_update_ms = now
+
+            oled = self._oled
+            oled.fill(0)
+
+            # ── Time (3x font, top-left) — 24px tall, 120px wide ──
+            time_str = f"{h:02d}:{m:02d}"
+            self._text_scaled(time_str, 0, 0, 3)
+
+            # ── Speed bar (vertical column, bottom-right) ──
+            # Solid squares only for filled tiers. Empty outline = reverse. Flash = 0x.
+            sq_size = 6
+            sq_gap = 4
+            sq_x = 120
+            tier = self._speed_to_tier(speed)
+            is_reverse = speed < 0
+            for i in range(4):
+                sq_tier = 4 - i  # i=0 → tier 4 (top), i=3 → tier 1 (bottom)
+                sq_y = 26 + i * (sq_size + sq_gap)
+                if tier == 0:
+                    # HOLD: flash single outline at bottom position
+                    if sq_tier == 1 and parity:
+                        oled.rect(sq_x, sq_y, sq_size, sq_size, 1)
+                elif is_reverse:
+                    # Reverse: empty outlines for active tiers
+                    if sq_tier <= tier:
+                        oled.rect(sq_x, sq_y, sq_size, sq_size, 1)
+                else:
+                    # Forward: solid filled for active tiers only
+                    if sq_tier <= tier:
+                        oled.fill_rect(sq_x, sq_y, sq_size, sq_size, 1)
+
+            # ── Intensity + Step (2x font, side by side, below time) ──
+            if isinstance(intensity, float):
+                if intensity == int(intensity):
+                    int_str = f"I:{int(intensity)}"
+                else:
+                    int_str = f"I:{intensity:.1f}"
+            else:
+                int_str = f"I:{intensity}"
+
+            if step_total > 0:
+                info_str = f"{int_str} {step_cur}/{step_total}"
+            else:
+                info_str = int_str
+            self._text_scaled(info_str, 0, 28, 2)
+
+            oled.show()
+        except Exception as e:
+            print(f"[DISPLAY] Dashboard error: {e}")
+            self._available = False  # Disable to prevent repeated crashes
 
     def show_time(self, hours, minutes):
-        """Display current simulation time."""
-        pass
+        """Legacy single-value display (calls dashboard with defaults)."""
+        if self._available:
+            self.show_dashboard(hours, minutes, 0, 1.0)
 
     def show_speed(self, speed_scale):
         """Display current speed indicator."""
@@ -108,12 +216,22 @@ class Display:
         pass
 
     def show_message(self, line1, line2=""):
-        """Display a two-line message."""
-        pass
+        """Display a two-line message (e.g., boot screen)."""
+        if not self._available:
+            return
+        oled = self._oled
+        oled.fill(0)
+        oled.text(line1, 0, 10, 1)
+        if line2:
+            oled.text(line2, 0, 30, 1)
+        oled.show()
 
     def clear(self):
         """Clear the display."""
-        pass
+        if not self._available:
+            return
+        self._oled.fill(0)
+        self._oled.show()
 
 
 class Hardware:
@@ -151,7 +269,8 @@ class Hardware:
         self.button_b = Pin(BUTTON_B_PIN, Pin.IN, Pin.PULL_UP)
         print(f"[HW] Buttons on GPIO {BUTTON_A_PIN}, {BUTTON_B_PIN}")
 
-        # --- I2C / Display ---
+        # --- I2C / Display (last — after BLE heap is stable) ---
+        gc.collect()  # Defragment heap before display alloc
         self._i2c = None
         self.display = Display()  # Stub by default
         try:

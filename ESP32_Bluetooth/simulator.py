@@ -1169,8 +1169,10 @@ class SolarSimulator:
                         and not self.manual_panel_override_active):
                     self.hw.update_sun_display(display_minutes, get_sun_position, DUAL_SUN_ENABLED)
 
-                # Update display stub
-                self.hw.display.show_time(h, m)
+                # Update OLED dashboard
+                step_cur = self.program.current_step + 1 if self.program.program_running else 0
+                step_total = len(self.program.program_steps) if self.program.program_running else 0
+                self.hw.display.show_dashboard(h, m, TIME_SCALE, INTENSITY_SCALE, step_cur, step_total)
 
                 last_update_ms = now_ms
 
