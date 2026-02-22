@@ -44,6 +44,8 @@ SERVO3_INTERVAL_DAY_SEC = 0
 SERVO3_INTERVAL_NIGHT_SEC = 0
 STILLS_IMAGING_INTERVAL_SEC = 2.0
 CAMERA_TRIGGER_HOLD_MS = 1500
+SERVO2_TRIGGER_HOLD_MS = 1500
+SERVO3_TRIGGER_HOLD_MS = 1500
 ROTATION_SPEED_PRESET = "medium"
 IMAGES_PER_ROTATION = 36
 DEGREES_PER_IMAGE = 10.0
@@ -64,6 +66,7 @@ AUTO_LOAD_LATEST_PROFILE = True
 # Lighting defaults
 CAMERA_LIGHTING_ENABLED = True
 SERVO3_LIGHTING_ENABLED = True
+CAMERA_LIGHT_HOLD_MS = 1000
 CAMERA_LIGHTING_PANELS = "ALL"
 CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B = 255, 255, 255
 ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B = 255, 255, 255
@@ -887,31 +890,41 @@ class SolarSimulator:
     def _handle_trigger(self, target):
         now = ticks_ms()
         if target == "servo2":
-            if self.servo2_state != 'IDLE':
-                self.output("[SERIAL CMD] Error: Servo 2 busy.")
+            if self.servo2_state != 'IDLE' or self.servo2_controlled_by_rotation:
+                self.output("[SERIAL CMD] Error: Servo 2 is currently busy.")
                 return
             self.servo2_state = 'TRIGGERED'
             self.servo2_trigger_start_ms = now
             self.last_servo2_trigger_ms = now
+            # Activate camera lighting before trigger
+            if CAMERA_LIGHTING_ENABLED and not self.rotation_lighting_active:
+                self.camera_lighting_active = True
+                self.servo2_using_lighting = True
+                self.hw.apply_lighting(CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B, CAMERA_LIGHTING_PANELS)
             self.hw.set_servo_angle(self.hw.servo_pwm_2, CAMERA_SERVO_TRIGGER_ANGLE)
-            self.output("[SERIAL CMD] Triggering Servo 2")
+            self.output("[SERIAL CMD] Manually triggering photo with Servo 2.")
         elif target == "servo3":
             if self.servo3_state != 'IDLE':
-                self.output("[SERIAL CMD] Error: Servo 3 busy.")
+                self.output("[SERIAL CMD] Error: Servo 3 is currently busy.")
                 return
             self.servo3_state = 'TRIGGERED'
             self.servo3_trigger_start_ms = now
             self.last_servo3_trigger_ms = now
+            # Activate camera lighting before trigger
+            if SERVO3_LIGHTING_ENABLED and not self.rotation_lighting_active:
+                self.servo3_using_lighting = True
+                self.camera_lighting_active = True
+                self.hw.apply_lighting(CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B, CAMERA_LIGHTING_PANELS)
             self.hw.set_servo_angle(self.hw.servo_pwm_3, CAMERA_SERVO_TRIGGER_ANGLE)
-            self.output("[SERIAL CMD] Triggering Servo 3")
+            self.output("[SERIAL CMD] Manually triggering photo with Servo 3.")
         elif target == "rotation":
             if self.rotation_in_progress:
-                self.output("[SERIAL CMD] Error: Rotation in progress.")
+                self.output("[SERIAL CMD] Error: Rotation cycle is already in progress.")
                 return
             self.last_rotation_absolute_time = -ROTATION_CYCLE_INTERVAL_MINUTES
             self.rotation_state = 'IDLE'
             self.manual_rotation_triggered = True
-            self.output("[SERIAL CMD] Manual rotation triggered")
+            self.output("[SERIAL CMD] Manual rotation imaging cycle triggered.")
         else:
             self.output(f"[SERIAL CMD] Error: Unknown target '{target}'")
 
@@ -1142,6 +1155,7 @@ class SolarSimulator:
                 if next_angle > next_trigger_angle - 1e-6:
                     self.current_rotation_angle = min(next_trigger_angle, 360)
                     self.hw.set_servo1_angle(self.current_rotation_angle, SERVO_1TO1_RATIO)
+                    self.output(f"Rotating table to {self.current_rotation_angle:.1f} deg")
                     # STILLS trigger at image angle
                     if (ROTATION_CAPTURE_MODE == "STILLS" and ROTATION_CAMERA_ENABLED
                             and self.current_rotation_angle < 360):
@@ -1177,6 +1191,7 @@ class SolarSimulator:
             if ticks_diff(now_ms, self.camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
                 cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
                 self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_REST_ANGLE)
+                self.output("STILLS mode: Camera trigger released")
                 self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
                 self.rotation_state = 'ROTATING'
                 self.last_rotation_step_time_ms = now_ms
@@ -1185,10 +1200,12 @@ class SolarSimulator:
             if ticks_diff(now_ms, self.camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
                 cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
                 self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_REST_ANGLE)
+                self.output(f"Final camera trigger released, returning to {CAMERA_SERVO_REST_ANGLE} deg")
                 self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
                 self.rotation_state = 'RETURNING'
                 self.return_angle = self.current_rotation_angle
                 self.last_rotation_step_time_ms = now_ms
+                self.output(f"Starting gradual return to start position from {self.return_angle:.0f} deg")
 
         elif self.rotation_state == 'DWELL':
             if ticks_diff(now_ms, self.last_rotation_step_time_ms) >= DWELL_TIME_MS:
@@ -1204,6 +1221,8 @@ class SolarSimulator:
                 self.return_angle = max(0, self.return_angle - RETURN_STEP_DEGREES)
                 self.hw.set_servo1_angle(self.return_angle, SERVO_1TO1_RATIO)
                 self.last_rotation_step_time_ms = now_ms
+                if self.return_angle % 90 == 0 or self.return_angle == 0:
+                    self.output(f"Returning table to {self.return_angle:.0f} deg")
                 if self.return_angle <= 0:
                     self.last_rotation_real_ms = now_ms
                     self.rotation_state = 'IDLE'
@@ -1216,7 +1235,11 @@ class SolarSimulator:
     # ==========================================================
 
     def update_servo2(self, now_ms, is_daytime):
-        """Standalone servo 2 state machine."""
+        """Standalone servo 2 state machine (RP2040-compatible).
+
+        Activates camera lighting before trigger, fires shutter on release,
+        and holds lighting briefly after release.
+        """
         if self.servo2_controlled_by_rotation:
             return
 
@@ -1227,18 +1250,34 @@ class SolarSimulator:
             if ticks_diff(now_ms, self.last_servo2_trigger_ms) >= interval * 1000:
                 self.servo2_state = 'TRIGGERED'
                 self.servo2_trigger_start_ms = now_ms
-                self.last_servo2_trigger_ms = now_ms
+                # Activate camera lighting before trigger
+                if CAMERA_LIGHTING_ENABLED and not self.rotation_lighting_active:
+                    self.camera_lighting_active = True
+                    self.servo2_using_lighting = True
+                    self.hw.apply_lighting(CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B, CAMERA_LIGHTING_PANELS)
+                sleep_ms(10)  # Brief pause after lighting, before servo move
                 self.hw.set_servo_angle(self.hw.servo_pwm_2, CAMERA_SERVO_TRIGGER_ANGLE)
-                self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
-                self.output("[CAMERA] Servo2 auto-trigger")
+                time_period = "night" if not is_daytime else "day"
+                self.output(f"Standalone camera on servo2 trigger activated (using {time_period} interval: {interval}s)")
 
         elif self.servo2_state == 'TRIGGERED':
-            if ticks_diff(now_ms, self.servo2_trigger_start_ms) >= CAMERA_TRIGGER_HOLD_MS:
-                self.hw.set_servo_angle(self.hw.servo_pwm_2, CAMERA_SERVO_REST_ANGLE)
+            if ticks_diff(now_ms, self.servo2_trigger_start_ms) >= SERVO2_TRIGGER_HOLD_MS:
                 self.servo2_state = 'IDLE'
+                self.hw.set_servo_angle(self.hw.servo_pwm_2, CAMERA_SERVO_REST_ANGLE)
+                self.output("Camera trigger released")
+                self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
+                self.last_servo2_trigger_ms = now_ms  # Reset interval timer on release
+                if self.camera_lighting_active and self.servo2_using_lighting and not self.rotation_lighting_active:
+                    self.servo2_using_lighting = False
+                    self.camera_light_hold_until_ms = now_ms + CAMERA_LIGHT_HOLD_MS
 
     def update_servo3(self, now_ms, is_daytime):
-        """Standalone servo 3 state machine."""
+        """Standalone servo 3 state machine (RP2040-compatible).
+
+        Operates independently of rotation and servo2. Activates camera
+        lighting before trigger and holds briefly after release.
+        Does NOT trigger camera shutter (servo3 is mechanical-only in RP2040).
+        """
         if self.servo3_state == 'IDLE':
             interval = SERVO3_INTERVAL_DAY_SEC if is_daytime else SERVO3_INTERVAL_NIGHT_SEC
             if interval <= 0:
@@ -1246,15 +1285,25 @@ class SolarSimulator:
             if ticks_diff(now_ms, self.last_servo3_trigger_ms) >= interval * 1000:
                 self.servo3_state = 'TRIGGERED'
                 self.servo3_trigger_start_ms = now_ms
-                self.last_servo3_trigger_ms = now_ms
+                # Activate camera lighting if enabled and rotation lighting is not active
+                if SERVO3_LIGHTING_ENABLED and not self.rotation_lighting_active:
+                    self.servo3_using_lighting = True
+                    self.camera_lighting_active = True
+                    self.hw.apply_lighting(CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B, CAMERA_LIGHTING_PANELS)
                 self.hw.set_servo_angle(self.hw.servo_pwm_3, CAMERA_SERVO_TRIGGER_ANGLE)
-                self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
-                self.output("[CAMERA] Servo3 auto-trigger")
+                time_period = "night" if not is_daytime else "day"
+                self.output(f"Second camera on servo3 trigger activated (using {time_period} interval: {interval}s)")
 
         elif self.servo3_state == 'TRIGGERED':
-            if ticks_diff(now_ms, self.servo3_trigger_start_ms) >= CAMERA_TRIGGER_HOLD_MS:
-                self.hw.set_servo_angle(self.hw.servo_pwm_3, CAMERA_SERVO_REST_ANGLE)
+            if ticks_diff(now_ms, self.servo3_trigger_start_ms) >= SERVO3_TRIGGER_HOLD_MS:
                 self.servo3_state = 'IDLE'
+                self.last_servo3_trigger_ms = now_ms  # Reset interval timer on release
+                self.hw.set_servo_angle(self.hw.servo_pwm_3, CAMERA_SERVO_REST_ANGLE)
+                if self.camera_lighting_active and self.servo3_using_lighting and not self.rotation_lighting_active:
+                    self.servo3_using_lighting = False
+                    self.camera_light_hold_until_ms = now_ms + CAMERA_LIGHT_HOLD_MS
+                else:
+                    self.servo3_using_lighting = False
 
     # ==========================================================
     # Auto-load & Startup
@@ -1288,6 +1337,7 @@ class SolarSimulator:
             self.frozen_time_initialized = True
 
         init_solar_day()
+        update_rotation_parameters()  # Compute fine rotation timing from defaults
         self.start_real_time_ms = ticks_ms()
         last_update_ms = self.start_real_time_ms
         update_interval_ms = 1000
