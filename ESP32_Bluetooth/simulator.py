@@ -29,7 +29,7 @@ INTENSITY_SCALE = 1.0
 SIMULATION_DATE = 20250621
 LATITUDE = 39.75
 SOLAR_MODE = "BASIC"
-SUN_COLOR_MODE = "NATURAL"
+SUN_COLOR_MODE = "BLUE"
 DUAL_SUN_ENABLED = False
 
 # Rotation / Camera defaults
@@ -823,8 +823,12 @@ class SolarSimulator:
     def _handle_jump(self, parts):
         global TIME_SCALE
         if not self.program.program_running:
-            self.output("[SERIAL CMD] Error: Program not running.")
-            return
+            if self.program.program_enabled and self.program.program_steps:
+                self.program.start()
+                self.output("[SERIAL CMD] Program auto-started for jump command.")
+            else:
+                self.output("[SERIAL CMD] Error: Program not running.")
+                return
         target = parts[1]
         if target == "nextstep":
             idx = (self.program.current_step + 1) % len(self.program.program_steps)

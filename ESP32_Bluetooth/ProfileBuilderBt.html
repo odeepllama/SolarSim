@@ -10546,8 +10546,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         const serialState = window.__serialState || null;
         const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
+        const hasActiveProgram = state.PROGRAM_ENABLED && programSteps.length > 0;
 
-        if (!hasConnection || !hasLoadedProfile) return;
+        if (!hasConnection || (!hasLoadedProfile && !hasActiveProgram)) return;
 
         // Calculate playhead position as percentage
         const posPct = ((simTimeMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
@@ -17536,7 +17537,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const serialState = window.__serialState || null;
         const hasConnection = serialState && (serialState.port || serialState.bleDevice);
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
-        const isDeviceConnected = !!(hasConnection && hasLoadedProfile);
+        const hasActiveProgram = (typeof state !== 'undefined' && state.PROGRAM_ENABLED && typeof programSteps !== 'undefined' && programSteps.length > 0);
+        const isDeviceConnected = !!(hasConnection && (hasLoadedProfile || hasActiveProgram));
 
         // Step navigation: show when device is connected and we have program steps
         const shouldShowStepNav = (isDeviceConnected && totalSteps > 0);
@@ -17590,7 +17592,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const serialState = window.__serialState || null;
           const hasConnection = serialState && (serialState.port || serialState.bleDevice);
           const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
-          return !!(hasConnection && hasLoadedProfile);
+          const hasActiveProgram = (typeof state !== 'undefined' && state.PROGRAM_ENABLED && typeof programSteps !== 'undefined' && programSteps.length > 0);
+          return !!(hasConnection && (hasLoadedProfile || hasActiveProgram));
         }
 
         // Update section titles based on device state
@@ -17750,7 +17753,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const serialState = window.__serialState || null;
           const hasConnection = serialState && (serialState.port || serialState.bleDevice);
           const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
-          const deviceRunning = hasConnection && hasLoadedProfile;
+          const hasActiveProgram = (typeof state !== 'undefined' && state.PROGRAM_ENABLED && typeof programSteps !== 'undefined' && programSteps.length > 0);
+          const deviceRunning = hasConnection && (hasLoadedProfile || hasActiveProgram);
 
           // Only auto-expand if device is running AND user hasn't manually set preference
           if (deviceRunning && !userHasManuallyToggled && !isExpanded) {
