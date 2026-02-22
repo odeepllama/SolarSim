@@ -1664,6 +1664,13 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-color: #2a5fa0 !important;
     }
 
+    /* Emoji sizing inside monitor toolbar connect buttons – 15% larger */
+    .btn-emoji {
+      font-size: 1.15em;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
     /* Refresh button: light blue */
     #monitorRefreshBtn {
       background: #5dade2 !important;
@@ -3657,15 +3664,15 @@ https://github.com/odeepllama/SolarSim/tree/main
               <div class="help-detail" style="display:none;">
                 <p>Two connection methods are available:</p>
                 <ul>
-                  <li><strong>Connect (Cable)</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
+                  <li><strong>🔌 Connect USB</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
                     ESP32-S3 devices. Requires Chrome, Edge, or Opera on a desktop computer.</li>
-                  <li><strong>Connect BT (Bluetooth)</strong>: Uses Web Bluetooth for wireless connection. Available
+                  <li><strong>📶 Connect BT</strong> (Bluetooth): Uses Web Bluetooth for wireless connection. Available
                     only with ESP32-S3 hardware. Works on desktop Chrome and also on tablets and phones, so you can
                     monitor and control the device without a USB cable.</li>
                 </ul>
                 <p>Both connection methods support full status monitoring, command console, status tiles, solar arc,
                   and profile upload. The status badge shows "Connected" when active. If connection fails, try
-                  unplugging/replugging (Cable) or power-cycling the device (Bluetooth).</p>
+                  unplugging/replugging (USB) or power-cycling the device (Bluetooth).</p>
               </div>
             </li>
           </ul>
@@ -3695,8 +3702,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                   "newest" profile for future auto-load on startup. Use this when you've made changes to a profile and
                   want them to persist.</p>
                 <p><strong>Connection Picker:</strong> When you click Upload, a dialog lets you choose between
-                  <strong>BT</strong> (Bluetooth) and <strong>Cable</strong> (USB Serial). Bluetooth upload is
-                  available only with ESP32-S3 hardware. Cable upload works with both RP2040 and ESP32-S3. If you are
+                  <strong>📶 Connect BT</strong> (Bluetooth) and <strong>🔌 Connect USB</strong> (USB Serial). Bluetooth
+                  upload is
+                  available only with ESP32-S3 hardware. USB upload works with both RP2040 and ESP32-S3. If you are
                   already connected, the upload will use the active connection automatically.
                 </p>
               </div>
@@ -4571,8 +4579,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         <h4 id="uploadConnPickerTitle">Connect to Upload</h4>
         <p>No device connected. Choose a connection method to upload your profile.</p>
         <div class="picker-btns">
-          <button type="button" id="uploadPickerBLE">BT</button>
-          <button type="button" id="uploadPickerCable">Cable</button>
+          <button type="button" id="uploadPickerBLE">📶 Connect BT</button>
+          <button type="button" id="uploadPickerCable">🔌 Connect USB</button>
         </div>
         <button type="button" class="picker-cancel" id="uploadPickerCancel">Cancel</button>
       </div>
@@ -4700,7 +4708,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             <h4>Option A: USB Cable (all devices)</h4>
             <ol>
               <li>Connect the device to your computer via USB cable.</li>
-              <li>Click the green <strong>Connect</strong> button in the top "Monitor / Interact" bar.</li>
+              <li>Click the green <strong>🔌 Connect USB</strong> button in the top "Monitor / Interact" bar.</li>
               <li>A browser window will pop up asking permission to connect to a serial device.</li>
               <li>Select your device (often listed as "Board in FS node") and click <strong>Connect</strong>.</li>
               <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
@@ -4711,7 +4719,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             <ol>
               <li>Ensure the ESP32-S3 device is powered on (USB or external power). No cable to the computer is needed.
               </li>
-              <li>Click the blue <strong>Connect BT</strong> button in the top "Monitor / Interact" bar.</li>
+              <li>Click the blue <strong>📶 Connect BT</strong> button in the top "Monitor / Interact" bar.</li>
               <li>A browser dialog will appear showing nearby Bluetooth devices. Select <strong>SolarSim-BT</strong>.
               </li>
               <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
@@ -4893,7 +4901,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>Device not connecting (Cable)</strong></td>
+                  <td><strong>Device not connecting (USB)</strong></td>
                   <td>Ensure no other tab or program (like Thonny or VS Code) is using the USB port. Unplug and replug
                     the device.</td>
                 </tr>
@@ -4973,7 +4981,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <strong>方法A：USBケーブル（全デバイス）</strong><br>
                 <ol>
                   <li>USBケーブルでデバイスをPCに接続します。</li>
-                  <li>画面上部の「Monitor / Interact」バーの緑色の「接続」ボタンをクリックします。</li>
+                  <li>画面上部の「Monitor / Interact」バーの緑色の「🔌 USB接続」ボタンをクリックします。</li>
                   <li>ブラウザのウィンドウが開き、シリアルデバイスへの接続許可を求められます。</li>
                   <li>デバイス（多くの場合「Board in FS node」等）を選択し、「接続」をクリックします。</li>
                   <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
@@ -4982,7 +4990,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <strong>方法B：Bluetooth（ESP32-S3のみ）</strong><br>
                 <ol>
                   <li>ESP32-S3デバイスの電源が入っていることを確認します（USBまたは外部電源）。PCへのケーブル接続は不要です。</li>
-                  <li>画面上部の「Monitor / Interact」バーの青色の「接続 BT」ボタンをクリックします。</li>
+                  <li>画面上部の「Monitor / Interact」バーの青色の「📶 BT接続」ボタンをクリックします。</li>
                   <li>近くのBluetoothデバイスを表示するブラウザダイアログが表示されます。<strong>SolarSim-BT</strong>を選択します。</li>
                   <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
                   <li>Bluetoothはタブレットやスマートフォンのクロームでも動作するため、ワイヤレスでデバイスを監視・制御できます。</li>
@@ -5115,7 +5123,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               </thead>
               <tbody>
                 <tr>
-                  <td>デバイスが接続できない（ケーブル）</td>
+                  <td>デバイスが接続できない（USB）</td>
                   <td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td>
                 </tr>
                 <tr>
@@ -5194,8 +5202,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           appTitle: 'SolaSim Studio 20260221',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
-          connect: 'Cable',
-          connectBT: 'BT',
+          connect: '<span class="btn-emoji">🔌</span> Connect USB',
+          connectBT: '<span class="btn-emoji">📶</span> Connect BT',
           refresh: 'Refresh',
           disconnect: 'Disconnect',
           showAllCommands: 'Show All Commands',
@@ -5291,7 +5299,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           finish: 'Finish ✓',
           // Guide step translations
           guideConnectDevice: 'Connect Your Device',
-          guideConnectDeviceDesc: 'Click <strong>Cable</strong> to connect via USB, or <strong>BT</strong> to connect wirelessly via Bluetooth.',
+          guideConnectDeviceDesc: 'Click the green <strong>🔌 Connect USB</strong> for a wired connection, or the blue <strong>📶 Connect BT</strong> for wireless Bluetooth.',
           guideStatusTiles: 'Status Tiles',
           guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more. Click on a tile to quickly adjust its setting.',
           guideSolarArc: 'Solar Arc Simulation',
@@ -5344,8 +5352,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           appTitle: 'SolaSim Studio 20260221',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
-          connect: 'ケーブル',
-          connectBT: 'BT',
+          connect: '<span class="btn-emoji">🔌</span> USB接続',
+          connectBT: '<span class="btn-emoji">📶</span> BT接続',
           refresh: 'リフレッシュ',
           disconnect: '切断',
           showAllCommands: 'すべてのコマンドを表示',
@@ -5406,7 +5414,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           understood: '了解',
           // Guide step translations
           guideConnectDevice: 'デバイスを接続',
-          guideConnectDeviceDesc: '<strong>ケーブル</strong>をクリックしてUSBで接続するか、<strong>BT</strong>をクリックしてBluetooth経由でワイヤレス接続してください。',
+          guideConnectDeviceDesc: '緑色の<strong>🔌 USB接続</strong>をクリックしてUSBで接続するか、青色の<strong>📶 BT接続</strong>をクリックしてBluetooth経由でワイヤレス接続してください。',
           guideStatusTiles: 'ステータスタイル',
           guideStatusTilesDesc: '接続状態、プログラム状態、時刻、強度など、主要なパラメータをひと目で確認できます。タイルをクリックすると設定をすばやく調整できます。',
           guideSolarArc: 'ソーラーアークシミュレーション',
@@ -5559,8 +5567,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         document.querySelector('#toggleMonitorBtn .txt').textContent = TRANSLATIONS[lang].monitorInteract;
         document.getElementById('monitorConnBadge').textContent = TRANSLATIONS[lang].disconnected;
-        document.getElementById('monitorConnectBtn').textContent = TRANSLATIONS[lang].connect;
-        document.getElementById('monitorBTConnectBtn').textContent = TRANSLATIONS[lang].connectBT;
+        document.getElementById('monitorConnectBtn').innerHTML = TRANSLATIONS[lang].connect;
+        document.getElementById('monitorBTConnectBtn').innerHTML = TRANSLATIONS[lang].connectBT;
         document.getElementById('monitorRefreshBtn').textContent = TRANSLATIONS[lang].refresh;
         document.getElementById('monitorDisconnectBtn').textContent = TRANSLATIONS[lang].disconnect;
         document.getElementById('monitorCmdHelpBtn').textContent = TRANSLATIONS[lang].showAllCommands;
