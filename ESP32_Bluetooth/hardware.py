@@ -195,7 +195,7 @@ class Display:
                 info_str = f"{int_str} {step_cur}/{step_total}"
             else:
                 info_str = int_str
-            self._text_scaled(info_str, 0, 28, 2)
+            self._text_scaled(info_str, 0, 36, 2)
 
             oled.show()
         except Exception as e:
