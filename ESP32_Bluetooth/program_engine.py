@@ -155,7 +155,7 @@ class ProgramEngine:
         # --- Program configuration ---
         self.program_enabled = True
         self.program_steps = [
-            {"sim_time_hhmm": 1200, "speed": 1, "intensity_scale": 1.0, "dual_sun": False}
+            {"sim_time_hhmm": 600, "speed": 1, "intensity_scale": 1.0, "dual_sun": False}
         ]
         self.program_repeats = -1
         self.stop_after_program = False
