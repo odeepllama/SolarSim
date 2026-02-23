@@ -1469,6 +1469,73 @@ https://github.com/odeepllama/SolarSim/tree/main
       flex-shrink: 0;
     }
 
+    /* Comparison Timeline Preview */
+    #compareTimelinePreview {
+      padding: 12px 20px 8px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    #compareTimelinePreview:empty {
+      display: none;
+    }
+
+    .compare-timeline-row {
+      margin-bottom: 8px;
+    }
+
+    .compare-timeline-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .compare-timeline-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .compare-timeline-label.differs {
+      color: #e65100;
+    }
+
+    .compare-timeline-bar {
+      height: 28px;
+      position: relative;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+
+    .compare-timeline-bar .timeline-strip {
+      height: 100% !important;
+      min-height: 0 !important;
+      border-radius: 4px;
+    }
+
+    .compare-timeline-bar .tl-seg-label-bg {
+      font-size: 0.6rem !important;
+      padding: 0 2px !important;
+    }
+
+    .compare-timeline-bar .tl-label {
+      font-size: 0.55rem !important;
+    }
+
+    .compare-no-steps {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;
+      border-radius: 4px;
+      color: #999;
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+
     /* ============================================================================
    VALIDATION & ERROR DISPLAY
    ============================================================================ */
@@ -4356,6 +4423,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <button id="compareProfileModalClose" type="button" class="secondary" aria-label="Close">&times;</button>
         </header>
         <div class="modal-body">
+          <div id="compareTimelinePreview"></div>
           <div id="compareProfileContent"></div>
         </div>
         <div class="modal-footer">
@@ -8890,7 +8958,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           sections.push(otherSection);
         }
 
-        return { sections, differences };
+        return { sections, differences, currentSteps, profileSteps: profileObj.PROGRAM_STEPS || [] };
       }
 
       function formatValue(val, key) {
@@ -9002,6 +9070,137 @@ https://github.com/odeepllama/SolarSim/tree/main
         html += '</div>';
 
         content.innerHTML = html;
+
+        // Render comparison timelines at the top
+        renderComparisonTimelines(comparisonData, profileName);
+      }
+
+      /**
+       * Renders two mini timeline strips in the comparison modal header,
+       * showing current form steps vs. profile steps for quick visual comparison.
+       * Uses a shared time window so both timelines align horizontally.
+       *
+       * @param {Object} comparisonData - From buildComparisonData, must include currentSteps and profileSteps
+       * @param {string} profileName - Display name of the loaded profile
+       */
+      function renderComparisonTimelines(comparisonData, profileName) {
+        const container = document.getElementById('compareTimelinePreview');
+        if (!container) return;
+
+        const currentSteps = comparisonData.currentSteps || [];
+        const profileSteps = comparisonData.profileSteps || [];
+
+        // Don't show timeline section if neither profile has steps
+        if (currentSteps.length === 0 && profileSteps.length === 0) {
+          container.innerHTML = '';
+          return;
+        }
+
+        // Check if steps differ for visual indicator
+        const stepsDiffer = JSON.stringify(currentSteps) !== JSON.stringify(profileSteps);
+
+        // Build dayInfo objects for both step sets
+        function buildDayInfo(steps) {
+          return {
+            steps: steps.map((step, index) => ({
+              step,
+              m: parseHHMM(step.sim_time_hhmm),
+              index
+            })).filter(s => s.m != null)
+          };
+        }
+
+        const currentDayInfo = buildDayInfo(currentSteps);
+        const profileDayInfo = buildDayInfo(profileSteps);
+
+        // Calculate a shared global time window across both sets of steps
+        function getTimeWindow(dayInfo) {
+          if (!dayInfo.steps.length) return null;
+          const minutes = dayInfo.steps.map(s => s.m);
+          let minTime = Math.min(...minutes);
+          let maxTime = Math.max(...minutes);
+          // Extend for HOLD steps with explicit hold_minutes
+          dayInfo.steps.forEach(s => {
+            if (s.step.speed === 0 && s.step.hold_minutes != null) {
+              maxTime = Math.max(maxTime, s.m + s.step.hold_minutes);
+            }
+          });
+          return { min: minTime, max: maxTime };
+        }
+
+        const currentWindow = getTimeWindow(currentDayInfo);
+        const profileWindow = getTimeWindow(profileDayInfo);
+
+        // Merge into shared window (default 06:00-18:00)
+        let sharedMin = 6 * 60;
+        let sharedMax = 18 * 60;
+        if (currentWindow) {
+          sharedMin = Math.min(sharedMin, currentWindow.min);
+          sharedMax = Math.max(sharedMax, currentWindow.max);
+        }
+        if (profileWindow) {
+          sharedMin = Math.min(sharedMin, profileWindow.min);
+          sharedMax = Math.max(sharedMax, profileWindow.max);
+        }
+        // Round outward to whole hours
+        sharedMin = Math.floor(sharedMin / 60) * 60;
+        sharedMax = Math.ceil(sharedMax / 60) * 60;
+        if (sharedMax === sharedMin) sharedMax = sharedMin + 60;
+
+        const globalWindow = { start: sharedMin, end: sharedMax };
+
+        // Build HTML structure
+        container.innerHTML = '';
+
+        // Current form timeline
+        const currentRow = document.createElement('div');
+        currentRow.className = 'compare-timeline-row';
+        const currentLabel = document.createElement('div');
+        currentLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
+        currentLabel.textContent = 'Current Form' + (stepsDiffer ? ' ⬤' : '');
+        currentRow.appendChild(currentLabel);
+
+        if (currentSteps.length > 0 && currentDayInfo.steps.length > 0) {
+          const barWrap = document.createElement('div');
+          barWrap.className = 'compare-timeline-bar';
+          const bar = document.createElement('div');
+          bar.className = 'timeline-strip readonly';
+          barWrap.appendChild(bar);
+          currentRow.appendChild(barWrap);
+          container.appendChild(currentRow);
+          renderDayTimeline(bar, currentDayInfo, globalWindow, true);
+        } else {
+          const noSteps = document.createElement('div');
+          noSteps.className = 'compare-no-steps';
+          noSteps.textContent = 'No program steps';
+          currentRow.appendChild(noSteps);
+          container.appendChild(currentRow);
+        }
+
+        // Profile timeline
+        const profileRow = document.createElement('div');
+        profileRow.className = 'compare-timeline-row';
+        const profileLabel = document.createElement('div');
+        profileLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
+        profileLabel.textContent = (profileName || 'Profile') + (stepsDiffer ? ' ⬤' : '');
+        profileRow.appendChild(profileLabel);
+
+        if (profileSteps.length > 0 && profileDayInfo.steps.length > 0) {
+          const barWrap = document.createElement('div');
+          barWrap.className = 'compare-timeline-bar';
+          const bar = document.createElement('div');
+          bar.className = 'timeline-strip readonly';
+          barWrap.appendChild(bar);
+          profileRow.appendChild(barWrap);
+          container.appendChild(profileRow);
+          renderDayTimeline(bar, profileDayInfo, globalWindow, true);
+        } else {
+          const noSteps = document.createElement('div');
+          noSteps.className = 'compare-no-steps';
+          noSteps.textContent = 'No program steps';
+          profileRow.appendChild(noSteps);
+          container.appendChild(profileRow);
+        }
       }
 
       // Parse profile text (may already exist, but including here for safety)
