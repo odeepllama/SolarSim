@@ -215,15 +215,17 @@ class BLEComms:
         """Encode a single AD structure: length + type + data."""
         return bytes((len(data) + 1, adv_type)) + data
 
-    def _advertise(self, interval_us=250000):
+    def _advertise(self, interval_us=20000):
         """Start BLE advertising with iOS-compatible payloads.
 
         iOS requires explicit AD flags and the service UUID in
         advertising / scan-response data. Without them the device
         is invisible to CoreBluetooth (Safari, Bluefy, LightBlue…).
 
+        Apple recommends 20ms (20000µs) for fastest iOS discovery.
+
         Args:
-            interval_us: Advertising interval in microseconds (default 250ms)
+            interval_us: Advertising interval in microseconds (default 20ms)
         """
         try:
             # --- Primary advertising data ---
