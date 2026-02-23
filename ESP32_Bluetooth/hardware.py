@@ -86,25 +86,37 @@ class Display:
     All methods are safe no-ops if the display is unavailable.
     """
 
+    RESCAN_INTERVAL_MS = 10000  # Re-scan I2C every 10s when display unavailable
+
     def __init__(self, i2c=None):
         self._available = False
         self._oled = None
+        self._i2c = i2c
         self._last_update_ms = 0
+        self._last_scan_ms = 0
         self._last_hash = 0
         if i2c:
-            try:
-                devices = i2c.scan()
-                if 0x3C in devices or 0x3D in devices:
-                    from ssd1306 import SSD1306_I2C
-                    addr = 0x3C if 0x3C in devices else 0x3D
-                    self._oled = SSD1306_I2C(128, 64, i2c, addr=addr)
-                    self._available = True
-                    print(f"[DISPLAY] SSD1306 found at 0x{addr:02X}")
-                    self.show_message("Solar Sim", "Booting...")
-                else:
-                    print(f"[DISPLAY] No SSD1306 at 0x3C/0x3D (found: {[hex(d) for d in devices]})")
-            except Exception as e:
-                print(f"[DISPLAY] Init error: {e}")
+            self._try_connect()
+
+    def _try_connect(self):
+        """Attempt to detect and initialize the SSD1306 on I2C."""
+        if not self._i2c:
+            return False
+        try:
+            devices = self._i2c.scan()
+            if 0x3C in devices or 0x3D in devices:
+                from ssd1306 import SSD1306_I2C
+                addr = 0x3C if 0x3C in devices else 0x3D
+                self._oled = SSD1306_I2C(128, 64, self._i2c, addr=addr)
+                self._available = True
+                print(f"[DISPLAY] SSD1306 found at 0x{addr:02X}")
+                self.show_message("Solar Sim", "Ready")
+                return True
+            else:
+                print(f"[DISPLAY] No SSD1306 at 0x3C/0x3D (found: {[hex(d) for d in devices]})")
+        except Exception as e:
+            print(f"[DISPLAY] Init error: {e}")
+        return False
 
     def _text_scaled(self, s, x, y, scale=2):
         """Draw text at Nx scale by rendering char-by-char then pixel-scaling."""
@@ -141,6 +153,11 @@ class Display:
     def show_dashboard(self, h, m, speed, intensity, step_cur=0, step_total=0):
         """Update dashboard display. Throttled: max 1 update/sec, skip if unchanged."""
         if not self._available:
+            # Periodic re-scan for hot-plugged display
+            now = ticks_ms()
+            if self._i2c and ticks_diff(now, self._last_scan_ms) >= self.RESCAN_INTERVAL_MS:
+                self._last_scan_ms = now
+                self._try_connect()
             return
         try:
             # Include seconds-parity so 0x flash toggles each update
@@ -204,7 +221,8 @@ class Display:
             oled.show()
         except Exception as e:
             print(f"[DISPLAY] Dashboard error: {e}")
-            self._available = False  # Disable to prevent repeated crashes
+            self._available = False  # Will re-scan after RESCAN_INTERVAL_MS
+            self._last_scan_ms = ticks_ms()
 
     def show_time(self, hours, minutes):
         """Legacy single-value display (calls dashboard with defaults)."""

@@ -921,7 +921,7 @@ class SolarSimulator:
             if self.rotation_in_progress:
                 self.output("[SERIAL CMD] Error: Rotation cycle is already in progress.")
                 return
-            self.last_rotation_absolute_time = -ROTATION_CYCLE_INTERVAL_MINUTES
+            self.last_rotation_real_ms = 0  # Reset real-time scheduler so cycle starts immediately
             self.rotation_state = 'IDLE'
             self.manual_rotation_triggered = True
             self.output("[SERIAL CMD] Manual rotation imaging cycle triggered.")
