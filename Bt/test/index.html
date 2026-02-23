@@ -1469,6 +1469,73 @@ https://github.com/odeepllama/SolarSim/tree/main
       flex-shrink: 0;
     }
 
+    /* Comparison Timeline Preview */
+    #compareTimelinePreview {
+      padding: 12px 20px 8px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    #compareTimelinePreview:empty {
+      display: none;
+    }
+
+    .compare-timeline-row {
+      margin-bottom: 8px;
+    }
+
+    .compare-timeline-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .compare-timeline-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .compare-timeline-label.differs {
+      color: #e65100;
+    }
+
+    .compare-timeline-bar {
+      height: 28px;
+      position: relative;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+
+    .compare-timeline-bar .timeline-strip {
+      height: 100% !important;
+      min-height: 0 !important;
+      border-radius: 4px;
+    }
+
+    .compare-timeline-bar .tl-seg-label-bg {
+      font-size: 0.6rem !important;
+      padding: 0 2px !important;
+    }
+
+    .compare-timeline-bar .tl-label {
+      font-size: 0.55rem !important;
+    }
+
+    .compare-no-steps {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;
+      border-radius: 4px;
+      color: #999;
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+
     /* ============================================================================
    VALIDATION & ERROR DISPLAY
    ============================================================================ */
@@ -3667,12 +3734,21 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li><strong>🔌 Connect USB</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
                     ESP32-S3 devices. Requires Chrome, Edge, or Opera on a desktop computer.</li>
                   <li><strong>📶 Connect BT</strong> (Bluetooth): Uses Web Bluetooth for wireless connection. Available
-                    only with ESP32-S3 hardware. Works on desktop Chrome and also on tablets and phones, so you can
-                    monitor and control the device without a USB cable.</li>
+                    only with ESP32-S3 hardware. Works on desktop Chrome and Android tablets/phones.
+                    <strong>iPad/iPhone:</strong> Use the free <a
+                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055" target="_blank">Bluefy
+                      browser</a>
+                    (Safari and Chrome on iOS do not support Web Bluetooth).
+                  </li>
                 </ul>
                 <p>Both connection methods support full status monitoring, command console, status tiles, solar arc,
                   and profile upload. The status badge shows "Connected" when active. If connection fails, try
                   unplugging/replugging (USB) or power-cycling the device (Bluetooth).</p>
+                <p><strong>Switching from Bluetooth to USB (ESP32):</strong> If you previously connected via
+                  Bluetooth (e.g., from an iPad) and now want to connect via USB from a laptop, you will need to
+                  press the <strong>RESET</strong> button on the ESP32 device first. This is because the BLE radio
+                  remains active after disconnecting, which can interfere with the USB serial connection in the
+                  browser.</p>
               </div>
             </li>
           </ul>
@@ -4107,11 +4183,17 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li><strong>接続（ケーブル）</strong>: USB経由のWeb Serial
                     APIを使用します。RP2040とESP32-S3の両方のデバイスで動作します。デスクトップのChrome、Edge、Operaが必要です。</li>
                   <li><strong>接続 BT（Bluetooth）</strong>: Web
-                    Bluetoothによるワイヤレス接続。ESP32-S3ハードウェアでのみ利用可能です。デスクトップChromeのほか、タブレットやスマートフォンでも動作し、USBケーブルなしでデバイスの監視・制御ができます。
+                    Bluetoothによるワイヤレス接続。ESP32-S3ハードウェアでのみ利用可能です。デスクトップChromeおよびAndroidタブレット・スマートフォンで動作します。
+                    <strong>iPad/iPhone：</strong>無料の<a
+                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055"
+                      target="_blank">Bluefyブラウザ</a>が必要です（iOS版のSafariやChromeはWeb Bluetooth非対応）。
                   </li>
                 </ul>
                 <p>
                   どちらの接続方法でも、ステータス監視、コマンドコンソール、ステータスタイル、太陽アーク、プロファイルアップロードのすべての機能を利用できます。ステータスバッジはアクティブ時に「接続済み」と表示されます。接続に失敗した場合は、ケーブルの抜き差し（ケーブル）またはデバイスの電源の入れ直し（Bluetooth）をお試しください。
+                </p>
+                <p><strong>BluetoothからUSBへの切替（ESP32）：</strong>
+                  以前Bluetooth（iPadなど）で接続し、その後ノートPCからUSBで接続したい場合は、まずESP32デバイスの<strong>RESET</strong>ボタンを押してください。Bluetooth切断後もBLE無線が有効なままのため、ブラウザがUSBシリアルポートを開けないことがあります。
                 </p>
               </div>
             </li>
@@ -4341,6 +4423,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <button id="compareProfileModalClose" type="button" class="secondary" aria-label="Close">&times;</button>
         </header>
         <div class="modal-body">
+          <div id="compareTimelinePreview"></div>
           <div id="compareProfileContent"></div>
         </div>
         <div class="modal-footer">
@@ -4723,8 +4806,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li>A browser dialog will appear showing nearby Bluetooth devices. Select <strong>SolarSim-BT</strong>.
               </li>
               <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
-              <li>Bluetooth also works on tablets and phones with Chrome, so you can monitor and control the device
-                wirelessly.</li>
+              <li>Bluetooth also works on Android tablets and phones with Chrome.
+                <strong>iPad/iPhone users:</strong> You must use the free
+                <a href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055" target="_blank">Bluefy
+                  browser</a>
+                from the App Store — Safari and Chrome on iOS/iPadOS do not support Web Bluetooth.
+              </li>
             </ol>
 
             <h2>💡 Core Concepts</h2>
@@ -4927,6 +5014,15 @@ https://github.com/odeepllama/SolarSim/tree/main
                     <strong>Sync to Device</strong> (in the banner) or <strong>Upload</strong> to make them match.
                   </td>
                 </tr>
+                <tr>
+                  <td><strong>Switching from Bluetooth to USB (ESP32)</strong></td>
+                  <td>If you previously connected via Bluetooth (e.g., initial setup from an iPad or phone) and now
+                    want to connect via USB from a laptop for long-term monitoring, press the
+                    <strong>RESET</strong> button on the ESP32 device before clicking <strong>🔌 Connect USB</strong>.
+                    The BLE radio stays active after a Bluetooth disconnect, which can prevent the browser from
+                    opening the USB serial port. A reset cleanly restarts the device and allows USB connection.
+                  </td>
+                </tr>
               </tbody>
             </table>
             <!-- English guide content end -->
@@ -4993,7 +5089,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li>画面上部の「Monitor / Interact」バーの青色の「📶 BT接続」ボタンをクリックします。</li>
                   <li>近くのBluetoothデバイスを表示するブラウザダイアログが表示されます。<strong>SolarSim-BT</strong>を選択します。</li>
                   <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
-                  <li>Bluetoothはタブレットやスマートフォンのクロームでも動作するため、ワイヤレスでデバイスを監視・制御できます。</li>
+                  <li>BluetoothはAndroidタブレットやスマートフォンのChromeでも動作します。
+                    <strong>iPad/iPhoneの場合：</strong>App Storeから無料の<a
+                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055"
+                      target="_blank">Bluefyブラウザ</a>をダウンロードしてください（iOS版Safari・ChromeはWeb Bluetooth非対応）。
+                  </li>
                 </ol>
               </li>
             </ol>
@@ -5145,49 +5245,14 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <td>オレンジ色のハイライトが消えない</td>
                   <td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」または「アップロード」で一致させてください。</td>
                 </tr>
+                <tr>
+                  <td>BluetoothからUSBへの切替（ESP32）</td>
+                  <td>以前Bluetooth（iPadやスマートフォンなど）で接続した後、ノートPCからUSBで接続したい場合は、ESP32デバイスの<strong>RESET</strong>ボタンを押してから「🔌
+                    USB接続」をクリックしてください。Bluetooth切断後もBLE無線が有効なままのため、リセットが必要です。</td>
+                </tr>
               </tbody>
             </table>
           </div>
-          <li><strong>アドバンストモード</strong>: すべてのパラメータを表示します。</li>
-          <li>シンプルモード時に非表示にするセクションは、モード切替横の<strong>ギアアイコン（⚙）</strong>でカスタマイズできます。</li>
-          </ul>
-
-          <h3>デバイスラベリング</h3>
-          <p>複数のデバイスを接続している場合：</p>
-          <ol>
-            <li>上部ヘッダーの<strong>Device Badge</strong>（例：「Device 1」）をクリックします。</li>
-            <li>名前を変更します（例：「Experiment A」）。</li>
-            <li>右上の<strong>背景色スウォッチ</strong>（緑・青・赤）でタブを色分けできます。</li>
-          </ol>
-
-          <h3>トラブルシューティング</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>問題</th>
-                <th>解決策</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>デバイスが接続できない</strong></td>
-                <td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td>
-              </tr>
-              <tr>
-                <td><strong>設定が反映されない</strong></td>
-                <td>「アップロード」ボタンをクリックしましたか？フォームの変更だけではハードウェアに反映されません。</td>
-              </tr>
-              <tr>
-                <td><strong>起動時に違うプロファイルが読み込まれる</strong></td>
-                <td>デバイスは最新のタイムスタンプのプロファイルを自動で読み込みます。「Load from
-                  Device」で古いプロファイルを読み込んだ場合、再起動後は保持されません。古いプロファイルを常時使いたい場合は再度アップロードしてください。</td>
-              </tr>
-              <tr>
-                <td><strong>オレンジ色のハイライトが消えない</strong></td>
-                <td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」（バナー内）または「アップロード」で一致させてください。</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
@@ -8893,7 +8958,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           sections.push(otherSection);
         }
 
-        return { sections, differences };
+        return { sections, differences, currentSteps, profileSteps: profileObj.PROGRAM_STEPS || [] };
       }
 
       function formatValue(val, key) {
@@ -9005,6 +9070,137 @@ https://github.com/odeepllama/SolarSim/tree/main
         html += '</div>';
 
         content.innerHTML = html;
+
+        // Render comparison timelines at the top
+        renderComparisonTimelines(comparisonData, profileName);
+      }
+
+      /**
+       * Renders two mini timeline strips in the comparison modal header,
+       * showing current form steps vs. profile steps for quick visual comparison.
+       * Uses a shared time window so both timelines align horizontally.
+       *
+       * @param {Object} comparisonData - From buildComparisonData, must include currentSteps and profileSteps
+       * @param {string} profileName - Display name of the loaded profile
+       */
+      function renderComparisonTimelines(comparisonData, profileName) {
+        const container = document.getElementById('compareTimelinePreview');
+        if (!container) return;
+
+        const currentSteps = comparisonData.currentSteps || [];
+        const profileSteps = comparisonData.profileSteps || [];
+
+        // Don't show timeline section if neither profile has steps
+        if (currentSteps.length === 0 && profileSteps.length === 0) {
+          container.innerHTML = '';
+          return;
+        }
+
+        // Check if steps differ for visual indicator
+        const stepsDiffer = JSON.stringify(currentSteps) !== JSON.stringify(profileSteps);
+
+        // Build dayInfo objects for both step sets
+        function buildDayInfo(steps) {
+          return {
+            steps: steps.map((step, index) => ({
+              step,
+              m: parseHHMM(step.sim_time_hhmm),
+              index
+            })).filter(s => s.m != null)
+          };
+        }
+
+        const currentDayInfo = buildDayInfo(currentSteps);
+        const profileDayInfo = buildDayInfo(profileSteps);
+
+        // Calculate a shared global time window across both sets of steps
+        function getTimeWindow(dayInfo) {
+          if (!dayInfo.steps.length) return null;
+          const minutes = dayInfo.steps.map(s => s.m);
+          let minTime = Math.min(...minutes);
+          let maxTime = Math.max(...minutes);
+          // Extend for HOLD steps with explicit hold_minutes
+          dayInfo.steps.forEach(s => {
+            if (s.step.speed === 0 && s.step.hold_minutes != null) {
+              maxTime = Math.max(maxTime, s.m + s.step.hold_minutes);
+            }
+          });
+          return { min: minTime, max: maxTime };
+        }
+
+        const currentWindow = getTimeWindow(currentDayInfo);
+        const profileWindow = getTimeWindow(profileDayInfo);
+
+        // Merge into shared window (default 06:00-18:00)
+        let sharedMin = 6 * 60;
+        let sharedMax = 18 * 60;
+        if (currentWindow) {
+          sharedMin = Math.min(sharedMin, currentWindow.min);
+          sharedMax = Math.max(sharedMax, currentWindow.max);
+        }
+        if (profileWindow) {
+          sharedMin = Math.min(sharedMin, profileWindow.min);
+          sharedMax = Math.max(sharedMax, profileWindow.max);
+        }
+        // Round outward to whole hours
+        sharedMin = Math.floor(sharedMin / 60) * 60;
+        sharedMax = Math.ceil(sharedMax / 60) * 60;
+        if (sharedMax === sharedMin) sharedMax = sharedMin + 60;
+
+        const globalWindow = { start: sharedMin, end: sharedMax };
+
+        // Build HTML structure
+        container.innerHTML = '';
+
+        // Current form timeline
+        const currentRow = document.createElement('div');
+        currentRow.className = 'compare-timeline-row';
+        const currentLabel = document.createElement('div');
+        currentLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
+        currentLabel.textContent = 'Current Form' + (stepsDiffer ? ' ⬤' : '');
+        currentRow.appendChild(currentLabel);
+
+        if (currentSteps.length > 0 && currentDayInfo.steps.length > 0) {
+          const barWrap = document.createElement('div');
+          barWrap.className = 'compare-timeline-bar';
+          const bar = document.createElement('div');
+          bar.className = 'timeline-strip readonly';
+          barWrap.appendChild(bar);
+          currentRow.appendChild(barWrap);
+          container.appendChild(currentRow);
+          renderDayTimeline(bar, currentDayInfo, globalWindow, true);
+        } else {
+          const noSteps = document.createElement('div');
+          noSteps.className = 'compare-no-steps';
+          noSteps.textContent = 'No program steps';
+          currentRow.appendChild(noSteps);
+          container.appendChild(currentRow);
+        }
+
+        // Profile timeline
+        const profileRow = document.createElement('div');
+        profileRow.className = 'compare-timeline-row';
+        const profileLabel = document.createElement('div');
+        profileLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
+        profileLabel.textContent = (profileName || 'Profile') + (stepsDiffer ? ' ⬤' : '');
+        profileRow.appendChild(profileLabel);
+
+        if (profileSteps.length > 0 && profileDayInfo.steps.length > 0) {
+          const barWrap = document.createElement('div');
+          barWrap.className = 'compare-timeline-bar';
+          const bar = document.createElement('div');
+          bar.className = 'timeline-strip readonly';
+          barWrap.appendChild(bar);
+          profileRow.appendChild(barWrap);
+          container.appendChild(profileRow);
+          renderDayTimeline(bar, profileDayInfo, globalWindow, true);
+        } else {
+          const noSteps = document.createElement('div');
+          noSteps.className = 'compare-no-steps';
+          noSteps.textContent = 'No program steps';
+          profileRow.appendChild(noSteps);
+          container.appendChild(profileRow);
+        }
       }
 
       // Parse profile text (may already exist, but including here for safety)
@@ -11808,8 +12004,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!/\.txt$/i.test(name)) name += '.txt';
         name = name.replace(/[^a-zA-Z0-9_.-]/g, '_');
 
-        // Use Web Share API only on iOS/iPadOS (where <a download> doesn't work).
-        // On desktop (Mac/Win/Linux), skip straight to <a download> for direct save.
+        // iOS/iPadOS: <a download> doesn't work; use Web Share API
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         if (isIOS && navigator.share && navigator.canShare) {
