@@ -144,7 +144,7 @@ class BLEComms:
 
         # Set large write buffer for command characteristic
         # (profiles can be sent as large multi-line strings)
-        self._ble.gatts_set_buffer(self._cmd_handle, 1024)
+        self._ble.gatts_set_buffer(self._cmd_handle, 2048)
 
 
     def _irq_handler(self, event, data):

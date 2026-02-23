@@ -13486,21 +13486,43 @@ https://github.com/odeepllama/SolarSim/tree/main
       });
 
       // Show upload success modal with optional auto-load message
-      function showUploadSuccessModal(filename, autoloadWasReEnabled) {
+      function showUploadSuccessModal(filename, autoloadWasReEnabled, options = {}) {
         const overlay = document.getElementById('uploadSuccessOverlay');
         const autoloadMsg = document.getElementById('uploadSuccessAutoloadMsg');
         const instructionsMsg = document.getElementById('uploadSuccessConnectInstructions');
+        const connectBtn = document.getElementById('uploadSuccessConnectBtn');
+        const cancelBtn = document.getElementById('uploadSuccessCancelBtn');
+        const titleEl = document.getElementById('uploadSuccessTitle');
+        const uploadedMsg = document.querySelector('#uploadSuccessDialog [data-i18n="profileUploaded"]');
+        const refreshMsg = document.querySelector('#uploadSuccessDialog [data-i18n="refreshConnection"]');
         if (!overlay) return;
+
+        const isBLE = options.transport === 'ble';
 
         // Only show auto-load message if it was actually re-enabled (changed from OFF to ON)
         if (autoloadMsg) {
           autoloadMsg.style.display = autoloadWasReEnabled ? 'block' : 'none';
         }
 
-        // Show the instructions for reconnecting
-        if (instructionsMsg) {
-          instructionsMsg.style.display = 'block';
+        // BLE uploads load in-place — no reconnect needed
+        if (isBLE) {
+          if (instructionsMsg) instructionsMsg.style.display = 'none';
+          if (refreshMsg) refreshMsg.style.display = 'none';
+          if (connectBtn) connectBtn.style.display = 'none';
+          if (uploadedMsg) uploadedMsg.textContent = 'Profile uploaded and active on the device! No reconnect needed.';
+          // Relabel Cancel → Done for BLE since there's nothing to cancel
+          if (cancelBtn) cancelBtn.textContent = 'Done';
+        } else {
+          // Serial: show reconnect instructions
+          if (instructionsMsg) instructionsMsg.style.display = 'block';
+          if (refreshMsg) refreshMsg.style.display = '';
+          if (connectBtn) connectBtn.style.display = '';
+          if (uploadedMsg) uploadedMsg.textContent = 'The profile has been uploaded to the device.';
+          if (cancelBtn) cancelBtn.textContent = 'Cancel';
         }
+
+        // Store transport for the close handler
+        overlay.dataset.transport = isBLE ? 'ble' : 'serial';
 
         // Show the modal
         overlay.classList.add('open');
@@ -13754,28 +13776,86 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!sendLine) { alert('BLE connection not available.'); return; }
 
         try {
-          if (typeof log === 'function') log('Uploading profile via BLE...', 'update');
+          if (typeof log === 'function') log('📤 Uploading profile via BLE...', 'update');
 
           // 1. Begin write session
           await sendLine('writeprofile ' + fn, { silentEcho: true });
-          await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 150));
 
-          // 2. Send profile lines with inter-line delay to avoid BLE congestion
-          const lines = profileText.split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            await sendLine('WP:' + lines[i], { silentEcho: true });
-            // Small delay every 5 lines to let BLE write queue drain
-            if (i % 5 === 4) await new Promise(r => setTimeout(r, 50));
+          // 2. Send profile lines with per-line delay to prevent BLE buffer overwrite.
+          //    Each line must be fully written to the GATT characteristic and read by the
+          //    ESP32 IRQ handler before the next write arrives.
+          // Filter out empty trailing lines from split (trailing '\n' produces empty element)
+          const lines = profileText.split('\n').filter((l, i, arr) => i < arr.length - 1 || l.length > 0);
+          const totalLines = lines.length;
+          if (typeof log === 'function') log(`Sending ${totalLines} lines...`, 'update');
+
+          for (let i = 0; i < totalLines; i++) {
+            const fullLine = lines[i];
+            // BLE writeValue limit is ~509 bytes (512 MTU - 3 ATT header).
+            // Lines that exceed this (e.g. PROGRAM_STEPS JSON) must be split
+            // into a first chunk (WP:) + continuation chunks (WPC:) that the
+            // ESP32 reassembles by appending WPC: data to the previous line.
+            const MAX_CHUNK = 480; // conservative limit within 509 byte MTU
+            if (('WP:' + fullLine).length > MAX_CHUNK) {
+              // Send first chunk
+              const firstLen = MAX_CHUNK - 3; // subtract 'WP:' prefix
+              await sendLine('WP:' + fullLine.slice(0, firstLen), { silentEcho: true });
+              await new Promise(r => setTimeout(r, 50));
+              // Send continuation chunks
+              let offset = firstLen;
+              while (offset < fullLine.length) {
+                const chunkLen = MAX_CHUNK - 4; // subtract 'WPC:' prefix
+                await sendLine('WPC:' + fullLine.slice(offset, offset + chunkLen), { silentEcho: true });
+                await new Promise(r => setTimeout(r, 50));
+                offset += chunkLen;
+              }
+            } else {
+              await sendLine('WP:' + fullLine, { silentEcho: true });
+            }
+            // 50ms delay per line ensures ESP32 IRQ has time to read the GATT buffer
+            // before the next write overwrites it. Increased from 30ms for reliability.
+            await new Promise(r => setTimeout(r, 50));
+            // Log progress every 10 lines
+            if (i > 0 && i % 10 === 0) {
+              if (typeof log === 'function') log(`  Sent ${i}/${totalLines} lines...`, 'update');
+            }
           }
+          if (typeof log === 'function') log(`  Sent ${totalLines}/${totalLines} lines.`, 'update');
 
-          // 3. Commit — device writes file and loads profile in-place
-          await new Promise(r => setTimeout(r, 100));
+          // 3. Set up WRITE_OK listener BEFORE sending commit
+          const writeOkPromise = new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              window.__writeOkResolver = null;
+              reject(new Error('Timed out waiting for device confirmation (WRITE_OK). The upload may have failed.'));
+            }, 10000);
+
+            window.__writeOkResolver = (responseText) => {
+              clearTimeout(timeoutId);
+              window.__writeOkResolver = null;
+              resolve(responseText);
+            };
+          });
+
+          // 4. Commit — device writes file and loads profile in-place
+          await new Promise(r => setTimeout(r, 150));
           await sendLine('writeprofile commit', { silentEcho: true });
 
-          // 4. Wait for WRITE_OK confirmation via processIncoming
-          //    The device sends "[SERIAL CMD] WRITE_OK <filename>" which appears in the log.
-          //    We use a simple timeout-based check since processIncoming handles all incoming data.
-          await new Promise(r => setTimeout(r, 2000));
+          // 5. Wait for WRITE_OK confirmation from device
+          if (typeof log === 'function') log('Waiting for device confirmation...', 'update');
+          const writeOkResponse = await writeOkPromise;
+
+          // 6. Verify line count if provided (format: "WRITE_OK filename.txt 48")
+          const lineCountMatch = writeOkResponse.match(/WRITE_OK\s+\S+\s+(\d+)/);
+          if (lineCountMatch) {
+            const deviceLineCount = parseInt(lineCountMatch[1], 10);
+            if (deviceLineCount !== totalLines) {
+              console.warn(`[BLE Upload] Line count mismatch: sent ${totalLines}, device wrote ${deviceLineCount}`);
+              if (typeof log === 'function') log(`⚠️ Warning: sent ${totalLines} lines but device wrote ${deviceLineCount}`, 'error');
+            } else {
+              console.log(`[BLE Upload] Line count verified: ${deviceLineCount} lines`);
+            }
+          }
 
           if (typeof log === 'function') log('✓ Profile uploaded via BLE: ' + fn, 'update');
 
@@ -13789,25 +13869,39 @@ https://github.com/odeepllama/SolarSim/tree/main
             clearDiffHighlights();
           }
 
-          // BLE uploads load the profile in-place (no reboot), so no reconnect needed.
-          // Just log success and request a status refresh to update the UI with new settings.
+          // Show success confirmation dialog
           if (typeof log === 'function') log('✓ Profile uploaded and applied: ' + fn, 'success');
+          // Only show popup for Serial uploads (which require reconnect).
+          // BLE uploads apply in-place — the log window shows all confirmation.
 
-          // Request status so the form/timeline updates with the newly loaded profile
-          const statusSendLine = window.__sendLine;
-          if (statusSendLine) {
-            window.__loadingFromDevice = true;
-            window.__deviceConfig = {};
-            try {
-              await statusSendLine('status', { silentEcho: true });
-            } catch (_) { }
+          // For Serial uploads, request status so the form/timeline updates.
+          // For BLE uploads, SKIP this — the ~35-line status dump overwhelms the
+          // BLE stack and causes a disconnect.  The profile is already confirmed
+          // loaded (WRITE_OK + validated + applied + restarted) and the normal
+          // periodic status polling will update the tiles shortly.
+          const monitorTransport = window.__solarSimMonitorState && window.__solarSimMonitorState.transport;
+          if (monitorTransport !== 'ble') {
+            await new Promise(r => setTimeout(r, 2000));
+            const statusSendLine = window.__sendLine;
+            if (statusSendLine) {
+              window.__loadingFromDevice = true;
+              window.__deviceConfig = {};
+              try {
+                await statusSendLine('status', { silentEcho: true });
+              } catch (_) { }
+            }
           }
 
         } catch (err) {
           console.error('[BLE Upload]', err);
+          // Clean up resolver if still pending
+          window.__writeOkResolver = null;
           // Attempt to abort on error
           try { await sendLine('writeprofile abort', { silentEcho: true }); } catch (_) { }
-          alert('BLE upload failed: ' + err.message);
+          // Show user-visible error
+          const errorMsg = err.message || String(err);
+          if (typeof log === 'function') log('❌ BLE upload failed: ' + errorMsg, 'error');
+          alert('❌ BLE upload failed:\n\n' + errorMsg + '\n\nPlease try again. Make sure the device is nearby and the BLE connection is stable.');
         }
       }
 
@@ -15671,6 +15765,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             const line = cleanedLine.trim(); if (!line) continue;
             // Process all lines as plain text
             state.stats.textLines++; handlePlainTextLine(cleanedLine);
+            // WRITE_OK hook: resolve pending BLE upload confirmation
+            if (window.__writeOkResolver && /WRITE_OK/.test(line)) {
+              try { window.__writeOkResolver(line); } catch (_) { }
+            }
             // Detect first successful status population (sim + speed OR sunColor etc.)
             if (!state.__statusPrimed) {
               if (/sim\s*time/i.test(line) || /sun\s*color\s*mode/i.test(line) || /intensity\s*scale/i.test(line)) {

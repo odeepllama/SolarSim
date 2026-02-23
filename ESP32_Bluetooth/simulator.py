@@ -512,6 +512,11 @@ class SolarSimulator:
             if hasattr(self, '_wp_lines') and self._wp_lines is not None:
                 self._wp_lines.append(command_str[3:])
             return
+        # Continuation chunk for long lines split across BLE writes (>480 bytes)
+        if command_str.startswith('WPC:'):
+            if hasattr(self, '_wp_lines') and self._wp_lines is not None and len(self._wp_lines) > 0:
+                self._wp_lines[-1] += command_str[4:]
+            return
 
         parts = command_str.lower().strip().split()
         if not parts:
@@ -546,7 +551,13 @@ class SolarSimulator:
 
             # === STATUS ===
             elif command == "status":
-                self.print_status()
+                # Debounce: the browser polls every 1-4s but each response is
+                # ~35 lines of BLE notifications.  If responses stack up faster
+                # than they can be sent, the BLE notification pipeline overflows.
+                now_cmd = ticks_ms()
+                if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 5000:
+                    self._last_status_ms = now_cmd
+                    self.print_status()
 
             # === FILL PANEL ===
             elif command == "fillpanel" and len(parts) >= 4:
@@ -994,6 +1005,11 @@ class SolarSimulator:
             fn += '.txt'
         self._wp_filename = fn
         self._wp_lines = []
+        # Pause BLE output during write session to prevent outgoing
+        # notifications (status dumps, SimTime) from colliding with
+        # incoming WP: writes and crashing the BLE stack.
+        if self.ble:
+            self.ble.output_paused = True
         self.output(f"[SERIAL CMD] writeprofile: ready for '{fn}'")
 
     def _writeprofile_commit(self):
@@ -1007,19 +1023,33 @@ class SolarSimulator:
         self._wp_lines = None
         self._wp_filename = None
         try:
+            n_lines = len(lines)
             with open(fn, 'w') as f:
                 for line in lines:
                     f.write(line + '\n')
             del lines
             gc.collect()
-            self.output(f"[SERIAL CMD] WRITE_OK {fn}")
+            # Briefly resume BLE output to send WRITE_OK, then re-pause
+            # during profile load to prevent notification burst that crashes BLE.
+            if self.ble:
+                self.ble.output_paused = False
+            self.output(f"[SERIAL CMD] WRITE_OK {fn} {n_lines}")
+            if self.ble:
+                self.ble.output_paused = True
             # Re-enable auto-load so this profile persists across reboots
             AUTO_LOAD_LATEST_PROFILE = True
             ProgramEngine.save_autoload_preference(True)
-            # Load the new profile in-place (no reboot needed — keeps BLE alive)
+            # Load the new profile in-place (BLE output suppressed)
             base = fn[:-4] if fn.endswith('.txt') else fn
             self._do_load_profile(base)
+            gc.collect()
+            # Let BLE stack settle before resuming normal output
+            sleep_ms(500)
+            if self.ble:
+                self.ble.output_paused = False
         except Exception as e:
+            if self.ble:
+                self.ble.output_paused = False
             self.output(f"[SERIAL CMD] writeprofile error: {e}")
             gc.collect()
 
@@ -1027,6 +1057,8 @@ class SolarSimulator:
         """Cancel an active profile write session."""
         self._wp_lines = None
         self._wp_filename = None
+        if self.ble:
+            self.ble.output_paused = False
         gc.collect()
         self.output("[SERIAL CMD] writeprofile: aborted")
 
@@ -1423,9 +1455,10 @@ class SolarSimulator:
                     self.hw.deactivate_lighting()
                     self.camera_lighting_active = False
 
-            # Process BLE commands (dequeued from IRQ buffer)
+            # Process BLE commands (drain all queued from IRQ buffer)
             if self.ble:
-                self.ble.poll_command()
+                while self.ble.poll_command():
+                    pass
 
             # Process serial input
             self.process_serial_input()
