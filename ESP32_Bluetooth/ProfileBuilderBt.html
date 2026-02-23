@@ -15446,26 +15446,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!navigator.bluetooth) { log('Web Bluetooth unsupported in this browser', 'error'); throw new Error('No navigator.bluetooth'); }
           badge('CONNECTING', 'amber');
           try {
-            let device;
-            try {
-              // Try name-prefix filter first (works on Chrome desktop, iPad Bluefy)
-              device = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: 'SolarSim' }],
-                optionalServices: [NUS_SERVICE]
-              });
-            } catch (filterErr) {
-              // If user cancelled or no devices found, try acceptAllDevices
-              // (Bluefy on iPhone sometimes fails to match namePrefix filter)
-              if (filterErr.name === 'NotFoundError' || filterErr.message?.includes('No device')) {
-                log('Retrying with broad scan…');
-                device = await navigator.bluetooth.requestDevice({
-                  acceptAllDevices: true,
-                  optionalServices: [NUS_SERVICE]
-                });
-              } else {
-                throw filterErr;
-              }
-            }
+            const device = await navigator.bluetooth.requestDevice({
+              filters: [{ namePrefix: 'SolarSim' }],
+              optionalServices: [NUS_SERVICE]
+            });
             device.addEventListener('gattserverdisconnected', () => {
               log('BLE device disconnected', 'error');
               state.bleDevice = null; state.bleServer = null;
