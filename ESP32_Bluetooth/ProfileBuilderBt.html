@@ -47,30 +47,55 @@ https://github.com/odeepllama/SolarSim/tree/main
   <style>
     /* Ensure language toggle button is always visible and styled */
     #langToggleBtn {
-      background: #fff !important;
-      color: #222 !important;
-      border: 1px solid #bbb !important;
       border-radius: 6px !important;
-      font-weight: 600;
-      font-size: 1rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.10);
-      transition: background 0.18s, color 0.18s;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      padding: 8px 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      transition: background 0.25s, color 0.25s, border-color 0.25s, box-shadow 0.25s;
       cursor: pointer;
       z-index: 1001;
     }
 
-    #langToggleBtn:hover,
-    #langToggleBtn:focus-visible {
-      background: #f5f5f5 !important;
-      color: #111 !important;
-      border-color: #888 !important;
+    /* --- State: page is English → button offers JPN (warm vermillion) --- */
+    #langToggleBtn[data-lang="en"] {
+      background: #c62828 !important;
+      color: #fff !important;
+      border: 1px solid #a01c1c !important;
+    }
+
+    #langToggleBtn[data-lang="en"]:hover,
+    #langToggleBtn[data-lang="en"]:focus-visible {
+      background: #d84141 !important;
+      border-color: #b71c1c !important;
+      box-shadow: 0 3px 8px rgba(198, 40, 40, 0.35);
       outline: none;
     }
 
-    #langToggleBtn:active {
-      background: #e0e0e0 !important;
-      color: #000 !important;
-      border-color: #888 !important;
+    #langToggleBtn[data-lang="en"]:active {
+      background: #a01c1c !important;
+      border-color: #7f1616 !important;
+    }
+
+    /* --- State: page is Japanese → button offers ENG (cool blue) --- */
+    #langToggleBtn[data-lang="ja"] {
+      background: #1565c0 !important;
+      color: #fff !important;
+      border: 1px solid #0d47a1 !important;
+    }
+
+    #langToggleBtn[data-lang="ja"]:hover,
+    #langToggleBtn[data-lang="ja"]:focus-visible {
+      background: #1e88e5 !important;
+      border-color: #1565c0 !important;
+      box-shadow: 0 3px 8px rgba(21, 101, 192, 0.35);
+      outline: none;
+    }
+
+    #langToggleBtn[data-lang="ja"]:active {
+      background: #0d47a1 !important;
+      border-color: #0a3780 !important;
     }
 
     /* Japanese button size adjustment for i18n (monitor/toolbar row) */
@@ -721,6 +746,7 @@ https://github.com/odeepllama/SolarSim/tree/main
    HELP PANEL
    ============================================================================ */
     /* Guide and Help buttons in top-right corner */
+    #langToggleBtn,
     #guideToggleBtn,
     #helpToggleBtn {
       z-index: 900;
@@ -3524,9 +3550,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   <body>
     <div id="topButtonBar"
       style="position:fixed; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
-      <button id="langToggleBtn" type="button"
-        style="padding:8px 12px; background:#fff; color:#222; border:1px solid #bbb; border-radius:6px; font-weight:600; font-size:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.10); transition:background 0.18s, color 0.18s; cursor:pointer; vertical-align:middle;">日本語
-        / ENG</button>
+      <button id="langToggleBtn" type="button" data-lang="en" style="vertical-align:middle;">JPN</button>
       <button id="guideToggleBtn" type="button" style="vertical-align:middle;">🎓 Guide</button>
       <button id="helpToggleBtn" type="button" class="secondary"
         style="padding:8px 12px; vertical-align:middle;">Help</button>
@@ -3534,20 +3558,6 @@ https://github.com/odeepllama/SolarSim/tree/main
     <!-- ...existing code... -->
 
     <style>
-      #topButtonBar button#langToggleBtn:hover,
-      #topButtonBar button#langToggleBtn:focus-visible {
-        background: #f5f5f5;
-        color: #111;
-        border-color: #888;
-        outline: none;
-      }
-
-      #topButtonBar button#langToggleBtn:active {
-        background: #e0e0e0;
-        color: #000;
-        border-color: #888;
-      }
-
       #topButtonBar button#helpToggleBtn {
         background: #FFD700;
         color: #111;
@@ -5275,7 +5285,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           showStatus: 'Show Status',
           simple: 'Simple',
           advanced: 'Advanced',
-          langToggle: '日本語 / ENG',
+          langToggle: 'JPN',
           guide: '🎓 Guide',
           help: 'Help',
           welcomeTitle: 'Welcome to SolaSim Studio! 🌞',
@@ -5425,7 +5435,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           showStatus: 'ステータスを表示',
           simple: 'シンプル',
           advanced: '詳細',
-          langToggle: '日本語 / ENG',
+          langToggle: 'ENG',
           guide: '🎓 ガイド',
           help: 'ヘルプ',
           welcomeTitle: 'SolaSim Studio へようこそ！🌞',
@@ -5588,10 +5598,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             btn.classList.remove('jp-btn');
           }
         });
-        // Adjust heading font size for Japanese
-        const appTitle = document.getElementById('appTitle');
+        // Adjust heading font size for Japanese (excluding appTitle — same text in both languages)
         const mainHeadings = [
-          appTitle,
           document.querySelector('h2[data-i18n="profileManagement"]'),
           document.querySelector('h2[data-i18n="programSettingsHeader"]'),
           document.querySelector('h2[data-i18n="exportSection"]'),
@@ -5640,7 +5648,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         document.getElementById('monitorShowStatusBtn').textContent = TRANSLATIONS[lang].showStatus;
         document.getElementById('simpleModeBtn').textContent = TRANSLATIONS[lang].simple;
         document.getElementById('advancedModeBtn').textContent = TRANSLATIONS[lang].advanced;
-        document.getElementById('langToggleBtn').textContent = TRANSLATIONS[lang].langToggle;
+        const langBtn = document.getElementById('langToggleBtn');
+        langBtn.textContent = TRANSLATIONS[lang].langToggle;
+        langBtn.setAttribute('data-lang', lang);
         document.getElementById('guideToggleBtn').textContent = TRANSLATIONS[lang].guide;
         document.getElementById('helpToggleBtn').textContent = TRANSLATIONS[lang].help;
         // FTUE modal
