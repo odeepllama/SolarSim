@@ -3667,12 +3667,21 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li><strong>🔌 Connect USB</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
                     ESP32-S3 devices. Requires Chrome, Edge, or Opera on a desktop computer.</li>
                   <li><strong>📶 Connect BT</strong> (Bluetooth): Uses Web Bluetooth for wireless connection. Available
-                    only with ESP32-S3 hardware. Works on desktop Chrome and also on tablets and phones, so you can
-                    monitor and control the device without a USB cable.</li>
+                    only with ESP32-S3 hardware. Works on desktop Chrome and Android tablets/phones.
+                    <strong>iPad/iPhone:</strong> Use the free <a
+                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055" target="_blank">Bluefy
+                      browser</a>
+                    (Safari and Chrome on iOS do not support Web Bluetooth).
+                  </li>
                 </ul>
                 <p>Both connection methods support full status monitoring, command console, status tiles, solar arc,
                   and profile upload. The status badge shows "Connected" when active. If connection fails, try
                   unplugging/replugging (USB) or power-cycling the device (Bluetooth).</p>
+                <p><strong>Switching from Bluetooth to USB (ESP32):</strong> If you previously connected via
+                  Bluetooth (e.g., from an iPad) and now want to connect via USB from a laptop, you will need to
+                  press the <strong>RESET</strong> button on the ESP32 device first. This is because the BLE radio
+                  remains active after disconnecting, which can interfere with the USB serial connection in the
+                  browser.</p>
               </div>
             </li>
           </ul>
@@ -4107,11 +4116,17 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li><strong>接続（ケーブル）</strong>: USB経由のWeb Serial
                     APIを使用します。RP2040とESP32-S3の両方のデバイスで動作します。デスクトップのChrome、Edge、Operaが必要です。</li>
                   <li><strong>接続 BT（Bluetooth）</strong>: Web
-                    Bluetoothによるワイヤレス接続。ESP32-S3ハードウェアでのみ利用可能です。デスクトップChromeのほか、タブレットやスマートフォンでも動作し、USBケーブルなしでデバイスの監視・制御ができます。
+                    Bluetoothによるワイヤレス接続。ESP32-S3ハードウェアでのみ利用可能です。デスクトップChromeおよびAndroidタブレット・スマートフォンで動作します。
+                    <strong>iPad/iPhone：</strong>無料の<a
+                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055"
+                      target="_blank">Bluefyブラウザ</a>が必要です（iOS版のSafariやChromeはWeb Bluetooth非対応）。
                   </li>
                 </ul>
                 <p>
                   どちらの接続方法でも、ステータス監視、コマンドコンソール、ステータスタイル、太陽アーク、プロファイルアップロードのすべての機能を利用できます。ステータスバッジはアクティブ時に「接続済み」と表示されます。接続に失敗した場合は、ケーブルの抜き差し（ケーブル）またはデバイスの電源の入れ直し（Bluetooth）をお試しください。
+                </p>
+                <p><strong>BluetoothからUSBへの切替（ESP32）：</strong>
+                  以前Bluetooth（iPadなど）で接続し、その後ノートPCからUSBで接続したい場合は、まずESP32デバイスの<strong>RESET</strong>ボタンを押してください。Bluetooth切断後もBLE無線が有効なままのため、ブラウザがUSBシリアルポートを開けないことがあります。
                 </p>
               </div>
             </li>
@@ -4723,8 +4738,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li>A browser dialog will appear showing nearby Bluetooth devices. Select <strong>SolarSim-BT</strong>.
               </li>
               <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
-              <li>Bluetooth also works on tablets and phones with Chrome, so you can monitor and control the device
-                wirelessly.</li>
+              <li>Bluetooth also works on Android tablets and phones with Chrome.
+                <strong>iPad/iPhone users:</strong> You must use the free
+                <a href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055" target="_blank">Bluefy
+                  browser</a>
+                from the App Store — Safari and Chrome on iOS/iPadOS do not support Web Bluetooth.
+              </li>
             </ol>
 
             <h2>💡 Core Concepts</h2>
@@ -4927,6 +4946,15 @@ https://github.com/odeepllama/SolarSim/tree/main
                     <strong>Sync to Device</strong> (in the banner) or <strong>Upload</strong> to make them match.
                   </td>
                 </tr>
+                <tr>
+                  <td><strong>Switching from Bluetooth to USB (ESP32)</strong></td>
+                  <td>If you previously connected via Bluetooth (e.g., initial setup from an iPad or phone) and now
+                    want to connect via USB from a laptop for long-term monitoring, press the
+                    <strong>RESET</strong> button on the ESP32 device before clicking <strong>🔌 Connect USB</strong>.
+                    The BLE radio stays active after a Bluetooth disconnect, which can prevent the browser from
+                    opening the USB serial port. A reset cleanly restarts the device and allows USB connection.
+                  </td>
+                </tr>
               </tbody>
             </table>
             <!-- English guide content end -->
@@ -4993,7 +5021,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li>画面上部の「Monitor / Interact」バーの青色の「📶 BT接続」ボタンをクリックします。</li>
                   <li>近くのBluetoothデバイスを表示するブラウザダイアログが表示されます。<strong>SolarSim-BT</strong>を選択します。</li>
                   <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
-                  <li>Bluetoothはタブレットやスマートフォンのクロームでも動作するため、ワイヤレスでデバイスを監視・制御できます。</li>
+                  <li>BluetoothはAndroidタブレットやスマートフォンのChromeでも動作します。
+                    <strong>iPad/iPhoneの場合：</strong>App Storeから無料の<a
+                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055"
+                      target="_blank">Bluefyブラウザ</a>をダウンロードしてください（iOS版Safari・ChromeはWeb Bluetooth非対応）。
+                  </li>
                 </ol>
               </li>
             </ol>
@@ -5144,6 +5176,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <tr>
                   <td>オレンジ色のハイライトが消えない</td>
                   <td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」または「アップロード」で一致させてください。</td>
+                </tr>
+                <tr>
+                  <td>BluetoothからUSBへの切替（ESP32）</td>
+                  <td>以前Bluetooth（iPadやスマートフォンなど）で接続した後、ノートPCからUSBで接続したい場合は、ESP32デバイスの<strong>RESET</strong>ボタンを押してから「🔌
+                    USB接続」をクリックしてください。Bluetooth切断後もBLE無線が有効なままのため、リセットが必要です。</td>
                 </tr>
               </tbody>
             </table>
