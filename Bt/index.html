@@ -13555,10 +13555,13 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Raw REPL Upload (Stopgap Implementation)
       // -----------------------------
       async function uploadProfileToBoard(options = {}) {
-        // Route to BLE upload if connected via Bluetooth
+        // Route to writeprofile command if already monitoring via BLE or serial
         const monitorState = window.__solarSimMonitorState;
         if (monitorState && monitorState.transport === 'ble') {
-          return uploadProfileViaBLE(options);
+          return uploadProfileViaWriteCommand(options);
+        }
+        if (monitorState && monitorState.transport === 'serial') {
+          return uploadProfileViaWriteCommand(options);
         }
         if (!('serial' in navigator)) { alert('Web Serial not supported in this browser. Use recent Chrome / Edge desktop.'); return; }
         // Force-refresh the export preview so it reflects current state (including PROGRAM_STEPS)
@@ -13718,7 +13721,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             await window.__ensureBLE();
             // Brief delay for connection to stabilise
             await new Promise(r => setTimeout(r, 300));
-            uploadProfileViaBLE({ _preSnapshotText: preConnectProfileText });
+            uploadProfileViaWriteCommand({ _preSnapshotText: preConnectProfileText });
           } catch (e) {
             const msg = e.message || String(e);
             if (typeof log === 'function') log('BLE connection failed: ' + msg, 'error');
@@ -13728,12 +13731,18 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         cableBtn.onclick = async () => {
           closePicker();
+          // CRITICAL: Snapshot profile text BEFORE connecting.
+          // Serial status updates can overwrite programSteps with device data
+          // (which may have fewer/different steps), so we must capture the
+          // form state before the connection triggers any data exchange.
+          if (typeof updatePreview === 'function') updatePreview(true);
+          const preConnectProfileText = document.getElementById('exportPreview').value;
           try {
             const monitorState = window.__solarSimMonitorState;
             if (monitorState) monitorState.transport = 'serial';
             await window.__ensurePort();
-            // Proceed with Serial upload (may show RESET dialog for RP2040)
-            uploadProfileToBoard();
+            // Proceed with upload using pre-snapshotted text
+            uploadProfileToBoard({ _preSnapshotText: preConnectProfileText });
           } catch (e) {
             const monitorState = window.__solarSimMonitorState;
             if (monitorState) monitorState.transport = null;
@@ -13757,9 +13766,9 @@ https://github.com/odeepllama/SolarSim/tree/main
       }
 
       // -----------------------------
-      // BLE Profile Upload (via writeprofile command)
+      // Profile Upload via writeprofile command (BLE or Serial)
       // -----------------------------
-      async function uploadProfileViaBLE(options = {}) {
+      async function uploadProfileViaWriteCommand(options = {}) {
         // Use pre-snapshotted text if provided (from connect-then-upload flow),
         // otherwise force-refresh and read from textarea
         let profileText = options._preSnapshotText || null;
@@ -13773,10 +13782,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!fn.toLowerCase().endsWith('.txt')) fn += '.txt';
 
         const sendLine = window.__sendLine;
-        if (!sendLine) { alert('BLE connection not available.'); return; }
+        if (!sendLine) { alert('Connection not available.'); return; }
+        const monitorTransport = window.__solarSimMonitorState && window.__solarSimMonitorState.transport;
+
+        // Pause auto-refresh to prevent periodic status commands from
+        // interleaving with WP:/WPC: data lines on the serial port.
+        const state = window.__solarSimMonitorState;
+        const wasAutoRefreshEnabled = state && state.autoRefreshEnabled;
+        if (state) state.autoRefreshEnabled = false;
 
         try {
-          if (typeof log === 'function') log('📤 Uploading profile via BLE...', 'update');
+          if (typeof log === 'function') log('📤 Uploading profile...', 'update');
 
           // 1. Begin write session
           await sendLine('writeprofile ' + fn, { silentEcho: true });
@@ -13792,30 +13808,51 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           for (let i = 0; i < totalLines; i++) {
             const fullLine = lines[i];
-            // BLE writeValue limit is ~509 bytes (512 MTU - 3 ATT header).
-            // Lines that exceed this (e.g. PROGRAM_STEPS JSON) must be split
-            // into a first chunk (WP:) + continuation chunks (WPC:) that the
-            // ESP32 reassembles by appending WPC: data to the previous line.
-            const MAX_CHUNK = 480; // conservative limit within 509 byte MTU
-            if (('WP:' + fullLine).length > MAX_CHUNK) {
-              // Send first chunk
-              const firstLen = MAX_CHUNK - 3; // subtract 'WP:' prefix
-              await sendLine('WP:' + fullLine.slice(0, firstLen), { silentEcho: true });
-              await new Promise(r => setTimeout(r, 50));
-              // Send continuation chunks
-              let offset = firstLen;
-              while (offset < fullLine.length) {
-                const chunkLen = MAX_CHUNK - 4; // subtract 'WPC:' prefix
-                await sendLine('WPC:' + fullLine.slice(offset, offset + chunkLen), { silentEcho: true });
+            if (monitorTransport === 'ble') {
+              // BLE writeValue limit is ~509 bytes (512 MTU - 3 ATT header).
+              // Lines that exceed this (e.g. PROGRAM_STEPS JSON) must be split
+              // into a first chunk (WP:) + continuation chunks (WPC:) that the
+              // ESP32 reassembles by appending WPC: data to the previous line.
+              const MAX_CHUNK = 480; // conservative limit within 509 byte MTU
+              if (('WP:' + fullLine).length > MAX_CHUNK) {
+                // Send first chunk
+                const firstLen = MAX_CHUNK - 3; // subtract 'WP:' prefix
+                await sendLine('WP:' + fullLine.slice(0, firstLen), { silentEcho: true });
                 await new Promise(r => setTimeout(r, 50));
-                offset += chunkLen;
+                // Send continuation chunks
+                let offset = firstLen;
+                while (offset < fullLine.length) {
+                  const chunkLen = MAX_CHUNK - 4; // subtract 'WPC:' prefix
+                  await sendLine('WPC:' + fullLine.slice(offset, offset + chunkLen), { silentEcho: true });
+                  await new Promise(r => setTimeout(r, 50));
+                  offset += chunkLen;
+                }
+              } else {
+                await sendLine('WP:' + fullLine, { silentEcho: true });
               }
+              await new Promise(r => setTimeout(r, 50));
             } else {
-              await sendLine('WP:' + fullLine, { silentEcho: true });
+              // Serial: for PROGRAM_STEPS, send each step individually via PS:
+              // to avoid long-line corruption. All other lines are short enough
+              // to send as-is via WP:.
+              const psMatch = fullLine.match(/^PROGRAM_STEPS\s*=\s*(\[.*\])$/);
+              if (psMatch) {
+                try {
+                  const steps = JSON.parse(psMatch[1]);
+                  for (let s = 0; s < steps.length; s++) {
+                    await sendLine('PS:' + JSON.stringify(steps[s]), { silentEcho: true });
+                    await new Promise(r => setTimeout(r, 20));
+                  }
+                } catch (e) {
+                  // Fallback: send as single WP: line
+                  console.warn('[Upload] Failed to split PROGRAM_STEPS, sending as-is:', e);
+                  await sendLine('WP:' + fullLine, { silentEcho: true });
+                }
+              } else {
+                await sendLine('WP:' + fullLine, { silentEcho: true });
+              }
+              await new Promise(r => setTimeout(r, 20));
             }
-            // 50ms delay per line ensures ESP32 IRQ has time to read the GATT buffer
-            // before the next write overwrites it. Increased from 30ms for reliability.
-            await new Promise(r => setTimeout(r, 50));
             // Log progress every 10 lines
             if (i > 0 && i % 10 === 0) {
               if (typeof log === 'function') log(`  Sent ${i}/${totalLines} lines...`, 'update');
@@ -13828,7 +13865,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const timeoutId = setTimeout(() => {
               window.__writeOkResolver = null;
               reject(new Error('Timed out waiting for device confirmation (WRITE_OK). The upload may have failed.'));
-            }, 10000);
+            }, 30000);
 
             window.__writeOkResolver = (responseText) => {
               clearTimeout(timeoutId);
@@ -13850,14 +13887,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (lineCountMatch) {
             const deviceLineCount = parseInt(lineCountMatch[1], 10);
             if (deviceLineCount !== totalLines) {
-              console.warn(`[BLE Upload] Line count mismatch: sent ${totalLines}, device wrote ${deviceLineCount}`);
+              console.warn(`[Upload] Line count mismatch: sent ${totalLines}, device wrote ${deviceLineCount}`);
               if (typeof log === 'function') log(`⚠️ Warning: sent ${totalLines} lines but device wrote ${deviceLineCount}`, 'error');
             } else {
-              console.log(`[BLE Upload] Line count verified: ${deviceLineCount} lines`);
+              console.log(`[Upload] Line count verified: ${deviceLineCount} lines`);
             }
           }
 
-          if (typeof log === 'function') log('✓ Profile uploaded via BLE: ' + fn, 'update');
+          if (typeof log === 'function') log('✓ Profile uploaded: ' + fn, 'update');
 
           // Record in recent profiles
           if (typeof recordRecentProfile === 'function') {
@@ -13874,34 +13911,37 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Only show popup for Serial uploads (which require reconnect).
           // BLE uploads apply in-place — the log window shows all confirmation.
 
-          // For Serial uploads, request status so the form/timeline updates.
-          // For BLE uploads, SKIP this — the ~35-line status dump overwhelms the
-          // BLE stack and causes a disconnect.  The profile is already confirmed
-          // loaded (WRITE_OK + validated + applied + restarted) and the normal
-          // periodic status polling will update the tiles shortly.
-          const monitorTransport = window.__solarSimMonitorState && window.__solarSimMonitorState.transport;
+          // Request fresh status so the form/timeline updates with the new profile.
+          // Auto-refresh is already paused from the upload start.
           if (monitorTransport !== 'ble') {
             await new Promise(r => setTimeout(r, 2000));
+            window.__loadingFromDevice = true;
+            window.__deviceConfig = {};
+            if (state) state.__silentStatusUntil = performance.now() + 6000;
             const statusSendLine = window.__sendLine;
             if (statusSendLine) {
-              window.__loadingFromDevice = true;
-              window.__deviceConfig = {};
               try {
                 await statusSendLine('status', { silentEcho: true });
               } catch (_) { }
             }
+            // Wait for status parsing and form population to complete
+            await new Promise(r => setTimeout(r, 4000));
           }
+          // Resume auto-refresh after successful upload
+          if (state) state.autoRefreshEnabled = wasAutoRefreshEnabled !== false;
 
         } catch (err) {
-          console.error('[BLE Upload]', err);
+          console.error('[Upload]', err);
+          // Resume auto-refresh on error
+          if (state) state.autoRefreshEnabled = wasAutoRefreshEnabled !== false;
           // Clean up resolver if still pending
           window.__writeOkResolver = null;
           // Attempt to abort on error
           try { await sendLine('writeprofile abort', { silentEcho: true }); } catch (_) { }
           // Show user-visible error
           const errorMsg = err.message || String(err);
-          if (typeof log === 'function') log('❌ BLE upload failed: ' + errorMsg, 'error');
-          alert('❌ BLE upload failed:\n\n' + errorMsg + '\n\nPlease try again. Make sure the device is nearby and the BLE connection is stable.');
+          if (typeof log === 'function') log('❌ Upload failed: ' + errorMsg, 'error');
+          alert('❌ Upload failed:\n\n' + errorMsg + '\n\nPlease try again.');
         }
       }
 
@@ -14094,7 +14134,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // BLE uploads skip the "press RESET" confirmation (not applicable)
           if (monitorState && monitorState.transport === 'ble') {
-            uploadProfileViaBLE();
+            uploadProfileViaWriteCommand();
             return;
           }
           // Serial: If user opted to skip and isn't forcing prompt with Option/Alt, bypass dialog
