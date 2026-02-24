@@ -517,6 +517,11 @@ class SolarSimulator:
             if hasattr(self, '_wp_lines') and self._wp_lines is not None and len(self._wp_lines) > 0:
                 self._wp_lines[-1] += command_str[4:]
             return
+        # Individual program step (sent one per line to avoid long-line corruption)
+        if command_str.startswith('PS:'):
+            if hasattr(self, '_wp_steps') and self._wp_steps is not None:
+                self._wp_steps.append(command_str[3:])
+            return
 
         parts = command_str.lower().strip().split()
         if not parts:
@@ -551,17 +556,7 @@ class SolarSimulator:
 
             # === STATUS ===
             elif command == "status":
-                # Debounce: the browser polls every 1-4s but each response is
-                # ~35 lines of BLE notifications.  If responses stack up faster
-                # than they can be sent, the BLE notification pipeline overflows.
-                # Fresh BLE connections bypass debounce for instant first response.
-                fresh = self.ble and getattr(self.ble, '_fresh_connect', False)
-                now_cmd = ticks_ms()
-                if fresh or not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 5000:
-                    if fresh:
-                        self.ble._fresh_connect = False
-                    self._last_status_ms = now_cmd
-                    self.print_status()
+                self.print_status()
 
             # === FILL PANEL ===
             elif command == "fillpanel" and len(parts) >= 4:
@@ -1009,11 +1004,7 @@ class SolarSimulator:
             fn += '.txt'
         self._wp_filename = fn
         self._wp_lines = []
-        # Pause BLE output during write session to prevent outgoing
-        # notifications (status dumps, SimTime) from colliding with
-        # incoming WP: writes and crashing the BLE stack.
-        if self.ble:
-            self.ble.output_paused = True
+        self._wp_steps = []  # individual PS: step entries
         self.output(f"[SERIAL CMD] writeprofile: ready for '{fn}'")
 
     def _writeprofile_commit(self):
@@ -1027,33 +1018,26 @@ class SolarSimulator:
         self._wp_lines = None
         self._wp_filename = None
         try:
+            # If individual PS: steps were sent, assemble them into PROGRAM_STEPS
+            if hasattr(self, '_wp_steps') and self._wp_steps:
+                steps_json = '[' + ','.join(self._wp_steps) + ']'
+                lines.append('PROGRAM_STEPS = ' + steps_json)
+                self._wp_steps = []
             n_lines = len(lines)
             with open(fn, 'w') as f:
                 for line in lines:
                     f.write(line + '\n')
             del lines
             gc.collect()
-            # Briefly resume BLE output to send WRITE_OK, then re-pause
-            # during profile load to prevent notification burst that crashes BLE.
-            if self.ble:
-                self.ble.output_paused = False
             self.output(f"[SERIAL CMD] WRITE_OK {fn} {n_lines}")
-            if self.ble:
-                self.ble.output_paused = True
             # Re-enable auto-load so this profile persists across reboots
             AUTO_LOAD_LATEST_PROFILE = True
             ProgramEngine.save_autoload_preference(True)
-            # Load the new profile in-place (BLE output suppressed)
+            # Load the new profile in-place
             base = fn[:-4] if fn.endswith('.txt') else fn
             self._do_load_profile(base)
             gc.collect()
-            # Let BLE stack settle before resuming normal output
-            sleep_ms(500)
-            if self.ble:
-                self.ble.output_paused = False
         except Exception as e:
-            if self.ble:
-                self.ble.output_paused = False
             self.output(f"[SERIAL CMD] writeprofile error: {e}")
             gc.collect()
 
@@ -1061,8 +1045,7 @@ class SolarSimulator:
         """Cancel an active profile write session."""
         self._wp_lines = None
         self._wp_filename = None
-        if self.ble:
-            self.ble.output_paused = False
+        self._wp_steps = None
         gc.collect()
         self.output("[SERIAL CMD] writeprofile: aborted")
 
@@ -1099,14 +1082,16 @@ class SolarSimulator:
                 import select
                 self._stdin_poller = select.poll()
                 self._stdin_poller.register(sys.stdin, select.POLLIN)
+                self._serial_buf_parts = []
             while self._stdin_poller.poll(0):
                 char = sys.stdin.read(1)
                 if char in ('\n', '\r'):
-                    if self.serial_buffer:
-                        self.handle_command(self.serial_buffer)
-                        self.serial_buffer = ""
+                    if self._serial_buf_parts:
+                        cmd = ''.join(self._serial_buf_parts)
+                        self._serial_buf_parts = []
+                        self.handle_command(cmd)
                 elif char is not None:
-                    self.serial_buffer += char
+                    self._serial_buf_parts.append(char)
         except Exception:
             pass
     # ==========================================================
