@@ -1151,7 +1151,7 @@ class SolarSimulator:
                 self.camera_trigger_started_ms = now_ms
                 cam_pwm = self.hw.get_rotation_camera_pwm(ROTATION_CAMERA_SERVO)
                 self.hw.set_servo_angle(cam_pwm, CAMERA_SERVO_TRIGGER_ANGLE)
-                self.output(f"Initial camera trigger at {CAMERA_SERVO_TRIGGER_ANGLE} deg")
+                self.output("Camera triggered")
                 if ROTATION_CAPTURE_MODE == "STILLS" and ROTATION_LIGHTING_ENABLED and not self.rotation_lighting_active:
                     self.rotation_lighting_active = True
                     self.hw.apply_lighting(ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B, CAMERA_LIGHTING_PANELS)
