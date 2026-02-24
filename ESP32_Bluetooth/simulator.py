@@ -1497,18 +1497,18 @@ class SolarSimulator:
         elif not a and hasattr(self, '_btn_a_start'):
             del self._btn_a_start
 
-        # Button B long press → cycle speed
-        if b and not hasattr(self, '_btn_b_start'):
-            self._btn_b_start = now_ms
-        elif b and hasattr(self, '_btn_b_start'):
-            if ticks_diff(now_ms, self._btn_b_start) >= 1000:
-                speeds = [0, 1, 60, 600]
+        # Button B short press → cycle speed (triggers on release, 300ms debounce)
+        if b and not hasattr(self, '_btn_b_down'):
+            self._btn_b_down = True
+        elif not b and hasattr(self, '_btn_b_down'):
+            del self._btn_b_down
+            # Debounce: ignore releases within 300ms of last action
+            if not hasattr(self, '_btn_b_cooldown') or ticks_diff(now_ms, self._btn_b_cooldown) >= 300:
+                self._btn_b_cooldown = now_ms
+                speeds = [1, 6, 60, 600, 0]
                 try:
                     idx = speeds.index(TIME_SCALE)
                     TIME_SCALE = speeds[(idx + 1) % len(speeds)]
                 except ValueError:
                     TIME_SCALE = 1
                 self.output(f"Button B: Speed → {get_speed_name(TIME_SCALE)}")
-                self._btn_b_start = now_ms + 99999
-        elif not b and hasattr(self, '_btn_b_start'):
-            del self._btn_b_start

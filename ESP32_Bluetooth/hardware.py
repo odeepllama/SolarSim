@@ -187,9 +187,9 @@ class Display:
                 sq_tier = 4 - i  # i=0 → tier 4 (top), i=3 → tier 1 (bottom)
                 sq_y = 26 + i * (sq_size + sq_gap)
                 if tier == 0:
-                    # HOLD: flash single outline at bottom position
+                    # HOLD: flash single filled square at bottom position
                     if sq_tier == 1 and parity:
-                        oled.rect(sq_x, sq_y, sq_size, sq_size, 1)
+                        oled.fill_rect(sq_x, sq_y, sq_size, sq_size, 1)
                 elif is_reverse:
                     # Reverse: empty outlines for active tiers
                     if sq_tier <= tier:
