@@ -554,8 +554,12 @@ class SolarSimulator:
                 # Debounce: the browser polls every 1-4s but each response is
                 # ~35 lines of BLE notifications.  If responses stack up faster
                 # than they can be sent, the BLE notification pipeline overflows.
+                # Fresh BLE connections bypass debounce for instant first response.
+                fresh = self.ble and getattr(self.ble, '_fresh_connect', False)
                 now_cmd = ticks_ms()
-                if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 5000:
+                if fresh or not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 5000:
+                    if fresh:
+                        self.ble._fresh_connect = False
                     self._last_status_ms = now_cmd
                     self.print_status()
 

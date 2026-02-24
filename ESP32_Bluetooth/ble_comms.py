@@ -153,6 +153,7 @@ class BLEComms:
             conn_handle, addr_type, addr = data
             self._connections.add(conn_handle)
             self._conn_handle = conn_handle
+            self._fresh_connect = True  # Signal simulator to skip status debounce
             addr_str = ':'.join(['%02X' % b for b in bytes(addr)])
             print(f"[BLE] Connected: {addr_str} (handle={conn_handle})")
 
