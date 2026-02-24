@@ -47,30 +47,55 @@ https://github.com/odeepllama/SolarSim/tree/main
   <style>
     /* Ensure language toggle button is always visible and styled */
     #langToggleBtn {
-      background: #fff !important;
-      color: #222 !important;
-      border: 1px solid #bbb !important;
       border-radius: 6px !important;
-      font-weight: 600;
-      font-size: 1rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.10);
-      transition: background 0.18s, color 0.18s;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      padding: 8px 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      transition: background 0.25s, color 0.25s, border-color 0.25s, box-shadow 0.25s;
       cursor: pointer;
       z-index: 1001;
     }
 
-    #langToggleBtn:hover,
-    #langToggleBtn:focus-visible {
-      background: #f5f5f5 !important;
-      color: #111 !important;
-      border-color: #888 !important;
+    /* --- State: page is English → button offers JPN (warm vermillion) --- */
+    #langToggleBtn[data-lang="en"] {
+      background: #c62828 !important;
+      color: #fff !important;
+      border: 1px solid #a01c1c !important;
+    }
+
+    #langToggleBtn[data-lang="en"]:hover,
+    #langToggleBtn[data-lang="en"]:focus-visible {
+      background: #d84141 !important;
+      border-color: #b71c1c !important;
+      box-shadow: 0 3px 8px rgba(198, 40, 40, 0.35);
       outline: none;
     }
 
-    #langToggleBtn:active {
-      background: #e0e0e0 !important;
-      color: #000 !important;
-      border-color: #888 !important;
+    #langToggleBtn[data-lang="en"]:active {
+      background: #a01c1c !important;
+      border-color: #7f1616 !important;
+    }
+
+    /* --- State: page is Japanese → button offers ENG (cool blue) --- */
+    #langToggleBtn[data-lang="ja"] {
+      background: #1565c0 !important;
+      color: #fff !important;
+      border: 1px solid #0d47a1 !important;
+    }
+
+    #langToggleBtn[data-lang="ja"]:hover,
+    #langToggleBtn[data-lang="ja"]:focus-visible {
+      background: #1e88e5 !important;
+      border-color: #1565c0 !important;
+      box-shadow: 0 3px 8px rgba(21, 101, 192, 0.35);
+      outline: none;
+    }
+
+    #langToggleBtn[data-lang="ja"]:active {
+      background: #0d47a1 !important;
+      border-color: #0a3780 !important;
     }
 
     /* Japanese button size adjustment for i18n (monitor/toolbar row) */
@@ -721,6 +746,7 @@ https://github.com/odeepllama/SolarSim/tree/main
    HELP PANEL
    ============================================================================ */
     /* Guide and Help buttons in top-right corner */
+    #langToggleBtn,
     #guideToggleBtn,
     #helpToggleBtn {
       z-index: 900;
@@ -3524,9 +3550,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   <body>
     <div id="topButtonBar"
       style="position:fixed; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
-      <button id="langToggleBtn" type="button"
-        style="padding:8px 12px; background:#fff; color:#222; border:1px solid #bbb; border-radius:6px; font-weight:600; font-size:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.10); transition:background 0.18s, color 0.18s; cursor:pointer; vertical-align:middle;">日本語
-        / ENG</button>
+      <button id="langToggleBtn" type="button" data-lang="en" style="vertical-align:middle;">JPN</button>
       <button id="guideToggleBtn" type="button" style="vertical-align:middle;">🎓 Guide</button>
       <button id="helpToggleBtn" type="button" class="secondary"
         style="padding:8px 12px; vertical-align:middle;">Help</button>
@@ -3534,20 +3558,6 @@ https://github.com/odeepllama/SolarSim/tree/main
     <!-- ...existing code... -->
 
     <style>
-      #topButtonBar button#langToggleBtn:hover,
-      #topButtonBar button#langToggleBtn:focus-visible {
-        background: #f5f5f5;
-        color: #111;
-        border-color: #888;
-        outline: none;
-      }
-
-      #topButtonBar button#langToggleBtn:active {
-        background: #e0e0e0;
-        color: #000;
-        border-color: #888;
-      }
-
       #topButtonBar button#helpToggleBtn {
         background: #FFD700;
         color: #111;
@@ -5275,7 +5285,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           showStatus: 'Show Status',
           simple: 'Simple',
           advanced: 'Advanced',
-          langToggle: '日本語 / ENG',
+          langToggle: 'JPN',
           guide: '🎓 Guide',
           help: 'Help',
           welcomeTitle: 'Welcome to SolaSim Studio! 🌞',
@@ -5425,7 +5435,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           showStatus: 'ステータスを表示',
           simple: 'シンプル',
           advanced: '詳細',
-          langToggle: '日本語 / ENG',
+          langToggle: 'ENG',
           guide: '🎓 ガイド',
           help: 'ヘルプ',
           welcomeTitle: 'SolaSim Studio へようこそ！🌞',
@@ -5588,10 +5598,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             btn.classList.remove('jp-btn');
           }
         });
-        // Adjust heading font size for Japanese
-        const appTitle = document.getElementById('appTitle');
+        // Adjust heading font size for Japanese (excluding appTitle — same text in both languages)
         const mainHeadings = [
-          appTitle,
           document.querySelector('h2[data-i18n="profileManagement"]'),
           document.querySelector('h2[data-i18n="programSettingsHeader"]'),
           document.querySelector('h2[data-i18n="exportSection"]'),
@@ -5640,7 +5648,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         document.getElementById('monitorShowStatusBtn').textContent = TRANSLATIONS[lang].showStatus;
         document.getElementById('simpleModeBtn').textContent = TRANSLATIONS[lang].simple;
         document.getElementById('advancedModeBtn').textContent = TRANSLATIONS[lang].advanced;
-        document.getElementById('langToggleBtn').textContent = TRANSLATIONS[lang].langToggle;
+        const langBtn = document.getElementById('langToggleBtn');
+        langBtn.textContent = TRANSLATIONS[lang].langToggle;
+        langBtn.setAttribute('data-lang', lang);
         document.getElementById('guideToggleBtn').textContent = TRANSLATIONS[lang].guide;
         document.getElementById('helpToggleBtn').textContent = TRANSLATIONS[lang].help;
         // FTUE modal
@@ -13476,21 +13486,43 @@ https://github.com/odeepllama/SolarSim/tree/main
       });
 
       // Show upload success modal with optional auto-load message
-      function showUploadSuccessModal(filename, autoloadWasReEnabled) {
+      function showUploadSuccessModal(filename, autoloadWasReEnabled, options = {}) {
         const overlay = document.getElementById('uploadSuccessOverlay');
         const autoloadMsg = document.getElementById('uploadSuccessAutoloadMsg');
         const instructionsMsg = document.getElementById('uploadSuccessConnectInstructions');
+        const connectBtn = document.getElementById('uploadSuccessConnectBtn');
+        const cancelBtn = document.getElementById('uploadSuccessCancelBtn');
+        const titleEl = document.getElementById('uploadSuccessTitle');
+        const uploadedMsg = document.querySelector('#uploadSuccessDialog [data-i18n="profileUploaded"]');
+        const refreshMsg = document.querySelector('#uploadSuccessDialog [data-i18n="refreshConnection"]');
         if (!overlay) return;
+
+        const isBLE = options.transport === 'ble';
 
         // Only show auto-load message if it was actually re-enabled (changed from OFF to ON)
         if (autoloadMsg) {
           autoloadMsg.style.display = autoloadWasReEnabled ? 'block' : 'none';
         }
 
-        // Show the instructions for reconnecting
-        if (instructionsMsg) {
-          instructionsMsg.style.display = 'block';
+        // BLE uploads load in-place — no reconnect needed
+        if (isBLE) {
+          if (instructionsMsg) instructionsMsg.style.display = 'none';
+          if (refreshMsg) refreshMsg.style.display = 'none';
+          if (connectBtn) connectBtn.style.display = 'none';
+          if (uploadedMsg) uploadedMsg.textContent = 'Profile uploaded and active on the device! No reconnect needed.';
+          // Relabel Cancel → Done for BLE since there's nothing to cancel
+          if (cancelBtn) cancelBtn.textContent = 'Done';
+        } else {
+          // Serial: show reconnect instructions
+          if (instructionsMsg) instructionsMsg.style.display = 'block';
+          if (refreshMsg) refreshMsg.style.display = '';
+          if (connectBtn) connectBtn.style.display = '';
+          if (uploadedMsg) uploadedMsg.textContent = 'The profile has been uploaded to the device.';
+          if (cancelBtn) cancelBtn.textContent = 'Cancel';
         }
+
+        // Store transport for the close handler
+        overlay.dataset.transport = isBLE ? 'ble' : 'serial';
 
         // Show the modal
         overlay.classList.add('open');
@@ -13744,28 +13776,86 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!sendLine) { alert('BLE connection not available.'); return; }
 
         try {
-          if (typeof log === 'function') log('Uploading profile via BLE...', 'update');
+          if (typeof log === 'function') log('📤 Uploading profile via BLE...', 'update');
 
           // 1. Begin write session
           await sendLine('writeprofile ' + fn, { silentEcho: true });
-          await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 150));
 
-          // 2. Send profile lines with inter-line delay to avoid BLE congestion
-          const lines = profileText.split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            await sendLine('WP:' + lines[i], { silentEcho: true });
-            // Small delay every 5 lines to let BLE write queue drain
-            if (i % 5 === 4) await new Promise(r => setTimeout(r, 50));
+          // 2. Send profile lines with per-line delay to prevent BLE buffer overwrite.
+          //    Each line must be fully written to the GATT characteristic and read by the
+          //    ESP32 IRQ handler before the next write arrives.
+          // Filter out empty trailing lines from split (trailing '\n' produces empty element)
+          const lines = profileText.split('\n').filter((l, i, arr) => i < arr.length - 1 || l.length > 0);
+          const totalLines = lines.length;
+          if (typeof log === 'function') log(`Sending ${totalLines} lines...`, 'update');
+
+          for (let i = 0; i < totalLines; i++) {
+            const fullLine = lines[i];
+            // BLE writeValue limit is ~509 bytes (512 MTU - 3 ATT header).
+            // Lines that exceed this (e.g. PROGRAM_STEPS JSON) must be split
+            // into a first chunk (WP:) + continuation chunks (WPC:) that the
+            // ESP32 reassembles by appending WPC: data to the previous line.
+            const MAX_CHUNK = 480; // conservative limit within 509 byte MTU
+            if (('WP:' + fullLine).length > MAX_CHUNK) {
+              // Send first chunk
+              const firstLen = MAX_CHUNK - 3; // subtract 'WP:' prefix
+              await sendLine('WP:' + fullLine.slice(0, firstLen), { silentEcho: true });
+              await new Promise(r => setTimeout(r, 50));
+              // Send continuation chunks
+              let offset = firstLen;
+              while (offset < fullLine.length) {
+                const chunkLen = MAX_CHUNK - 4; // subtract 'WPC:' prefix
+                await sendLine('WPC:' + fullLine.slice(offset, offset + chunkLen), { silentEcho: true });
+                await new Promise(r => setTimeout(r, 50));
+                offset += chunkLen;
+              }
+            } else {
+              await sendLine('WP:' + fullLine, { silentEcho: true });
+            }
+            // 50ms delay per line ensures ESP32 IRQ has time to read the GATT buffer
+            // before the next write overwrites it. Increased from 30ms for reliability.
+            await new Promise(r => setTimeout(r, 50));
+            // Log progress every 10 lines
+            if (i > 0 && i % 10 === 0) {
+              if (typeof log === 'function') log(`  Sent ${i}/${totalLines} lines...`, 'update');
+            }
           }
+          if (typeof log === 'function') log(`  Sent ${totalLines}/${totalLines} lines.`, 'update');
 
-          // 3. Commit — device writes file and loads profile in-place
-          await new Promise(r => setTimeout(r, 100));
+          // 3. Set up WRITE_OK listener BEFORE sending commit
+          const writeOkPromise = new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              window.__writeOkResolver = null;
+              reject(new Error('Timed out waiting for device confirmation (WRITE_OK). The upload may have failed.'));
+            }, 10000);
+
+            window.__writeOkResolver = (responseText) => {
+              clearTimeout(timeoutId);
+              window.__writeOkResolver = null;
+              resolve(responseText);
+            };
+          });
+
+          // 4. Commit — device writes file and loads profile in-place
+          await new Promise(r => setTimeout(r, 150));
           await sendLine('writeprofile commit', { silentEcho: true });
 
-          // 4. Wait for WRITE_OK confirmation via processIncoming
-          //    The device sends "[SERIAL CMD] WRITE_OK <filename>" which appears in the log.
-          //    We use a simple timeout-based check since processIncoming handles all incoming data.
-          await new Promise(r => setTimeout(r, 2000));
+          // 5. Wait for WRITE_OK confirmation from device
+          if (typeof log === 'function') log('Waiting for device confirmation...', 'update');
+          const writeOkResponse = await writeOkPromise;
+
+          // 6. Verify line count if provided (format: "WRITE_OK filename.txt 48")
+          const lineCountMatch = writeOkResponse.match(/WRITE_OK\s+\S+\s+(\d+)/);
+          if (lineCountMatch) {
+            const deviceLineCount = parseInt(lineCountMatch[1], 10);
+            if (deviceLineCount !== totalLines) {
+              console.warn(`[BLE Upload] Line count mismatch: sent ${totalLines}, device wrote ${deviceLineCount}`);
+              if (typeof log === 'function') log(`⚠️ Warning: sent ${totalLines} lines but device wrote ${deviceLineCount}`, 'error');
+            } else {
+              console.log(`[BLE Upload] Line count verified: ${deviceLineCount} lines`);
+            }
+          }
 
           if (typeof log === 'function') log('✓ Profile uploaded via BLE: ' + fn, 'update');
 
@@ -13779,25 +13869,39 @@ https://github.com/odeepllama/SolarSim/tree/main
             clearDiffHighlights();
           }
 
-          // BLE uploads load the profile in-place (no reboot), so no reconnect needed.
-          // Just log success and request a status refresh to update the UI with new settings.
+          // Show success confirmation dialog
           if (typeof log === 'function') log('✓ Profile uploaded and applied: ' + fn, 'success');
+          // Only show popup for Serial uploads (which require reconnect).
+          // BLE uploads apply in-place — the log window shows all confirmation.
 
-          // Request status so the form/timeline updates with the newly loaded profile
-          const statusSendLine = window.__sendLine;
-          if (statusSendLine) {
-            window.__loadingFromDevice = true;
-            window.__deviceConfig = {};
-            try {
-              await statusSendLine('status', { silentEcho: true });
-            } catch (_) { }
+          // For Serial uploads, request status so the form/timeline updates.
+          // For BLE uploads, SKIP this — the ~35-line status dump overwhelms the
+          // BLE stack and causes a disconnect.  The profile is already confirmed
+          // loaded (WRITE_OK + validated + applied + restarted) and the normal
+          // periodic status polling will update the tiles shortly.
+          const monitorTransport = window.__solarSimMonitorState && window.__solarSimMonitorState.transport;
+          if (monitorTransport !== 'ble') {
+            await new Promise(r => setTimeout(r, 2000));
+            const statusSendLine = window.__sendLine;
+            if (statusSendLine) {
+              window.__loadingFromDevice = true;
+              window.__deviceConfig = {};
+              try {
+                await statusSendLine('status', { silentEcho: true });
+              } catch (_) { }
+            }
           }
 
         } catch (err) {
           console.error('[BLE Upload]', err);
+          // Clean up resolver if still pending
+          window.__writeOkResolver = null;
           // Attempt to abort on error
           try { await sendLine('writeprofile abort', { silentEcho: true }); } catch (_) { }
-          alert('BLE upload failed: ' + err.message);
+          // Show user-visible error
+          const errorMsg = err.message || String(err);
+          if (typeof log === 'function') log('❌ BLE upload failed: ' + errorMsg, 'error');
+          alert('❌ BLE upload failed:\n\n' + errorMsg + '\n\nPlease try again. Make sure the device is nearby and the BLE connection is stable.');
         }
       }
 
@@ -15661,6 +15765,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             const line = cleanedLine.trim(); if (!line) continue;
             // Process all lines as plain text
             state.stats.textLines++; handlePlainTextLine(cleanedLine);
+            // WRITE_OK hook: resolve pending BLE upload confirmation
+            if (window.__writeOkResolver && /WRITE_OK/.test(line)) {
+              try { window.__writeOkResolver(line); } catch (_) { }
+            }
             // Detect first successful status population (sim + speed OR sunColor etc.)
             if (!state.__statusPrimed) {
               if (/sim\s*time/i.test(line) || /sun\s*color\s*mode/i.test(line) || /intensity\s*scale/i.test(line)) {
