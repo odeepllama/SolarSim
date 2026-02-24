@@ -45,7 +45,7 @@ STATUS_CHAR_UUID       = ubluetooth.UUID('6E400004-B5A3-F393-E0A9-E50E24DCCA9E')
 # ======================================================
 # MTU Configuration
 # ======================================================
-TARGET_MTU = 512          # Negotiated MTU target
+TARGET_MTU = 256          # Negotiated MTU target (256 reduces NimBLE buffer pressure)
 ATT_HEADER_SIZE = 3       # ATT notification header
 DEFAULT_PAYLOAD = 20      # Conservative fallback payload
 CHUNK_DELAY_MS = 20       # Delay between chunked notifications
@@ -144,7 +144,7 @@ class BLEComms:
 
         # Set large write buffer for command characteristic
         # (profiles can be sent as large multi-line strings)
-        self._ble.gatts_set_buffer(self._cmd_handle, 2048)
+        self._ble.gatts_set_buffer(self._cmd_handle, 512)
 
 
     def _irq_handler(self, event, data):
