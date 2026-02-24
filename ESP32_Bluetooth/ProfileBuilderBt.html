@@ -13908,7 +13908,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Helper function to perform disconnect and refresh
       // Used by both the Disconnect & Refresh button and the upload success modal
       // Disconnect serial connection without refreshing the page
-      function performDisconnect() {
+      async function performDisconnect() {
         try {
           const state = window.__solarSimMonitorState;
           // Mark as user-initiated for connection logging
@@ -13936,13 +13936,11 @@ https://github.com/odeepllama/SolarSim/tree/main
               state.writer = null;
             }
 
-            // Cancel reader but don't await it
+            // Cancel reader and wait for lock release before closing port
             if (state.reader) {
               try {
-                state.reader.cancel().catch(() => { });
-                setTimeout(() => {
-                  try { state.reader.releaseLock(); } catch (_) { }
-                }, 50);
+                await state.reader.cancel();
+                try { state.reader.releaseLock(); } catch (_) { }
               } catch (_) { }
               state.reader = null;
             }
@@ -13961,8 +13959,14 @@ https://github.com/odeepllama/SolarSim/tree/main
             state.bleRxChar = null; state.bleTxChar = null;
             state.transport = null;
 
-            // Abandon port reference - this will stop the "Running on Device" animation
+            // Properly close the serial port so it can be reopened later
+            // (Without this, Chrome keeps the port claimed and subsequent
+            //  open() calls fail with NotAllowedError / PORT_IN_USE)
+            const portToClose = state.port;
             state.port = null;
+            if (portToClose) {
+              try { await portToClose.close(); } catch (_) { }
+            }
           }
 
           // Update UI to show disconnected state (moved outside state check for reliability)
@@ -14003,19 +14007,21 @@ https://github.com/odeepllama/SolarSim/tree/main
               state.writer = null;
             }
 
-            // Cancel reader but don't await it
+            // Cancel reader
             if (state.reader) {
               try {
                 state.reader.cancel().catch(() => { });
-                setTimeout(() => {
-                  try { state.reader.releaseLock(); } catch (_) { }
-                }, 50);
+                try { state.reader.releaseLock(); } catch (_) { }
               } catch (_) { }
               state.reader = null;
             }
 
-            // Abandon port reference
+            // Close the port properly before page reload
+            const portToClose = state.port;
             state.port = null;
+            if (portToClose) {
+              try { portToClose.close().catch(() => { }); } catch (_) { }
+            }
 
             // Update UI
             try { setConnected(false); } catch (_) { }
@@ -15520,13 +15526,21 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!navigator.serial) { log('Web Serial unsupported in this browser', 'error'); throw new Error('No navigator.serial'); }
           badge('CONNECTING', 'amber');
           try {
-            state.port = await navigator.serial.requestPort({
-              filters: [
-                { usbVendorId: 0x303A },  // Espressif (ESP32-S3 "Board in FS mode")
-                { usbVendorId: 0x2E8A },  // Raspberry Pi (RP2040)
-                { usbVendorId: 0x1A86 },  // WCH (CH340 "USB Single Serial")
-              ]
+            // Try to reuse a previously-granted port (avoids re-prompting
+            // after disconnect → reconnect within the same page session)
+            const granted = await navigator.serial.getPorts();
+            const filters = [
+              { usbVendorId: 0x303A },  // Espressif (ESP32-S3 "Board in FS mode")
+              { usbVendorId: 0x2E8A },  // Raspberry Pi (RP2040)
+              { usbVendorId: 0x1A86 },  // WCH (CH340 "USB Single Serial")
+            ];
+            const matching = granted.find(p => {
+              try {
+                const info = p.getInfo();
+                return filters.some(f => info.usbVendorId === f.usbVendorId);
+              } catch (_) { return false; }
             });
+            state.port = matching || await navigator.serial.requestPort({ filters });
             await state.port.open({ baudRate: 115200 });
             state.connStartTs = performance.now();
             setConnected(true); startReader(); log('Port opened');
