@@ -125,6 +125,13 @@ PROFILE_VALIDATORS = {
     "CUSTOM_SUN_R": _validate_color,
     "CUSTOM_SUN_G": _validate_color,
     "CUSTOM_SUN_B": _validate_color,
+    "CAMERA_LIGHTING_PANELS": _validate_string,
+    "CAMERA_LIGHT_R": _validate_color,
+    "CAMERA_LIGHT_G": _validate_color,
+    "CAMERA_LIGHT_B": _validate_color,
+    "ROTATION_LIGHT_R": _validate_color,
+    "ROTATION_LIGHT_G": _validate_color,
+    "ROTATION_LIGHT_B": _validate_color,
 }
 
 # Legacy fields to silently ignore during loading

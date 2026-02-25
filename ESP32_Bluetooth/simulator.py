@@ -370,6 +370,13 @@ class SolarSimulator:
             "CUSTOM_SUN_R": CUSTOM_SUN_R,
             "CUSTOM_SUN_G": CUSTOM_SUN_G,
             "CUSTOM_SUN_B": CUSTOM_SUN_B,
+            "CAMERA_LIGHTING_PANELS": CAMERA_LIGHTING_PANELS,
+            "CAMERA_LIGHT_R": CAMERA_LIGHT_R,
+            "CAMERA_LIGHT_G": CAMERA_LIGHT_G,
+            "CAMERA_LIGHT_B": CAMERA_LIGHT_B,
+            "ROTATION_LIGHT_R": ROTATION_LIGHT_R,
+            "ROTATION_LIGHT_G": ROTATION_LIGHT_G,
+            "ROTATION_LIGHT_B": ROTATION_LIGHT_B,
             "PROGRAM_ENABLED": self.program.program_enabled,
             "PROGRAM_REPEATS": self.program.program_repeats,
             "PROGRAM_STEPS": self.program.program_steps,
@@ -971,6 +978,8 @@ class SolarSimulator:
         global SERVO3_INTERVAL_DAY_SEC, SERVO3_INTERVAL_NIGHT_SEC
         global RESTART_AFTER_LOAD, ROTATION_CAMERA_SERVO, ROTATION_AT_NIGHT
         global CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+        global CAMERA_LIGHTING_PANELS, CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B
+        global ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B
 
         validated = self.program.load_profile(name)
         if validated is None:
