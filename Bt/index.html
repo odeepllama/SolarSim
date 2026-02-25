@@ -1528,17 +1528,21 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .compare-timeline-bar {
-      height: 28px;
       position: relative;
       border-radius: 4px;
-      overflow: hidden;
       background: #f0f0f0;
+      display: flex;
     }
 
     .compare-timeline-bar .timeline-strip {
-      height: 100% !important;
+      height: 28px !important;
       min-height: 0 !important;
-      border-radius: 4px;
+      border-radius: 4px 4px 0 0;
+    }
+
+    .compare-timeline-bar .timeline-color-strip {
+      height: 8px;
+      border-radius: 0 0 4px 4px;
     }
 
     .compare-timeline-bar .tl-seg-label-bg {
@@ -4497,6 +4501,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             <th>Time (sim, hhmm)</th>
             <th>Speed</th>
             <th>Intensity</th>
+            <th>Sun Color</th>
             <th>Dual Sun</th>
             <th>Transition</th>
             <th>Hold (mins)</th>
@@ -6639,6 +6644,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 sim_time_hhmm: step.sim_time_hhmm || 0,
                 speed: step.speed !== undefined ? step.speed : 1,
                 intensity_scale: step.intensity_scale,
+                sun_color_rgb: step.sun_color_rgb,
                 dual_sun: step.dual_sun,
                 transition: step.transition,
                 hold_minutes: step.hold_minutes,
@@ -6802,6 +6808,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               sim_time_hhmm: step.sim_time_hhmm || 0,
               speed: step.speed !== undefined ? step.speed : 1,
               intensity_scale: step.intensity_scale,
+              sun_color_rgb: step.sun_color_rgb,
               dual_sun: step.dual_sun,
               transition: step.transition,
               hold_minutes: step.hold_minutes,
@@ -6930,6 +6937,25 @@ https://github.com/odeepllama/SolarSim/tree/main
           const inputBg = spd < 0 ? 'background-color:#ff6b6b;' : '';
           tr.appendChild(mkCell(`<input data-f='speed' type='number' step='0.1' value='${step.speed ?? ''}' style='width:60px;${inputBg}'/>`, speedBg, '700'));
           tr.appendChild(mkCell(`<input data-f='intensity_scale' type='number' step='0.1' min='0' value='${step.intensity_scale ?? ''}' style='width:70px'/>`));
+          // Sun color cell - color picker + R/G/B fields (inline layout)
+          const rgb = step.sun_color_rgb;
+          const hasColor = Array.isArray(rgb) && rgb.length === 3;
+          const rVal = hasColor ? rgb[0] : '';
+          const gVal = hasColor ? rgb[1] : '';
+          const bVal = hasColor ? rgb[2] : '';
+          const hexColor = hasColor ? `#${rgb[0].toString(16).padStart(2, '0')}${rgb[1].toString(16).padStart(2, '0')}${rgb[2].toString(16).padStart(2, '0')}` : '#4488ff';
+          const cellBg = hasColor ? `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` : '';
+          const colorCell = mkCell(
+            `<div style='display:flex;align-items:center;gap:1px;white-space:nowrap;'>`
+            + `<input data-f='sun_color_picker' type='color' value='${hexColor}' style='width:60px;height:22px;padding:0;border:1px solid #aaa;cursor:pointer;flex-shrink:0;${hasColor ? '' : 'opacity:0.3;'}' title='Pick sun color'/>`
+            + `<input data-f='sun_r' type='number' min='0' max='255' value='${rVal}' style='width:38px;font-size:1.05em;padding:1px' placeholder='R'/>`
+            + `<input data-f='sun_g' type='number' min='0' max='255' value='${gVal}' style='width:38px;font-size:1.05em;padding:1px' placeholder='G'/>`
+            + `<input data-f='sun_b' type='number' min='0' max='255' value='${bVal}' style='width:38px;font-size:1.05em;padding:1px' placeholder='B'/>`
+            + `</div>`);
+          if (hasColor) {
+            colorCell.style.background = `linear-gradient(rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45), rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45)), #fff`;
+          }
+          tr.appendChild(colorCell);
           // Dual sun cell - highlight if checked
           const dualBg = step.dual_sun ? '#90be6d' : '';
           tr.appendChild(mkCell(`<input data-f='dual_sun' type='checkbox' ${step.dual_sun ? 'checked' : ''} style='text-align:center; display:block; margin:0 auto;'/>`, dualBg, step.dual_sun ? '700' : ''));
@@ -7310,6 +7336,65 @@ https://github.com/odeepllama/SolarSim/tree/main
           const td = e.target.closest('td'); if (!td) return;
           const tr = e.target.closest('tr'); const row = Array.from(tr.parentNode.children).indexOf(tr);
           const field = e.target.getAttribute('data-f'); if (!field) return;
+          // Sun color picker → update R/G/B fields and step data
+          if (field === 'sun_color_picker') {
+            const hex = e.target.value;
+            const r = parseInt(hex.substr(1, 2), 16);
+            const g = parseInt(hex.substr(3, 2), 16);
+            const b = parseInt(hex.substr(5, 2), 16);
+            programSteps[row].sun_color_rgb = [r, g, b];
+            // Update sibling R/G/B inputs
+            const cell = e.target.closest('td');
+            if (cell) {
+              const rIn = cell.querySelector('input[data-f="sun_r"]');
+              const gIn = cell.querySelector('input[data-f="sun_g"]');
+              const bIn = cell.querySelector('input[data-f="sun_b"]');
+              if (rIn) rIn.value = r;
+              if (gIn) gIn.value = g;
+              if (bIn) bIn.value = b;
+              cell.style.background = `linear-gradient(rgba(${r},${g},${b},0.45), rgba(${r},${g},${b},0.45)), #fff`;
+              e.target.style.opacity = '1';
+            }
+            updatePreview(false);
+            if (typeof renderTimelineStrip === 'function') {
+              try { renderTimelineStrip(); } catch (e) { }
+            }
+            return;
+          }
+          // Sun R/G/B fields → update picker and step data
+          if (field === 'sun_r' || field === 'sun_g' || field === 'sun_b') {
+            const cell = e.target.closest('td');
+            if (!cell) return;
+            const rIn = cell.querySelector('input[data-f="sun_r"]');
+            const gIn = cell.querySelector('input[data-f="sun_g"]');
+            const bIn = cell.querySelector('input[data-f="sun_b"]');
+            const rV = rIn ? rIn.value : '';
+            const gV = gIn ? gIn.value : '';
+            const bV = bIn ? bIn.value : '';
+            // If all empty, revert to default (no explicit color)
+            if (rV === '' && gV === '' && bV === '') {
+              programSteps[row].sun_color_rgb = undefined;
+              cell.style.background = '';
+              const picker = cell.querySelector('input[data-f="sun_color_picker"]');
+              if (picker) picker.style.opacity = '0.3';
+            } else {
+              const r = Math.min(255, Math.max(0, parseInt(rV) || 0));
+              const g = Math.min(255, Math.max(0, parseInt(gV) || 0));
+              const b = Math.min(255, Math.max(0, parseInt(bV) || 0));
+              programSteps[row].sun_color_rgb = [r, g, b];
+              cell.style.background = `linear-gradient(rgba(${r},${g},${b},0.45), rgba(${r},${g},${b},0.45)), #fff`;
+              const picker = cell.querySelector('input[data-f="sun_color_picker"]');
+              if (picker) {
+                picker.value = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                picker.style.opacity = '1';
+              }
+            }
+            updatePreview(false);
+            if (typeof renderTimelineStrip === 'function') {
+              try { renderTimelineStrip(); } catch (e) { }
+            }
+            return;
+          }
           if (field === 'dual_sun') {
             programSteps[row][field] = e.target.checked;
             // Update dual_sun cell color dynamically
@@ -7580,7 +7665,16 @@ https://github.com/odeepllama/SolarSim/tree/main
             simTime = 600;
           }
 
-          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN' });
+          // Inherit sun color from last step if it has one
+          let inheritedColor = undefined;
+          if (programSteps.length > 0) {
+            const lastStep = programSteps[programSteps.length - 1];
+            if (Array.isArray(lastStep.sun_color_rgb) && lastStep.sun_color_rgb.length === 3) {
+              inheritedColor = [...lastStep.sun_color_rgb];
+            }
+          }
+
+          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', sun_color_rgb: inheritedColor });
         });
 
         // Single-day visualization checkbox
@@ -8321,6 +8415,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (s.repeat != null) { const n = parseInt(s.repeat, 10); if (!isNaN(n)) o.repeat = n; }
             // transition: string 'RUN' or 'JUMP'
             if (s.transition) { o.transition = String(s.transition).toUpperCase(); }
+            // sun_color_rgb: array [R, G, B] with 0-255 values
+            if (s.sun_color_rgb != null && Array.isArray(s.sun_color_rgb) && s.sun_color_rgb.length === 3) {
+              o.sun_color_rgb = s.sun_color_rgb.map(v => Math.min(255, Math.max(0, parseInt(v) || 0)));
+            }
             return o;
           });
           // Firmware loads PROGRAM_STEPS via JSON, so keep JSON array syntax
@@ -9048,19 +9146,28 @@ https://github.com/odeepllama/SolarSim/tree/main
         const currentRow = document.createElement('div');
         currentRow.className = 'compare-timeline-row';
         const currentLabel = document.createElement('div');
-        currentLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
-        currentLabel.textContent = 'Current Form' + (stepsDiffer ? ' ⬤' : '');
+        currentLabel.className = 'compare-timeline-label';
+        currentLabel.textContent = 'Current Form';
         currentRow.appendChild(currentLabel);
 
         if (currentSteps.length > 0 && currentDayInfo.steps.length > 0) {
           const barWrap = document.createElement('div');
           barWrap.className = 'compare-timeline-bar';
+          const barCol = document.createElement('div');
+          barCol.style.cssText = 'display:flex;flex-direction:column;flex:1;min-width:0;';
           const bar = document.createElement('div');
           bar.className = 'timeline-strip readonly';
-          barWrap.appendChild(bar);
+          barCol.appendChild(bar);
+          barWrap.appendChild(barCol);
           currentRow.appendChild(barWrap);
           container.appendChild(currentRow);
           renderDayTimeline(bar, currentDayInfo, globalWindow, true);
+          // Color strip
+          const hasColor = currentDayInfo.steps.some(s => Array.isArray(s.step.sun_color_rgb) && s.step.sun_color_rgb.length === 3);
+          if (hasColor) {
+            const strip = buildColorStrip(currentDayInfo.steps, globalWindow.start, globalWindow.end);
+            barCol.appendChild(strip);
+          }
         } else {
           const noSteps = document.createElement('div');
           noSteps.className = 'compare-no-steps';
@@ -9074,18 +9181,27 @@ https://github.com/odeepllama/SolarSim/tree/main
         profileRow.className = 'compare-timeline-row';
         const profileLabel = document.createElement('div');
         profileLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
-        profileLabel.textContent = (profileName || 'Profile') + (stepsDiffer ? ' ⬤' : '');
+        profileLabel.textContent = (profileName || 'Profile');
         profileRow.appendChild(profileLabel);
 
         if (profileSteps.length > 0 && profileDayInfo.steps.length > 0) {
           const barWrap = document.createElement('div');
           barWrap.className = 'compare-timeline-bar';
+          const barCol = document.createElement('div');
+          barCol.style.cssText = 'display:flex;flex-direction:column;flex:1;min-width:0;';
           const bar = document.createElement('div');
           bar.className = 'timeline-strip readonly';
-          barWrap.appendChild(bar);
+          barCol.appendChild(bar);
+          barWrap.appendChild(barCol);
           profileRow.appendChild(barWrap);
           container.appendChild(profileRow);
           renderDayTimeline(bar, profileDayInfo, globalWindow, true);
+          // Color strip
+          const hasColor = profileDayInfo.steps.some(s => Array.isArray(s.step.sun_color_rgb) && s.step.sun_color_rgb.length === 3);
+          if (hasColor) {
+            const strip = buildColorStrip(profileDayInfo.steps, globalWindow.start, globalWindow.end);
+            barCol.appendChild(strip);
+          }
         } else {
           const noSteps = document.createElement('div');
           noSteps.className = 'compare-no-steps';
@@ -9263,9 +9379,12 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-day-actions button.danger:hover{ background:#b71c1c !important; }
   .timeline-day-actions svg{ display:block; }
   /* Increased visualization font sizes ~1.5x */
-  .timeline-strip{ position:relative; background:#f4f5f7; border:1px solid #ccc; height:54px; border-radius:4px; overflow:visible; font-family:ui-monospace,monospace; font-size:1.2rem; flex:1; }
+  .timeline-strip{ position:relative; background:#f4f5f7; border:1px solid #ccc; height:54px; border-radius:4px; overflow:visible; font-family:ui-monospace,monospace; font-size:1.2rem; flex:1 0 auto; }
     .timeline-strip.empty{ display:none; }
     .timeline-strip.readonly *{ cursor: default !important; } /* No interactive cursors for read-only device status */
+  /* Sun color strip below timeline */
+  .timeline-color-strip{ position:relative; height:16px; border-radius:0 0 4px 4px; overflow:hidden; margin-top:0; }
+  .color-strip-seg{ position:absolute; top:0; height:100%; box-sizing:border-box; border-right:1px solid rgba(0,0,0,0.12); }
   /* 1x speed background layer (lowest z-index) */
   .tl-bg-1x{ position:absolute; top:0; bottom:0; background:#4DA6FF; z-index:10; }
   /* Segments sit above background but beneath axis labels */
@@ -9934,11 +10053,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           label.innerHTML = `Day&nbsp;<span class="day-num">${dayInfo.dayNumber}</span>`;
           wrapper.appendChild(label);
 
+          // Column container for timeline bar + color strip
+          const barColumn = document.createElement('div');
+          barColumn.style.cssText = 'display:flex;flex-direction:column;flex:1;min-width:0;';
+
           // Timeline bar for this day
           const bar = document.createElement('div');
           bar.className = readOnly ? 'timeline-strip readonly' : 'timeline-strip';
           bar.setAttribute('data-day', dayInfo.dayNumber);
-          wrapper.appendChild(bar);
+          barColumn.appendChild(bar);
+          wrapper.appendChild(barColumn);
 
           // Day action buttons (Duplicate and Delete)
           const actions = document.createElement('div');
@@ -9960,7 +10084,92 @@ https://github.com/odeepllama/SolarSim/tree/main
           // isStartingDay is true for the day with the highest dayNumber (the program's entry point)
           const isStartingDay = (dayInfo.dayNumber === highestDayNumber);
           renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed);
+
+          // Sun color strip for this day
+          const daySteps = dayInfo.steps;
+          const hasAnyDayColor = daySteps.some(s => Array.isArray(s.step.sun_color_rgb) && s.step.sun_color_rgb.length === 3);
+          if (hasAnyDayColor) {
+            const colorStrip = document.createElement('div');
+            colorStrip.className = 'timeline-color-strip';
+            const wStart = globalWindow.start;
+            const wEnd = globalWindow.end;
+            const wSpan = wEnd - wStart;
+            // Head segment: window start to first step (gray default)
+            if (daySteps.length > 0 && daySteps[0].m != null && daySteps[0].m > wStart) {
+              const headSeg = document.createElement('div');
+              headSeg.className = 'color-strip-seg';
+              headSeg.style.left = '0%';
+              headSeg.style.width = (((daySteps[0].m - wStart) / wSpan) * 100) + '%';
+              headSeg.style.background = '#ddd';
+              headSeg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
+              headSeg.title = 'default color';
+              colorStrip.appendChild(headSeg);
+            }
+            for (let si = 0; si < daySteps.length; si++) {
+              const cur = daySteps[si];
+              const next = daySteps[si + 1];
+              const endMin = next ? next.m : wEnd;
+              if (cur.m == null || endMin <= cur.m) continue;
+              const leftPct = ((cur.m - wStart) / wSpan) * 100;
+              const widthPct = ((endMin - cur.m) / wSpan) * 100;
+              const seg = document.createElement('div');
+              seg.className = 'color-strip-seg';
+              seg.style.left = leftPct + '%';
+              seg.style.width = widthPct + '%';
+              const rgb = cur.step.sun_color_rgb;
+              if (Array.isArray(rgb) && rgb.length === 3) {
+                seg.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+                seg.title = `Step ${cur.index + 1}: RGB(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+              } else {
+                seg.style.background = '#ddd';
+                seg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
+                seg.title = `Step ${cur.index + 1}: default color`;
+              }
+              colorStrip.appendChild(seg);
+            }
+            barColumn.appendChild(colorStrip);
+          }
         });
+      }
+
+      // Build a sun color strip element from step data (used by compare timelines)
+      // steps: array of {step, m, index} objects; wStart/wEnd: window bounds in minutes
+      function buildColorStrip(steps, wStart, wEnd) {
+        const colorStrip = document.createElement('div');
+        colorStrip.className = 'timeline-color-strip';
+        const wSpan = wEnd - wStart;
+        if (wSpan <= 0) return colorStrip;
+        // Head segment
+        if (steps.length > 0 && steps[0].m != null && steps[0].m > wStart) {
+          const h = document.createElement('div');
+          h.className = 'color-strip-seg';
+          h.style.left = '0%';
+          h.style.width = (((steps[0].m - wStart) / wSpan) * 100) + '%';
+          h.style.background = '#ddd';
+          h.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
+          colorStrip.appendChild(h);
+        }
+        for (let i = 0; i < steps.length; i++) {
+          const cur = steps[i];
+          const next = steps[i + 1];
+          const endMin = next ? next.m : wEnd;
+          if (cur.m == null || endMin <= cur.m) continue;
+          const seg = document.createElement('div');
+          seg.className = 'color-strip-seg';
+          seg.style.left = (((cur.m - wStart) / wSpan) * 100) + '%';
+          seg.style.width = (((endMin - cur.m) / wSpan) * 100) + '%';
+          const rgb = cur.step.sun_color_rgb;
+          if (Array.isArray(rgb) && rgb.length === 3) {
+            seg.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+            seg.title = `Step ${cur.index + 1}: RGB(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+          } else {
+            seg.style.background = '#ddd';
+            seg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
+            seg.title = `Step ${cur.index + 1}: default color`;
+          }
+          colorStrip.appendChild(seg);
+        }
+        return colorStrip;
       }
 
       // Render single day timeline (original behavior)
@@ -9971,9 +10180,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         const wrapper = document.createElement('div');
         wrapper.className = 'timeline-day-wrapper';
 
+        // Column container for timeline bar + color strip (so they stack vertically)
+        const barColumn = document.createElement('div');
+        barColumn.style.cssText = 'display:flex;flex-direction:column;flex:1;min-width:0;';
+
         const bar = document.createElement('div');
         bar.className = readOnly ? 'timeline-strip readonly' : 'timeline-strip';
-        wrapper.appendChild(bar);
+        barColumn.appendChild(bar);
+        wrapper.appendChild(barColumn);
 
         // Use existing rendering logic for single day
         const dayInfo = {
@@ -10003,6 +10217,60 @@ https://github.com/odeepllama/SolarSim/tree/main
         container.appendChild(wrapper);
 
         renderDayTimeline(bar, dayInfo, null, readOnly);
+
+        // Sun color strip below the speed timeline
+        const hasAnyColor = programSteps.some(s => Array.isArray(s.sun_color_rgb) && s.sun_color_rgb.length === 3);
+        if (hasAnyColor) {
+          const colorStrip = document.createElement('div');
+          colorStrip.className = 'timeline-color-strip';
+          // Build segments matching the speed timeline's window
+          const stepsWithTime = programSteps.map((step, index) => ({
+            step, m: parseHHMM(step.sim_time_hhmm), index
+          })).filter(s => s.m != null);
+          if (stepsWithTime.length > 0) {
+            // Calculate window bounds (same logic as renderDayTimeline)
+            let wStart = Math.min(6 * 60, Math.min(...stepsWithTime.map(s => s.m)));
+            let wEnd = Math.max(18 * 60, Math.max(...stepsWithTime.map(s => s.m)));
+            wStart = Math.floor(wStart / 60) * 60;
+            wEnd = Math.ceil(wEnd / 60) * 60;
+            if (wEnd === wStart) wEnd = wStart + 60;
+            const wSpan = wEnd - wStart;
+            // Head segment: window start to first step (gray default)
+            if (stepsWithTime.length > 0 && stepsWithTime[0].m > wStart) {
+              const headSeg = document.createElement('div');
+              headSeg.className = 'color-strip-seg';
+              headSeg.style.left = '0%';
+              headSeg.style.width = (((stepsWithTime[0].m - wStart) / wSpan) * 100) + '%';
+              headSeg.style.background = '#ddd';
+              headSeg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
+              headSeg.title = 'default color';
+              colorStrip.appendChild(headSeg);
+            }
+            for (let i = 0; i < stepsWithTime.length; i++) {
+              const cur = stepsWithTime[i];
+              const next = stepsWithTime[i + 1];
+              const endMin = next ? next.m : wEnd;
+              if (endMin <= cur.m) continue;
+              const leftPct = ((cur.m - wStart) / wSpan) * 100;
+              const widthPct = ((endMin - cur.m) / wSpan) * 100;
+              const seg = document.createElement('div');
+              seg.className = 'color-strip-seg';
+              seg.style.left = leftPct + '%';
+              seg.style.width = widthPct + '%';
+              const rgb = cur.step.sun_color_rgb;
+              if (Array.isArray(rgb) && rgb.length === 3) {
+                seg.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+                seg.title = `Step ${cur.index + 1}: RGB(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+              } else {
+                seg.style.background = '#ddd';
+                seg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
+                seg.title = `Step ${cur.index + 1}: default color`;
+              }
+              colorStrip.appendChild(seg);
+            }
+          }
+          barColumn.appendChild(colorStrip);
+        }
       }
 
       // Render timeline for a single day bar
@@ -10317,8 +10585,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Show all hour labels (both major and minor)
           // (Tick lines removed via CSS; still create element for consistent structure if desired)
           const line = document.createElement('div'); line.className = 'tl-hour ' + (major ? 'major' : 'minor'); line.style.left = posPct + '%'; axis.appendChild(line);
-          // Skip odd-hour labels on mobile to reduce visual clutter
-          if (shouldHideOddHours && !major) continue;
+          // Skip odd-hour labels on mobile or in compare (readOnly) view to reduce visual clutter
+          if ((shouldHideOddHours || readOnly) && !major) continue;
           // For phone-sized screens, only show specific hours
           const isPhoneHour = phoneHours.includes(h);
           if (shouldRestrictToPhoneHours && !isPhoneHour) continue;
@@ -15756,6 +16024,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reSunColorCustomStatus = /sun\s*color[^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
         const reSunColorCustomCmd = />?\s*set\s+suncolor\s+custom\s+(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})/i;
         const reSunColorCustomSerial = /\[serial\s*cmd\][^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
+        const reSunColorProgram = /\[PROGRAM\]\s*Sun\s*color\s*set\s*to\s*RGB\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/i;
         const reCameraLightRGB = /camera\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
         const reRotationLightRGB = /rotation\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
         const reImagesPerRotation = /images\s*per\s*rotation\s*[:=]\s*(\d+)/i;
@@ -16116,7 +16385,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             updated = true;
           }
           // Capture CUSTOM RGB values when present and reflect in tile
-          const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus);
+          const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus) || line.match(reSunColorProgram);
           if (mCust) {
             try {
               let r = parseInt(mCust[1], 10), g = parseInt(mCust[2], 10), b = parseInt(mCust[3], 10);
@@ -16863,14 +17132,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         function sendStatusSilent() {
           if (window.__uploadInProgress) return; // don't interfere with active upload
           if (!state.port && state.transport !== 'ble') return;
-          if (state._bleStatusPending) return; // debounce concurrent calls
-          if (state.transport === 'ble') state._bleStatusPending = true;
           state.__silentStatusUntil = performance.now() + 1500; // suppress typical status lines
-          // Heartbeat visual removed
-          sendLine('status', { silentEcho: true }).finally(() => {
-            // Reset debounce flag after write completes (or fails)
-            setTimeout(() => { state._bleStatusPending = false; }, 500);
-          });
+          sendLine('status', { silentEcho: true });
           // Request an immediate arc refresh in case day/night boundary just changed
           try { const ns = window.__solarSimMonitorState; if (ns && ns.__sunArc && ns.__sunArc.refresh) { ns.__sunArc.refresh(); ns.__sunArc.updateVisibility && ns.__sunArc.updateVisibility(); } } catch (_) { }
         }
@@ -16960,10 +17223,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           function applyUI() { /* no-op: UI removed */ }
           // === Adaptive Status Polling Interval ===
           // Polling interval (ms) based on number of program steps
-          const STATUS_POLL_MIN_INTERVAL_MS = 1000;
-          const STATUS_POLL_MAX_INTERVAL_MS = 4000;
+          const STATUS_POLL_MIN_INTERVAL_MS = 2000;
+          const STATUS_POLL_MAX_INTERVAL_MS = 8000;
           const STATUS_POLL_THRESHOLDS = [20, 30, 40];
-          const STATUS_POLL_INTERVALS = [1000, 2000, 3000, 4000];
+          const STATUS_POLL_INTERVALS = [2000, 4000, 6000, 8000];
 
           function getStatusPollInterval(stepCount) {
             if (typeof stepCount !== 'number' || isNaN(stepCount)) return STATUS_POLL_MIN_INTERVAL_MS;
@@ -17608,7 +17871,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           document.addEventListener('touchstart', outsideTouchHandler, { passive: true });
         }
         function canSend() { return true; /* popover only opens when connected */ }
-        async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
+        async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
         // Touch device detection — prompt() for custom input on touch, inline inputs on desktop
         const _isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         function hhmmRow() { const row = document.createElement('div'); row.className = 'row'; const lab = document.createElement('label'); lab.textContent = 'HHMM:'; row.appendChild(lab); const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = '0730'; inp.maxLength = 4; inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9]/g, '').slice(0, 4); }); row.appendChild(inp); return { row, input: inp, get: () => inp.value }; }
@@ -20162,6 +20425,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (finalTop < margin) finalTop = margin;
             tooltip.style.left = finalLeft + 'px';
             tooltip.style.top = finalTop + 'px';
+
             tooltip.classList.add('positioned');
             return;
           }
