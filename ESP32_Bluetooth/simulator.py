@@ -1408,6 +1408,12 @@ class SolarSimulator:
                     self.start_real_time_ms = result['start_real_time_ms']
                 if 'frozen_sim_time_minutes' in result:
                     self.frozen_sim_time_minutes = result['frozen_sim_time_minutes']
+                if 'sun_color_rgb' in result:
+                    rgb = result['sun_color_rgb']
+                    CUSTOM_SUN_R = rgb[0]
+                    CUSTOM_SUN_G = rgb[1]
+                    CUSTOM_SUN_B = rgb[2]
+                    SUN_COLOR_MODE = "CUSTOM"
 
             # Periodic display update (every 1 second)
             if ticks_diff(now_ms, last_update_ms) >= update_interval_ms:

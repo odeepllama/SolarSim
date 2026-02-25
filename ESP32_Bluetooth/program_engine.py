@@ -207,7 +207,7 @@ class ProgramEngine:
     def get_step_settings(self, step=None):
         """Extract settings from a program step.
 
-        Returns dict with keys: speed, intensity_scale, dual_sun.
+        Returns dict with keys: speed, intensity_scale, dual_sun, sun_color_rgb.
         """
         if step is None:
             step = self.get_current_step_dict()
@@ -217,6 +217,7 @@ class ProgramEngine:
             "speed": step.get("speed", 1),
             "intensity_scale": step.get("intensity_scale", None),
             "dual_sun": step.get("dual_sun", None),
+            "sun_color_rgb": step.get("sun_color_rgb", None),
         }
 
     # ==========================================================
@@ -349,6 +350,8 @@ class ProgramEngine:
                 result['intensity_scale'] = settings['intensity_scale']
             if settings.get("dual_sun") is not None:
                 result['dual_sun'] = settings['dual_sun']
+            if settings.get("sun_color_rgb") is not None:
+                result['sun_color_rgb'] = settings['sun_color_rgb']
 
             if new_speed != time_scale:
                 result['time_scale'] = new_speed
