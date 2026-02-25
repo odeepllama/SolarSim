@@ -265,11 +265,20 @@ CAMERA_SHUTTER_PIN_NUM = 14 # corresponds to pin 6 on the Micro:bit breakout boa
 camera_shutter_pin = machine.Pin(CAMERA_SHUTTER_PIN_NUM, machine.Pin.OUT)
 camera_shutter_pin.high()
 
-# 5x5 display buffer (5 rows, 5 columns)
+# 5x5 display buffers (5 rows, 5 columns)
+# Front buffer: read by POV refresh (never written directly during display)
+# Back buffer: written by all update functions, then swapped to front atomically
 matrix_buffer = [[0] * 5 for _ in range(5)]
+matrix_buffer_back = [[0] * 5 for _ in range(5)]
+
+def swap_matrix_buffers():
+    """Copy back buffer to front buffer atomically to prevent mid-scan glitches."""
+    for r in range(5):
+        for c in range(5):
+            matrix_buffer[r][c] = matrix_buffer_back[r][c]
 
 # POV display parameters
-POV_COL_DELAY_US = 3000  # 3000 microseconds (short = dimmer, but less flicker)
+POV_COL_DELAY_US = 4000  # 4000 microseconds (increased from 3000 for brighter digits)
 
 # Initialize servos at startup
 # Table rotation servo
@@ -410,22 +419,22 @@ FONT = {
 
 # Helper function to clear the matrix buffer
 def clear_matrix_display_buffer():
-    """Clear the 5x5 LED matrix buffer by setting all elements to 0."""
-    global matrix_buffer
+    """Clear the 5x5 LED matrix back buffer by setting all elements to 0."""
+    global matrix_buffer_back
     for r in range(5):
         for c in range(5):
-            matrix_buffer[r][c] = 0
+            matrix_buffer_back[r][c] = 0
 
 def display_single_char(char_to_display):
-    """Helper function to display a character (3x5) in the center of the 5x5 matrix_buffer."""
-    global matrix_buffer, FONT
+    """Helper function to display a character (3x5) in the center of the 5x5 matrix back buffer."""
+    global matrix_buffer_back, FONT
     # Clear relevant part of buffer or whole buffer.
     # Columns 1, 2, 3 will be used for the 3-wide char. Cols 0 and 4 are blank. (UNTRUE!?!)
     for r_idx in range(5):
-        matrix_buffer[r_idx][0] = 0 # Clear side column
-        matrix_buffer[r_idx][4] = 0 # Clear other side column
+        matrix_buffer_back[r_idx][0] = 0 # Clear side column
+        matrix_buffer_back[r_idx][4] = 0 # Clear other side column
         for c_idx in range(1, 4): # Clear center 3 columns
-            matrix_buffer[r_idx][c_idx] = 0
+            matrix_buffer_back[r_idx][c_idx] = 0
 
     if char_to_display in FONT:
         char_pattern = FONT[char_to_display]
@@ -439,16 +448,16 @@ def display_single_char(char_to_display):
             if matrix_col_idx < 5:
                 for r_idx in range(char_rows):
                     if r_idx < 5:
-                        matrix_buffer[r_idx][matrix_col_idx] = char_pattern[c_idx_char][r_idx]
+                        matrix_buffer_back[r_idx][matrix_col_idx] = char_pattern[c_idx_char][r_idx]
 
 def update_display_character(char_to_display):
-    """Update just the character portion of the display (columns 1-3) without touching column 0 (speed indicator)"""
-    global matrix_buffer, FONT
+    """Update just the character portion of the back buffer (columns 1-3) without touching column 0 (speed indicator)"""
+    global matrix_buffer_back, FONT
     
     # Only clear columns 1-3 (character area), preserve column 0 (speed indicator) and column 4
     for r_idx in range(5):
         for c_idx in range(1, 4):  # Clear center 3 columns only
-            matrix_buffer[r_idx][c_idx] = 0
+            matrix_buffer_back[r_idx][c_idx] = 0
 
     # Draw the new character
     if char_to_display in FONT:
@@ -462,7 +471,7 @@ def update_display_character(char_to_display):
             if matrix_col_idx < 5:
                 for r_idx in range(char_rows):
                     if r_idx < 5:
-                        matrix_buffer[r_idx][matrix_col_idx] = char_pattern[c_idx_char][r_idx]
+                        matrix_buffer_back[r_idx][matrix_col_idx] = char_pattern[c_idx_char][r_idx]
 
 def update_rotation_parameters():
     """Derives rotation settings from speed and images per full rotation"""
@@ -766,19 +775,19 @@ def get_camera_panel_indices():
         return list(range(7))  # Default to all
 
 def update_speed_indicator(speed_scale):
-    """Update column 0 of matrix display to show current simulation speed."""
-    global matrix_buffer
+    """Update column 0 of matrix back buffer to show current simulation speed."""
+    global matrix_buffer_back
 
     # Clear the first column (column 0) EXCEPT the top pixel used for HOLD indicator
     for r in range(1, 5):  # Start from row 1 instead of row 0
-        matrix_buffer[r][0] = 0
+        matrix_buffer_back[r][0] = 0
 
     # HOLD mode (0X) shows no LEDs in speed column (except the topmost slowly blinking LED)
     if speed_scale == 0:
         return
     elif speed_scale == CUSTOM_TIME_SCALE:
         # For custom speed, ONLY show the second pixel from bottom
-        matrix_buffer[3][0] = 1
+        matrix_buffer_back[3][0] = 1
         return
         
     # Standard speeds - determine number of LEDs to light
@@ -794,19 +803,19 @@ def update_speed_indicator(speed_scale):
 
     # Light up the required LEDs
     if num_leds_to_light >= 1:
-        matrix_buffer[4][0] = 1  # Bottom-most LED
+        matrix_buffer_back[4][0] = 1  # Bottom-most LED
     if num_leds_to_light >= 2:
-        matrix_buffer[3][0] = 1
+        matrix_buffer_back[3][0] = 1
     if num_leds_to_light >= 3:
-        matrix_buffer[2][0] = 1
+        matrix_buffer_back[2][0] = 1
     if num_leds_to_light >= 4:
-        matrix_buffer[1][0] = 1
+        matrix_buffer_back[1][0] = 1
 
 def update_mode_indicator(mode):
-    """Update column 4 of matrix display to indicate simulation mode (BASIC, SCIENTIFIC)."""
+    """Update column 4 of matrix back buffer to indicate simulation mode (BASIC, SCIENTIFIC)."""
     # Clear the penultimate column (column 4) EXCEPT the top pixel used for the autoload indicator
     for r in range(1, 5):  # Start from row 1 instead of 0 to preserve autoload indicator
-        matrix_buffer[r][4] = 0
+        matrix_buffer_back[r][4] = 0
 
     # Determine number of LEDs to light based on mode
     if mode == "BASIC":
@@ -816,35 +825,35 @@ def update_mode_indicator(mode):
     else:
         num_leds = 0  # Default/error case
         
-    # Light up the required LEDs in matrix_buffer (column 4)
+    # Light up the required LEDs in matrix_buffer_back (column 4)
     if num_leds >= 1:
-        matrix_buffer[4][4] = 1  # Bottom-most LED
+        matrix_buffer_back[4][4] = 1  # Bottom-most LED
     if num_leds >= 2:
-        matrix_buffer[3][4] = 1  # Second LED from bottom
+        matrix_buffer_back[3][4] = 1  # Second LED from bottom
 
 def update_hold_indicator(now_ms, is_hold_mode):
     """Update the top-left pixel to blink when in HOLD mode."""
-    global matrix_buffer
+    global matrix_buffer_back
     
     if not is_hold_mode:
         # Not in HOLD mode, ensure indicator is off
-        matrix_buffer[0][0] = 0
+        matrix_buffer_back[0][0] = 0
         return
         
     # In HOLD mode, blink the top-left pixel at 1Hz (500ms on, 500ms off)
     blink_cycle = (now_ms // 1000) % 2  # 0 or 1
-    matrix_buffer[0][0] = blink_cycle
+    matrix_buffer_back[0][0] = blink_cycle
 
 def update_autoload_indicator():
     """Update the top-right pixel (column 4, row 0) to indicate AUTO_LOAD_LATEST_PROFILE status.
     Illuminated when AUTO_LOAD_LATEST_PROFILE is False."""
-    global matrix_buffer
+    global matrix_buffer_back
     
     # Top pixel in column 4 (mode indicator column)
     if AUTO_LOAD_LATEST_PROFILE:
-        matrix_buffer[0][4] = 0  # Off when auto-load is enabled
+        matrix_buffer_back[0][4] = 0  # Off when auto-load is enabled
     else:
-        matrix_buffer[0][4] = 1  # On when auto-load is disabled
+        matrix_buffer_back[0][4] = 1  # On when auto-load is disabled
 
 # --- Rotation Cycle State Machine ---
 def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
@@ -2929,7 +2938,7 @@ def run_simulation():
                     # Explicit buffer clearing for PAUSE state
                     for r_idx in range(5):
                         for c_idx in range(1, 4):  # Clear columns 1-3 (character area)
-                            matrix_buffer[r_idx][c_idx] = 0
+                            matrix_buffer_back[r_idx][c_idx] = 0
                   # Pause state - keep column 0 (speed indicator) intact
                 elif display_state == 'PAUSE':
                     display_state = 'HOUR_TENS'
@@ -2946,6 +2955,9 @@ def run_simulation():
             update_mode_indicator(SOLAR_MODE)
             update_hold_indicator(now_ms, TIME_SCALE == 0)
             update_autoload_indicator()  # Show AUTO_LOAD status
+            
+            # Atomically copy back buffer to front buffer (prevents mid-scan glitches)
+            swap_matrix_buffers()
             
             last_update_time_ms = now_ms
         
@@ -3149,9 +3161,8 @@ def run_simulation():
             
         button_b_pressed_last = button_b_state
 
-        # IMPORTANT: Refresh the LED matrix display on every loop iteration
-        # This is critical for POV effect - must be called frequently for stability and brightness
-        refresh_pov_matrix_display()
+        # POV refresh is handled by the 3ms-gated call above (line 2882)
+        # Removed duplicate unconditional refresh here to ensure even scan timing
 # Print memory info at startup
 # Insert helper above startup sequence
 # ===== Auto-Load Latest Profile (tidy placement) =====
