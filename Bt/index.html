@@ -10585,8 +10585,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Show all hour labels (both major and minor)
           // (Tick lines removed via CSS; still create element for consistent structure if desired)
           const line = document.createElement('div'); line.className = 'tl-hour ' + (major ? 'major' : 'minor'); line.style.left = posPct + '%'; axis.appendChild(line);
-          // Skip odd-hour labels on mobile or in compare (readOnly) view to reduce visual clutter
-          if ((shouldHideOddHours || readOnly) && !major) continue;
+          // Skip odd-hour labels on mobile, or in wide (>18h) readOnly views to reduce visual clutter
+          const isWideWindow = WINDOW_SPAN > 18 * 60;
+          if ((shouldHideOddHours || (readOnly && isWideWindow)) && !major) continue;
           // For phone-sized screens, only show specific hours
           const isPhoneHour = phoneHours.includes(h);
           if (shouldRestrictToPhoneHours && !isPhoneHour) continue;
@@ -11697,16 +11698,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
         });
 
-        // Only show up to 12 steps as requested
-        const displaySteps = stepsWithDays.slice(0, 12);
-
         let html = '<table class="print-steps-table">';
         html += '<thead><tr>';
         html += '<th>#</th><th>Day</th><th>Time</th><th>Speed</th><th>Intensity</th>';
-        html += '<th>Dual Sun</th><th>Trans</th><th>Hold</th><th>Repeat</th>';
+        html += '<th>Dual Sun</th><th>Sun Color</th><th>Trans</th><th>Hold</th><th>Repeat</th>';
         html += '</tr></thead><tbody>';
 
-        displaySteps.forEach(step => {
+        stepsWithDays.forEach(step => {
           const timeStr = String(step.sim_time_hhmm).padStart(4, '0');
           const formattedTime = timeStr.slice(0, 2) + ':' + timeStr.slice(2);
           const isJump = ((step.transition || 'RUN').toUpperCase() === 'JUMP');
@@ -11743,6 +11741,17 @@ https://github.com/odeepllama/SolarSim/tree/main
           const dualBg = step.dual_sun ? '#90be6d' : (isEvenDay ? evenDayBg : 'white');
           html += `<td style="background:${dualBg}"><div class="cell-value-box">${step.dual_sun ? 'Yes' : 'No'}</div></td>`;
 
+          // Sun Color cell - show swatch + RGB if defined
+          const sunRgb = step.sun_color_rgb;
+          if (Array.isArray(sunRgb) && sunRgb.length === 3) {
+            const [sr, sg, sb] = sunRgb;
+            const swatchStyle = `width:14px;height:14px;border-radius:3px;border:1px solid #999;background:rgb(${sr},${sg},${sb});flex-shrink:0;`;
+            html += `<td><div style="display:flex;align-items:center;padding:2pt 4pt;"><span style="${swatchStyle}"></span><span style="flex:1;text-align:center;font-weight:700;font-size:8.5pt">${sr},${sg},${sb}</span></div></td>`;
+          } else {
+            const colorBg = isEvenDay ? evenDayBg : 'white';
+            html += `<td style="background:${colorBg}"><div class="cell-value-box">&mdash;</div></td>`;
+          }
+
           // Transition cell - with day background if even day (no custom color)
           const transBg = isEvenDay ? evenDayBg : 'white';
           html += `<td style="background:${transBg}"><div class="cell-value-box">${step.transition || 'RUN'}</div></td>`;
@@ -11762,9 +11771,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         html += '</tbody></table>';
 
-        if (programSteps.length > 12) {
-          html += `<p style="text-align:center; color:#666; font-size:0.9rem; margin-top:8px;">Showing first 12 of ${programSteps.length} steps</p>`;
-        }
+
 
         return html;
       }
@@ -12059,8 +12066,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     @page {
-      size: portrait;
-      margin: 0.5in;
+      size: landscape;
+      margin: 0.4in;
     }
 
     /* Hide browser-generated headers and footers */
