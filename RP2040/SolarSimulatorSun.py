@@ -2320,14 +2320,18 @@ def handle_command(command_str):
                         f.write(f"CUSTOM_SUN_R = {CUSTOM_SUN_R}\n")
                         f.write(f"CUSTOM_SUN_G = {CUSTOM_SUN_G}\n")
                         f.write(f"CUSTOM_SUN_B = {CUSTOM_SUN_B}\n")
-                        # Save program state and related fields only once
-                        if PROGRAM_ENABLED:
-                            import ujson as json  # Use ujson for MicroPython
-                            f.write("PROGRAM_ENABLED = True\n")
-                            f.write(f"PROGRAM_REPEATS = {PROGRAM_REPEATS}\n")
-                            f.write(f"PROGRAM_STEPS = {json.dumps(PROGRAM_STEPS)}\n")
-                        else:
-                            f.write("PROGRAM_ENABLED = False\n")
+                        f.write(f'CAMERA_LIGHTING_PANELS = "{CAMERA_LIGHTING_PANELS}"\n')
+                        f.write(f"CAMERA_LIGHT_R = {CAMERA_LIGHT_R}\n")
+                        f.write(f"CAMERA_LIGHT_G = {CAMERA_LIGHT_G}\n")
+                        f.write(f"CAMERA_LIGHT_B = {CAMERA_LIGHT_B}\n")
+                        f.write(f"ROTATION_LIGHT_R = {ROTATION_LIGHT_R}\n")
+                        f.write(f"ROTATION_LIGHT_G = {ROTATION_LIGHT_G}\n")
+                        f.write(f"ROTATION_LIGHT_B = {ROTATION_LIGHT_B}\n")
+                        # Save program state (always include steps for profile completeness)
+                        import ujson as json
+                        f.write(f"PROGRAM_ENABLED = {PROGRAM_ENABLED}\n")
+                        f.write(f"PROGRAM_REPEATS = {PROGRAM_REPEATS}\n")
+                        f.write(f"PROGRAM_STEPS = {json.dumps(PROGRAM_STEPS)}\n")
                     print(f"[SERIAL CMD] Profile '{filename}' saved successfully.")
                 except Exception as e:
                     print(f"[SERIAL CMD] Error saving profile: {e}")
@@ -2456,8 +2460,14 @@ def handle_command(command_str):
                                 if value_str.lower() not in ('true', 'false'):
                                     raise ValueError("ROTATION_AT_NIGHT must be True or False")
                                 validated_settings[key] = value_str.lower() == 'true'
+                            elif key == "CAMERA_LIGHTING_PANELS":
+                                validated_settings[key] = value_str.strip('"')
+                            elif key in ("CAMERA_LIGHT_R", "CAMERA_LIGHT_G", "CAMERA_LIGHT_B",
+                                         "ROTATION_LIGHT_R", "ROTATION_LIGHT_G", "ROTATION_LIGHT_B"):
+                                validated_settings[key] = clamp(int(value_str))
                             # Legacy fields - ignore if present in old profiles
-                            elif key in ("IMAGE_AT_NIGHT", "SERVO2_STANDALONE_ENABLED", "SERVO3_STANDALONE_ENABLED", "SERVO2_INTERVAL_SEC", "SERVO3_INTERVAL_SEC"):
+                            elif key in ("IMAGE_AT_NIGHT", "SERVO2_STANDALONE_ENABLED", "SERVO3_STANDALONE_ENABLED",
+                                         "SERVO2_INTERVAL_SEC", "SERVO3_INTERVAL_SEC", "DEGREES_PER_IMAGE", "NOTE"):
                                 pass  # Silently skip obsolete fields
                 except Exception as e:
                     print(f"[SERIAL CMD] Load cancelled. Error in '{filename}': {e}")
