@@ -1966,9 +1966,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     /* Active (ON) tile highlight */
     .mon-kv.kv-active {
-      background: #0d5f2d !important;
-      border-color: #158a42 !important;
-      box-shadow: 0 0 0 1px #19c150, 0 0 0 3px rgba(25, 193, 80, 0.35), 0 2px 6px -1px rgba(0, 0, 0, 0.55);
+      background: #28853e !important;
+      border-color: #3cc85a !important;
+      box-shadow: 0 0 0 1px #3cc85a, 0 0 0 3px rgba(60, 200, 90, 0.35), 0 2px 6px -1px rgba(0, 0, 0, 0.55);
     }
 
     .mon-kv.kv-active b {
@@ -18255,6 +18255,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         let isExpanded = localStorage.getItem('deviceProgramStatusExpanded') === 'true';
 
         // Initialize state — always expanded (non-collapsible)
+        let _lastDisplayHtml = '';
         function updateDisplay() {
           // Get navigation controls
           const navControls = window.__generateNavControlsHtml();
@@ -18262,14 +18263,25 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           contentEl.style.display = 'block';
           const dpsTitle = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang].deviceProgramStatus) || 'Device Program Status';
-          titleEl.innerHTML = `<span style="display:inline-flex; align-items:center; width:100%;">
-        <span style="flex:0 0 auto;">${dpsTitle}</span>
+          const newHtml = `<span style="display:inline-flex; align-items:center; width:100%;">
+        <span class="dps-title-text" style="flex:0 0 auto;">${dpsTitle}</span>
         ${navHtml}
       </span>`;
+          // Only update DOM when content actually changes to prevent button flicker
+          if (newHtml !== _lastDisplayHtml) {
+            titleEl.innerHTML = newHtml;
+            _lastDisplayHtml = newHtml;
+          }
         }
 
-        // Expose title updater for language switching
-        window.__updateDeviceProgramStatusTitle = updateDisplay;
+        // Lightweight title-only updater for language switching (avoids rebuilding nav buttons)
+        window.__updateDeviceProgramStatusTitle = function () {
+          const titleSpan = titleEl.querySelector('.dps-title-text');
+          if (titleSpan) {
+            const dpsTitle = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang].deviceProgramStatus) || 'Device Program Status';
+            titleSpan.textContent = dpsTitle;
+          }
+        };
 
         // Stub — fieldset always visible, but kept for external callers
         function updateFieldsetVisibility() { }
