@@ -9146,8 +9146,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const currentRow = document.createElement('div');
         currentRow.className = 'compare-timeline-row';
         const currentLabel = document.createElement('div');
-        currentLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
-        currentLabel.textContent = 'Current Form' + (stepsDiffer ? ' ⬤' : '');
+        currentLabel.className = 'compare-timeline-label';
+        currentLabel.textContent = 'Current Form';
         currentRow.appendChild(currentLabel);
 
         if (currentSteps.length > 0 && currentDayInfo.steps.length > 0) {
@@ -9181,7 +9181,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         profileRow.className = 'compare-timeline-row';
         const profileLabel = document.createElement('div');
         profileLabel.className = 'compare-timeline-label' + (stepsDiffer ? ' differs' : '');
-        profileLabel.textContent = (profileName || 'Profile') + (stepsDiffer ? ' ⬤' : '');
+        profileLabel.textContent = (profileName || 'Profile');
         profileRow.appendChild(profileLabel);
 
         if (profileSteps.length > 0 && profileDayInfo.steps.length > 0) {
@@ -10585,8 +10585,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Show all hour labels (both major and minor)
           // (Tick lines removed via CSS; still create element for consistent structure if desired)
           const line = document.createElement('div'); line.className = 'tl-hour ' + (major ? 'major' : 'minor'); line.style.left = posPct + '%'; axis.appendChild(line);
-          // Skip odd-hour labels on mobile to reduce visual clutter
-          if (shouldHideOddHours && !major) continue;
+          // Skip odd-hour labels on mobile or in compare (readOnly) view to reduce visual clutter
+          if ((shouldHideOddHours || readOnly) && !major) continue;
           // For phone-sized screens, only show specific hours
           const isPhoneHour = phoneHours.includes(h);
           if (shouldRestrictToPhoneHours && !isPhoneHour) continue;
@@ -16024,6 +16024,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reSunColorCustomStatus = /sun\s*color[^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
         const reSunColorCustomCmd = />?\s*set\s+suncolor\s+custom\s+(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})/i;
         const reSunColorCustomSerial = /\[serial\s*cmd\][^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
+        const reSunColorProgram = /\[PROGRAM\]\s*Sun\s*color\s*set\s*to\s*RGB\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/i;
         const reCameraLightRGB = /camera\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
         const reRotationLightRGB = /rotation\s*light\s*rgb\s*[:=]\s*\(?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?/i;
         const reImagesPerRotation = /images\s*per\s*rotation\s*[:=]\s*(\d+)/i;
@@ -16384,7 +16385,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             updated = true;
           }
           // Capture CUSTOM RGB values when present and reflect in tile
-          const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus);
+          const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus) || line.match(reSunColorProgram);
           if (mCust) {
             try {
               let r = parseInt(mCust[1], 10), g = parseInt(mCust[2], 10), b = parseInt(mCust[3], 10);
@@ -17222,10 +17223,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           function applyUI() { /* no-op: UI removed */ }
           // === Adaptive Status Polling Interval ===
           // Polling interval (ms) based on number of program steps
-          const STATUS_POLL_MIN_INTERVAL_MS = 1000;
-          const STATUS_POLL_MAX_INTERVAL_MS = 4000;
+          const STATUS_POLL_MIN_INTERVAL_MS = 2000;
+          const STATUS_POLL_MAX_INTERVAL_MS = 8000;
           const STATUS_POLL_THRESHOLDS = [20, 30, 40];
-          const STATUS_POLL_INTERVALS = [1000, 2000, 3000, 4000];
+          const STATUS_POLL_INTERVALS = [2000, 4000, 6000, 8000];
 
           function getStatusPollInterval(stepCount) {
             if (typeof stepCount !== 'number' || isNaN(stepCount)) return STATUS_POLL_MIN_INTERVAL_MS;
