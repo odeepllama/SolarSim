@@ -3672,7 +3672,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 </ul>
                 <p>The USB connection supports full status monitoring, command console, status tiles, solar arc,
                   and profile upload. The status badge shows "Connected" when active. If connection fails, try
-                  unplugging/replugging the USB cable.</p>
+                  unplugging/replugging the USB cable or pressing the RESET button on the device.</p>
               </div>
             </li>
           </ul>
@@ -3853,6 +3853,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><code>speed</code>: Time scale (negative = reverse, 0 = hold). Leave empty to keep current speed.</li>
               <li><code>intensity_scale</code>: Light multiplier (0.0–1.0) for this step. Leave empty to use global
                 setting.</li>
+              <li><code>sun_color</code>: Per-step sun color override (R,G,B). Use the color picker or enter RGB values
+                directly. Leave empty to use the global sun color setting.</li>
               <li><code>dual_sun</code>: Enable mirrored sun for this segment</li>
               <li><code>hold_minutes</code>: Real-time pause duration (only applies if speed=0)</li>
               <li><code>repeat</code>: Repeat this step N additional times before moving to the next</li>
@@ -3900,7 +3902,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <ol style="padding-left:18px;">
             <li>Configure core settings and enable Program if using steps</li>
             <li>Add/edit steps; review timeline and validation</li>
-            <li>Upload to Device (via Cable or Bluetooth) or Download to save locally</li>
+            <li>Upload to Device or Download to save locally</li>
             <li>Optionally Save as Default for quick restore</li>
           </ol>
 
@@ -4097,25 +4099,16 @@ https://github.com/odeepllama/SolarSim/tree/main
               </div>
             </li>
             <li><strong>すべてのコマンドを表示</strong>: 利用可能なすべてのコマンドの完全なリストをログウィンドウに表示します（詳細モードで表示）。</li>
-            <li><strong>デバイス接続</strong>: USBケーブルまたはBluetooth（ESP32のみ）で接続。<button class="help-expand-btn"
+            <li><strong>デバイス接続</strong>: USBケーブルで接続。<button class="help-expand-btn"
                 onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
               <div class="help-detail" style="display:none;">
-                <p>2つの接続方法があります：</p>
+                <p><strong>🔌 USB接続</strong>ボタンでデバイスに接続します：</p>
                 <ul>
-                  <li><strong>接続（ケーブル）</strong>: USB経由のWeb Serial
+                  <li><strong>🔌 USB接続</strong>: USB経由のWeb Serial
                     APIを使用します。RP2040とESP32-S3の両方のデバイスで動作します。デスクトップのChrome、Edge、Operaが必要です。</li>
-                  <li><strong>接続 BT（Bluetooth）</strong>: Web
-                    Bluetoothによるワイヤレス接続。ESP32-S3ハードウェアでのみ利用可能です。デスクトップChromeおよびAndroidタブレット・スマートフォンで動作します。
-                    <strong>iPad/iPhone：</strong>無料の<a
-                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055"
-                      target="_blank">Bluefyブラウザ</a>が必要です（iOS版のSafariやChromeはWeb Bluetooth非対応）。
-                  </li>
                 </ul>
                 <p>
-                  どちらの接続方法でも、ステータス監視、コマンドコンソール、ステータスタイル、太陽アーク、プロファイルアップロードのすべての機能を利用できます。ステータスバッジはアクティブ時に「接続済み」と表示されます。接続に失敗した場合は、ケーブルの抜き差し（ケーブル）またはデバイスの電源の入れ直し（Bluetooth）をお試しください。
-                </p>
-                <p><strong>BluetoothからUSBへの切替（ESP32）：</strong>
-                  以前Bluetooth（iPadなど）で接続し、その後ノートPCからUSBで接続したい場合は、まずESP32デバイスの<strong>RESET</strong>ボタンを押してください。Bluetooth切断後もBLE無線が有効なままのため、ブラウザがUSBシリアルポートを開けないことがあります。
+                  USB接続では、ステータス監視、コマンドコンソール、ステータスタイル、太陽アーク、プロファイルアップロードのすべての機能を利用できます。ステータスバッジはアクティブ時に「接続済み」と表示されます。接続に失敗した場合は、ケーブルの抜き差しまたはデバイスのRESETボタンを押してお試しください。
                 </p>
               </div>
             </li>
@@ -4143,9 +4136,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                 onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
               <div class="help-detail" style="display:none;">
                 <p>デバイスに新しいタイムスタンプ付きプロファイルファイルを作成し、即座に実行します。起動時の自動読み込み対象の「最新」プロファイルになります。</p>
-                <p><strong>接続方式の選択：</strong>アップロードをクリックすると、<strong>BT</strong>（Bluetooth）と<strong>ケーブル</strong>（USB
-                  Serial）のどちらかを選択するダイアログが表示されます。Bluetoothアップロードは
-                  ESP32-S3ハードウェアでのみ利用可能です。ケーブルアップロードはRP2040とESP32-S3の両方で動作します。すでに接続中の場合は、アクティブな接続が自動的に使用されます。</p>
+                <p>
+                  <strong>アップロード方法：</strong>アップロードをクリックすると、デバイスは自動的にUSB経由で接続され（未接続の場合）、プロファイルが直接送信されます。すでに接続中の場合は、アクティブな接続が自動的に使用されます。
+                </p>
               </div>
             </li>
             <li><strong>印刷用サマリー</strong>: 印刷用のPDFスタイルサマリーを生成します。<button class="help-expand-btn"
@@ -4257,6 +4250,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><code>transition</code>: <strong>RUN</strong>（時間を進める）または<strong>JUMP</strong>（瞬間移動、所要時間なし）</li>
               <li><code>speed</code>: タイムスケール（負の値=逆再生、0=ホールド）。空欄で現在の速度を維持</li>
               <li><code>intensity_scale</code>: このステップの光量倍率（0.0～1.0）。空欄でグローバル設定を使用</li>
+              <li><code>sun_color</code>: ステップごとの太陽色オーバーライド（R,G,B）。カラーピッカーまたはRGB値で指定。空欄でグローバル太陽色設定を使用</li>
               <li><code>dual_sun</code>: ミラーリングされた太陽を有効化</li>
               <li><code>hold_minutes</code>: 実時間の一時停止時間（speed=0の場合のみ適用）</li>
               <li><code>repeat</code>: 次に進む前にこのステップをN回繰り返す</li>
@@ -4287,7 +4281,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <ol style="padding-left:18px;">
             <li>コア設定を構成し、ステップを使用する場合はプログラムを有効にします</li>
             <li>ステップを追加/編集します。タイムラインと検証を確認します</li>
-            <li>デバイスにアップロード（ケーブルまたはBluetooth経由）またはダウンロードしてローカルに保存します</li>
+            <li>デバイスにアップロードまたはダウンロードしてローカルに保存します</li>
             <li>オプションでデフォルトとして保存し、すばやく復元します</li>
           </ol>
 
@@ -4663,7 +4657,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <code>.uf2</code> file onto the device in bootloader mode.
               </li>
               <li><strong>ESP32-S3</strong>: Flash the MicroPython firmware using <code>esptool</code>, then upload the
-                Solar Simulator Python files. The ESP32-S3 also supports wireless Bluetooth (BLE) connections.</li>
+                Solar Simulator Python files.</li>
             </ul>
 
             <h4>RP2040:bit Firmware Installation</h4>
@@ -4795,6 +4789,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li><strong>Transition</strong>: <code>RUN</code> (simulate time passing) or <code>JUMP</code> (skip
                     instantly).</li>
                   <li><strong>Speed/Intensity</strong>: The conditions during this step.</li>
+                  <li><strong>Sun Color</strong>: Optional per-step color override (R,G,B). Use the color picker or
+                    leave blank to use the global sun color.</li>
                 </ul>
               </li>
               <li>Use the <strong>Timeline Visualization</strong> to verify your sequence looks correct.</li>
@@ -4890,11 +4886,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                     the device.</td>
                 </tr>
                 <tr>
-                  <td><strong>Device not connecting (Bluetooth)</strong></td>
-                  <td>Ensure the ESP32-S3 is powered on and not connected to another device. Try power-cycling the
-                    device. BLE is only available on ESP32-S3 hardware, not RP2040.</td>
-                </tr>
-                <tr>
                   <td><strong>Settings didn't change</strong></td>
                   <td>Did you click <strong>Upload</strong>? Changing the form only updates the web view, not the
                     hardware.</td>
@@ -4909,15 +4900,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <td><strong>Orange highlights everywhere</strong></td>
                   <td>This is normal! It means the settings in your web form are different to those on the device. Click
                     <strong>Sync to Device</strong> (in the banner) or <strong>Upload</strong> to make them match.
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Switching from Bluetooth to USB (ESP32)</strong></td>
-                  <td>If you previously connected via Bluetooth (e.g., initial setup from an iPad or phone) and now
-                    want to connect via USB from a laptop for long-term monitoring, press the
-                    <strong>RESET</strong> button on the ESP32 device before clicking <strong>🔌 Connect USB</strong>.
-                    The BLE radio stays active after a Bluetooth disconnect, which can prevent the browser from
-                    opening the USB serial port. A reset cleanly restarts the device and allows USB connection.
                   </td>
                 </tr>
               </tbody>
@@ -4937,7 +4919,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li><strong>RP2040:bit</strong>（Raspberry Pi
                     Picoベース）：ブートローダーモードで.uf2ファイルをドラッグ＆ドロップしてファームウェアをインストールします。</li>
                   <li>
-                    <strong>ESP32-S3</strong>：<code>esptool</code>を使用してMicroPythonファームウェアをフラッシュし、ソーラーシミュレーターのPythonファイルをアップロードします。ESP32-S3はワイヤレスBluetooth（BLE）接続にも対応しています。
+                    <strong>ESP32-S3</strong>：<code>esptool</code>を使用してMicroPythonファームウェアをフラッシュし、ソーラーシミュレーターのPythonファイルをアップロードします。
                   </li>
                 </ul>
                 <strong>RP2040:bit ファームウェアのインストール：</strong><br>
@@ -4979,18 +4961,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li>デバイス（多くの場合「Board in FS node」等）を選択し、「接続」をクリックします。</li>
                   <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
                   <li>すぐに接続できない場合は、基板のRESETボタンを押して再度お試しください。</li>
-                </ol>
-                <strong>方法B：Bluetooth（ESP32-S3のみ）</strong><br>
-                <ol>
-                  <li>ESP32-S3デバイスの電源が入っていることを確認します（USBまたは外部電源）。PCへのケーブル接続は不要です。</li>
-                  <li>画面上部の「Monitor / Interact」バーの青色の「📶 BT接続」ボタンをクリックします。</li>
-                  <li>近くのBluetoothデバイスを表示するブラウザダイアログが表示されます。<strong>SolarSim-BT</strong>を選択します。</li>
-                  <li>ステータスバッジが緑色になり「CONNECTED」と表示されます。</li>
-                  <li>BluetoothはAndroidタブレットやスマートフォンのChromeでも動作します。
-                    <strong>iPad/iPhoneの場合：</strong>App Storeから無料の<a
-                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055"
-                      target="_blank">Bluefyブラウザ</a>をダウンロードしてください（iOS版Safari・ChromeはWeb Bluetooth非対応）。
-                  </li>
                 </ol>
               </li>
             </ol>
@@ -5049,6 +5019,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                       <li>Time：このステップの時刻（例：1200）</li>
                       <li>Transition：RUN（時間進行）またはJUMP（即時遷移）</li>
                       <li>Speed/Intensity：このステップ中の条件</li>
+                      <li>Sun Color：ステップごとの太陽色オーバーライド（R,G,B）。カラーピッカーで選択するか、空欄でグローバル太陽色設定を使用</li>
                     </ul>
                   </li>
                   <li>Timeline Visualizationでシーケンスを確認できます。</li>
@@ -5124,12 +5095,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <td>他のタブやプログラム（ThonnyやVS Code等）がUSBポートを使用していないか確認し、デバイスを抜き差ししてください。</td>
                 </tr>
                 <tr>
-                  <td>デバイスが接続できない（Bluetooth）</td>
-                  <td>
-                    ESP32-S3の電源が入っていること、他のデバイスに接続されていないことを確認してください。デバイスの電源を入れ直してみてください。BLEはESP32-S3ハードウェアでのみ利用可能で、RP2040では使用できません。
-                  </td>
-                </tr>
-                <tr>
                   <td>設定が反映されない</td>
                   <td>「アップロード」ボタンをクリックしましたか？フォームの変更だけではハードウェアに反映されません。</td>
                 </tr>
@@ -5141,11 +5106,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <tr>
                   <td>オレンジ色のハイライトが消えない</td>
                   <td>これは正常です！フォームとデバイスの設定が異なる場合に表示されます。「デバイスと同期」または「アップロード」で一致させてください。</td>
-                </tr>
-                <tr>
-                  <td>BluetoothからUSBへの切替（ESP32）</td>
-                  <td>以前Bluetooth（iPadやスマートフォンなど）で接続した後、ノートPCからUSBで接続したい場合は、ESP32デバイスの<strong>RESET</strong>ボタンを押してから「🔌
-                    USB接続」をクリックしてください。Bluetooth切断後もBLE無線が有効なままのため、リセットが必要です。</td>
                 </tr>
               </tbody>
             </table>
@@ -5289,7 +5249,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProgramTimeline: 'Program Step Timeline Visualization',
           guideProgramTimelineDesc: 'The timeline visualizes your program steps. You can drag segments to adjust timing when preparing a program, and use navigation buttons to jump between steps and days when that program is running.',
           guideProgramSteps: 'Program Step Editing',
-          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, and transition behaviors (RUN, JUMP, or HOLD).',
+          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, sun colors, and transition behaviors (RUN, JUMP, or HOLD).',
           guideProfileTextWindow: 'Profile Text Window',
           guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here before uploading to the device.',
           guideRecentProfiles: 'Recent Profiles',
@@ -5404,7 +5364,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProgramTimeline: 'プログラムステップタイムライン視覚化',
           guideProgramTimelineDesc: 'タイムラインはプログラムステップを視覚化します。プログラムを準備する際はセグメントをドラッグしてタイミングを調整でき、プログラムが実行中の場合はナビゲーションボタンでステップや日を移動できます。',
           guideProgramSteps: 'プログラムステップ編集',
-          guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、遷移動作（RUN、JUMP、またはHOLD）を持つことができ、移動ボタンやドラッグで順序を変更できます。',
+          guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、太陽色、遷移動作（RUN、JUMP、またはHOLD）を持つことができ、移動ボタンやドラッグで順序を変更できます。',
           guideProfileTextWindow: 'プロファイルテキストウィンドウ',
           guideProfileTextWindowDesc: '生のプロファイルテキストを表示・編集します。上級ユーザーはここでパラメータを直接編集し、フォームに反映してからデバイスにアップロードできます。',
           guideRecentProfiles: '最近のプロファイル',
@@ -16782,7 +16742,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           } else {
             span.textContent = newText; // initial or unchanged
           }
-          // Sun Color tile background/foreground: when CUSTOM, match the solar arc color (intensity-adjusted) and choose black/white text for contrast.
+          // Sun Color tile background/foreground: when CUSTOM, show the actual RGB color on the tile.
           // Also refresh this whenever the intensity tile changes.
           if (k === 'sunColor' || k === 'intensity') {
             try {
@@ -16790,27 +16750,24 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (sunBox) {
                 const sSpan = sunBox.querySelector('span'); const t = (sSpan && sSpan.textContent) ? sSpan.textContent : '';
                 const isCustom = /\bCUSTOM\b/i.test(t);
-                if (isCustom && typeof window.currentIntensity === 'function' && typeof window.sunColor === 'function') {
-                  const inten = window.currentIntensity();
-                  let colStr = window.sunColor('CUSTOM', inten) || '';
-                  // Parse rgb(R,G,B)
-                  let r = null, g = null, b = null; const m = colStr.match(/rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/i);
-                  if (m) { r = parseInt(m[1], 10); g = parseInt(m[2], 10); b = parseInt(m[3], 10); }
-                  // Fallback: parse numbers in the tile text (CUSTOM (r,g,b)) if needed
+                if (isCustom) {
+                  // 1) Prefer stashed RGB from serial/status parsing
+                  let r = null, g = null, b = null;
+                  try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB) && st.__sunCustomRGB.length === 3) { r = st.__sunCustomRGB[0]; g = st.__sunCustomRGB[1]; b = st.__sunCustomRGB[2]; } } catch (_) { }
+                  // 2) Fallback: parse numbers in the tile text (CUSTOM (r,g,b))
                   if (r == null || isNaN(r)) {
-                    const mt = t.match(/(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/); if (mt) { r = parseInt(mt[1], 10); g = parseInt(mt[2], 10); b = parseInt(mt[3], 10); colStr = `rgb(${r}, ${g}, ${b})`; }
+                    const mt = t.match(/(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/); if (mt) { r = parseInt(mt[1], 10); g = parseInt(mt[2], 10); b = parseInt(mt[3], 10); }
                   }
                   if (r != null && g != null && b != null) {
-                    // Apply background same as arc color
+                    // Apply actual sun color as tile background
                     sunBox.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
                     // Slightly darker border for definition
                     const dark = (n) => Math.max(0, Math.floor(n * 0.75));
                     sunBox.style.borderColor = `rgb(${dark(r)}, ${dark(g)}, ${dark(b)})`;
-                    // Choose white or black text for contrast using YIQ
+                    // Choose white or black text for contrast using YIQ luminance
                     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
                     const txtColor = yiq >= 160 ? '#000' : '#fff';
                     sunBox.style.color = txtColor;
-                    // Ensure span inherits
                     if (sSpan) sSpan.style.color = '';
                   } else {
                     // Failed to resolve color; fall back to CSS classes
@@ -16820,7 +16777,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                     if (sSpan) sSpan.style.color = '';
                   }
                 } else {
-                  // Non-custom or helpers not available: revert to class-based styling
+                  // Non-custom mode: revert to class-based styling
                   sunBox.style.backgroundColor = '';
                   sunBox.style.borderColor = '';
                   sunBox.style.color = '';
@@ -20133,9 +20090,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Inject demo program so guide steps show meaningful content
           programSteps.length = 0;
           programSteps.push(
-            { sim_time_hhmm: '06:00', speed: 1, transition: 'RUN' },
-            { sim_time_hhmm: '07:00', speed: 2, transition: 'RUN' },
-            { sim_time_hhmm: '09:00', speed: 3, transition: 'RUN' }
+            { sim_time_hhmm: '06:00', speed: 1, transition: 'RUN', sun_r: 255, sun_g: 140, sun_b: 0 },
+            { sim_time_hhmm: '07:00', speed: 2, transition: 'RUN', sun_r: 100, sun_g: 160, sun_b: 255 },
+            { sim_time_hhmm: '09:00', speed: 3, transition: 'RUN', sun_r: 30, sun_g: 80, sun_b: 255 }
           );
           state.PROGRAM_ENABLED = true;
           const programCheckbox = document.getElementById('PROGRAM_ENABLED');
