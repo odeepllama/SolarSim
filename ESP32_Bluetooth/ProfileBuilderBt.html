@@ -5269,6 +5269,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideHelpPanel: 'Help Panel',
           guideHelpPanelDesc: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
           guideUploadToDevice: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
+          // --- Section title translations ---
+          sectionTimeDate: 'Time & Date',
+          sectionSolarMode: 'Solar Mode & Sun Color',
+          sectionImagingIllum: 'Imaging Illumination',
+          sectionImagingServo: 'Imaging Servo Operation & Timing',
+          sectionRotation: 'Rotation & Imaging',
+          sectionProgramControl: 'Program Control',
+          toggleView: '(Toggle view)',
         },
         ja: {
           appTitle: 'SolaSim Studio 20260221',
@@ -5418,6 +5426,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           autoloadReenabled: 'デバイスの自動ロードが再有効化されました。',
           connectToDeviceNow: '今すぐデバイスに接続',
           errorBanner: '', // Will be set dynamically
+          // --- Section title translations ---
+          sectionTimeDate: '時刻と日付',
+          sectionSolarMode: 'ソーラーモードと太陽色',
+          sectionImagingIllum: '撮像照明',
+          sectionImagingServo: '撮像サーボ動作とタイミング',
+          sectionRotation: '回転と撮像',
+          sectionProgramControl: 'プログラム制御',
+          toggleView: '(表示切替)',
         }
       };
 
@@ -5585,6 +5601,25 @@ https://github.com/odeepllama/SolarSim/tree/main
             el.placeholder = TRANSLATIONS[lang][key];
           }
         });
+
+        // --- Re-render fieldset section legends with translated titles ---
+        document.querySelectorAll('legend[data-i18n-section]').forEach(leg => {
+          const i18nKey = leg.getAttribute('data-i18n-section');
+          const groupName = leg.getAttribute('data-group-name');
+          if (leg.getAttribute('data-collapsible') === 'true') {
+            // Determine current expanded state from the sibling grid
+            const grid = leg.nextElementSibling;
+            const expanded = grid && grid.style.display !== 'none';
+            leg.innerHTML = getCollapsibleLegendHTML(i18nKey, groupName, expanded);
+          } else {
+            leg.textContent = getSectionTitle(i18nKey, groupName);
+          }
+        });
+
+        // Update Device Program Status title if visible
+        if (typeof window.__updateDeviceProgramStatusTitle === 'function') {
+          window.__updateDeviceProgramStatusTitle();
+        }
       }
 
       document.addEventListener('DOMContentLoaded', function () {
@@ -5643,11 +5678,11 @@ https://github.com/odeepllama/SolarSim/tree/main
       ];
 
       const FIELD_GROUPS = [
-        { name: 'Time & Date', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'] },
-        { name: 'Solar Mode & Sun Color', keys: ['SOLAR_MODE', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'] },
-        { name: 'Imaging Illumination', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
-        { name: 'Imaging Servo Operation & Timing', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'] },
-        { name: 'Rotation & Imaging', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
+        { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'] },
+        { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'] },
+        { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
+        { name: 'Imaging Servo Operation & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'] },
+        { name: 'Rotation & Imaging', i18nKey: 'sectionRotation', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
       ];
 
       const FIELDS = {
@@ -5837,6 +5872,20 @@ https://github.com/odeepllama/SolarSim/tree/main
         return wrap;
       }
 
+      // Helper: get translated section title from i18nKey, falling back to group.name
+      function getSectionTitle(i18nKey, fallbackName) {
+        const t = TRANSLATIONS[currentLang];
+        return (t && t[i18nKey]) || fallbackName;
+      }
+
+      // Helper: build collapsible legend HTML with translated name and toggle hint
+      function getCollapsibleLegendHTML(i18nKey, fallbackName, expanded) {
+        const title = getSectionTitle(i18nKey, fallbackName);
+        const toggleHint = (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang].toggleView) || '(Toggle view)';
+        const arrow = expanded ? '▼' : '▶';
+        return arrow + ' ' + title + ' <small style="color: #666;">' + toggleHint + '</small>';
+      }
+
       function buildForm() {
         const container = document.getElementById('formContainer');
         container.innerHTML = '';
@@ -5847,18 +5896,22 @@ https://github.com/odeepllama/SolarSim/tree/main
           fs.setAttribute('data-section', sectionKey);
 
           const legend = document.createElement('legend');
+          // Store i18nKey and group name for language switching
+          if (group.i18nKey) legend.setAttribute('data-i18n-section', group.i18nKey);
+          legend.setAttribute('data-group-name', group.name);
 
           // Check if this is a collapsible section
           if (group.collapsible) {
             // Make section collapsible with toggle
             legend.style.cursor = 'pointer';
             legend.style.userSelect = 'none';
+            legend.setAttribute('data-collapsible', 'true');
 
             // Create unique ID for this collapsible section
             const sectionId = group.name.replace(/\s+/g, '') + 'Content';
             const storageKey = group.name.replace(/\s+/g, '') + 'Expanded';
 
-            legend.innerHTML = '▶ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
+            legend.innerHTML = getCollapsibleLegendHTML(group.i18nKey, group.name, false);
 
             const grid = document.createElement('div');
             grid.className = 'group-grid';
@@ -5875,7 +5928,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Load collapsed state from localStorage (default: collapsed)
             const isExpanded = localStorage.getItem(storageKey) === 'true';
             if (isExpanded) {
-              legend.innerHTML = '▼ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
+              legend.innerHTML = getCollapsibleLegendHTML(group.i18nKey, group.name, true);
               grid.style.display = 'grid';
             } else {
               grid.style.display = 'none';
@@ -5884,13 +5937,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Add click handler for toggle
             legend.addEventListener('click', function () {
               const isCurrentlyExpanded = grid.style.display !== 'none';
+              const i18nKey = legend.getAttribute('data-i18n-section');
+              const groupName = legend.getAttribute('data-group-name');
               if (isCurrentlyExpanded) {
                 grid.style.display = 'none';
-                legend.innerHTML = '▶ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
+                legend.innerHTML = getCollapsibleLegendHTML(i18nKey, groupName, false);
                 localStorage.setItem(storageKey, 'false');
               } else {
                 grid.style.display = 'grid';
-                legend.innerHTML = '▼ ' + group.name + ' <small style="color: #666;">(Click to toggle visibility)</small>';
+                legend.innerHTML = getCollapsibleLegendHTML(i18nKey, groupName, true);
                 localStorage.setItem(storageKey, 'true');
               }
             });
@@ -5900,7 +5955,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             fs.appendChild(grid);
           } else {
             // Regular sections (no collapsible behavior)
-            legend.textContent = group.name;
+            legend.textContent = getSectionTitle(group.i18nKey, group.name);
             const grid = document.createElement('div'); grid.className = 'group-grid';
             group.keys.forEach(k => { grid.appendChild(createInput(k)); });
             fs.appendChild(legend);
@@ -5912,7 +5967,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Append program enabled field separately below groups for clarity
         const programFs = document.createElement('fieldset');
         programFs.setAttribute('data-section', 'program-control');
-        const legend = document.createElement('legend'); legend.textContent = 'Program Control'; programFs.appendChild(legend);
+        const legend = document.createElement('legend');
+        legend.textContent = getSectionTitle('sectionProgramControl', 'Program Control');
+        legend.setAttribute('data-i18n-section', 'sectionProgramControl');
+        legend.setAttribute('data-group-name', 'Program Control');
+        programFs.appendChild(legend);
         const grid = document.createElement('div');
         // Use 5-column grid layout for Program Control
         grid.className = 'group-grid program-control';
@@ -18202,11 +18261,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           const navHtml = navControls.html;
 
           contentEl.style.display = 'block';
+          const dpsTitle = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang].deviceProgramStatus) || 'Device Program Status';
           titleEl.innerHTML = `<span style="display:inline-flex; align-items:center; width:100%;">
-        <span style="flex:0 0 auto;">Device Program Status</span>
+        <span style="flex:0 0 auto;">${dpsTitle}</span>
         ${navHtml}
       </span>`;
         }
+
+        // Expose title updater for language switching
+        window.__updateDeviceProgramStatusTitle = updateDisplay;
 
         // Stub — fieldset always visible, but kept for external callers
         function updateFieldsetVisibility() { }
@@ -20072,7 +20135,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 const legend = imagingIlluminationContent.previousElementSibling;
                 if (legend && legend.tagName === 'LEGEND') {
                   imagingIlluminationContent.style.display = 'grid';
-                  legend.innerHTML = '▼ Imaging Illumination <small style="color: #666;">(Click to toggle visibility)</small>';
+                  legend.innerHTML = getCollapsibleLegendHTML('sectionImagingIllum', 'Imaging Illumination', true);
                 }
               }
             }
@@ -20530,7 +20593,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 // Was collapsed, restore to collapsed
                 imagingIlluminationContent.style.display = 'none';
                 if (legend && legend.tagName === 'LEGEND') {
-                  legend.innerHTML = '▶ Imaging Illumination <small style="color: #666;">(Click to toggle visibility)</small>';
+                  legend.innerHTML = getCollapsibleLegendHTML('sectionImagingIllum', 'Imaging Illumination', false);
                 }
                 // Update localStorage to match restored state
                 localStorage.setItem('ImagingIlluminationExpanded', 'false');
