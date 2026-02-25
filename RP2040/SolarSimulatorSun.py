@@ -635,7 +635,7 @@ def print_program_status(now_ms, sim_time_minutes):
                 progress = f"{pct:.0f}%"
     sim_hour = int(sim_time_minutes // 60) % 24
     sim_minute = int(sim_time_minutes % 60)
-    time_str = f"\x1b[1m{sim_hour:02d}:{sim_minute:02d}\x1b[0m"
+    time_str = f"{sim_hour:02d}:{sim_minute:02d}"
     print(f"[PROGRAM] Step {current_program_step + 1}/{len(PROGRAM_STEPS)} (Rep {current_step_repeat + 1}/{step.get('repeat', 1)}) | Target: {target_time} | Speed: {TIME_SCALE}X | Intensity: {step.get('intensity_scale', INTENSITY_SCALE):.2f} | Progress: {progress} | Sim Time: {time_str}")
 
 def update_program_state(now_ms, sim_time_minutes):
@@ -2510,30 +2510,30 @@ def handle_command(command_str):
             sim_hour = int(time_of_day_minutes // 60) % 24
             sim_minute = int(time_of_day_minutes % 60)
 
-            print("\x1b[1m-- Simulation & Time --\x1b[0m")
-            print(f"  (Re)Start Time: \x1b[1m{START_TIME_HHMM:04d}\x1b[0m")
-            print(f"  Sim Time: \x1b[1m{sim_hour:02d}:{sim_minute:02d}\x1b[0m")
-            print(f"  Time Scale: \x1b[1m{TIME_SCALE}x\x1b[0m")
+            print("-- Simulation & Time --")
+            print(f"  (Re)Start Time: {START_TIME_HHMM:04d}")
+            print(f"  Sim Time: {sim_hour:02d}:{sim_minute:02d}")
+            print(f"  Time Scale: {TIME_SCALE}x")
             # Human readable speed descriptor (mirrors JSON 'speed')
             try:
                 speed_name = get_speed_name(TIME_SCALE)
             except Exception:
                 speed_name = "Unknown"
-            print(f"  Speed Name: \x1b[1m{speed_name}\x1b[0m")
-            print(f"  Program Enabled: \x1b[1m{PROGRAM_ENABLED}\x1b[0m")
-            print(f"  Restart After Profile Load: \x1b[1m{RESTART_AFTER_LOAD}\x1b[0m")
-            print(f"  Auto-Load Latest Profile: \x1b[1m{AUTO_LOAD_LATEST_PROFILE}\x1b[0m")
-            print(f"  Loaded Profile: \x1b[1m{LOADED_PROFILE_NAME if LOADED_PROFILE_NAME else '(none - using defaults)'}\x1b[0m")
-            print("\n\x1b[1m-- Environment & Sun --\x1b[0m")
-            print(f"  Solar Mode: \x1b[1m{SOLAR_MODE}\x1b[0m")
-            print(f"  Intensity Scale: \x1b[1m{INTENSITY_SCALE}\x1b[0m")
-            print(f"  Sun Color Mode: \x1b[1m{SUN_COLOR_MODE}\x1b[0m")
-            print(f"  Dual Sun Enabled: \x1b[1m{DUAL_SUN_ENABLED}\x1b[0m")
+            print(f"  Speed Name: {speed_name}")
+            print(f"  Program Enabled: {PROGRAM_ENABLED}")
+            print(f"  Restart After Profile Load: {RESTART_AFTER_LOAD}")
+            print(f"  Auto-Load Latest Profile: {AUTO_LOAD_LATEST_PROFILE}")
+            print(f"  Loaded Profile: {LOADED_PROFILE_NAME if LOADED_PROFILE_NAME else '(none - using defaults)'}")
+            print("-- Environment & Sun --")
+            print(f"  Solar Mode: {SOLAR_MODE}")
+            print(f"  Intensity Scale: {INTENSITY_SCALE}")
+            print(f"  Sun Color Mode: {SUN_COLOR_MODE}")
+            print(f"  Dual Sun Enabled: {DUAL_SUN_ENABLED}")
             if SUN_COLOR_MODE == "CUSTOM":
-                print(f"  Custom Sun RGB: \x1b[1m({CUSTOM_SUN_R}, {CUSTOM_SUN_G}, {CUSTOM_SUN_B})\x1b[0m")
-            #print(f"  Date (for SCI): \x1b[1m{SIMULATION_DATE}\x1b[0m")
-            #print(f"  Latitude (for SCI): \x1b[1m{LATITUDE}\x1b[0m")
-            print("\n\x1b[1m-- Hardware & Imaging --\x1b[0m")
+                print(f"  Custom Sun RGB: ({CUSTOM_SUN_R}, {CUSTOM_SUN_G}, {CUSTOM_SUN_B})")
+            #print(f"  Date (for SCI): {SIMULATION_DATE}")
+            #print(f"  Latitude (for SCI): {LATITUDE}")
+            print("-- Hardware & Imaging --")
             # Determine which period is currently active
             current_time = get_sim_time(START_TIME_HHMM, ticks_diff(ticks_ms(), start_real_time_ms), TIME_SCALE)[1]
             sun_x, _, sun_size, _, _, _ = get_sun_position(current_time)
@@ -2544,34 +2544,34 @@ def handle_command(command_str):
             # Servo 2 status with day/night intervals
             servo2_day_status = f"{SERVO2_INTERVAL_DAY_SEC}s" if SERVO2_INTERVAL_DAY_SEC > 0 else "disabled"
             servo2_night_status = f"{SERVO2_INTERVAL_NIGHT_SEC}s" if SERVO2_INTERVAL_NIGHT_SEC > 0 else "disabled"
-            print(f"  Servo 2: Day \x1b[1m{servo2_day_status}\x1b[0m | Night \x1b[1m{servo2_night_status}\x1b[0m [{active_period} ACTIVE]")
+            print(f"  Servo 2: Day {servo2_day_status} | Night {servo2_night_status} [{active_period} ACTIVE]")
             
             # Servo 3 status with day/night intervals
             servo3_day_status = f"{SERVO3_INTERVAL_DAY_SEC}s" if SERVO3_INTERVAL_DAY_SEC > 0 else "disabled"
             servo3_night_status = f"{SERVO3_INTERVAL_NIGHT_SEC}s" if SERVO3_INTERVAL_NIGHT_SEC > 0 else "disabled"
-            print(f"  Servo 3: Day \x1b[1m{servo3_day_status}\x1b[0m | Night \x1b[1m{servo3_night_status}\x1b[0m [{active_period} ACTIVE]")
+            print(f"  Servo 3: Day {servo3_day_status} | Night {servo3_night_status} [{active_period} ACTIVE]")
             
             print("-- -- -- -- -- -- -- --")          
-            print(f"  Rotation Enabled: \x1b[1m{ROTATION_ENABLED}\x1b[0m")
-            print(f"  Rotation Imaging Servo: \x1b[1m{ROTATION_CAMERA_SERVO}\x1b[0m")
-            print(f"  Rotation Interval: \x1b[1m{ROTATION_CYCLE_INTERVAL_MINUTES} sim min\x1b[0m")
-            print(f"  Images per Rotation: \x1b[1m{IMAGES_PER_ROTATION}\x1b[0m")
-            print(f"  Degrees per Image: \x1b[1m{DEGREES_PER_IMAGE:.2f}°\x1b[0m")
-            print(f"  Rotation at Night: \x1b[1m{ROTATION_AT_NIGHT}\x1b[0m")
-            print(f"  Rotation Speed Preset: \x1b[1m{ROTATION_SPEED_PRESET}\x1b[0m ({ROTATION_SPEED_PRESET_TABLE[ROTATION_SPEED_PRESET]}s/360deg)")
-            print(f"  Rotation Imaging Mode: \x1b[1m{ROTATION_CAPTURE_MODE}\x1b[0m")
-            print(f"  Camera Lighting Panels: \x1b[1m{CAMERA_LIGHTING_PANELS}\x1b[0m")
-            print(f"  Camera Light RGB: \x1b[1m({CAMERA_LIGHT_R}, {CAMERA_LIGHT_G}, {CAMERA_LIGHT_B})\x1b[0m")
-            print(f"  Rotation Light RGB: \x1b[1m({ROTATION_LIGHT_R}, {ROTATION_LIGHT_G}, {ROTATION_LIGHT_B})\x1b[0m")
-            print(f"  1:1 Servo-to-sample rotation ratio: \x1b[1m{SERVO_1TO1_RATIO}\x1b[0m")
-            print(f"  Rotation Trigger Hold: \x1b[1m{CAMERA_TRIGGER_HOLD_MS} ms\x1b[0m")
+            print(f"  Rotation Enabled: {ROTATION_ENABLED}")
+            print(f"  Rotation Imaging Servo: {ROTATION_CAMERA_SERVO}")
+            print(f"  Rotation Interval: {ROTATION_CYCLE_INTERVAL_MINUTES} sim min")
+            print(f"  Images per Rotation: {IMAGES_PER_ROTATION}")
+            print(f"  Degrees per Image: {DEGREES_PER_IMAGE:.2f}°")
+            print(f"  Rotation at Night: {ROTATION_AT_NIGHT}")
+            print(f"  Rotation Speed Preset: {ROTATION_SPEED_PRESET} ({ROTATION_SPEED_PRESET_TABLE[ROTATION_SPEED_PRESET]}s/360deg)")
+            print(f"  Rotation Imaging Mode: {ROTATION_CAPTURE_MODE}")
+            print(f"  Camera Lighting Panels: {CAMERA_LIGHTING_PANELS}")
+            print(f"  Camera Light RGB: ({CAMERA_LIGHT_R}, {CAMERA_LIGHT_G}, {CAMERA_LIGHT_B})")
+            print(f"  Rotation Light RGB: ({ROTATION_LIGHT_R}, {ROTATION_LIGHT_G}, {ROTATION_LIGHT_B})")
+            print(f"  1:1 Servo-to-sample rotation ratio: {SERVO_1TO1_RATIO}")
+            print(f"  Rotation Trigger Hold: {CAMERA_TRIGGER_HOLD_MS} ms")
             print("-----------------------")
             
             # Program Steps
             if PROGRAM_ENABLED:
-                print("\n\x1b[1m-- Program Configuration --\x1b[0m")
-                print(f"  Program Repeats: \x1b[1m{PROGRAM_REPEATS}\x1b[0m")
-                print(f"  Number of Steps: \x1b[1m{len(PROGRAM_STEPS)}\x1b[0m")
+                print("-- Program Configuration --")
+                print(f"  Program Repeats: {PROGRAM_REPEATS}")
+                print(f"  Number of Steps: {len(PROGRAM_STEPS)}")
                 if PROGRAM_STEPS:
                     import ujson as json
                     # Output program steps in chunks of 5 to reduce memory usage
@@ -2580,11 +2580,11 @@ def handle_command(command_str):
                         chunk = PROGRAM_STEPS[i:i + chunk_size]
                         start_idx = i + 1
                         end_idx = min(i + chunk_size, len(PROGRAM_STEPS))
-                        print(f"  Program Steps ({start_idx}-{end_idx}): \x1b[1m{json.dumps(chunk)}\x1b[0m")
+                        print(f"  Program Steps ({start_idx}-{end_idx}): {json.dumps(chunk)}")
             else:
-                print("\n\x1b[1m-- Program Configuration --\x1b[0m")
-                print(f"  Program Repeats: \x1b[1m{PROGRAM_REPEATS}\x1b[0m")
-                print("  Program Steps: \x1b[1m(none - program disabled)\x1b[0m")
+                print("-- Program Configuration --")
+                print(f"  Program Repeats: {PROGRAM_REPEATS}")
+                print("  Program Steps: (none - program disabled)")
             print("-----------------------")
 
         elif command == "fillpanel" and (len(parts) == 4 or len(parts) == 5):
@@ -2864,7 +2864,7 @@ def run_simulation():
 
         # Check for time change OR time scale change
         if total_minutes != last_printed_minute:
-            print(f"Simulation time: \x1b[1m{current_hour:02d}:{current_minute:02d}\x1b[0m (Speed: {TIME_SCALE}x)")
+            print(f"Simulation time: {current_hour:02d}:{current_minute:02d} (Speed: {TIME_SCALE}x)")
             last_printed_minute = total_minutes
         
         # Perform POV refresh at regular intervals
@@ -3032,7 +3032,7 @@ def run_simulation():
                 else:  # SCIENTIFIC
                     SOLAR_MODE = "BASIC"
                 
-                print(f"Button A short press: Solar mode changed to \x1b[1m{SOLAR_MODE}\x1b[0m")
+                print(f"Button A short press: Solar mode changed to {SOLAR_MODE}")
 
                 # Re-initialize the solar day with the new mode
                 init_solar_day()
