@@ -1350,7 +1350,7 @@ class SolarSimulator:
 
     def run(self):
         """Main simulation loop."""
-        global TIME_SCALE
+        global TIME_SCALE, SUN_COLOR_MODE, CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
 
         # Init frozen time if starting in HOLD
         if TIME_SCALE == 0 and not self.frozen_time_initialized:
