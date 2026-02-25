@@ -498,6 +498,9 @@ def start_program():
     global current_program_repeat, program_step_start_sim_time, hold_step_start_ms
     global last_printed_minute
     
+    if not PROGRAM_STEPS:
+        print("[PROGRAM] No program steps defined — cannot start")
+        return
     program_running = True
     current_program_step = 0
     current_step_repeat = 0
@@ -636,6 +639,9 @@ def update_program_state(now_ms, sim_time_minutes):
     global frozen_sim_time_minutes
     if not program_running:
         return
+    if not PROGRAM_STEPS:
+        program_running = False
+        return
     if int(sim_time_minutes) > last_printed_minute:
         print_program_status(now_ms, sim_time_minutes)
         last_printed_minute = int(sim_time_minutes)
@@ -699,35 +705,34 @@ def update_program_state(now_ms, sim_time_minutes):
                 frozen_sim_time_minutes = (frozen_sim_time_minutes + step["hold_minutes"]) % 1440
             target_reached = True
     elif transition_type == "RUN":
-        # Check against NEXT step's time (or current step's time if last step)
+        # Check against NEXT step's time (or hold on last step)
         if current_program_step < len(PROGRAM_STEPS) - 1:
             next_step_hhmm = PROGRAM_STEPS[current_program_step + 1]["sim_time_hhmm"]
             target_time_minutes = (next_step_hhmm // 100) * 60 + (next_step_hhmm % 100)
-        else:
-            target_time_minutes = step_time_minutes
-        step_speed = step.get("speed", TIME_SCALE)
-        direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
-        speed_mag = abs(step_speed) if step_speed != 0 else 1
-        tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
-        if direction >= 0:
-            current_eval_time = sim_time_minutes
-            target_eval_time = target_time_minutes
-            if target_time_minutes < program_step_start_sim_time:
-                if sim_time_minutes < program_step_start_sim_time:
-                    current_eval_time += 1440
-                target_eval_time += 1440
-            if current_eval_time >= (target_eval_time - tolerance):
-                target_reached = True
-        else:
-            start_tod = program_step_start_sim_time
-            target_eval_time = target_time_minutes
-            if target_time_minutes > start_tod:
-                target_eval_time -= 1440
-            current_eval_time = sim_time_minutes
-            if sim_time_minutes > start_tod:
-                current_eval_time -= 1440
-            if current_eval_time <= (target_eval_time + tolerance):
-                target_reached = True
+            step_speed = step.get("speed", TIME_SCALE)
+            direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
+            speed_mag = abs(step_speed) if step_speed != 0 else 1
+            tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
+            if direction >= 0:
+                current_eval_time = sim_time_minutes
+                target_eval_time = target_time_minutes
+                if target_time_minutes < program_step_start_sim_time:
+                    if sim_time_minutes < program_step_start_sim_time:
+                        current_eval_time += 1440
+                    target_eval_time += 1440
+                if current_eval_time >= (target_eval_time - tolerance):
+                    target_reached = True
+            else:
+                start_tod = program_step_start_sim_time
+                target_eval_time = target_time_minutes
+                if target_time_minutes > start_tod:
+                    target_eval_time -= 1440
+                current_eval_time = sim_time_minutes
+                if sim_time_minutes > start_tod:
+                    current_eval_time -= 1440
+                if current_eval_time <= (target_eval_time + tolerance):
+                    target_reached = True
+        # else: last step — hold configuration, don't auto-advance
     elif transition_type == "JUMP":
         target_reached = True
     if target_reached:
