@@ -17131,14 +17131,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         function sendStatusSilent() {
           if (window.__uploadInProgress) return; // don't interfere with active upload
           if (!state.port && state.transport !== 'ble') return;
-          if (state._bleStatusPending) return; // debounce concurrent calls
-          if (state.transport === 'ble') state._bleStatusPending = true;
           state.__silentStatusUntil = performance.now() + 1500; // suppress typical status lines
-          // Heartbeat visual removed
-          sendLine('status', { silentEcho: true }).finally(() => {
-            // Reset debounce flag after write completes (or fails)
-            setTimeout(() => { state._bleStatusPending = false; }, 500);
-          });
+          sendLine('status', { silentEcho: true });
           // Request an immediate arc refresh in case day/night boundary just changed
           try { const ns = window.__solarSimMonitorState; if (ns && ns.__sunArc && ns.__sunArc.refresh) { ns.__sunArc.refresh(); ns.__sunArc.updateVisibility && ns.__sunArc.updateVisibility(); } } catch (_) { }
         }
@@ -17876,7 +17870,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           document.addEventListener('touchstart', outsideTouchHandler, { passive: true });
         }
         function canSend() { return true; /* popover only opens when connected */ }
-        async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
+        async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
         // Touch device detection — prompt() for custom input on touch, inline inputs on desktop
         const _isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         function hhmmRow() { const row = document.createElement('div'); row.className = 'row'; const lab = document.createElement('label'); lab.textContent = 'HHMM:'; row.appendChild(lab); const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = '0730'; inp.maxLength = 4; inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9]/g, '').slice(0, 4); }); row.appendChild(inp); return { row, input: inp, get: () => inp.value }; }
@@ -20430,6 +20424,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (finalTop < margin) finalTop = margin;
             tooltip.style.left = finalLeft + 'px';
             tooltip.style.top = finalTop + 'px';
+
             tooltip.classList.add('positioned');
             return;
           }
