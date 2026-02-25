@@ -183,6 +183,10 @@ class ProgramEngine:
         self.step_start_sim_time = 0
         self.last_printed_minute = 0
         self.has_completed_all_repeats = False
+        if not self.program_steps:
+            self.output("[PROGRAM] No steps defined — program not started")
+            self.program_running = False
+            return
         self.output("[PROGRAM] Started")
 
     def stop(self):
@@ -236,6 +240,8 @@ class ProgramEngine:
                 'done': True if program completed all repeats
         """
         result = {'start_real_time_ms': None, 'done': False}
+        if not self.program_steps:
+            return result
         previous_step = self.program_steps[self.current_step]
         previous_was_hold = previous_step.get("speed", 1) == 0
 
@@ -317,7 +323,7 @@ class ProgramEngine:
                 'dual_sun': new dual sun state if changed
         """
         result = {}
-        if not self.program_running:
+        if not self.program_running or not self.program_steps:
             return result
 
         # Print status once per sim minute
@@ -454,7 +460,7 @@ class ProgramEngine:
 
     def _print_status(self, now_ms, sim_time_minutes, time_scale, intensity_scale):
         """Print program status line."""
-        if not self.program_running:
+        if not self.program_running or not self.program_steps:
             return
 
         step = self.program_steps[self.current_step]
