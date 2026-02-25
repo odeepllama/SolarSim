@@ -1414,6 +1414,7 @@ class SolarSimulator:
                     CUSTOM_SUN_G = rgb[1]
                     CUSTOM_SUN_B = rgb[2]
                     SUN_COLOR_MODE = "CUSTOM"
+                    self.output(f"[PROGRAM] Sun color set to RGB({CUSTOM_SUN_R}, {CUSTOM_SUN_G}, {CUSTOM_SUN_B})")
 
             # Periodic display update (every 1 second)
             if ticks_diff(now_ms, last_update_ms) >= update_interval_ms:
