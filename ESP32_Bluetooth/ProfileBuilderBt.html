@@ -11745,8 +11745,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const sunRgb = step.sun_color_rgb;
           if (Array.isArray(sunRgb) && sunRgb.length === 3) {
             const [sr, sg, sb] = sunRgb;
-            const swatchStyle = `display:block;width:14px;height:14px;border-radius:3px;border:1px solid #999;background:rgb(${sr},${sg},${sb});float:left;margin-top:1px;`;
-            html += `<td><div class="cell-value-box" style="text-align:center;overflow:hidden"><span style="${swatchStyle}"></span><span style="display:block;margin-left:18px">${sr},${sg},${sb}</span></div></td>`;
+            const swatchStyle = `width:14px;height:14px;border-radius:3px;border:1px solid #999;background:rgb(${sr},${sg},${sb});flex-shrink:0;`;
+            html += `<td><div style="display:flex;align-items:center;padding:2pt 4pt;"><span style="${swatchStyle}"></span><span style="flex:1;text-align:center;font-weight:700;font-size:8.5pt">${sr},${sg},${sb}</span></div></td>`;
           } else {
             const colorBg = isEvenDay ? evenDayBg : 'white';
             html += `<td style="background:${colorBg}"><div class="cell-value-box">&mdash;</div></td>`;
