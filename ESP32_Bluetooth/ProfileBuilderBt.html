@@ -6908,10 +6908,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           const cellBg = hasColor ? `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` : '';
           const colorCell = mkCell(
             `<div style='display:flex;align-items:center;gap:1px;white-space:nowrap;'>`
-            + `<input data-f='sun_color_picker' type='color' value='${hexColor}' style='width:60px;height:22px;padding:0;border:1px solid #aaa;cursor:pointer;flex-shrink:0;${hasColor ? '' : 'opacity:0.3;'}' title='Pick sun color'/>`
-            + `<input data-f='sun_r' type='number' min='0' max='255' value='${rVal}' style='width:38px;font-size:1.05em;padding:1px' placeholder='R'/>`
-            + `<input data-f='sun_g' type='number' min='0' max='255' value='${gVal}' style='width:38px;font-size:1.05em;padding:1px' placeholder='G'/>`
-            + `<input data-f='sun_b' type='number' min='0' max='255' value='${bVal}' style='width:38px;font-size:1.05em;padding:1px' placeholder='B'/>`
+            + `<input data-f='sun_color_picker' type='color' value='${hexColor}' style='width:42px;height:22px;padding:0;border:1px solid #aaa;cursor:pointer;flex-shrink:0;${hasColor ? '' : 'opacity:0.3;'}' title='Pick sun color'/>`
+            + `<input data-f='sun_r' type='number' min='0' max='255' value='${rVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='R'/>`
+            + `<input data-f='sun_g' type='number' min='0' max='255' value='${gVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='G'/>`
+            + `<input data-f='sun_b' type='number' min='0' max='255' value='${bVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='B'/>`
             + `</div>`);
           if (hasColor) {
             colorCell.style.background = `linear-gradient(rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45), rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45)), #fff`;
