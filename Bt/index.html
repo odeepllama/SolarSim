@@ -5121,7 +5121,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
       const TRANSLATIONS = {
         en: {
-          appTitle: 'SolaSim Studio 20260221',
+          appTitle: 'SolaSim Studio 20260226',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
@@ -5279,7 +5279,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           toggleView: '(Toggle view)',
         },
         ja: {
-          appTitle: 'SolaSim Studio 20260221',
+          appTitle: 'SolaSim Studio 20260226',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
@@ -5340,7 +5340,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           filenameNote: 'タイムスタンプ＋タグから自動生成されます。',
           profileMeta: 'プロファイルメタ',
           maxStepsReached: '追加する前にステップを削除してください。',
-          maxStepsReachedTitle: '最大50ステップ数に到達',
+          maxStepsReachedTitle: '最大100ステップ数に到達',
           understood: '了解',
           // Guide step translations
           guideConnectDevice: 'デバイスを接続',
@@ -7156,7 +7156,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       }
 
       // Maximum number of program steps allowed
-      const MAX_PROGRAM_STEPS = 50;
+      const MAX_PROGRAM_STEPS = 100;
 
       /**
        * Adds a new program step to the end of the steps array.
@@ -9806,7 +9806,24 @@ https://github.com/odeepllama/SolarSim/tree/main
               let dayDirection = 0; // +1 forward, -1 backward
 
               if (transition === 'RUN') {
-                if (speed >= 0) {
+                const nextSpeed = nextStep.speed !== undefined ? nextStep.speed : speed;
+                const speedSignChanges = (speed >= 0 && nextSpeed < 0) || (speed < 0 && nextSpeed >= 0);
+
+                if (speedSignChanges) {
+                  // Speed direction reversal: only cross midnight if the gap truly wraps through midnight
+                  // e.g., forward 18:00 → reverse 17:45 is NOT a midnight crossing (just a reversal)
+                  // but forward 23:50 → reverse 00:10 IS a midnight crossing
+                  if (speed >= 0 && nextSpeed < 0) {
+                    // Forward→Reverse: only midnight if we need to go forward past midnight to reach mNext
+                    // A small backward gap (mNext slightly < m) is a natural reversal point, not midnight
+                    // Midnight crossing only if mNext > m (would require going forward past midnight and back)
+                    // Actually for forward→reverse, no midnight crossing expected - the sim just reverses direction
+                    console.log(`[Multi-Day]   → Speed reversal forward→reverse (${m} → ${mNext}), same day`);
+                  } else {
+                    // Reverse→Forward: similar logic
+                    console.log(`[Multi-Day]   → Speed reversal reverse→forward (${m} → ${mNext}), same day`);
+                  }
+                } else if (speed >= 0) {
                   // Forward RUN: if next time is earlier or equal to current, we wrapped forward to next day
                   if (mNext <= m) {
                     crossesMidnight = true;
