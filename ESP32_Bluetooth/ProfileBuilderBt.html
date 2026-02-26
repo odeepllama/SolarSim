@@ -9193,12 +9193,29 @@ https://github.com/odeepllama/SolarSim/tree/main
           barWrap.appendChild(barCol);
           currentRow.appendChild(barWrap);
           container.appendChild(currentRow);
-          renderDayTimeline(bar, currentDayInfo, globalWindow, true);
-          // Color strip
+          // Determine if this has reverse steps
+          const curHasReverse = currentDayInfo.steps.some(s => (s.step.speed !== undefined ? s.step.speed : 1) < 0);
+          renderDayTimeline(bar, currentDayInfo, globalWindow, true, null, false, undefined, curHasReverse ? 'forward' : undefined);
+          // Intensity bar graphs + reverse bar (forward + reverse)
           const hasColor = currentDayInfo.steps.some(s => Array.isArray(s.step.sun_color_rgb) && s.step.sun_color_rgb.length === 3);
-          if (hasColor) {
-            const strip = buildColorStrip(currentDayInfo.steps, globalWindow.start, globalWindow.end);
-            barCol.appendChild(strip);
+          const hasIntensity = currentDayInfo.steps.some(s => s.step.intensity_scale != null && s.step.intensity_scale !== 1);
+          if (hasColor || hasIntensity) {
+            const { forward, reverse } = partitionForwardReverse(currentDayInfo.steps);
+            if (forward.length > 0) {
+              barCol.appendChild(buildIntensityStrip(forward, globalWindow.start, globalWindow.end, curHasReverse ? 'forward-intensity' : 'only-intensity'));
+            }
+            if (curHasReverse && reverse.length > 0) {
+              const revBar = document.createElement('div');
+              revBar.className = 'timeline-strip reverse-strip readonly';
+              barCol.appendChild(revBar);
+              renderDayTimeline(revBar, currentDayInfo, globalWindow, true, null, false, undefined, 'reverse');
+              barCol.appendChild(buildIntensityStrip(reverse, globalWindow.start, globalWindow.end, 'reverse-intensity'));
+            }
+          } else if (curHasReverse) {
+            const revBar = document.createElement('div');
+            revBar.className = 'timeline-strip reverse-strip readonly';
+            barCol.appendChild(revBar);
+            renderDayTimeline(revBar, currentDayInfo, globalWindow, true, null, false, undefined, 'reverse');
           }
         } else {
           const noSteps = document.createElement('div');
@@ -9227,12 +9244,29 @@ https://github.com/odeepllama/SolarSim/tree/main
           barWrap.appendChild(barCol);
           profileRow.appendChild(barWrap);
           container.appendChild(profileRow);
-          renderDayTimeline(bar, profileDayInfo, globalWindow, true);
-          // Color strip
+          // Determine if this has reverse steps
+          const profHasReverse = profileDayInfo.steps.some(s => (s.step.speed !== undefined ? s.step.speed : 1) < 0);
+          renderDayTimeline(bar, profileDayInfo, globalWindow, true, null, false, undefined, profHasReverse ? 'forward' : undefined);
+          // Intensity bar graphs + reverse bar (forward + reverse)
           const hasColor = profileDayInfo.steps.some(s => Array.isArray(s.step.sun_color_rgb) && s.step.sun_color_rgb.length === 3);
-          if (hasColor) {
-            const strip = buildColorStrip(profileDayInfo.steps, globalWindow.start, globalWindow.end);
-            barCol.appendChild(strip);
+          const hasIntensity = profileDayInfo.steps.some(s => s.step.intensity_scale != null && s.step.intensity_scale !== 1);
+          if (hasColor || hasIntensity) {
+            const { forward: fwd, reverse: rev } = partitionForwardReverse(profileDayInfo.steps);
+            if (fwd.length > 0) {
+              barCol.appendChild(buildIntensityStrip(fwd, globalWindow.start, globalWindow.end, profHasReverse ? 'forward-intensity' : 'only-intensity'));
+            }
+            if (profHasReverse && rev.length > 0) {
+              const revBar = document.createElement('div');
+              revBar.className = 'timeline-strip reverse-strip readonly';
+              barCol.appendChild(revBar);
+              renderDayTimeline(revBar, profileDayInfo, globalWindow, true, null, false, undefined, 'reverse');
+              barCol.appendChild(buildIntensityStrip(rev, globalWindow.start, globalWindow.end, 'reverse-intensity'));
+            }
+          } else if (profHasReverse) {
+            const revBar = document.createElement('div');
+            revBar.className = 'timeline-strip reverse-strip readonly';
+            barCol.appendChild(revBar);
+            renderDayTimeline(revBar, profileDayInfo, globalWindow, true, null, false, undefined, 'reverse');
           }
         } else {
           const noSteps = document.createElement('div');
@@ -9412,11 +9446,18 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-day-actions svg{ display:block; }
   /* Increased visualization font sizes ~1.5x */
   .timeline-strip{ position:relative; background:#f4f5f7; border:1px solid #ccc; height:54px; border-radius:4px; overflow:visible; font-family:ui-monospace,monospace; font-size:1.2rem; flex:1 0 auto; }
+    .timeline-strip.reverse-strip{ height:40px; border-radius:0; border-top:none; margin-top:5px; }
     .timeline-strip.empty{ display:none; }
     .timeline-strip.readonly *{ cursor: default !important; } /* No interactive cursors for read-only device status */
-  /* Sun color strip below timeline */
-  .timeline-color-strip{ position:relative; height:16px; border-radius:0 0 4px 4px; overflow:hidden; margin-top:0; }
-  .color-strip-seg{ position:absolute; top:0; height:100%; box-sizing:border-box; border-right:1px solid rgba(0,0,0,0.12); }
+  /* Sun color strip below timeline - REMOVED (replaced by intensity bar graph) */
+  /* Intensity bar graph strip */
+  .timeline-intensity-strip{ position:relative; height:38px; overflow:hidden; margin-top:0; background:#f0f0f0; border:1px solid #ddd; border-top:none; }
+  .timeline-intensity-strip:first-of-type{ border-radius:0; }
+  .timeline-intensity-strip.forward-intensity{ border-radius:0; }
+  .timeline-intensity-strip.reverse-intensity{ border-radius:0 0 4px 4px; }
+  .timeline-intensity-strip.only-intensity{ border-radius:0 0 4px 4px; }
+  .intensity-bar-seg{ position:absolute; bottom:0; box-sizing:border-box; border-right:1px solid rgba(0,0,0,0.08); }
+  .intensity-bar-seg .intensity-fill{ position:absolute; bottom:0; left:0; right:0; border-radius:1px 1px 0 0; }
   /* 1x speed background layer (lowest z-index) */
   .tl-bg-1x{ position:absolute; top:0; bottom:0; background:#4DA6FF; z-index:10; }
   /* Segments sit above background but beneath axis labels */
@@ -9441,6 +9482,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     .tl-seg.dual{ border:2px solid #ffbf3a; }
   .tl-seg.wrap::after{ content:'↺'; position:absolute; top:50%; right:4px; transform:translateY(-50%); font-size:18px; line-height:1; opacity:.92; text-shadow:0 0 2px #fff,0 0 3px #fff; }
   .tl-seg.reverse::before{ content:'◀'; position:absolute; left:4px; top:50%; transform:translateY(-50%); font-size:18px; line-height:1; opacity:.9; text-shadow:0 0 2px #fff, 0 0 3px #fff; }
+  .tl-seg.forward-arrow::before{ content:'▶'; position:absolute; left:4px; top:50%; transform:translateY(-50%); font-size:14px; line-height:1; opacity:.7; text-shadow:0 0 2px #fff, 0 0 3px #fff; }
   /* Jump marker above segments & labels for prominence */
   .tl-jump{ position:absolute; top:0; bottom:0; width:3px; margin-left:-1.5px; background:linear-gradient(180deg,#ffbd00,#ff7b00); box-shadow:0 0 0 1px #b85c00, 0 0 4px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; font-size:20px; color:#222; font-weight:bold; z-index:70; }
   .tl-jump:after{ content:'⚡'; background:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
@@ -10132,60 +10174,51 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Render this day's timeline with global window and orphaned time from previous day
           // isStartingDay is true for the day with the highest dayNumber (the program's entry point)
           const isStartingDay = (dayInfo.dayNumber === highestDayNumber);
-          renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed);
 
-          // Sun color strip for this day
+          // Determine if this day has reverse steps
           const daySteps = dayInfo.steps;
+          const hasReverse = daySteps.some(s => (s.step.speed !== undefined ? s.step.speed : 1) < 0);
           const hasAnyDayColor = daySteps.some(s => Array.isArray(s.step.sun_color_rgb) && s.step.sun_color_rgb.length === 3);
-          if (hasAnyDayColor) {
-            const colorStrip = document.createElement('div');
-            colorStrip.className = 'timeline-color-strip';
-            const wStart = globalWindow.start;
-            const wEnd = globalWindow.end;
-            const wSpan = wEnd - wStart;
-            // Head segment: window start to first step (gray default)
-            if (daySteps.length > 0 && daySteps[0].m != null && daySteps[0].m > wStart) {
-              const headSeg = document.createElement('div');
-              headSeg.className = 'color-strip-seg';
-              headSeg.style.left = '0%';
-              headSeg.style.width = (((daySteps[0].m - wStart) / wSpan) * 100) + '%';
-              headSeg.style.background = '#ddd';
-              headSeg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
-              headSeg.title = 'default color';
-              colorStrip.appendChild(headSeg);
+          const hasAnyDayIntensity = daySteps.some(s => s.step.intensity_scale != null && s.step.intensity_scale !== 1);
+          const wStart = globalWindow.start;
+          const wEnd = globalWindow.end;
+
+          // Forward speed bar (always render — filterDirection='forward' if reverse exists, undefined otherwise)
+          renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, hasReverse ? 'forward' : undefined);
+
+          // Forward intensity bar
+          if (hasAnyDayColor || hasAnyDayIntensity) {
+            const { forward, reverse } = partitionForwardReverse(daySteps);
+            if (forward.length > 0) {
+              barColumn.appendChild(buildIntensityStrip(forward, wStart, wEnd, hasReverse ? 'forward-intensity' : 'only-intensity'));
             }
-            for (let si = 0; si < daySteps.length; si++) {
-              const cur = daySteps[si];
-              const next = daySteps[si + 1];
-              const endMin = next ? next.m : wEnd;
-              if (cur.m == null || endMin <= cur.m) continue;
-              const leftPct = ((cur.m - wStart) / wSpan) * 100;
-              const widthPct = ((endMin - cur.m) / wSpan) * 100;
-              const seg = document.createElement('div');
-              seg.className = 'color-strip-seg';
-              seg.style.left = leftPct + '%';
-              seg.style.width = widthPct + '%';
-              const rgb = cur.step.sun_color_rgb;
-              if (Array.isArray(rgb) && rgb.length === 3) {
-                seg.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-                seg.title = `Step ${cur.index + 1}: RGB(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-              } else {
-                seg.style.background = '#ddd';
-                seg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
-                seg.title = `Step ${cur.index + 1}: default color`;
-              }
-              colorStrip.appendChild(seg);
+
+            // Reverse speed bar + intensity (only if reverse steps exist)
+            if (hasReverse && reverse.length > 0) {
+              const reverseBar = document.createElement('div');
+              reverseBar.className = readOnly ? 'timeline-strip reverse-strip readonly' : 'timeline-strip reverse-strip';
+              reverseBar.setAttribute('data-day', dayInfo.dayNumber);
+              barColumn.appendChild(reverseBar);
+              renderDayTimeline(reverseBar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'reverse');
+              barColumn.appendChild(buildIntensityStrip(reverse, wStart, wEnd, 'reverse-intensity'));
             }
-            barColumn.appendChild(colorStrip);
+          } else if (hasReverse) {
+            // Has reverse steps but no colour/intensity data — still show reverse speed bar
+            const reverseBar = document.createElement('div');
+            reverseBar.className = readOnly ? 'timeline-strip reverse-strip readonly' : 'timeline-strip reverse-strip';
+            reverseBar.setAttribute('data-day', dayInfo.dayNumber);
+            barColumn.appendChild(reverseBar);
+            renderDayTimeline(reverseBar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'reverse');
           }
         });
       }
 
-      // Build a sun color strip element from step data (used by compare timelines)
+      // Build a sun color strip element from step data
       // steps: array of {step, m, index} objects; wStart/wEnd: window bounds in minutes
-      function buildColorStrip(steps, wStart, wEnd) {
+      // isReverse: if true, adds 'reverse' class for styling
+      function buildColorStrip(steps, wStart, wEnd, isReverse = false) {
         const colorStrip = document.createElement('div');
-        colorStrip.className = 'timeline-color-strip';
+        colorStrip.className = 'timeline-color-strip' + (isReverse ? ' reverse' : '');
         const wSpan = wEnd - wStart;
         if (wSpan <= 0) return colorStrip;
         // Head segment
@@ -10219,6 +10252,56 @@ https://github.com/odeepllama/SolarSim/tree/main
           colorStrip.appendChild(seg);
         }
         return colorStrip;
+      }
+
+      // Build an intensity bar graph strip from step data
+      // steps: array of {step, m, index}; wStart/wEnd: window bounds in minutes
+      // cssClass: extra class for border-radius control ('forward-intensity', 'reverse-intensity', 'only-intensity')
+      function buildIntensityStrip(steps, wStart, wEnd, cssClass) {
+        const strip = document.createElement('div');
+        strip.className = 'timeline-intensity-strip ' + (cssClass || '');
+        const wSpan = wEnd - wStart;
+        if (wSpan <= 0 || steps.length === 0) return strip;
+        for (let i = 0; i < steps.length; i++) {
+          const cur = steps[i];
+          const next = steps[i + 1];
+          const endMin = next ? next.m : wEnd;
+          if (cur.m == null || endMin <= cur.m) continue;
+          const intensity = cur.step.intensity_scale != null ? parseFloat(cur.step.intensity_scale) : 1.0;
+          const clampedIntensity = Math.max(0, Math.min(1, isNaN(intensity) ? 1 : intensity));
+          const seg = document.createElement('div');
+          seg.className = 'intensity-bar-seg';
+          seg.style.left = (((cur.m - wStart) / wSpan) * 100) + '%';
+          seg.style.width = (((endMin - cur.m) / wSpan) * 100) + '%';
+          seg.style.height = '100%';
+          seg.title = `Step ${cur.index + 1}: Intensity ${intensity}`;
+          // Fill bar: height = intensity percentage, colored by sun_color_rgb or gray
+          const fill = document.createElement('div');
+          fill.className = 'intensity-fill';
+          fill.style.height = (clampedIntensity * 100) + '%';
+          const rgb = cur.step.sun_color_rgb;
+          if (Array.isArray(rgb) && rgb.length === 3) {
+            fill.style.background = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.7)`;
+          } else {
+            fill.style.background = 'rgba(100,100,100,0.5)';
+          }
+          seg.appendChild(fill);
+          strip.appendChild(seg);
+        }
+        return strip;
+      }
+
+      // Partition steps into forward and reverse groups, sort reverse by sim_time ascending
+      function partitionForwardReverse(steps) {
+        const forward = steps.filter(s => {
+          const speed = s.step.speed !== undefined ? s.step.speed : 1;
+          return speed >= 0;
+        });
+        const reverse = steps.filter(s => {
+          const speed = s.step.speed !== undefined ? s.step.speed : 1;
+          return speed < 0;
+        }).sort((a, b) => a.m - b.m); // sort ascending by sim_time
+        return { forward, reverse };
       }
 
       // Render single day timeline (original behavior)
@@ -10265,13 +10348,16 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         container.appendChild(wrapper);
 
-        renderDayTimeline(bar, dayInfo, null, readOnly);
+        // Determine if program has reverse steps
+        const hasReverse = programSteps.some(s => (s.speed !== undefined ? s.speed : 1) < 0);
 
-        // Sun color strip below the speed timeline
+        // Forward speed bar
+        renderDayTimeline(bar, dayInfo, null, readOnly, null, false, undefined, hasReverse ? 'forward' : undefined);
+
+        // Intensity bar graphs below the speed timeline (forward + reverse)
         const hasAnyColor = programSteps.some(s => Array.isArray(s.sun_color_rgb) && s.sun_color_rgb.length === 3);
-        if (hasAnyColor) {
-          const colorStrip = document.createElement('div');
-          colorStrip.className = 'timeline-color-strip';
+        const hasAnyIntensity = programSteps.some(s => s.intensity_scale != null && s.intensity_scale !== 1);
+        if (hasAnyColor || hasAnyIntensity) {
           // Build segments matching the speed timeline's window
           const stepsWithTime = programSteps.map((step, index) => ({
             step, m: parseHHMM(step.sim_time_hhmm), index
@@ -10283,42 +10369,30 @@ https://github.com/odeepllama/SolarSim/tree/main
             wStart = Math.floor(wStart / 60) * 60;
             wEnd = Math.ceil(wEnd / 60) * 60;
             if (wEnd === wStart) wEnd = wStart + 60;
-            const wSpan = wEnd - wStart;
-            // Head segment: window start to first step (gray default)
-            if (stepsWithTime.length > 0 && stepsWithTime[0].m > wStart) {
-              const headSeg = document.createElement('div');
-              headSeg.className = 'color-strip-seg';
-              headSeg.style.left = '0%';
-              headSeg.style.width = (((stepsWithTime[0].m - wStart) / wSpan) * 100) + '%';
-              headSeg.style.background = '#ddd';
-              headSeg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
-              headSeg.title = 'default color';
-              colorStrip.appendChild(headSeg);
+
+            // Partition into forward and reverse
+            const { forward, reverse } = partitionForwardReverse(stepsWithTime);
+
+            // Forward intensity bar
+            if (forward.length > 0) {
+              barColumn.appendChild(buildIntensityStrip(forward, wStart, wEnd, hasReverse ? 'forward-intensity' : 'only-intensity'));
             }
-            for (let i = 0; i < stepsWithTime.length; i++) {
-              const cur = stepsWithTime[i];
-              const next = stepsWithTime[i + 1];
-              const endMin = next ? next.m : wEnd;
-              if (endMin <= cur.m) continue;
-              const leftPct = ((cur.m - wStart) / wSpan) * 100;
-              const widthPct = ((endMin - cur.m) / wSpan) * 100;
-              const seg = document.createElement('div');
-              seg.className = 'color-strip-seg';
-              seg.style.left = leftPct + '%';
-              seg.style.width = widthPct + '%';
-              const rgb = cur.step.sun_color_rgb;
-              if (Array.isArray(rgb) && rgb.length === 3) {
-                seg.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-                seg.title = `Step ${cur.index + 1}: RGB(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-              } else {
-                seg.style.background = '#ddd';
-                seg.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)';
-                seg.title = `Step ${cur.index + 1}: default color`;
-              }
-              colorStrip.appendChild(seg);
+
+            // Reverse speed bar + intensity - only if reverse steps exist
+            if (hasReverse && reverse.length > 0) {
+              const reverseBar = document.createElement('div');
+              reverseBar.className = readOnly ? 'timeline-strip reverse-strip readonly' : 'timeline-strip reverse-strip';
+              barColumn.appendChild(reverseBar);
+              renderDayTimeline(reverseBar, dayInfo, null, readOnly, null, false, undefined, 'reverse');
+              barColumn.appendChild(buildIntensityStrip(reverse, wStart, wEnd, 'reverse-intensity'));
             }
           }
-          barColumn.appendChild(colorStrip);
+        } else if (hasReverse) {
+          // Has reverse steps but no colour/intensity data — still show reverse speed bar
+          const reverseBar = document.createElement('div');
+          reverseBar.className = readOnly ? 'timeline-strip reverse-strip readonly' : 'timeline-strip reverse-strip';
+          barColumn.appendChild(reverseBar);
+          renderDayTimeline(reverseBar, dayInfo, null, readOnly, null, false, undefined, 'reverse');
         }
       }
 
@@ -10327,7 +10401,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       // prevDayOrphanedTime: if previous day ended with orphaned HOLD, this is the end time (in minutes)
       // isStartingDay: true if this is the first day of a multi-day program (prevents negative speed head segment)
       // prevDayLastSpeed: the speed value from the last step of the previous day (for initialSpeed inheritance)
-      function renderDayTimeline(host, dayInfo, globalWindow, readOnly = false, prevDayOrphanedTime = null, isStartingDay = false, prevDayLastSpeed = undefined) {
+      // filterDirection: 'forward' (only positive/zero speed), 'reverse' (only negative speed), or undefined (all)
+      function renderDayTimeline(host, dayInfo, globalWindow, readOnly = false, prevDayOrphanedTime = null, isStartingDay = false, prevDayLastSpeed = undefined, filterDirection = undefined) {
         if (!host || !dayInfo || !dayInfo.steps.length) return;
 
         let WINDOW_START_MIN, WINDOW_END_MIN;
@@ -10587,66 +10662,58 @@ https://github.com/odeepllama/SolarSim/tree/main
         host.innerHTML = '';
 
         // Render 1x speed background zones first (lowest layer)
-        segments.forEach(seg => {
-          const widthMin = Math.abs(seg.endMin - seg.startMin);
-          if (widthMin < 5) return;
-          const speed = seg.speed;
-          const intensity = seg.intensity || 1.0;
-          const reverse = speed < 0;
-          const hold = speed === 0;
-          if (!hold && !reverse && speed <= 1) {
-            const leftPct = ((Math.min(seg.startMin, seg.endMin) - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
-            const widthPct = (widthMin / WINDOW_SPAN) * 100;
-            const bgDiv = document.createElement('div');
-            bgDiv.className = 'tl-bg-1x';
-            bgDiv.style.left = leftPct + '%';
-            bgDiv.style.width = widthPct + '%';
-            // Modulate blue color based on intensity
-            // At intensity 1.0: medium vibrant sky blue
-            // At intensity 0.1: very light pastel blue
-            // Base color (at 0.1): #B3D9FF (light pastel blue: rgb(179, 217, 255))
-            // Target color (at 1.0): #4DA6FF (vibrant sky blue: rgb(77, 166, 255))
-            // Scale linearly from light to dark as intensity goes from 0.1 to 1.0
-            const baseR = 179, baseG = 217, baseB = 255;
-            const darkR = 77, darkG = 166, darkB = 255;
-            // Linear interpolation: at intensity 1.0 use dark, at intensity 0.1 use light
-            const t = (intensity - 0.1) / 0.9; // normalize 0.1-1.0 to 0-1
-            const r = Math.round(baseR + (darkR - baseR) * t);
-            const g = Math.round(baseG + (darkG - baseG) * t);
-            const b = Math.round(baseB + (darkB - baseB) * t);
-            bgDiv.style.background = `rgb(${r}, ${g}, ${b})`;
-            host.appendChild(bgDiv);
-          }
-        });
-
-        // Axis with HHMM labels for all hours
-        const axis = document.createElement('div'); axis.className = 'tl-axis';
-        // Hour ticks (minor every hour, major every 2 hours)
-        const labelElements = [];
-        // Mobile optimization: skip odd-hour labels on narrow screens
-        const shouldHideOddHours = window.innerWidth <= 480;
-        const shouldRestrictToPhoneHours = window.innerWidth <= 480;
-        const phoneHours = [6, 9, 12, 15, 18]; // Only show these hours on phones
-        for (let minute = WINDOW_START_MIN; minute <= WINDOW_END_MIN; minute += 60) {
-          const h = Math.floor(minute / 60);
-          const posPct = ((minute - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
-          const major = ((h % 2) === 0);
-          // Show all hour labels (both major and minor)
-          // (Tick lines removed via CSS; still create element for consistent structure if desired)
-          const line = document.createElement('div'); line.className = 'tl-hour ' + (major ? 'major' : 'minor'); line.style.left = posPct + '%'; axis.appendChild(line);
-          // Skip odd-hour labels on mobile, or in wide (>18h) readOnly views to reduce visual clutter
-          const isWideWindow = WINDOW_SPAN > 18 * 60;
-          if ((shouldHideOddHours || (readOnly && isWideWindow)) && !major) continue;
-          // For phone-sized screens, only show specific hours
-          const isPhoneHour = phoneHours.includes(h);
-          if (shouldRestrictToPhoneHours && !isPhoneHour) continue;
-          const lab = document.createElement('div'); lab.className = 'tl-label ' + (major ? 'major' : 'minor'); lab.textContent = ('' + h).padStart(2, '0') + '00'; lab.style.left = posPct + '%';
-          lab.setAttribute('data-phone-restricted', isPhoneHour ? 'true' : 'false');
-          if (minute === WINDOW_START_MIN) lab.classList.add('edge-start');
-          if (minute === WINDOW_END_MIN) lab.classList.add('edge-end');
-          labelElements.push(lab);
+        // Only render for forward direction (or unfiltered)
+        if (filterDirection !== 'reverse') {
+          segments.forEach(seg => {
+            const widthMin = Math.abs(seg.endMin - seg.startMin);
+            if (widthMin < 5) return;
+            const speed = seg.speed;
+            const intensity = seg.intensity || 1.0;
+            const reverse = speed < 0;
+            const hold = speed === 0;
+            if (!hold && !reverse && speed <= 1) {
+              const leftPct = ((Math.min(seg.startMin, seg.endMin) - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+              const widthPct = (widthMin / WINDOW_SPAN) * 100;
+              const bgDiv = document.createElement('div');
+              bgDiv.className = 'tl-bg-1x';
+              bgDiv.style.left = leftPct + '%';
+              bgDiv.style.width = widthPct + '%';
+              const baseR = 179, baseG = 217, baseB = 255;
+              const darkR = 77, darkG = 166, darkB = 255;
+              const t = (intensity - 0.1) / 0.9;
+              const r = Math.round(baseR + (darkR - baseR) * t);
+              const g = Math.round(baseG + (darkG - baseG) * t);
+              const b = Math.round(baseB + (darkB - baseB) * t);
+              bgDiv.style.background = `rgb(${r}, ${g}, ${b})`;
+              host.appendChild(bgDiv);
+            }
+          });
         }
-        host.appendChild(axis);
+
+        // Axis with HHMM labels — only for forward bar or unfiltered mode
+        const labelElements = [];
+        if (filterDirection !== 'reverse') {
+          const axis = document.createElement('div'); axis.className = 'tl-axis';
+          const shouldHideOddHours = window.innerWidth <= 480;
+          const shouldRestrictToPhoneHours = window.innerWidth <= 480;
+          const phoneHours = [6, 9, 12, 15, 18];
+          for (let minute = WINDOW_START_MIN; minute <= WINDOW_END_MIN; minute += 60) {
+            const h = Math.floor(minute / 60);
+            const posPct = ((minute - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+            const major = ((h % 2) === 0);
+            const line = document.createElement('div'); line.className = 'tl-hour ' + (major ? 'major' : 'minor'); line.style.left = posPct + '%'; axis.appendChild(line);
+            const isWideWindow = WINDOW_SPAN > 18 * 60;
+            if ((shouldHideOddHours || (readOnly && isWideWindow)) && !major) continue;
+            const isPhoneHour = phoneHours.includes(h);
+            if (shouldRestrictToPhoneHours && !isPhoneHour) continue;
+            const lab = document.createElement('div'); lab.className = 'tl-label ' + (major ? 'major' : 'minor'); lab.textContent = ('' + h).padStart(2, '0') + '00'; lab.style.left = posPct + '%';
+            lab.setAttribute('data-phone-restricted', isPhoneHour ? 'true' : 'false');
+            if (minute === WINDOW_START_MIN) lab.classList.add('edge-start');
+            if (minute === WINDOW_END_MIN) lab.classList.add('edge-end');
+            labelElements.push(lab);
+          }
+          host.appendChild(axis);
+        }
 
         // Display numbering for steps inside window (chronological)
         // Use programSteps order for step numbering
@@ -10673,17 +10740,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
         };
 
-        // Render segments with proper layering: negative speed underneath, positive speed on top
-        // Separate labels array to render them in correct order on top (with proper z-index)
+        // Render segments with proper layering
         const segmentLabels = [];
+        const segmentMeta = []; // Collect segment info for grouped label creation
 
-        // Separate segments by speed: negative first (bottom layer), then positive/zero (top layer)
-        // This ensures DOM order puts negative segments underneath, with z-index reinforcing it
-        const negativeSegments = segments.filter(s => s.speed < 0);
-        const otherSegments = segments.filter(s => s.speed >= 0);
+        // Filter segments based on direction
+        const negativeSegments = filterDirection === 'forward' ? [] : segments.filter(s => s.speed < 0);
+        const otherSegments = filterDirection === 'reverse' ? [] : segments.filter(s => s.speed >= 0);
 
-        let negativeLabelZIndex = 35; // Labels for negative segments (lower layer)
-        let positiveLabelZIndex = 50; // Labels for positive segments (upper layer)
+        let negativeLabelZIndex = 35;
+        let positiveLabelZIndex = 50;
 
         // Render NEGATIVE speed segments FIRST (they'll be lowest in DOM order)
         negativeSegments.forEach(seg => {
@@ -10714,10 +10780,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const segStepNum = stepOrder.get(seg.index) || 0;
           div.style.zIndex = Math.max(20, Math.min(29, 20 + segStepNum)).toString();
 
-          // Reduce opacity for forward segments that overlap with negative-speed sections
-          if (!hold && !reverse && overlapWithNegativeSpeed(seg.startMin, seg.endMin)) {
-            div.style.opacity = '0.2';
-          }
+
           if (!hold && !reverse) {
             let baseColor;
             if (speed <= 1) {
@@ -10735,20 +10798,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             } else {
               baseColor = '#f9844a'; // >6x: orange
             }
-            // Modulate saturation based on intensity
-            div.style.background = modulateColorByIntensity(baseColor, intensity);
+            // Use base color directly (no intensity modulation)
+            div.style.background = baseColor;
           }
-          // Label (only show for segments 45+ minutes wide)
-          // BUT: on starting day (isStartingDay=true), don't show negative speed labels - only show them on Day 0
+          // Collect segment info for grouped labelling (done after both loops)
           let speedLabel = hold ? 'HOLD' : (reverse ? ('−' + Math.abs(speed) + 'X') : (speed + 'X'));
-          if (widthMin >= 45 && !(isStartingDay && reverse)) {
-            // Add dual sun indicator in label
-            const labelSpan = document.createElement('span');
-            labelSpan.className = 'tl-seg-label-bg';
-            labelSpan.textContent = dualSun ? ('☼' + speedLabel + '☼') : speedLabel;
-            // Store label for later rendering with z-index (negative labels get lower z-index)
-            segmentLabels.push({ span: labelSpan, div: div, zIndex: negativeLabelZIndex });
-            negativeLabelZIndex++;
+          if (!(isStartingDay && reverse)) {
+            segmentMeta.push({ div, speed, speedLabel, dualSun, leftPct: parseFloat(div.style.left), widthPct: parseFloat(div.style.width), layer: 'negative' });
           }
           // Tooltip with intensity info
           let intensityLabel = intensity.toFixed(2);
@@ -10799,10 +10855,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const segStepNum2 = stepOrder.get(seg.index) || 0;
           div.style.zIndex = Math.max(40, Math.min(49, 40 + segStepNum2)).toString();
 
-          // Reduce opacity for forward segments that overlap with negative-speed sections
-          if (!hold && !reverse && overlapWithNegativeSpeed(seg.startMin, seg.endMin)) {
-            div.style.opacity = '0.2';
-          }
+
           if (!hold && !reverse) {
             let baseColor;
             if (speed <= 1) {
@@ -10820,20 +10873,12 @@ https://github.com/odeepllama/SolarSim/tree/main
             } else {
               baseColor = '#f9844a'; // >6x: orange
             }
-            // Modulate saturation based on intensity
-            div.style.background = modulateColorByIntensity(baseColor, intensity);
+            // Use base color directly (no intensity modulation)
+            div.style.background = baseColor;
           }
-          // Label (only show for segments 45+ minutes wide)
+          // Collect segment info for grouped labelling (done after both loops)
           let speedLabel = hold ? 'HOLD' : (reverse ? ('−' + Math.abs(speed) + 'X') : (speed + 'X'));
-          if (widthMin >= 45) {
-            // Add dual sun indicator in label
-            const labelSpan = document.createElement('span');
-            labelSpan.className = 'tl-seg-label-bg';
-            labelSpan.textContent = dualSun ? ('☼' + speedLabel + '☼') : speedLabel;
-            // Store label for later rendering with z-index (positive labels get higher z-index)
-            segmentLabels.push({ span: labelSpan, div: div, zIndex: positiveLabelZIndex });
-            positiveLabelZIndex++;
-          }
+          segmentMeta.push({ div, speed, speedLabel, dualSun, leftPct: parseFloat(div.style.left), widthPct: parseFloat(div.style.width), layer: 'positive' });
           // Tooltip with intensity info
           let intensityLabel = intensity.toFixed(2);
           const stepNum = stepOrder.get(seg.index) || '?';
@@ -10857,6 +10902,43 @@ https://github.com/odeepllama/SolarSim/tree/main
           host.appendChild(div);
         });
 
+        // Group adjacent same-speed segments and create one label per group
+        // Sort segment metadata by left position within each layer
+        const negMeta = segmentMeta.filter(m => m.layer === 'negative').sort((a, b) => a.leftPct - b.leftPct);
+        const posMeta = segmentMeta.filter(m => m.layer === 'positive').sort((a, b) => a.leftPct - b.leftPct);
+
+        function createGroupedLabels(metaArr, baseZIndex) {
+          if (!metaArr.length) return;
+          let groupStart = 0;
+          for (let i = 0; i <= metaArr.length; i++) {
+            // End of group: different speed, or end of array
+            if (i === metaArr.length || metaArr[i].speed !== metaArr[groupStart].speed) {
+              // Calculate group span
+              const groupLeft = metaArr[groupStart].leftPct;
+              const lastSeg = metaArr[i - 1];
+              const groupRight = lastSeg.leftPct + lastSeg.widthPct;
+              const groupWidthPct = groupRight - groupLeft;
+              // Calculate group width in minutes for minimum-size check
+              const groupWidthMin = (groupWidthPct / 100) * WINDOW_SPAN;
+
+              if (groupWidthMin >= 30) { // lower threshold since groups span multiple segments
+                const groupCenter = groupLeft + groupWidthPct / 2;
+                const seg = metaArr[groupStart];
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'tl-seg-label-bg';
+                // Check if ANY segment in the group has dual_sun
+                const anyDualSun = metaArr.slice(groupStart, i).some(m => m.dualSun);
+                labelSpan.textContent = anyDualSun ? ('☼' + seg.speedLabel + '☼') : seg.speedLabel;
+                segmentLabels.push({ span: labelSpan, div: seg.div, zIndex: baseZIndex, groupCenter });
+              }
+              groupStart = i;
+            }
+          }
+        }
+
+        createGroupedLabels(negMeta, negativeLabelZIndex);
+        createGroupedLabels(posMeta, positiveLabelZIndex);
+
         // Now append all labels directly to host (not as children of segments)
         // This breaks them out of the segment's stacking context so they can layer independently
         // Sort by z-index to ensure they're appended in the correct order (lower z-index first)
@@ -10865,10 +10947,16 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Deduplicate labels: skip labels that are at the same position with the same text
         const seenLabels = new Set();
 
-        segmentLabels.forEach(({ span, div, zIndex }) => {
-          const segLeft = parseFloat(div.style.left);
-          const segWidth = parseFloat(div.style.width);
-          const segCenter = segLeft + segWidth / 2;
+        segmentLabels.forEach(({ span, zIndex, groupCenter, div }) => {
+          // Use groupCenter if available (grouped labels), otherwise calculate from div
+          let segCenter;
+          if (groupCenter !== undefined) {
+            segCenter = groupCenter;
+          } else {
+            const segLeft = parseFloat(div.style.left);
+            const segWidth = parseFloat(div.style.width);
+            segCenter = segLeft + segWidth / 2;
+          }
           const labelText = span.textContent;
 
           // Create a unique key for this label position + text (rounded to 0.1% precision)
@@ -10895,6 +10983,12 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Add labels last so they are always on top
         labelElements.forEach(lab => host.appendChild(lab));
+
+        // Add forward-arrow class to the first forward segment (if direction filtered)
+        if (filterDirection === 'forward') {
+          const firstFwdSeg = host.querySelector('.tl-seg.run:not(.reverse):not(.hold)');
+          if (firstFwdSeg) firstFwdSeg.classList.add('forward-arrow');
+        }
 
         // Render jump markers inside window
         jumps.forEach(j => {
