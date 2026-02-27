@@ -940,7 +940,6 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
         if ticks_diff(now_ms, camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
             # Release camera trigger
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
-            print(f"Initial camera trigger released")
             trigger_camera_shutter()
             
             # Move to rotation state
@@ -1032,7 +1031,6 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
         # Check if camera trigger hold time has elapsed
         if ticks_diff(now_ms, camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
-            print(f"STILLS mode: Camera trigger released")
             trigger_camera_shutter()
             rotation_state = 'ROTATING'
             last_rotation_step_time_ms = now_ms  # Reset rotation timing
@@ -1043,7 +1041,6 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
         if ticks_diff(now_ms, camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
             # Release camera trigger
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
-            print(f"Final camera trigger released, returning to {CAMERA_SERVO_REST_ANGLE} deg")
             
             rotation_state = 'RETURNING'
             return_angle = current_rotation_angle  # Start returning from current angle (should be 360)
@@ -1134,7 +1131,6 @@ def update_standalone_servo2(now_ms):
         if ticks_diff(now_ms, servo2_trigger_start_ms) >= SERVO2_TRIGGER_HOLD_MS:
             servo2_state = 'IDLE'
             set_servo_angle(servo_pwm_2, CAMERA_SERVO_REST_ANGLE)
-            safe_print("Camera trigger released")
             trigger_camera_shutter()
             last_servo2_trigger_ms = now_ms
             if camera_lighting_active and not rotation_lighting_active:
@@ -2571,7 +2567,7 @@ def handle_command(command_str):
             print("-- -- -- -- -- -- -- --")          
             print(f"  Rotation Enabled: {ROTATION_ENABLED}")
             print(f"  Rotation Imaging Servo: {ROTATION_CAMERA_SERVO}")
-            print(f"  Rotation Interval: {ROTATION_CYCLE_INTERVAL_MINUTES} sim min")
+            print(f"  Rotation Interval: {ROTATION_CYCLE_INTERVAL_MINUTES} real min")
             print(f"  Images per Rotation: {IMAGES_PER_ROTATION}")
             print(f"  Degrees per Image: {DEGREES_PER_IMAGE:.2f}°")
             print(f"  Rotation at Night: {ROTATION_AT_NIGHT}")
