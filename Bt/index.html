@@ -10997,13 +10997,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         });
 
         // Render playhead if device is connected and sim time is within visible range
-        renderTimelinePlayhead(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN);
+        renderTimelinePlayhead(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN, filterDirection);
       }
 
       function formatHHMM(min) { const h = Math.floor(min / 60); const m = min % 60; return (h < 10 ? '' + h : ('' + h).padStart(2, '0')) + ('' + m).padStart(2, '0'); }
 
       // Render playhead indicator on timeline showing current sim time
-      function renderTimelinePlayhead(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN) {
+      // filterDirection: 'forward', 'reverse', or undefined (single strip, always show)
+      function renderTimelinePlayhead(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN, filterDirection) {
         if (!host) return;
 
         // Remove any existing playhead
@@ -11016,6 +11017,23 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         if (timelineDayNumber !== currentPlayheadDay) {
           return; // Only show playhead on the current day
+        }
+
+        // When forward/reverse strips are split, only show playhead on the active strip
+        if (filterDirection) {
+          // Read the actual device-reported speed from the status tile
+          const speedTile = window.kvCache && window.kvCache.get && window.kvCache.get('speed');
+          if (speedTile) {
+            const speedSpan = speedTile.querySelector('span');
+            const speedText = speedSpan ? speedSpan.textContent.trim() : '';
+            // Parse speed value from text like "-600X", "1X", "600X"
+            const speedVal = parseFloat(speedText);
+            if (!isNaN(speedVal)) {
+              const isReverse = speedVal < 0;
+              if (filterDirection === 'forward' && isReverse) return;
+              if (filterDirection === 'reverse' && !isReverse) return;
+            }
+          }
         }
 
         // Get current sim time from kvCache (same source as SimTime status tile)
