@@ -1972,7 +1972,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     /* SolarMode tile: text like SCIENTIFIC needs to fit */
-    .mon-kv.solar-mode-tile span {
+    /* SolarMode tile: only shrink SCIENTIFIC text to fit */
+    .mon-kv.solar-mode.mode-scientific span {
       font-size: 1.2rem;
     }
 
@@ -16876,7 +16877,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           let box = kvCache.get(k);
           const isNewBox = !box;
           if (isNewBox) {
-            box = document.createElement('div'); box.className = 'mon-kv' + (k === 'sunColor' ? ' sun-color-tile' : '') + (k === 'solarMode' ? ' solar-mode-tile' : ''); box.innerHTML = `<b>${label}</b><span></span>`; kvCache.set(k, box);
+            box = document.createElement('div'); box.className = 'mon-kv' + (k === 'sunColor' ? ' sun-color-tile' : ''); box.innerHTML = `<b>${label}</b><span></span>`; kvCache.set(k, box);
             // Don't insert yet - let reorderTiles() handle all insertions to avoid duplicates
           }
           const span = box.querySelector('span');
