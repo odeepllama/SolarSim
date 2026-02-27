@@ -9430,7 +9430,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-intensity-strip{ position:relative; height:38px; overflow:hidden; margin-top:0; background:#f0f0f0; border:1px solid #ddd; border-top:none; }
   .timeline-intensity-strip:first-of-type{ border-radius:0; }
   .timeline-intensity-strip.forward-intensity{ border-radius:0; }
-  .timeline-intensity-strip.reverse-intensity{ border-radius:0 0 4px 4px; }
+  .timeline-intensity-strip.reverse-intensity{ border-radius:0 0 4px 4px; background:transparent; border:none; }
   .timeline-intensity-strip.only-intensity{ border-radius:0 0 4px 4px; }
   .intensity-bar-seg{ position:absolute; bottom:0; box-sizing:border-box; border-right:1px solid rgba(0,0,0,0.08); }
   .intensity-bar-seg .intensity-fill{ position:absolute; bottom:0; left:0; right:0; border-radius:1px 1px 0 0; }
@@ -9858,30 +9858,33 @@ https://github.com/odeepllama/SolarSim/tree/main
                   }
                 }
               } else if (transition === 'JUMP') {
-                // JUMP: Any JUMP creates a day boundary
-                // Check time difference to determine direction
-                if (mNext < m) {
-                  // Time went backward: if large difference (>12h), it's forward to next day; otherwise backward to prev day
-                  if ((m - mNext) > 12 * 60) {
-                    // Large backward jump in time (e.g., 23:00 → 01:00) means forward wrap to next day
-                    crossesMidnight = true;
-                    dayDirection = 1;
-                  } else {
-                    // Small backward jump means same day (no boundary)
-                  }
-                } else if (mNext > m) {
-                  // Time went forward: if large difference (>12h), it's backward to prev day; otherwise forward to next day
-                  if ((mNext - m) > 12 * 60) {
-                    // Large forward jump in time (e.g., 01:00 → 23:00) means backward wrap to prev day
-                    crossesMidnight = true;
-                    dayDirection = -1;
-                  } else {
-                    // Small forward jump means same day (no boundary)
-                  }
-                } else {
-                  // Same time: JUMP to next day (most common case for multi-day programs)
+                // JUMP: Instantaneous teleport. Determine day boundary from the
+                // direction time was flowing BEFORE the jump (last non-zero speed).
+                // Find last non-zero speed by scanning backward through steps
+                let lastActiveSpeed = 1; // default to forward if none found
+                for (let k = i; k >= 0; k--) {
+                  const sp = programSteps[k].speed !== undefined ? programSteps[k].speed : 1;
+                  if (sp !== 0) { lastActiveSpeed = sp; break; }
+                }
+
+                if (mNext === m) {
+                  // Same time: always new day (repeat same time on next day)
                   crossesMidnight = true;
                   dayDirection = 1;
+                } else if (lastActiveSpeed > 0) {
+                  // Was running FORWARD: jumping to earlier/same time = new day
+                  if (mNext < m) {
+                    crossesMidnight = true;
+                    dayDirection = 1;
+                  }
+                  // jumping to later time = same day (skip ahead)
+                } else {
+                  // Was running REVERSE: jumping to later/same time = new day
+                  if (mNext > m) {
+                    crossesMidnight = true;
+                    dayDirection = 1;
+                  }
+                  // jumping to earlier time = same day (continue backward)
                 }
               }
 
@@ -10219,15 +10222,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (wSpan <= 0 || steps.length === 0) return strip;
         for (let i = 0; i < steps.length; i++) {
           const cur = steps[i];
+          // Use pre-computed display range for reverse steps, otherwise default logic
+          const segStart = cur.displayStart != null ? cur.displayStart : cur.m;
           const next = steps[i + 1];
-          const endMin = next ? next.m : wEnd;
-          if (cur.m == null || endMin <= cur.m) continue;
+          const segEnd = cur.displayEnd != null ? cur.displayEnd : (next ? next.m : wEnd);
+          if (segStart == null || segEnd <= segStart) continue;
           const intensity = cur.step.intensity_scale != null ? parseFloat(cur.step.intensity_scale) : 1.0;
           const clampedIntensity = Math.max(0, Math.min(1, isNaN(intensity) ? 1 : intensity));
           const seg = document.createElement('div');
           seg.className = 'intensity-bar-seg';
-          seg.style.left = (((cur.m - wStart) / wSpan) * 100) + '%';
-          seg.style.width = (((endMin - cur.m) / wSpan) * 100) + '%';
+          seg.style.left = (((segStart - wStart) / wSpan) * 100) + '%';
+          seg.style.width = (((segEnd - segStart) / wSpan) * 100) + '%';
           seg.style.height = '100%';
           seg.title = `Step ${cur.index + 1}: Intensity ${intensity}`;
           // Fill bar: height = intensity percentage, colored by sun_color_rgb or gray
@@ -10246,7 +10251,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         return strip;
       }
 
-      // Partition steps into forward and reverse groups, sort reverse by sim_time ascending
+      // Partition steps into forward and reverse groups
+      // For reverse steps, compute displayStart/displayEnd based on the next step in program order
       function partitionForwardReverse(steps) {
         const forward = steps.filter(s => {
           const speed = s.step.speed !== undefined ? s.step.speed : 1;
@@ -10255,7 +10261,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reverse = steps.filter(s => {
           const speed = s.step.speed !== undefined ? s.step.speed : 1;
           return speed < 0;
-        }).sort((a, b) => a.m - b.m); // sort ascending by sim_time
+        }).map(revStep => {
+          // Find the next step in original program order (by index)
+          const nextInProgram = steps.find(s => s.index === revStep.index + 1);
+          const targetM = nextInProgram ? nextInProgram.m : null;
+          if (targetM != null) {
+            return {
+              ...revStep,
+              displayStart: Math.min(revStep.m, targetM),
+              displayEnd: Math.max(revStep.m, targetM)
+            };
+          }
+          return revStep;
+        }).sort((a, b) => (a.displayStart || a.m) - (b.displayStart || b.m));
         return { forward, reverse };
       }
 
