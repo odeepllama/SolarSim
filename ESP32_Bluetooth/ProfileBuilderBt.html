@@ -198,7 +198,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       gap: 14px;
     }
 
-    /*  Rotation & Imaging section: force 3-column grid layout */
+    /*  Rotation Imaging section: force 3-column grid layout */
     .group-grid.rotation-imaging {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -3760,7 +3760,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                   your current form settings versus the profile you're about to load. This lets you review what will
                   change before applying.</p>
                 <p><strong>Comparison View:</strong> The modal displays settings organized into sections (Core Settings,
-                  Program Settings, Rotation & Imaging, Program Steps, etc.). Fields that differ between your current
+                  Program Settings, Rotation Imaging, Program Steps, etc.). Fields that differ between your current
                   form and the selected profile are highlighted with a yellow background.</p>
                 <p><strong>Diff Summary:</strong> At the bottom of the modal, you'll see a count of how many fields
                   differ (e.g., "5 fields differ"). If profiles are identical, it shows "Profiles are identical" in
@@ -4797,7 +4797,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li>You can add additional days with different steps/conditions if your experiment requires.</li>
             </ol>
 
-            <h4>Rotation & Imaging</h4>
+            <h4>Rotation Imaging</h4>
             <p>Configure the turntable and camera triggers.</p>
             <ul>
               <li><strong>Rotation Enabled</strong>: Master switch for the rotating platform.</li>
@@ -5274,7 +5274,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           sectionSolarMode: 'Solar Mode & Sun Color',
           sectionImagingIllum: 'Imaging Illumination',
           sectionImagingServo: 'Imaging Servo Operation & Timing',
-          sectionRotation: 'Rotation & Imaging',
+          sectionRotation: 'Rotation Imaging',
           sectionProgramControl: 'Program Control',
           toggleView: '(Toggle view)',
         },
@@ -5682,7 +5682,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'] },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
         { name: 'Imaging Servo Operation & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'] },
-        { name: 'Rotation & Imaging', i18nKey: 'sectionRotation', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
+        { name: 'Rotation Imaging', i18nKey: 'sectionRotation', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
       ];
 
       const FIELDS = {
@@ -5916,7 +5916,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const grid = document.createElement('div');
             grid.className = 'group-grid';
             // Add special class for multi-column grid layouts
-            if (group.name === 'Rotation & Imaging') {
+            if (group.name === 'Rotation Imaging') {
               grid.className = 'group-grid rotation-imaging';
             } else if (group.name === 'Imaging Illumination') {
               grid.className = 'group-grid imaging-illumination';
@@ -8879,10 +8879,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         sections.push(programSection);
 
-        // Rotation & Imaging Section
+        // Rotation Imaging Section
         const rotationFields = ['IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'IMAGING_PAUSE_MS'];
         const rotationSection = {
-          title: 'Rotation & Imaging',
+          title: 'Rotation Imaging',
           rows: []
         };
 
@@ -19214,7 +19214,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false },
           { id: 'imaging-illumination', name: 'Imaging Illumination', defaultSimple: false },
           { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true },
-          { id: 'rotation-and-imaging', name: 'Rotation & Imaging', defaultSimple: false },
+          { id: 'rotation-and-imaging', name: 'Rotation Imaging', defaultSimple: false },
           { id: 'program-control', name: 'Program Control', defaultSimple: true },
           { id: 'program-steps-section', name: 'Program Steps (Timeline & Table)', defaultSimple: false },
           { id: 'export-section', name: 'Download, Import & Upload', defaultSimple: false },
@@ -19227,7 +19227,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           { key: 'dualSun', name: 'Dual Sun', defaultVisible: true },
           { key: 'servo2DayInt', name: 'Servo2 Day Interval', defaultVisible: true },
           { key: 'servo2NightInt', name: 'Servo2 Night Interval', defaultVisible: true },
-          { key: 'rotation', name: 'Rotation & Imaging', defaultVisible: true }
+          { key: 'rotation', name: 'Rotation Imaging', defaultVisible: true }
         ];
 
         // Load configuration from localStorage
