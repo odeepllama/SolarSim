@@ -4626,6 +4626,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           data-i18n="autoloadReenabled">
           Auto-load has been re-enabled on the device.
         </div>
+        <div id="uploadSuccessAutoloadOffWarning"
+          style="margin-top:12px; padding:10px; background:#fff8e1; border-left:3px solid #f57c00; border-radius:4px; font-size:0.9rem; display:none;">
+          ⚠️ <strong>Auto-load is disabled.</strong> The device will <strong>not</strong> automatically run this profile
+          on restart. Enable auto-load via the badge if needed.
+        </div>
         <div class="btn-row">
           <button type="button" class="secondary" id="uploadSuccessCancelBtn" data-i18n="cancel">Cancel</button>
           <button type="button" class="upload-green" id="uploadSuccessConnectBtn" data-i18n="connectToDeviceNow">Connect
@@ -13777,6 +13782,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Only show auto-load message if it was actually re-enabled (changed from OFF to ON)
         if (autoloadMsg) {
           autoloadMsg.style.display = autoloadWasReEnabled ? 'block' : 'none';
+        }
+
+        // Show warning if auto-load is locked off (user won't get auto-load on restart)
+        const autoloadOffWarning = document.getElementById('uploadSuccessAutoloadOffWarning');
+        if (autoloadOffWarning) {
+          const isAutoloadLocked = localStorage.getItem('autoloadLocked') === 'true';
+          const isAutoloadOff = window.__autoloadEnabled === false;
+          autoloadOffWarning.style.display = (isAutoloadLocked && isAutoloadOff) ? 'block' : 'none';
         }
 
         // BLE uploads load in-place — no reconnect needed
