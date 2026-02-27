@@ -7449,6 +7449,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                   holdTd.style.fontWeight = holdBg ? '700' : '';
                 }
               }
+              // Speed changes affect day boundary logic — update day backgrounds and timeline
+              updateDayBackgroundColorsForAffectedRows(row);
+              renderTimelineStrip();
               updatePreview(false);
               return; // Don't trigger table re-render during typing
             }
@@ -9693,6 +9696,12 @@ https://github.com/odeepllama/SolarSim/tree/main
         for (let i = changedRowIndex; i < rows.length; i++) {
           const tr = rows[i];
           const dayNumber = stepToDayMap.get(i);
+
+          // Update Day column text
+          const dayCell = tr.querySelector('.day-number-cell');
+          if (dayCell) {
+            dayCell.textContent = dayNumber !== undefined ? dayNumber : '';
+          }
 
           // Update CSS classes for background color
           tr.classList.remove('odd-day-row', 'jump-row');
