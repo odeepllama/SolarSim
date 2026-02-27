@@ -539,13 +539,11 @@ def apply_step_settings(step_arg):
         INTENSITY_SCALE = step_arg["intensity_scale"]
     if "dual_sun" in step_arg:
         DUAL_SUN_ENABLED = bool(step_arg["dual_sun"])
-        print(f"[PROGRAM] Dual sun mode set to: {DUAL_SUN_ENABLED}")
     # Apply per-step sun color
     sun_rgb = step_arg.get("sun_color_rgb")
     if isinstance(sun_rgb, list) and len(sun_rgb) == 3:
         CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B = int(sun_rgb[0]), int(sun_rgb[1]), int(sun_rgb[2])
         SUN_COLOR_MODE = "CUSTOM"
-        print(f"[PROGRAM] Sun color set to RGB({CUSTOM_SUN_R}, {CUSTOM_SUN_G}, {CUSTOM_SUN_B})")
     if TIME_SCALE != previous_speed:
         if TIME_SCALE == 0:
             # HOLD transition handled by caller freeze logic (no anchor change here)

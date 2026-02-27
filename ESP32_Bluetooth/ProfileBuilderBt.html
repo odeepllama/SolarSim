@@ -16205,7 +16205,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reProgramSteps = /program\s*steps\s*[:=]\s*(\[.*\])/i;
         const reProgramStepsChunk = /program\s*steps\s*\((\d+)-(\d+)\)\s*[:=]\s*(\[.*\])/i;
         const reNumberOfSteps = /number\s*of\s*steps\s*[:=]\s*(\d+)/i;
-        const reProgramCurrentStep = /program\s*current\s*step\s*[:=]\s*(\d+)\s*\/\s*(\d+)/i;
+        const reProgramCurrentStep = /\[PROGRAM\]\s*Step\s+(\d+)\s*\/\s*(\d+)/i;
         const reProgramRunning = /program\s*running\s*[:=]\s*(true|false)/i;
 
         // Additional parsers for Load from Device functionality
@@ -16221,7 +16221,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reAutoloadStatusCmd = /\[SERIAL CMD\]\s*Auto-load\s+latest\s+profile\s+set\s+to\s*:\s*(true|false)/i;
 
         // Parser for program jump events: "[SERIAL CMD] Jumping program to step 3 at 1000"
-        const reProgramJump = /\[SERIAL CMD\]\s*Jumped\s+to\s+step\s+(\d+)\s+at\s+(\d{3,4})/i;
+        const reProgramJump = /\[SERIAL CMD\]\s*Jump(?:ed|ing(?:\s+program)?)\s+(?:to\s+)?step\s+(\d+)\s+at\s+(\d{3,4})/i;
 
         // Global state for capturing device configuration
         window.__deviceConfig = window.__deviceConfig || {};
@@ -18594,7 +18594,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const firstStepIndex = __getFirstStepOfDay(targetDay);
 
         // Check if device is connected
-        const isConnected = state && state.port;
+        const _ss1 = window.__serialState || null;
+        const isConnected = _ss1 && (_ss1.port || _ss1.bleDevice);
 
         if (isConnected && firstStepIndex !== null) {
           // Device is connected - send jump command
@@ -18606,11 +18607,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
           // Suppress verbose status output for 2 seconds after jump command
-          state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
+          _ss1.__navSuppressionActive = true;
+          _ss1.__silentStatusUntil = performance.now() + 2000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+          setTimeout(() => { _ss1.__navSuppressionActive = false; }, 2000);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
@@ -18636,44 +18637,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
       };
 
-      // Helper: determine which 1-based step the current sim time falls in/after
-      function __stepIndexFromSimTime() {
-        if (!programSteps || programSteps.length === 0) return 0;
-        // Read current sim time from kvCache
-        let currentMinutes = null;
-        if (window.kvCache && window.kvCache.get) {
-          const simBox = window.kvCache.get('sim');
-          if (simBox) {
-            const span = simBox.querySelector('span');
-            if (span) {
-              const txt = span.textContent.trim();
-              if (txt.includes(':')) {
-                const parts = txt.split(':');
-                const h = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10);
-                if (!isNaN(h) && !isNaN(m)) currentMinutes = h * 60 + m;
-              }
-            }
-          }
-        }
-        if (currentMinutes === null) return window.__currentStepIndex || 0; // fallback
-
-        // Find which step we're in: the last step whose sim_time_hhmm <= current time
-        let bestStep = 0; // 0 = before any step
-        for (let i = 0; i < programSteps.length; i++) {
-          const hhmm = programSteps[i].sim_time_hhmm;
-          const stepMin = Math.floor(hhmm / 100) * 60 + (hhmm % 100);
-          if (currentMinutes >= stepMin) {
-            bestStep = i + 1; // 1-based
-          }
-        }
-        return bestStep;
+      // Helper: get the current 1-based step index for navigation.
+      // Uses window.__currentStepIndex which is maintained by [PROGRAM] Step N/M
+      // status messages from the device. The old sim-time-based lookup was unreliable
+      // for programs with both forward and reverse steps (same sim time appears in
+      // multiple steps, causing wrong matches).
+      function __getCurrentStepForNav() {
+        return window.__currentStepIndex || 0;
       }
 
       // Function to scroll to previous step
       window.__scrollToPrevStep = async function () {
         if (!programSteps || programSteps.length === 0) return;
-        const currentStep = __stepIndexFromSimTime();
+        const currentStep = __getCurrentStepForNav();
         if (currentStep < 1) return;
         const prevStep = Math.max(currentStep - 1, 1);
 
@@ -18688,10 +18664,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           window.__dayWrapCount = window.__playheadCurrentDay - 1;
         }
         __setPlayheadManualFlag();
-        state.__navSuppressionActive = true;
-        state.__silentStatusUntil = performance.now() + 2000;
+        const _ss2 = window.__serialState;
+        if (_ss2) { _ss2.__navSuppressionActive = true; _ss2.__silentStatusUntil = performance.now() + 2000; }
         await __sendDeviceCommand(`jump step ${prevStep}`);
-        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        setTimeout(() => { if (_ss2) _ss2.__navSuppressionActive = false; }, 2000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -18699,7 +18675,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Function to scroll to next step
       window.__scrollToNextStep = async function () {
         if (!programSteps || programSteps.length === 0) return;
-        const currentStep = __stepIndexFromSimTime();
+        const currentStep = __getCurrentStepForNav();
         const nextStep = currentStep + 1;
         if (nextStep > programSteps.length) return;
 
@@ -18714,10 +18690,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           window.__dayWrapCount = window.__playheadCurrentDay - 1;
         }
         __setPlayheadManualFlag();
-        state.__navSuppressionActive = true;
-        state.__silentStatusUntil = performance.now() + 2000;
+        const _ss3 = window.__serialState;
+        if (_ss3) { _ss3.__navSuppressionActive = true; _ss3.__silentStatusUntil = performance.now() + 2000; }
         await __sendDeviceCommand(`jump step ${nextStep}`);
-        setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+        setTimeout(() => { if (_ss3) _ss3.__navSuppressionActive = false; }, 2000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -18734,7 +18710,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const firstStepIndex = __getFirstStepOfDay(targetDay);
 
         // Check if device is connected
-        const isConnected = state && state.port;
+        const _ss4 = window.__serialState || null;
+        const isConnected = _ss4 && (_ss4.port || _ss4.bleDevice);
 
         if (isConnected && firstStepIndex !== null) {
           // Device is connected - send jump command
@@ -18746,11 +18723,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
           // Suppress verbose status output for 2 seconds after jump command
-          state.__navSuppressionActive = true;
-          state.__silentStatusUntil = performance.now() + 2000;
+          _ss4.__navSuppressionActive = true;
+          _ss4.__silentStatusUntil = performance.now() + 2000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
-          setTimeout(() => { state.__navSuppressionActive = false; }, 2000);
+          setTimeout(() => { _ss4.__navSuppressionActive = false; }, 2000);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
