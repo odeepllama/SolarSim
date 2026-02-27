@@ -940,6 +940,7 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
         if ticks_diff(now_ms, camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
             # Release camera trigger
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
+            print(f"Initial camera trigger released")
             trigger_camera_shutter()
             
             # Move to rotation state
@@ -1031,6 +1032,7 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
         # Check if camera trigger hold time has elapsed
         if ticks_diff(now_ms, camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
+            print(f"STILLS mode: Camera trigger released")
             trigger_camera_shutter()
             rotation_state = 'ROTATING'
             last_rotation_step_time_ms = now_ms  # Reset rotation timing
@@ -1041,6 +1043,7 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
         if ticks_diff(now_ms, camera_trigger_started_ms) >= CAMERA_TRIGGER_HOLD_MS:
             # Release camera trigger
             set_servo_angle(get_rotation_camera_pwm(), CAMERA_SERVO_REST_ANGLE)
+            print(f"Final camera trigger released, returning to {CAMERA_SERVO_REST_ANGLE} deg")
             
             rotation_state = 'RETURNING'
             return_angle = current_rotation_angle  # Start returning from current angle (should be 360)
@@ -1494,6 +1497,7 @@ def get_scientific_sun_position(minute_of_day):
     elevation = calculate_solar_elevation(minute_of_day, day_of_year)
     
     # Check if it's daytime (elevation > 0)
+    brightness_factor = 0  # Default for nighttime (sun off-screen)
     if elevation > 0:
         # Calculate position based on time between sunrise and sunset
         if SUNSET_TIME > SUNRISE_TIME:

@@ -1940,7 +1940,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       padding: 6px 8px;
       font-size: .8rem;
       line-height: 1.3;
-      text-align: left;
+      text-align: center;
     }
 
     /* Animation only applied when tile is newly created */
@@ -1961,7 +1961,19 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .mon-kv span {
       font-family: ui-monospace, monospace;
+      font-size: 2rem;
+      display: block;
+      text-align: center;
+    }
+
+    /* SunColor tile keeps compact layout (icons + RGB text don't suit large text) */
+    .mon-kv.sun-color-tile span {
       font-size: 1rem;
+    }
+
+    /* SolarMode tile: text like SCIENTIFIC needs to fit */
+    .mon-kv.solar-mode-tile span {
+      font-size: 1.2rem;
     }
 
     /* Active (ON) tile highlight */
@@ -16864,7 +16876,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           let box = kvCache.get(k);
           const isNewBox = !box;
           if (isNewBox) {
-            box = document.createElement('div'); box.className = 'mon-kv'; box.innerHTML = `<b>${label}</b><span></span>`; kvCache.set(k, box);
+            box = document.createElement('div'); box.className = 'mon-kv' + (k === 'sunColor' ? ' sun-color-tile' : '') + (k === 'solarMode' ? ' solar-mode-tile' : ''); box.innerHTML = `<b>${label}</b><span></span>`; kvCache.set(k, box);
             // Don't insert yet - let reorderTiles() handle all insertions to avoid duplicates
           }
           const span = box.querySelector('span');

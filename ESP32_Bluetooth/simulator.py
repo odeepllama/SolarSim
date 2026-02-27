@@ -449,7 +449,7 @@ class SolarSimulator:
         o("-- -- -- -- -- -- -- --")
         o(f"  Rotation Enabled: {ROTATION_ENABLED}")
         o(f"  Rotation Imaging Servo: {ROTATION_CAMERA_SERVO}")
-        o(f"  Rotation Interval: {ROTATION_CYCLE_INTERVAL_MINUTES} sim min")
+        o(f"  Rotation Interval: {ROTATION_CYCLE_INTERVAL_MINUTES} real min")
         o(f"  Images per Rotation: {IMAGES_PER_ROTATION}")
         o(f"  Degrees per Image: {DEGREES_PER_IMAGE:.2f}")
         o(f"  Rotation at Night: {ROTATION_AT_NIGHT}")
@@ -1287,14 +1287,11 @@ class SolarSimulator:
                     self.hw.apply_lighting(CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B, CAMERA_LIGHTING_PANELS)
                 sleep_ms(10)  # Brief pause after lighting, before servo move
                 self.hw.set_servo_angle(self.hw.servo_pwm_2, CAMERA_SERVO_TRIGGER_ANGLE)
-                time_period = "night" if not is_daytime else "day"
-                self.output(f"Standalone camera on servo2 trigger activated (using {time_period} interval: {interval}s)")
 
         elif self.servo2_state == 'TRIGGERED':
             if ticks_diff(now_ms, self.servo2_trigger_start_ms) >= SERVO2_TRIGGER_HOLD_MS:
                 self.servo2_state = 'IDLE'
                 self.hw.set_servo_angle(self.hw.servo_pwm_2, CAMERA_SERVO_REST_ANGLE)
-                self.output("Camera trigger released")
                 self.hw.trigger_camera_shutter(ROTATION_CAPTURE_MODE)
                 self.last_servo2_trigger_ms = now_ms  # Reset interval timer on release
                 if self.camera_lighting_active and self.servo2_using_lighting and not self.rotation_lighting_active:
@@ -1423,7 +1420,6 @@ class SolarSimulator:
                     CUSTOM_SUN_G = rgb[1]
                     CUSTOM_SUN_B = rgb[2]
                     SUN_COLOR_MODE = "CUSTOM"
-                    self.output(f"[PROGRAM] Sun color set to RGB({CUSTOM_SUN_R}, {CUSTOM_SUN_G}, {CUSTOM_SUN_B})")
 
             # Periodic display update (every 1 second)
             if ticks_diff(now_ms, last_update_ms) >= update_interval_ms:
