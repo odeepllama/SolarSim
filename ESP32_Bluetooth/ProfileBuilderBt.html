@@ -6642,7 +6642,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         // If NOT explicitly loading from device, only update program steps for visualization
         // Do NOT overwrite the form fields or state - this preserves user edits for diff highlighting
         if (!window.__loadingFromDevice) {
-          console.log('[FORM] Status update - updating program steps for visualization only (preserving form edits)');
 
           // Sync PROGRAM_ENABLED and PROGRAM_REPEATS from device so timeline rendering works
           if (cfg.PROGRAM_ENABLED !== undefined) {
@@ -6686,12 +6685,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // EXPLICIT LOAD FROM DEVICE - Update everything
         logFn('[FORM] Populating form from device configuration...');
-        console.log('[FORM] Device config:', cfg);
 
         // Update state object from device config
         if (cfg.START_TIME_HHMM !== undefined) {
           state.START_TIME_HHMM = cfg.START_TIME_HHMM;
-          console.log('[FORM] Copied START_TIME_HHMM to state:', state.START_TIME_HHMM);
         }
         if (cfg.END_TIME_HHMM !== undefined) state.END_TIME_HHMM = cfg.END_TIME_HHMM;
         if (cfg.DURATION_MINUTES !== undefined) state.DURATION_MINUTES = cfg.DURATION_MINUTES;
@@ -6727,7 +6724,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (startTimeField && state.START_TIME_HHMM !== undefined) {
           // Keep numeric format (e.g., 600, not 06:00)
           startTimeField.value = String(state.START_TIME_HHMM);
-          console.log('[FORM] Set START_TIME field to:', startTimeField.value);
         } else {
           console.warn('[FORM] START_TIME_HHMM not populated. Field exists:', !!startTimeField, 'Value in state:', state.START_TIME_HHMM);
         }
@@ -6736,13 +6732,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (endTimeField && state.END_TIME_HHMM !== undefined) {
           // Keep numeric format (e.g., 1800, not 18:00)
           endTimeField.value = String(state.END_TIME_HHMM);
-          console.log('[FORM] Set END_TIME field to:', endTimeField.value);
         }
 
         const durationField = document.getElementById('DURATION_MINUTES');
         if (durationField && state.DURATION_MINUTES !== undefined) {
           durationField.value = state.DURATION_MINUTES;
-          console.log('[FORM] Set DURATION field to:', state.DURATION_MINUTES);
         }
 
         const timeScaleField = document.getElementById('TIME_SCALE');
@@ -6876,8 +6870,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           window.__loadingFromDevice = false;
-          console.log('[FORM] Cleared __loadingFromDevice flag after population');
-          console.log('[FORM] Synced deviceConfig with loaded profile to clear diff highlighting');
         }
         // For auto-status updates, DON'T replace deviceConfig - it's being populated continuously by parsers
         // The parsers update window.__deviceConfig directly, so we don't need to do anything here
@@ -6904,7 +6896,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         tbody.innerHTML = '';
 
         // Analyze multi-day program to get day numbers for each step
-        const dayData = analyzeMultiDayProgram();
+        // Always use true day analysis for the table (ignore single-day visualization mode)
+        const dayData = analyzeMultiDayProgram(true);
         const stepToDayMap = new Map(); // Map step index to day number
         dayData.days.forEach(day => {
           day.steps.forEach(stepInfo => {
@@ -7275,7 +7268,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                 if (currentTime != null) {
                   const newNextTime = currentTime + val;
                   nextStep.sim_time_hhmm = formatHHMM(newNextTime);
-                  console.log(`[Table Edit] Updated step ${row + 1} time to ${nextStep.sim_time_hhmm} based on hold_minutes=${val}`);
                 }
               }
             }
@@ -7289,23 +7281,19 @@ https://github.com/odeepllama/SolarSim/tree/main
             const newTimeStr = e.target.value.trim();
             const newTime = parseHHMM(newTimeStr);
 
-            console.log(`[Validation] Checking step ${row + 1} time: ${newTimeStr} (${newTime} minutes)`);
 
             // Validate against previous step's hold period
             if (newTime !== null && row > 0) {
               const prevStep = programSteps[row - 1];
-              console.log(`[Validation] Previous step: speed=${prevStep?.speed}, hold_minutes=${prevStep?.hold_minutes}`);
 
               if (prevStep && prevStep.speed === 0 && prevStep.hold_minutes !== undefined) {
                 const prevStartTime = parseHHMM(prevStep.sim_time_hhmm);
                 if (prevStartTime !== null) {
                   const holdEndTime = prevStartTime + prevStep.hold_minutes;
-                  console.log(`[Validation] Hold period: ${formatHHMM(prevStartTime)} - ${formatHHMM(holdEndTime)}, new time: ${formatHHMM(newTime)}`);
 
                   // Check if new time falls within hold period (excluding end time)
                   // Also check if new time is before hold start (indicates new day - allowed)
                   if (newTime > prevStartTime && newTime < holdEndTime) {
-                    console.log(`[Validation] INVALID: Time ${formatHHMM(newTime)} falls within hold period. Auto-correcting to ${formatHHMM(holdEndTime)}`);
 
                     // Invalid: time falls within hold period
                     // Flash red and auto-correct to hold end time
@@ -7328,7 +7316,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                     }, 300);
                     return;
                   } else {
-                    console.log(`[Validation] VALID: Time is OK (before hold start or after hold end)`);
                   }
                 }
               }
@@ -7484,7 +7471,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   if (currentTime != null) {
                     const newNextTime = currentTime + val;
                     nextStep.sim_time_hhmm = formatHHMM(newNextTime);
-                    console.log(`[hold_minutes Input] ✓ Updated step ${row + 2} time to ${nextStep.sim_time_hhmm} based on hold_minutes=${val}`);
                   }
                 }
               }
@@ -7506,7 +7492,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   if (nextInput) {
                     // Format with 4-digit padding for display
                     nextInput.value = String(nextStep.sim_time_hhmm).padStart(4, '0');
-                    console.log(`[hold_minutes] ✓ Updated DOM for step ${row + 2} time to ${nextStep.sim_time_hhmm}`);
                   }
                 }
               }
@@ -7533,7 +7518,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Auto-update next step's time if this is a HOLD step (same logic as hold_minutes)
             const currentStep = programSteps[row];
-            console.log(`[sim_time_hhmm Input] Step ${row + 1}: newTime=${newTimeStr}, speed=${currentStep?.speed}, hold_minutes=${currentStep?.hold_minutes}, hasNextStep=${row < programSteps.length - 1}`);
 
             if (currentStep && currentStep.speed === 0 && currentStep.hold_minutes != null && currentStep.hold_minutes !== '' && row < programSteps.length - 1) {
               const nextStep = programSteps[row + 1];
@@ -7544,7 +7528,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   if (!isNaN(holdMinutes)) {
                     const newNextTime = currentTime + holdMinutes;
                     nextStep.sim_time_hhmm = formatHHMM(newNextTime);
-                    console.log(`[Table Edit] ✓ Updated step ${row + 2} time to ${nextStep.sim_time_hhmm} based on new start time=${newTimeStr} + hold_minutes=${holdMinutes}`);
 
                     // Update the next step's DOM input directly without re-rendering
                     const nextRowSelector = `#programStepsTable tbody tr[data-step-index='${row + 1}'] input[data-f='sim_time_hhmm']`;
@@ -7554,14 +7537,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                       nextInput.value = String(nextStep.sim_time_hhmm).padStart(4, '0');
                     }
                   } else {
-                    console.log(`[Table Edit] ✗ hold_minutes is not a number: ${currentStep.hold_minutes}`);
                   }
                 } else {
-                  console.log(`[Table Edit] ✗ Could not parse time: ${newTimeStr}`);
                 }
               }
             } else {
-              console.log(`[Table Edit] ✗ Not updating next step - conditions not met: speed=${currentStep?.speed}, hold_minutes=${currentStep?.hold_minutes}, hasNext=${row < programSteps.length - 1}`);
             }
 
             // Update day background colors by analyzing and updating CSS classes on affected rows
@@ -8000,7 +7980,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (dragStateBeforeDrop) {
               undoBuffer.push(dragStateBeforeDrop);
               redoBuffer.length = 0; // Clear redo buffer when a new action is performed
-              console.log(`[Drag Drop Fallback] Reordered step from index ${draggedRowIndex} to ${targetIndex}. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
               dragStateBeforeDrop = null;
             }
 
@@ -8107,7 +8086,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (dragStateBeforeDrop) {
             undoBuffer.push(dragStateBeforeDrop);
             redoBuffer.length = 0; // Clear redo buffer when a new action is performed
-            console.log(`[Drag Drop] Reordered step from index ${draggedRowIndex} to ${targetIndex}. Undo buffer: ${undoBuffer.length}, Redo buffer: ${redoBuffer.length}`);
             dragStateBeforeDrop = null;
           }
 
@@ -8342,7 +8320,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Clear device tracking - these settings are NOT on the device yet
             // User must upload to sync with device
             window.__formProfile = null;
-            console.log('[TEXT-TO-FORM] Cleared __formProfile - settings now differ from device');
 
             // Reset diff banner dismissal so user sees the diff warning
             if (typeof diffBannerDismissed !== 'undefined') {
@@ -9411,7 +9388,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
         }
 
-        console.log('[Compare Modal] Initialized successfully');
       })();
 
       // Local timestamp helper (YYYYMMDDHHMM) using local timezone
@@ -9483,9 +9459,9 @@ https://github.com/odeepllama/SolarSim/tree/main
   .tl-seg.wrap::after{ content:'↺'; position:absolute; top:50%; right:4px; transform:translateY(-50%); font-size:18px; line-height:1; opacity:.92; text-shadow:0 0 2px #fff,0 0 3px #fff; }
   .tl-seg.reverse::before{ content:'◀'; position:absolute; left:4px; top:50%; transform:translateY(-50%); font-size:18px; line-height:1; opacity:.9; text-shadow:0 0 2px #fff, 0 0 3px #fff; }
   .tl-seg.forward-arrow::before{ content:'▶'; position:absolute; left:4px; top:50%; transform:translateY(-50%); font-size:14px; line-height:1; opacity:.7; text-shadow:0 0 2px #fff, 0 0 3px #fff; }
-  /* Jump marker above segments & labels for prominence */
-  .tl-jump{ position:absolute; top:0; bottom:0; width:3px; margin-left:-1.5px; background:linear-gradient(180deg,#ffbd00,#ff7b00); box-shadow:0 0 0 1px #b85c00, 0 0 4px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; font-size:20px; color:#222; font-weight:bold; z-index:70; }
-  .tl-jump:after{ content:'⚡'; background:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  /* Jump marker — pin above bar with dashed line through it */
+  .tl-jump{ position:absolute; top:0; bottom:0; width:0; border-left:3px dashed #d08000; z-index:70; pointer-events:none; }
+  .tl-jump:after{ content:'⚡'; position:absolute; top:-30px; left:50%; transform:translateX(-50%); background:#fff3cd; border:3px solid #d08000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.3); pointer-events:auto; cursor:help; }
     /* Axis placed above segments but below jump markers */
     .tl-axis{ position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:25; }
   /* Hour tick lines removed per request */
@@ -9644,7 +9620,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         bar.appendChild(axis);
       }
 
-      function renderTimelineStrip() {
+      // Core timeline render logic (called by debounced wrapper)
+      function _renderTimelineStripImmediate() {
         ensureTimelineStyle();
         const container = document.getElementById('timelineContainer');
         if (!container) return;
@@ -9680,11 +9657,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
       }
 
+      // Debounced wrapper — coalesces rapid-fire calls (200ms) to avoid
+      // redundant full DOM rebuilds from 25+ call sites and 1s playhead interval.
+      let _timelineDebounceTimer = null;
+      function renderTimelineStrip() {
+        clearTimeout(_timelineDebounceTimer);
+        _timelineDebounceTimer = setTimeout(_renderTimelineStripImmediate, 200);
+      }
+
       // Helper: Update day background colors for a row and potentially affected rows
       // without doing a full re-render (preserves cursor position)
       function updateDayBackgroundColorsForAffectedRows(changedRowIndex) {
-        // Analyze the multi-day program to get current day assignments
-        const dayData = analyzeMultiDayProgram();
+        // Analyze the multi-day program to get current day assignments (always true analysis for table)
+        const dayData = analyzeMultiDayProgram(true);
 
         // Build a map of step index to day number
         const stepToDayMap = new Map();
@@ -9791,16 +9776,15 @@ https://github.com/odeepllama/SolarSim/tree/main
       }
 
       // Analyze program to detect day boundaries
-      function analyzeMultiDayProgram() {
+      function analyzeMultiDayProgram(ignoreSingleDayMode = false) {
         if (!programSteps || !programSteps.length) return { days: [], spansMultipleDays: false };
 
         const MAX_DAYS = 7;
 
         // Check if single-day visualization mode is enabled
-        const singleDayMode = document.getElementById('singleDayVisualization')?.checked || false;
+        const singleDayMode = !ignoreSingleDayMode && (document.getElementById('singleDayVisualization')?.checked || false);
         if (singleDayMode) {
           // Force all steps into a single day (Day 1)
-          console.log('[Multi-Day] Single-day mode enabled - forcing all steps to Day 1');
           const allSteps = programSteps.map((step, index) => ({
             step,
             m: parseHHMM(step.sim_time_hhmm),
@@ -9822,7 +9806,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         let currentDay = 1;
         let currentDayMinutes = []; // Track minute values for current day
 
-        console.log('[Multi-Day] Analyzing program with', programSteps.length, 'steps');
 
         for (let i = 0; i < programSteps.length; i++) {
           const step = programSteps[i];
@@ -9831,7 +9814,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (m == null) continue;
 
           currentDayMinutes.push({ step, m, index: i });
-          console.log(`[Multi-Day] Step ${i}: time=${m} (${formatHHMM(m)}), currentDay=${currentDay}`);
 
           // Check for day boundary crossing to NEXT step
           if (nextStep) {
@@ -9841,7 +9823,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               const transition = (step.transition || 'RUN').toUpperCase();
               const speed = step.speed !== undefined ? step.speed : 1;
 
-              console.log(`[Multi-Day]   → Next: ${mNext} (${formatHHMM(mNext)}), transition=${transition}, speed=${speed}`);
 
               // Detect midnight crossing: ANY time that goes from late hours to early hours, or vice versa
               let crossesMidnight = false;
@@ -9860,24 +9841,20 @@ https://github.com/odeepllama/SolarSim/tree/main
                     // A small backward gap (mNext slightly < m) is a natural reversal point, not midnight
                     // Midnight crossing only if mNext > m (would require going forward past midnight and back)
                     // Actually for forward→reverse, no midnight crossing expected - the sim just reverses direction
-                    console.log(`[Multi-Day]   → Speed reversal forward→reverse (${m} → ${mNext}), same day`);
                   } else {
                     // Reverse→Forward: similar logic
-                    console.log(`[Multi-Day]   → Speed reversal reverse→forward (${m} → ${mNext}), same day`);
                   }
                 } else if (speed >= 0) {
                   // Forward RUN: if next time is earlier or equal to current, we wrapped forward to next day
                   if (mNext <= m) {
                     crossesMidnight = true;
                     dayDirection = 1;
-                    console.log(`[Multi-Day]   ✓ Forward RUN wraps to next day (${m} → ${mNext})`);
                   }
                 } else {
                   // Reverse RUN (negative speed): if next time is later than current, we wrapped backward to previous day
                   if (mNext > m) {
                     crossesMidnight = true;
                     dayDirection = -1;
-                    console.log(`[Multi-Day]   ✓ Reverse RUN wraps to previous day (${m} → ${mNext})`);
                   }
                 }
               } else if (transition === 'JUMP') {
@@ -9889,10 +9866,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                     // Large backward jump in time (e.g., 23:00 → 01:00) means forward wrap to next day
                     crossesMidnight = true;
                     dayDirection = 1;
-                    console.log(`[Multi-Day]   ✓ JUMP forward to next day (${m} → ${mNext})`);
                   } else {
                     // Small backward jump means same day (no boundary)
-                    console.log(`[Multi-Day]   → JUMP backward same day (${m} → ${mNext})`);
                   }
                 } else if (mNext > m) {
                   // Time went forward: if large difference (>12h), it's backward to prev day; otherwise forward to next day
@@ -9900,16 +9875,13 @@ https://github.com/odeepllama/SolarSim/tree/main
                     // Large forward jump in time (e.g., 01:00 → 23:00) means backward wrap to prev day
                     crossesMidnight = true;
                     dayDirection = -1;
-                    console.log(`[Multi-Day]   ✓ JUMP backward to previous day (${m} → ${mNext})`);
                   } else {
                     // Small forward jump means same day (no boundary)
-                    console.log(`[Multi-Day]   → JUMP forward same day (${m} → ${mNext})`);
                   }
                 } else {
                   // Same time: JUMP to next day (most common case for multi-day programs)
                   crossesMidnight = true;
                   dayDirection = 1;
-                  console.log(`[Multi-Day]   ✓ JUMP to next day at same time (${m} → ${mNext})`);
                 }
               }
 
@@ -9926,13 +9898,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                     // If hold ends before midnight (1440), it's orphaned time
                     if (holdEndMin < 1440) {
                       orphanedHoldEndTime = holdEndMin;
-                      console.log(`[Multi-Day]   → Day ${currentDay} ends with orphaned HOLD at ${formatHHMM(orphanedHoldEndTime)}`);
                     }
                   }
                 }
 
                 // Finalize current day
-                console.log(`[Multi-Day]   → Finalizing Day ${currentDay} with ${currentDayMinutes.length} steps`);
                 result.days.push({
                   dayNumber: currentDay,
                   steps: currentDayMinutes,
@@ -9940,7 +9910,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                 });
                 currentDayMinutes = [];
                 currentDay += dayDirection; // Move to next/previous day
-                console.log(`[Multi-Day]   → Moving to Day ${currentDay}`);
               }
             }
           }
@@ -9957,12 +9926,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             const holdEndMin = holdStartMin + lastStep.hold_minutes;
             if (holdEndMin < 1440) {
               orphanedHoldEndTime = holdEndMin;
-              console.log(`[Multi-Day]   → Last Day ${currentDay} ends with orphaned HOLD at ${formatHHMM(orphanedHoldEndTime)}`);
             }
           }
 
-          console.log(`[Multi-Day] Finalizing last Day ${currentDay} with ${currentDayMinutes.length} steps`);
-          console.log(`[Multi-Day]   Last day step indices:`, currentDayMinutes.map(s => s.index));
           result.days.push({
             dayNumber: currentDay,
             steps: currentDayMinutes,
@@ -9973,15 +9939,12 @@ https://github.com/odeepllama/SolarSim/tree/main
         result.spansMultipleDays = result.days.length > 1;
         result.exceedsLimit = result.days.length > MAX_DAYS;
 
-        console.log(`[Multi-Day] Result: ${result.days.length} day(s), spansMultiple=${result.spansMultipleDays}`);
-        result.days.forEach(d => console.log(`[Multi-Day]   Day ${d.dayNumber}: ${d.steps.length} steps`));
 
         return result;
       }
 
       // Duplicate a day - copy all steps belonging to that day and insert after
       function duplicateDay(dayNumber) {
-        console.log(`[Day Action] Duplicating Day ${dayNumber}`);
 
         // Save undo state BEFORE duplication
         saveUndoState();
@@ -9996,7 +9959,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           return;
         }
 
-        console.log(`[Day Action] Found Day ${dayNumber} with ${dayToDuplicate.steps.length} steps`);
 
         // Get the indices of steps to duplicate
         const stepIndices = dayToDuplicate.steps.map(s => s.index).sort((a, b) => a - b);
@@ -10005,7 +9967,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Clone all steps from this day
         const clonedSteps = stepIndices.map(idx => JSON.parse(JSON.stringify(programSteps[idx])));
 
-        console.log(`[Day Action] Cloning ${clonedSteps.length} steps after index ${lastStepIndex}`);
 
         // Insert cloned steps right after the last step of the duplicated day
         programSteps.splice(lastStepIndex + 1, 0, ...clonedSteps);
@@ -10023,12 +9984,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         renderProgramSteps();
         updatePreview(true);
 
-        console.log(`[Day Action] Day ${dayNumber} duplicated successfully`);
       }
 
       // Delete a day - remove all steps belonging to that day
       function deleteDay(dayNumber) {
-        console.log(`[Day Action] Deleting Day ${dayNumber}`);
 
         // Save undo state BEFORE deletion
         saveUndoState();
@@ -10043,14 +10002,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           return;
         }
 
-        console.log(`[Day Action] Found Day ${dayNumber} with ${dayToDelete.steps.length} steps`);
 
         // Get the indices of steps to delete (sorted in descending order to delete from end to start)
         const stepIndices = dayToDelete.steps.map(s => s.index).sort((a, b) => b - a);
 
         // Delete all steps for this day (backwards to preserve indices)
         stepIndices.forEach(idx => {
-          console.log(`[Day Action] Deleting step at index ${idx}`);
           programSteps.splice(idx, 1);
         });
 
@@ -10058,7 +10015,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         renderProgramSteps();
         updatePreview(true);
 
-        console.log(`[Day Action] Day ${dayNumber} deleted successfully`);
       }
 
       // Render multi-day timeline with stacked bars
@@ -10104,7 +10060,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           end: globalMaxTime
         };
 
-        console.log('[Multi-Day] Global time window:', formatHHMM(globalMinTime), 'to', formatHHMM(globalMaxTime));
 
         // Find the highest dayNumber (the program's starting day)
         const highestDayNumber = Math.max(...daysToShow.map(d => d.dayNumber));
@@ -10507,6 +10462,12 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           if (m == null || mNext == null) continue;
 
+          // JUMP transitions are instantaneous — only produce a ⚡ marker, no segment
+          if ((step.transition || 'RUN').toUpperCase() === 'JUMP') {
+            jumps.push({ index: stepInfo.i, m });
+            continue;
+          }
+
           if (speed < 0) {
             // Negative speed: time flows backward from m to mNext
             const timeStart = m;      // temporal start where step is declared (e.g., 1800)
@@ -10540,7 +10501,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
               // If hold ends BEFORE the next step, create shorter segment + implicit jump
               if (holdEndMin < segEnd) {
-                console.log(`[HOLD] Step ${stepInfo.i}: hold_minutes=${step.hold_minutes} ends at ${formatHHMM(holdEndMin)}, but next step at ${formatHHMM(segEnd)}. Creating gap + jump.`);
 
                 // Create HOLD segment only for the hold_minutes duration
                 if (holdEndMin > segStart && holdEndMin - segStart >= 5) {
@@ -10560,10 +10520,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (segEnd !== null && segEnd > segStart && segEnd - segStart >= 5) {
               segments.push({ type: 'interval', startMin: segStart, endMin: segEnd, speed, intensity, dualSun, index: stepInfo.i, labelType: (i === 0 ? 'start' : 'normal') });
             }
-          }
-          // Jumps (if needed)
-          if ((step.transition || 'RUN').toUpperCase() === 'JUMP') {
-            jumps.push({ index: stepInfo.i, m });
           }
         }
 
@@ -10911,8 +10867,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!metaArr.length) return;
           let groupStart = 0;
           for (let i = 0; i <= metaArr.length; i++) {
-            // End of group: different speed, or end of array
-            if (i === metaArr.length || metaArr[i].speed !== metaArr[groupStart].speed) {
+            // End of group: different speed, different dualSun, or end of array
+            if (i === metaArr.length || metaArr[i].speed !== metaArr[groupStart].speed || metaArr[i].dualSun !== metaArr[groupStart].dualSun) {
               // Calculate group span
               const groupLeft = metaArr[groupStart].leftPct;
               const lastSeg = metaArr[i - 1];
@@ -10929,7 +10885,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                 // Check if ANY segment in the group has dual_sun
                 const anyDualSun = metaArr.slice(groupStart, i).some(m => m.dualSun);
                 labelSpan.textContent = anyDualSun ? ('☼' + seg.speedLabel + '☼') : seg.speedLabel;
-                segmentLabels.push({ span: labelSpan, div: seg.div, zIndex: baseZIndex, groupCenter });
+                const numSegments = i - groupStart;
+                segmentLabels.push({ span: labelSpan, div: seg.div, zIndex: baseZIndex, groupCenter, groupWidthMin, numSegments });
               }
               groupStart = i;
             }
@@ -10947,7 +10904,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Deduplicate labels: skip labels that are at the same position with the same text
         const seenLabels = new Set();
 
-        segmentLabels.forEach(({ span, zIndex, groupCenter, div }) => {
+        segmentLabels.forEach(({ span, zIndex, groupCenter, groupWidthMin: gwMin, numSegments, div }) => {
           // Use groupCenter if available (grouped labels), otherwise calculate from div
           let segCenter;
           if (groupCenter !== undefined) {
@@ -10968,11 +10925,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           seenLabels.add(positionKey);
 
+          // Proportional bubble width: only expand for multi-segment combined labels
+          // 6 hours combined → ~3X default width (~90px vs ~30px base)
+          let minWidthStyle = '';
+          if (numSegments > 1 && gwMin > 60) {
+            const durationHours = gwMin / 60;
+            const minW = Math.min(150, 30 + durationHours * 10);
+            minWidthStyle = `min-width: ${minW}px !important; text-align: center !important;`;
+          }
+
           // Center all labels (no offset applied)
           const translateX = '-50%';
 
           // Use setAttribute to set inline style with !important to override CSS z-index:100
-          span.setAttribute('style', `position: absolute !important; z-index: ${zIndex} !important; left: ${segCenter}% !important; top: 50% !important; transform: translate(${translateX}, -50%) !important;`);
+          span.setAttribute('style', `position: absolute !important; z-index: ${zIndex} !important; left: ${segCenter}% !important; top: 50% !important; transform: translate(${translateX}, -50%) !important; ${minWidthStyle}`);
           host.appendChild(span);
         });
 
@@ -11417,7 +11383,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             const step = programSteps[segIndex];
             if (step) {
               step.sim_time_hhmm = formatHHMM(constrainedMinutes);
-              console.log(`[Drag] Updated step ${segIndex} time to ${step.sim_time_hhmm}`);
 
               // Update hold_minutes if this is a HOLD segment or affects one
               // Check if the previous step is a HOLD (speed=0)
@@ -11429,7 +11394,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   if (prevTime != null && thisTime != null && thisTime > prevTime) {
                     const holdDuration = thisTime - prevTime;
                     prevStep.hold_minutes = holdDuration;
-                    console.log(`[Drag] Updated step ${segIndex - 1} hold_minutes to ${holdDuration} (HOLD segment end adjusted)`);
                   }
                 }
               }
@@ -11443,7 +11407,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   if (thisTime != null && nextTime != null && nextTime > thisTime) {
                     const holdDuration = nextTime - thisTime;
                     step.hold_minutes = holdDuration;
-                    console.log(`[Drag] Updated step ${segIndex} hold_minutes to ${holdDuration} (HOLD segment start adjusted)`);
                   }
                 }
               }
@@ -11688,12 +11651,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             if (startStep) {
               startStep.sim_time_hhmm = formatHHMM(constrainedStartMin);
-              console.log(`[Drag] Updated step ${segIndex} start time to ${startStep.sim_time_hhmm}`);
             }
 
             if (actualEndStepIndex !== undefined && actualEndStepIndex >= 0 && programSteps[actualEndStepIndex]) {
               programSteps[actualEndStepIndex].sim_time_hhmm = formatHHMM(constrainedEndMin);
-              console.log(`[Drag] Updated step ${actualEndStepIndex} end time to ${programSteps[actualEndStepIndex].sim_time_hhmm}`);
             }
 
             // Update hold_minutes if this is a HOLD segment or affects one
@@ -11701,7 +11662,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (startStep && startStep.speed === 0 && actualEndStepIndex !== undefined && actualEndStepIndex >= 0) {
               const holdDuration = constrainedEndMin - constrainedStartMin;
               startStep.hold_minutes = holdDuration;
-              console.log(`[Drag] Updated step ${segIndex} hold_minutes to ${holdDuration} (HOLD segment moved)`);
             }
 
             // Check if the previous step is a HOLD that now ends at our new start position
@@ -11712,7 +11672,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                 if (prevTime != null && constrainedStartMin > prevTime) {
                   const holdDuration = constrainedStartMin - prevTime;
                   prevStep.hold_minutes = holdDuration;
-                  console.log(`[Drag] Updated step ${segIndex - 1} hold_minutes to ${holdDuration} (adjacent HOLD segment affected)`);
                 }
               }
             }
@@ -11728,7 +11687,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   if (endTime != null && nextTime != null && nextTime > endTime) {
                     const holdDuration = nextTime - endTime;
                     endStep.hold_minutes = holdDuration;
-                    console.log(`[Drag] Updated step ${actualEndStepIndex} hold_minutes to ${holdDuration} (following HOLD segment affected)`);
                   }
                 }
               }
@@ -12729,7 +12687,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Auto-load on startup if enabled
         if (hasDefault() && isAutoloadEnabled()) {
           setTimeout(() => {
-            console.log('[Defaults] Auto-loading default profile on page load');
             applyDefault();
           }, 100);
         }
@@ -12904,30 +12861,25 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Set up a global capture function BEFORE sending commands
             window.__captureProfileLine = function (line) {
-              console.log('[CAPTURE] Profile line received:', line);
               if (line && line.includes('.txt')) {
                 const trimmed = line.trim();
                 const parts = trimmed.split(' - ');
                 const filename = parts[0].trim();
                 const note = parts[1] ? parts[1].trim() : '';
-                console.log('[CAPTURE] Adding profile:', { filename, note });
                 profilesData.push({ filename, note });
               }
             };
 
-            console.log('[LOAD] Capture function installed, disabling auto-load...');
 
             // Disable auto-load first
             await sendLine('set autoload off', { silentEcho: false, logSource: 'button' });
             await new Promise(resolve => setTimeout(resolve, 300));
 
-            console.log('[LOAD] Sending listprofiles...');
 
             // Request profiles list
             await sendLine('listprofiles', { silentEcho: false, logSource: 'button' });
             await new Promise(resolve => setTimeout(resolve, 1200)); // Wait to ensure all lines are received
 
-            console.log('[LOAD] After wait, profilesData:', profilesData);
 
             // Clean up capture function
             delete window.__captureProfileLine;
@@ -12976,7 +12928,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         async function loadProfile(filename) {
-          console.log('[LOAD] loadProfile() called with filename:', filename);
           try {
             // Get sendLine from window scope
             const sendLine = window.__sendLine;
@@ -12984,21 +12935,15 @@ https://github.com/odeepllama/SolarSim/tree/main
               throw new Error('Serial communication not available');
             }
 
-            console.log('[LOAD] About to close modal and start loading...');
             closeModal();
 
             // Pause auto-status updates to prevent interference
             const wasAutoRefreshEnabled = state.autoRefreshEnabled;
             state.autoRefreshEnabled = false;
-            console.log('[LOAD] Paused auto-status refresh');
 
             // Set flag to indicate we're intentionally loading from device
             window.__loadingFromDevice = true;
             window.__deviceConfig = {}; // Reset config object
-            console.log('[LOAD] ========================================');
-            console.log('[LOAD] Starting profile load:', filename);
-            console.log('[LOAD] Set __loadingFromDevice = TRUE');
-            console.log('[LOAD] ========================================');
 
             // Remove .txt extension if present for command
             const profileName = filename.replace(/\.txt$/, '');
@@ -13018,7 +12963,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Resume auto-status updates (whether population succeeded or not)
             state.autoRefreshEnabled = wasAutoRefreshEnabled;
-            console.log('[LOAD] Resumed auto-status refresh');
 
             // Check if population actually happened
             if (window.__loadingFromDevice) {
@@ -13028,7 +12972,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.log('⚠ Profile loaded but form population may have failed. Check console.', 'warn');
             } else {
               // Flag was cleared by population - success!
-              console.log('[LOAD] Population completed successfully');
             }
 
             // Show success message
@@ -13091,7 +13034,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         $loadBtn.addEventListener('click', async (e) => {
           e.stopPropagation(); // Prevent click from bubbling to modal background
-          console.log('[LOAD] Load from Device button clicked');
 
           // Check if form is ready - CRITICAL to prevent retry loops
           if (!window.__formIsReady) {
@@ -13118,7 +13060,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             confirmed = await showConfirmationDialog();
           }
 
-          console.log('[LOAD] Confirmation result:', confirmed);
           if (!confirmed) return;
 
           openModal();
@@ -13213,7 +13154,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         $btn.addEventListener('click', async () => {
-          console.log('[LOAD] Load Current Profile button clicked');
 
           // Check if we have a tracked loaded profile
           if (!window.__loadedProfile) {
@@ -13223,7 +13163,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Extract the base name without .txt extension
           const profileName = window.__loadedProfile.replace(/\.txt$/i, '');
-          console.log('[LOAD] Loading current profile:', profileName);
 
           try {
             // Use the exposed loadProfile function from window scope
@@ -13337,7 +13276,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (window.__sendLine) {
                 try {
                   await window.__sendLine('set autoload off', { logSource: 'button' });
-                  console.log('[AUTOLOAD] Disabled via badge click');
                 } catch (e) {
                   console.error('[AUTOLOAD] Error disabling:', e);
                   // Revert on failure
@@ -13378,7 +13316,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (window.__sendLine) {
                 try {
                   await window.__sendLine('set autoload on', { logSource: 'button' });
-                  console.log('[AUTOLOAD] Enabled via badge click');
                 } catch (e) {
                   console.error('[AUTOLOAD] Error enabling:', e);
                   // Revert on failure
@@ -13419,7 +13356,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           const isLocked = localStorage.getItem('autoloadLocked') === 'true';
           const newState = !isLocked;
           localStorage.setItem('autoloadLocked', String(newState));
-          console.log('[AUTOLOAD] Lock state changed to:', newState);
           updateLockButton();
           updateAutoloadBadge(); // Refresh badge to show lock state
         };
@@ -13978,9 +13914,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!isAutoloadLocked) {
             await new Promise(r => setTimeout(r, 150));
             await sendText('set autoload on\n');
-            console.log('[UPLOAD] Sent command to re-enable auto-load');
           } else {
-            console.log('[UPLOAD] Auto-load setting is LOCKED - skipping auto-enable');
           }
           await new Promise(r => setTimeout(r, 200)); // Give time for command to process
 
@@ -14204,7 +14138,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               console.warn(`[Upload] Line count mismatch: sent ${totalLines}, device wrote ${deviceLineCount}`);
               if (typeof log === 'function') log(`⚠️ Warning: sent ${totalLines} lines but device wrote ${deviceLineCount}`, 'error');
             } else {
-              console.log(`[Upload] Line count verified: ${deviceLineCount} lines`);
             }
           }
 
@@ -14367,7 +14300,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (_log) _log('Disconnected from device', 'success');
           } catch (_) { }
 
-          console.log('[Disconnect] Disconnect complete - UI should now show Connect button enabled');
         } catch (err) {
           console.error('Error during disconnect:', err);
         }
@@ -14697,7 +14629,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Validate command before adding to history
           if (!isValidCommand(trimmed)) {
-            console.log('[History] Skipped invalid command:', trimmed);
             return;
           }
 
@@ -15302,11 +15233,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       })();
 
       (function () {
-        if (window.__solarSimMonitorState) { console.log('[Fallback] Primary monitor already present.'); return; }
+        if (window.__solarSimMonitorState) { return; }
         const toggleBtn = document.getElementById('toggleMonitorBtn');
         const panel = document.getElementById('monitorPanel');
         if (!toggleBtn || !panel) { console.warn('[Fallback] Monitor markup not found.'); return; }
-        console.log('[Fallback] Activating minimal monitor logic.');
         const connBadge = document.getElementById('monitorConnBadge');
         const connectBtn = document.getElementById('monitorConnectBtn');
         const btConnectBtn = document.getElementById('monitorBTConnectBtn');
@@ -15385,35 +15315,57 @@ https://github.com/odeepllama/SolarSim/tree/main
         const statusGrid = document.getElementById('monitorStatusGrid');
 
         // ==================== COMMAND LOG CONFIGURATION ====================
-        // Command log with 7-day retention in localStorage
+        // Command log with 7-day retention in localStorage.
+        // Uses an in-memory cache to avoid JSON.parse/stringify on every logCommand call.
+        // Flushes to localStorage every 30 seconds and on beforeunload.
         const COMMAND_LOG_KEY = 'solarSim_commandLog';
         const COMMAND_LOG_MAX_AGE_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
+        const COMMAND_LOG_MAX_ENTRIES = 2000; // Hard cap on number of entries
+        const COMMAND_LOG_FLUSH_INTERVAL_MS = 30000; // Flush to localStorage every 30s
 
-        // Load command log from localStorage, removing entries older than 5 days
+        // In-memory cache — loaded once at startup, flushed periodically
+        let _commandLogCache = null; // null = not yet loaded
+        let _commandLogDirty = false;
+
+        // Load command log from localStorage into memory (one-time)
         function loadCommandLog() {
+          if (_commandLogCache !== null) return _commandLogCache;
           try {
             const stored = localStorage.getItem(COMMAND_LOG_KEY);
-            if (!stored) return [];
+            if (!stored) { _commandLogCache = []; return _commandLogCache; }
             const log = JSON.parse(stored);
             const now = Date.now();
-            // Filter out entries older than 5 days
-            return log.filter(entry => (now - entry.timestamp) < COMMAND_LOG_MAX_AGE_MS);
+            let filtered = log.filter(entry => (now - entry.timestamp) < COMMAND_LOG_MAX_AGE_MS);
+            if (filtered.length > COMMAND_LOG_MAX_ENTRIES) {
+              filtered = filtered.slice(filtered.length - COMMAND_LOG_MAX_ENTRIES);
+            }
+            _commandLogCache = filtered;
           } catch (e) {
             console.error('Failed to load command log:', e);
-            return [];
+            _commandLogCache = [];
           }
+          return _commandLogCache;
         }
 
-        // Save command log to localStorage
-        function saveCommandLog(log) {
+        // Flush in-memory cache to localStorage (only if dirty)
+        function flushCommandLog() {
+          if (!_commandLogDirty || _commandLogCache === null) return;
           try {
-            localStorage.setItem(COMMAND_LOG_KEY, JSON.stringify(log));
+            // Enforce cap before saving
+            if (_commandLogCache.length > COMMAND_LOG_MAX_ENTRIES) {
+              _commandLogCache = _commandLogCache.slice(_commandLogCache.length - COMMAND_LOG_MAX_ENTRIES);
+            }
+            localStorage.setItem(COMMAND_LOG_KEY, JSON.stringify(_commandLogCache));
+            _commandLogDirty = false;
           } catch (e) {
             console.error('Failed to save command log:', e);
           }
         }
 
-        // Add command to log
+        // Periodic flush timer
+        setInterval(flushCommandLog, COMMAND_LOG_FLUSH_INTERVAL_MS);
+
+        // Add command to log (fast — just pushes to in-memory array)
         function logCommand(command, source, metadata) {
           const log = loadCommandLog();
           const entry = {
@@ -15433,7 +15385,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (metadata.speed !== undefined) entry.speed = metadata.speed;
           }
           log.push(entry);
-          saveCommandLog(log);
+          _commandLogDirty = true;
         }
 
         // Export command log as text file
@@ -15547,6 +15499,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         const NUS_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
         const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // write commands
         const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // notify responses
+
+        // Shared TextDecoder instance — reused across all serial/BLE reads to avoid GC pressure
+        const sharedDecoder = new TextDecoder();
 
         const state = {
           port: null, reader: null, writer: null, lineBuf: '', active: false, rate: 1000,
@@ -15910,7 +15865,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             state.port = null;
             const errMsg = (e.message || e.name || '').toLowerCase();
             const errName = (e.name || '').toLowerCase();
-            console.log('[Port Error] name:', e.name, 'message:', e.message);
             // Check for "port in use" errors - NotAllowedError is the standard for already-open ports
             if (errName === 'notallowederror' || errMsg.includes('notallowed') || errMsg.includes('in use') || errMsg.includes('already') || errMsg.includes('busy')) {
               throw new Error('PORT_IN_USE');
@@ -15942,8 +15896,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const txChar = await svc.getCharacteristic(NUS_TX);
             await txChar.startNotifications();
             txChar.addEventListener('characteristicvaluechanged', (e) => {
-              const text = new TextDecoder().decode(e.target.value);
-              console.log('[BLE RX]', text.length, 'bytes:', text.substring(0, 80));
+              const text = sharedDecoder.decode(e.target.value);
               processIncoming(text);
             });
             state.bleDevice = device;
@@ -16004,16 +15957,12 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Intercept "jump nextstep" to handle step 0 case with multi-day support
             const trimmedLine = line.trim().toLowerCase();
-            console.log('[SendLine] Received command:', trimmedLine);
 
             if (trimmedLine === 'jump nextstep') {
-              console.log('[Jump Nextstep] Detected jump nextstep command');
-              console.log('[Jump Nextstep] Current step:', window.__currentStepIndex);
 
               if (typeof programSteps !== 'undefined' && programSteps && programSteps.length > 0) {
                 // Special case: Step 0 → Step 1 requires starting the program
                 if (window.__currentStepIndex === 0) {
-                  console.log('[Jump Nextstep] At step 0, starting program at first step');
 
                   const firstStepTime = programSteps[0].sim_time_hhmm;
                   const firstStepFormatted = typeof formatHHMM === 'function' ? formatHHMM(typeof parseHHMM === 'function' ? parseHHMM(firstStepTime) : 0) : null;
@@ -16033,13 +15982,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                     }
 
                     // Set time to first step (uses sendLine which handles both Serial and BLE)
-                    console.log('[Jump Nextstep] Sending: set time', firstStepFormatted);
                     await sendLine(`set time ${firstStepFormatted}`, { silentEcho: opts.silentEcho });
 
                     // Enable program if needed
                     if (!programIsEnabled) {
                       await new Promise(resolve => setTimeout(resolve, 100));
-                      console.log('[Jump Nextstep] Enabling program');
                       await sendLine('toggle program', { silentEcho: opts.silentEcho });
                     }
 
@@ -16047,7 +15994,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                     window.__currentStepIndex = 1;
                     const dayForStep = __getDayForStep(0); // programSteps[0]
                     window.__playheadCurrentDay = dayForStep;
-                    console.log('[Jump Nextstep] Started at step 1 (programSteps[0]) - Day', dayForStep);
 
                     // Update UI
                     if (typeof renderTimelineStrip === 'function') {
@@ -16066,7 +16012,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
                 // Check if we're past the last step
                 if (nextStep > programSteps.length) {
-                  console.log('[Jump Nextstep] Already at last step (', programSteps.length, ') - not tracking beyond');
                   // Don't increment, just stay at last step
                   // Device will handle its own repeat behavior
                 } else {
@@ -16077,12 +16022,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
                   if (programIndex >= 0 && programIndex < programSteps.length) {
                     const dayForStep = __getDayForStep(programIndex);
-                    console.log('[Jump Nextstep] Advanced to step', window.__currentStepIndex, '(programSteps[' + programIndex + ']) - Day', dayForStep);
 
                     // Update playhead day
                     if (dayForStep !== window.__playheadCurrentDay) {
                       window.__playheadCurrentDay = dayForStep;
-                      console.log('[Jump Nextstep] Changed to Day', dayForStep);
 
                       // Update UI
                       if (typeof renderTimelineStrip === 'function') {
@@ -16092,7 +16035,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                         try { window.__updateProgramTitles(); } catch (e) { }
                       }
                     } else {
-                      console.log('[Jump Nextstep] Staying on Day', dayForStep);
                     }
                   }
                 }
@@ -16300,7 +16242,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__deviceProfile = mProfileValidated[1];
             window.__loadedProfile = mProfileValidated[1];
             window.__formProfile = null; // Clear form profile when device loads one
-            console.log('[PROFILE] Device loaded profile:', window.__loadedProfile);
             updateLoadCurrentButton();
             // Reset playhead to Day 1 when profile is loaded
             if (typeof window.__resetPlayheadToDay1 === 'function') window.__resetPlayheadToDay1();
@@ -16310,7 +16251,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__deviceProfile = mAutoload[1];
             window.__loadedProfile = mAutoload[1];
             window.__formProfile = null; // Clear form profile when device auto-loads one
-            console.log('[PROFILE] Device auto-loaded profile:', window.__loadedProfile);
             updateLoadCurrentButton();
             // Reset playhead to Day 1 when profile is auto-loaded
             if (typeof window.__resetPlayheadToDay1 === 'function') window.__resetPlayheadToDay1();
@@ -16324,13 +16264,11 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.__deviceProfile = null;
               window.__loadedProfile = null;
               window.__formProfile = null;
-              console.log('[PROFILE] Status shows no profile loaded on device (using defaults)');
 
               // Note: We intentionally do NOT clear program steps here anymore.
               // If Program Enabled: True, the device may still have an internal program running
               // that we want to display to the user. The program steps will be parsed from
               // the PROGRAM_STEPS line in the status output and displayed for visibility/editing.
-              console.log('[PROFILE] Keeping any internal program steps for display (will be cleared only if PROGRAM_ENABLED is False)');
 
               // Note: Device Program Status visibility and timeline will be updated
               // after PROGRAM_STEPS are parsed, based on whether PROGRAM_ENABLED is true
@@ -16339,7 +16277,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (typeof renderTimelineStrip === 'function') {
                 try {
                   renderTimelineStrip();
-                  console.log('[PROFILE] Cleared main timeline strip');
                 } catch (e) {
                   console.error('[PROFILE] Error clearing timeline:', e);
                 }
@@ -16428,7 +16365,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               simTime: simTime,
               dayNumber: window.__playheadCurrentDay || 1
             };
-            console.log('[HOLD] Entered hold state:', window.__holdState);
 
             // Start progress update interval (5 seconds)
             if (window.__holdProgressInterval) clearInterval(window.__holdProgressInterval);
@@ -16455,7 +16391,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Status lines have a colon, profile listings don't
             if (line.startsWith('  ') && line.includes('.txt') && !line.match(/^\s+\w+\s+\w+\s*:/)) {
               const trimmed = line.trim();
-              console.log('[CAPTURE] Calling capture function with:', trimmed);
               window.__captureProfileLine(trimmed);
             }
           }
@@ -16484,7 +16419,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Speed values after hold: "1X", "2X", "3X", etc.
             const isHoldSpeed = (speedValue === 'HOLD' || speedValue === '0X');
             if (window.__holdState && !isHoldSpeed) {
-              console.log('[HOLD] Completed - speed changed to:', speedValue);
               clearHoldState();
             }
           }
@@ -16503,7 +16437,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
                 // Detect hold completion: if we had a hold state and speed changed from 0 to non-zero
                 if (window.__holdState && num !== 0) {
-                  console.log('[HOLD] Completed - time scale changed to:', num);
                   clearHoldState();
                 }
               }
@@ -16587,35 +16520,30 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Debug: Log lines that might contain config info
           if (trimmedLine.includes('Time') || trimmedLine.includes('scale') || trimmedLine.includes('enabled') ||
             trimmedLine.includes('interval') || trimmedLine.includes('preset') || trimmedLine.includes('rotation')) {
-            console.log('[PARSER-RAW]:', trimmedLine.substring(0, 120));
           }
 
           // Parse start time (e.g., "(Re)Start Time: 0600")
           const mStartTime = trimmedLine.match(reStartTime);
           if (mStartTime) {
             window.__deviceConfig.START_TIME_HHMM = parseInt(mStartTime[1], 10);
-            console.log('[PARSER] ✓ Found START_TIME:', window.__deviceConfig.START_TIME_HHMM);
           }
 
           // Parse time scale (already has regex reTimeScale)
           const mTimeScale = trimmedLine.match(reTimeScale);
           if (mTimeScale) {
             window.__deviceConfig.TIME_SCALE = parseFloat(mTimeScale[1]);
-            console.log('[PARSER] ✓ Found TIME_SCALE:', window.__deviceConfig.TIME_SCALE);
           }
 
           // Parse intensity scale (already captured above in tiles)
           const mIntDevice = trimmedLine.match(/intensity\s*scale\s*[:=]\s*([\d.]+)/i);
           if (mIntDevice) {
             window.__deviceConfig.INTENSITY_SCALE = parseFloat(mIntDevice[1]);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found INTENSITY_SCALE:', window.__deviceConfig.INTENSITY_SCALE);
           }
 
           // Parse rotation enabled
           const mRotEnDevice = trimmedLine.match(/rotation\s*enabled\s*[:=]\s*(true|false)/i);
           if (mRotEnDevice) {
             window.__deviceConfig.ROTATION_ENABLED = mRotEnDevice[1].toLowerCase() === 'true';
-            if (window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_ENABLED:', window.__deviceConfig.ROTATION_ENABLED);
           }
 
           // Parse dual sun enabled
@@ -16623,7 +16551,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           const mDualCmdDevice = trimmedLine.match(reDualSunCmd);
           if (mDualDevice || mDualCmdDevice) {
             window.__deviceConfig.DUAL_SUN_ENABLED = (mDualDevice?.[1] || mDualCmdDevice?.[1] || '').toLowerCase() === 'true';
-            if (window.__loadingFromDevice) console.log('[PARSER] Found DUAL_SUN_ENABLED:', window.__deviceConfig.DUAL_SUN_ENABLED);
           }
 
           // Parse custom sun RGB values from status output: "Custom Sun RGB: (255, 255, 0)"
@@ -16632,7 +16559,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__deviceConfig.CUSTOM_SUN_R = parseInt(mCustomSunRGB[1], 10);
             window.__deviceConfig.CUSTOM_SUN_G = parseInt(mCustomSunRGB[2], 10);
             window.__deviceConfig.CUSTOM_SUN_B = parseInt(mCustomSunRGB[3], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found CUSTOM_SUN_RGB:', window.__deviceConfig.CUSTOM_SUN_R, window.__deviceConfig.CUSTOM_SUN_G, window.__deviceConfig.CUSTOM_SUN_B);
           }
 
           // Parse camera light RGB values from status output: "Camera Light RGB: (30, 30, 30)"
@@ -16641,7 +16567,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__deviceConfig.CAMERA_LIGHT_R = parseInt(mCameraLightRGB[1], 10);
             window.__deviceConfig.CAMERA_LIGHT_G = parseInt(mCameraLightRGB[2], 10);
             window.__deviceConfig.CAMERA_LIGHT_B = parseInt(mCameraLightRGB[3], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found CAMERA_LIGHT_RGB:', window.__deviceConfig.CAMERA_LIGHT_R, window.__deviceConfig.CAMERA_LIGHT_G, window.__deviceConfig.CAMERA_LIGHT_B);
           }
 
           // Parse rotation light RGB values from status output: "Rotation Light RGB: (30, 30, 30)"
@@ -16650,108 +16575,92 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__deviceConfig.ROTATION_LIGHT_R = parseInt(mRotationLightRGB[1], 10);
             window.__deviceConfig.ROTATION_LIGHT_G = parseInt(mRotationLightRGB[2], 10);
             window.__deviceConfig.ROTATION_LIGHT_B = parseInt(mRotationLightRGB[3], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_LIGHT_RGB:', window.__deviceConfig.ROTATION_LIGHT_R, window.__deviceConfig.ROTATION_LIGHT_G, window.__deviceConfig.ROTATION_LIGHT_B);
           }
 
           // Parse program enabled
           const mProgDevice = trimmedLine.match(/program\s*enabled\s*[:=]\s*(true|false)/i);
           if (mProgDevice) {
             window.__deviceConfig.PROGRAM_ENABLED = mProgDevice[1].toLowerCase() === 'true';
-            if (window.__loadingFromDevice) console.log('[PARSER] Found PROGRAM_ENABLED:', window.__deviceConfig.PROGRAM_ENABLED);
           }
 
           // Parse rotation speed preset (slow, medium, fast)
           const mRotSpeed = trimmedLine.match(/rotation\s*speed\s*preset\s*[:=]\s*(slow|medium|fast)/i);
           if (mRotSpeed) {
             window.__deviceConfig.ROTATION_SPEED_PRESET = mRotSpeed[1].toLowerCase();
-            console.log('[PARSER] ✓ Found ROTATION_SPEED_PRESET:', window.__deviceConfig.ROTATION_SPEED_PRESET);
           }
 
           // Parse servo2/servo3 enabled and intervals
           const mServo2En = trimmedLine.match(/servo2\s*(?:standalone\s*)?enabled\s*[:=]\s*(true|false)/i);
           if (mServo2En) {
             window.__deviceConfig.SERVO2_STANDALONE_ENABLED = mServo2En[1].toLowerCase() === 'true';
-            console.log('[PARSER] ✓ Found SERVO2_STANDALONE_ENABLED:', window.__deviceConfig.SERVO2_STANDALONE_ENABLED);
           }
 
           const mServo2Int = trimmedLine.match(/servo2\s*interval\s*[:=]\s*(\d+)/i);
           if (mServo2Int) {
             window.__deviceConfig.SERVO2_INTERVAL_SEC = parseInt(mServo2Int[1], 10);
-            console.log('[PARSER] ✓ Found SERVO2_INTERVAL_SEC:', window.__deviceConfig.SERVO2_INTERVAL_SEC);
           }
 
           const mServo3En = trimmedLine.match(/servo3\s*(?:standalone\s*)?enabled\s*[:=]\s*(true|false)/i);
           if (mServo3En) {
             window.__deviceConfig.SERVO3_STANDALONE_ENABLED = mServo3En[1].toLowerCase() === 'true';
-            if (window.__loadingFromDevice) console.log('[PARSER] Found SERVO3_STANDALONE_ENABLED:', window.__deviceConfig.SERVO3_STANDALONE_ENABLED);
           }
 
           const mServo3Int = trimmedLine.match(/servo3\s*interval\s*[:=]\s*(\d+)/i);
           if (mServo3Int) {
             window.__deviceConfig.SERVO3_INTERVAL_SEC = parseInt(mServo3Int[1], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found SERVO3_INTERVAL_SEC:', window.__deviceConfig.SERVO3_INTERVAL_SEC);
           }
 
           // Parse image at night and rotate at night
           const mImgNight = trimmedLine.match(/image\s*at\s*night\s*[:=]\s*(true|false)/i);
           if (mImgNight) {
             window.__deviceConfig.IMAGE_AT_NIGHT = mImgNight[1].toLowerCase() === 'true';
-            if (window.__loadingFromDevice) console.log('[PARSER] Found IMAGE_AT_NIGHT:', window.__deviceConfig.IMAGE_AT_NIGHT);
           }
 
           const mRotNight = trimmedLine.match(/rotat(?:e|ion)\s*at\s*night\s*[:=]\s*(true|false)/i);
           if (mRotNight) {
             window.__deviceConfig.ROTATION_AT_NIGHT = mRotNight[1].toLowerCase() === 'true';
-            if (window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_AT_NIGHT:', window.__deviceConfig.ROTATION_AT_NIGHT);
           }
 
           // Parse images per rotation
           const mImagesPerRot = trimmedLine.match(reImagesPerRotation);
           if (mImagesPerRot) {
             window.__deviceConfig.IMAGES_PER_ROTATION = parseInt(mImagesPerRot[1], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found IMAGES_PER_ROTATION:', window.__deviceConfig.IMAGES_PER_ROTATION);
           }
 
           // Parse rotation cycle interval
           const mRotInterval = trimmedLine.match(reRotationInterval);
           if (mRotInterval) {
             window.__deviceConfig.ROTATION_CYCLE_INTERVAL_MINUTES = parseInt(mRotInterval[1], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_CYCLE_INTERVAL_MINUTES:', window.__deviceConfig.ROTATION_CYCLE_INTERVAL_MINUTES);
           }
 
           // Parse rotation camera servo
           const mRotCamServo = trimmedLine.match(reRotationCameraServo);
           if (mRotCamServo) {
             window.__deviceConfig.ROTATION_CAMERA_SERVO = parseInt(mRotCamServo[1], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_CAMERA_SERVO:', window.__deviceConfig.ROTATION_CAMERA_SERVO);
           }
 
           // Parse rotation capture mode
           const mRotCaptureMode = trimmedLine.match(reRotationCaptureMode);
           if (mRotCaptureMode) {
             window.__deviceConfig.ROTATION_CAPTURE_MODE = mRotCaptureMode[1].toUpperCase();
-            if (window.__loadingFromDevice) console.log('[PARSER] Found ROTATION_CAPTURE_MODE:', window.__deviceConfig.ROTATION_CAPTURE_MODE);
           }
 
           // Parse camera lighting panels
           const mCamLightPanels = trimmedLine.match(reCameraLightingPanels);
           if (mCamLightPanels) {
             window.__deviceConfig.CAMERA_LIGHTING_PANELS = mCamLightPanels[1].toUpperCase();
-            if (window.__loadingFromDevice) console.log('[PARSER] Found CAMERA_LIGHTING_PANELS:', window.__deviceConfig.CAMERA_LIGHTING_PANELS);
           }
 
           // Parse camera trigger hold ms
           const mRotTriggerHold = trimmedLine.match(reRotationTriggerHold);
           if (mRotTriggerHold) {
             window.__deviceConfig.CAMERA_TRIGGER_HOLD_MS = parseInt(mRotTriggerHold[1], 10);
-            if (window.__loadingFromDevice) console.log('[PARSER] Found CAMERA_TRIGGER_HOLD_MS:', window.__deviceConfig.CAMERA_TRIGGER_HOLD_MS);
           }
 
           // Parse number of steps (used to know when all chunks are received)
           const mNumSteps = line.match(reNumberOfSteps);
           if (mNumSteps) {
             window.__deviceConfig.__expectedStepCount = parseInt(mNumSteps[1], 10);
-            console.log('[PARSER] Found Number of Steps:', window.__deviceConfig.__expectedStepCount);
             // Reset chunk accumulation when we see a new "Number of Steps" line
             window.__deviceConfig.__programStepsChunks = [];
           }
@@ -16759,10 +16668,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Parse program repeats
           const mProgRep = line.match(reProgramRepeats);
           if (mProgRep) {
-            console.log('[PARSER] Found PROGRAM_REPEATS:', mProgRep[1]);
             window.__deviceConfig.PROGRAM_REPEATS = parseInt(mProgRep[1], 10);
-            console.log('[PARSER] window.__deviceConfig:', window.__deviceConfig);
-            console.log('[PARSER] window.__loadingFromDevice:', window.__loadingFromDevice);
           }
 
           // Parse chunked program steps (new format: "Program Steps (1-5): [...]")
@@ -16771,7 +16677,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             const startIdx = parseInt(mProgStepsChunk[1], 10);
             const endIdx = parseInt(mProgStepsChunk[2], 10);
             const chunkJson = mProgStepsChunk[3];
-            console.log(`[PARSER] Found PROGRAM_STEPS chunk (${startIdx}-${endIdx}):`, chunkJson);
 
             try {
               const chunk = JSON.parse(chunkJson);
@@ -16786,12 +16691,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
               // Calculate total steps received so far
               const totalReceived = window.__deviceConfig.__programStepsChunks.reduce((sum, c) => sum + c.data.length, 0);
-              console.log(`[PARSER] Received ${totalReceived} of ${window.__deviceConfig.__expectedStepCount || '?'} program steps`);
 
               // Check if we have all chunks
               const expectedCount = window.__deviceConfig.__expectedStepCount || 0;
               if (expectedCount > 0 && totalReceived >= expectedCount) {
-                console.log('[PARSER] All program step chunks received - reconstructing array');
 
                 // Sort chunks by startIdx to ensure correct order
                 window.__deviceConfig.__programStepsChunks.sort((a, b) => a.startIdx - b.startIdx);
@@ -16802,7 +16705,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   window.__deviceConfig.PROGRAM_STEPS.push(...chunk.data);
                 }
 
-                console.log('[PARSER] Reconstructed complete PROGRAM_STEPS:', window.__deviceConfig.PROGRAM_STEPS);
 
                 // Clear chunk accumulation state
                 window.__deviceConfig.__programStepsChunks = [];
@@ -16816,7 +16718,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   (hasProgramEnabled && hasSteps);
 
                 if (shouldPopulate) {
-                  console.log('[PARSER] Triggering form population (__loadingFromDevice:', window.__loadingFromDevice, ', hasLoadedProfile:', hasLoadedProfile, ', hasProgramEnabled:', hasProgramEnabled, ', hasSteps:', hasSteps, ')...');
                   if (typeof window.populateFormFromDeviceConfig === 'function') {
                     window.populateFormFromDeviceConfig();
                   } else {
@@ -16830,7 +16731,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                     }, 100);
                   }
                 } else {
-                  console.log('[PARSER] Status update - NOT populating form (preserving diff tracking). __loadingFromDevice:', window.__loadingFromDevice, ', hasLoadedProfile:', hasLoadedProfile, ', hasProgramEnabled:', hasProgramEnabled, ', hasSteps:', hasSteps);
                 }
               }
             } catch (e) {
@@ -16841,10 +16741,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Fallback: Parse legacy single-line program steps format (for backward compatibility during transition)
           const mProgSteps = line.match(reProgramSteps);
           if (mProgSteps && !line.match(reProgramStepsChunk)) {
-            console.log('[PARSER] Found PROGRAM_STEPS (legacy format):', mProgSteps[1]);
             try {
               window.__deviceConfig.PROGRAM_STEPS = JSON.parse(mProgSteps[1]);
-              console.log('[PARSER] Parsed program steps:', window.__deviceConfig.PROGRAM_STEPS);
 
               const hasLoadedProfile = window.__loadedProfile && window.__loadedProfile !== null;
               const hasProgramEnabled = window.__deviceConfig.PROGRAM_ENABLED === true;
@@ -16854,7 +16752,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                 (hasProgramEnabled && hasSteps);
 
               if (shouldPopulate) {
-                console.log('[PARSER] Triggering form population (__loadingFromDevice:', window.__loadingFromDevice, ', hasLoadedProfile:', hasLoadedProfile, ', hasProgramEnabled:', hasProgramEnabled, ', hasSteps:', hasSteps, ')...');
                 if (typeof window.populateFormFromDeviceConfig === 'function') {
                   window.populateFormFromDeviceConfig();
                 } else {
@@ -16868,7 +16765,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   }, 100);
                 }
               } else {
-                console.log('[PARSER] Status update - NOT populating form (preserving diff tracking). __loadingFromDevice:', window.__loadingFromDevice, ', hasLoadedProfile:', hasLoadedProfile, ', hasProgramEnabled:', hasProgramEnabled, ', hasSteps:', hasSteps);
               }
             } catch (e) { console.warn('Failed to parse program steps:', e); }
           }
@@ -16918,8 +16814,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (span.textContent !== newText) {
             // Set new text without any flash animation to minimize overhead at high update rates
             span.textContent = newText;
-            // Emit a concise update log entry that bypasses suppression (no prefix tag)
-            try { log(`${label}: ${newText}`, 'update'); } catch (_) { }
             // Realign log column after status changes (tiles may have reflowed)
             try { scheduleVisLogAlign(); } catch (_) { }
           } else {
@@ -17067,7 +16961,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Removed: parseModePill interval (element no longer exists)
         async function startStream() { if (state.transport !== 'ble') await ensurePort(); await sendLine('jsonstatus rate ' + state.rate); await sendLine('jsonstatus on'); state.active = true; if (rateInfo) { rateInfo.style.display = 'inline-block'; rateInfo.textContent = state.rate + 'ms'; } startBtn.disabled = true; stopBtn.disabled = false; }
         async function stopStream() { if (!state.active) return; await sendLine('jsonstatus off'); state.active = false; startBtn.disabled = false; stopBtn.disabled = true; }
-        async function startReader() { if (!state.port || state.reader) return; (async () => { while (state.port && state.port.readable) { state.reader = state.port.readable.getReader(); try { while (true) { const { value, done } = await state.reader.read(); if (done) break; if (value) processIncoming(new TextDecoder().decode(value)); } } catch (e) { log('Connection not active', 'error'); state.port = null; setConnected(false); break; } finally { try { state.reader.releaseLock(); } catch (_) { } state.reader = null; } } if (!state.port || !state.port.readable) { state.port = null; setConnected(false); } })(); }
+        async function startReader() { if (!state.port || state.reader) return; (async () => { while (state.port && state.port.readable) { state.reader = state.port.readable.getReader(); try { while (true) { const { value, done } = await state.reader.read(); if (done) break; if (value) processIncoming(sharedDecoder.decode(value)); } } catch (e) { log('Connection not active', 'error'); state.port = null; setConnected(false); break; } finally { try { state.reader.releaseLock(); } catch (_) { } state.reader = null; } } if (!state.port || !state.port.readable) { state.port = null; setConnected(false); } })(); }
         // Events
         (function initMonitorToggle() {
           const showCmdBtn = document.getElementById('monitorCmdHelpBtn');
@@ -17118,6 +17012,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           // Deliberately NOT calling port.close()
           state.port = null;
+          // Flush command log to localStorage before unload
+          try { flushCommandLog(); } catch (_) { }
         });
         startBtn && startBtn.addEventListener('click', () => startStream().catch(e => log('Connection not active', 'error')));
         stopBtn && stopBtn.addEventListener('click', () => stopStream().catch(e => log('Connection not active', 'error')));
@@ -17476,8 +17372,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           ns.processIncoming.__sunEnhanced = true;
         }
 
-        // Periodic safety refresh
-        setInterval(positionMarker, 2500);
+        // Periodic safety refresh (gated behind connection state to save CPU when idle)
+        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) positionMarker(); }, 2500);
 
         // Resize observer for responsive layouts
         window.addEventListener('resize', () => { clearTimeout(ns.__sunResizeTimer); ns.__sunResizeTimer = setTimeout(positionMarker, 80); });
@@ -17946,7 +17842,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         ns.__sunArc.updateVisibility = updateVisibility;
-        setInterval(() => { updateVisibility(); if (wrapper.style.display !== 'none') draw(); }, 1500);
+        setInterval(() => { const ns = window.__solarSimMonitorState; if (!(ns && (ns.port || ns.transport === 'ble'))) return; updateVisibility(); if (wrapper.style.display !== 'none') draw(); }, 1500);
         window.addEventListener('resize', () => { if (wrapper.style.display !== 'none') draw(); });
         // Hook into setKV to trigger redraw on relevant changes
         if (typeof window.setKV === 'function' && !window.setKV.__sunArcWrapped) {
@@ -18018,7 +17914,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           document.addEventListener('touchstart', outsideTouchHandler, { passive: true });
         }
         function canSend() { return true; /* popover only opens when connected */ }
-        async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { console.log('Send fail ' + e); } catch (_) { } } }
+        async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { } catch (_) { } } }
         // Touch device detection — prompt() for custom input on touch, inline inputs on desktop
         const _isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         function hhmmRow() { const row = document.createElement('div'); row.className = 'row'; const lab = document.createElement('label'); lab.textContent = 'HHMM:'; row.appendChild(lab); const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = '0730'; inp.maxLength = 4; inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9]/g, '').slice(0, 4); }); row.appendChild(inp); return { row, input: inp, get: () => inp.value }; }
@@ -18170,7 +18066,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Fallback by scanning labels
           grid.querySelectorAll('.mon-kv').forEach(box => { if (box.title) return; const key = keyFromBox(box); if (!key) return; if (toggleKeys.includes(key)) box.title = 'Click to edit; Double-click to toggle'; else box.title = 'Click to edit'; });
         }
-        setInterval(applyTooltips, 1200);
+        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) applyTooltips(); }, 1200);
         // Mutation observer to mark interactive tiles with pointer cursor whenever they appear
         (function observeGrid() {
           const grid = document.getElementById('monitorStatusGrid'); if (!grid || grid.__tilePopoverObserved) return; const mark = (node) => { if (!(node instanceof Element)) return; if (!node.classList.contains('mon-kv')) return; const k = keyFromBox(node); if (k) node.classList.add('interactive'); };
@@ -18347,8 +18243,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Update titles when page loads
         updateProgramTitles();
 
-        // Update titles periodically to reflect connection state changes
-        setInterval(updateProgramTitles, 1000);
+        // Update titles periodically to reflect connection state changes (gated to save CPU)
+        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) updateProgramTitles(); }, 1000);
       })();
 
       // ============================================================
@@ -18414,8 +18310,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
 
-        // Check periodically for device connection and update nav buttons
+        // Check periodically for device connection and update nav buttons (gated)
         setInterval(function () {
+          const ns = window.__solarSimMonitorState;
+          if (!(ns && (ns.port || ns.transport === 'ble'))) return;
           checkAndAutoExpand();
           // Update nav button states
           updateDisplay();
@@ -18472,19 +18370,16 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         window.__playheadManuallySet = true;
         // Do NOT auto-clear after 2 seconds; only clear on explicit navigation or profile load
-        console.log('[Playhead] Manual navigation set, auto-detection paused');
       }
 
       // Helper function to send command to device
       async function __sendDeviceCommand(cmd) {
         const serialState = window.__serialState || null;
         if (!serialState || !(serialState.port || serialState.bleDevice)) {
-          console.log('[__sendDeviceCommand] No serial connection');
           return false;
         }
         try {
           if (typeof window.__sendSerialCommand === 'function') {
-            console.log('[__sendDeviceCommand] Sending:', cmd);
             await window.__sendSerialCommand(cmd, { silentEcho: true });
             return true;
           } else {
@@ -18498,19 +18393,14 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Helper function to check if program is at step 0 (before program starts)
       async function __checkIfAtStepZero() {
-        console.log('[Step 0 Check] Starting check...');
 
         // Check if we have a program loaded in the UI
         if (typeof programSteps === 'undefined' || !programSteps || programSteps.length === 0) {
-          console.log('[Step 0 Check] No program loaded in UI');
           return false;
         }
-        console.log('[Step 0 Check] Program loaded with', programSteps.length, 'steps');
 
         // Strategy 1: Check if playhead is locked (indicates program just loaded but not started)
-        console.log('[Step 0 Check] Playhead locked status:', window.__playheadDayLocked);
         if (window.__playheadDayLocked === true) {
-          console.log('[Step 0 Check] ✓ Playhead locked - at step 0');
           return true;
         }
 
@@ -18518,20 +18408,16 @@ https://github.com/odeepllama/SolarSim/tree/main
         // This is the PRIMARY check - if program is off, we're definitely at step 0
         if (window.kvCache && window.kvCache.get) {
           const programValue = window.kvCache.get('program');
-          console.log('[Step 0 Check] Program kvCache value:', programValue);
           if (programValue) {
             const valueEl = programValue.querySelector('span');
             if (valueEl) {
               const statusText = valueEl.textContent.toLowerCase().trim();
-              console.log('[Step 0 Check] Program status text:', statusText);
               // If program is off/disabled, we're at step 0
               if (statusText === 'off' || statusText === 'disabled' || statusText === 'false') {
-                console.log('[Step 0 Check] ✓ Program is OFF - at step 0');
                 return true;
               }
               // If program is on, check if it's actually running or just enabled
               if (statusText === 'on' || statusText === 'enabled' || statusText === 'true') {
-                console.log('[Step 0 Check] Program is ON, checking if actually running...');
                 // Program is enabled but might not be running yet
                 // Need to check if we're at the first step or before it
               }
@@ -18542,7 +18428,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Strategy 3: Even if program is enabled, check if we haven't reached the first step yet
         if (programSteps.length > 0) {
           const firstStepTime = programSteps[0].sim_time_hhmm;
-          console.log('[Step 0 Check] First step time:', firstStepTime);
 
           // Get sim time from kvCache
           if (window.kvCache && window.kvCache.get) {
@@ -18564,13 +18449,10 @@ https://github.com/odeepllama/SolarSim/tree/main
                   }
                 }
 
-                console.log('[Step 0 Check] Current time:', currentTime, '(', currentMinutes, 'min)');
-                console.log('[Step 0 Check] First step time:', firstStepTime, '(', firstStepMinutes, 'min)');
 
                 if (firstStepMinutes !== null && currentMinutes !== null) {
                   // If current time is before first step time, we're at step 0
                   if (currentMinutes < firstStepMinutes) {
-                    console.log('[Step 0 Check] ✓ Current time before first step - at step 0');
                     return true;
                   }
                 }
@@ -18579,7 +18461,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
 
-        console.log('[Step 0 Check] ✗ Not at step 0');
         return false;
       }
 
@@ -18596,12 +18477,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!day.steps || day.steps.length === 0) continue;
           const hasStep = day.steps.some(s => s.index === stepIndex);
           if (hasStep) {
-            console.log('[Get Day For Step] Step', stepIndex, 'is on Day', day.dayNumber);
             return day.dayNumber;
           }
         }
 
-        console.log('[Get Day For Step] Step', stepIndex, 'not found, defaulting to Day 1');
         return 1;
       }
 
@@ -18613,24 +18492,20 @@ https://github.com/odeepllama/SolarSim/tree/main
         const dayData = analyzeMultiDayProgram();
         if (!dayData || !dayData.days || dayData.days.length === 0) return null;
 
-        console.log('[First Step Day] Analyzing', dayData.days.length, 'days');
 
         // Find which day contains the first program step (index 0)
         for (const day of dayData.days) {
           if (!day.steps || day.steps.length === 0) continue;
 
-          console.log('[First Step Day] Day', day.dayNumber, 'has steps:', day.steps.map(s => s.index).join(', '));
 
           // Check if this day contains step index 0
           const hasFirstStep = day.steps.some(s => s.index === 0);
           if (hasFirstStep) {
-            console.log('[First Step Day] ✓ First program step (index 0) is in Day', day.dayNumber);
             return day.dayNumber;
           }
         }
 
         // Default to Day 1 if we can't determine
-        console.log('[First Step Day] Could not determine day, defaulting to Day 1');
         return 1;
       }
 
@@ -18651,29 +18526,22 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Function to scroll to previous day
       window.__scrollToPrevDay = async function () {
-        console.log('[Day Nav] scrollToPrevDay called');
-        console.log('[Day Nav] Current day:', window.__playheadCurrentDay, 'Max days:', window.__maxProgramDays);
 
         if (window.__playheadCurrentDay <= 1) {
-          console.log('[Day Nav] Already at first day, returning');
           return;
         }
 
         const targetDay = window.__playheadCurrentDay - 1;
-        console.log('[Day Nav] Target day:', targetDay);
 
         const firstStepIndex = __getFirstStepOfDay(targetDay);
-        console.log('[Day Nav] First step index of day', targetDay, ':', firstStepIndex);
 
         // Check if device is connected
         const isConnected = state && state.port;
-        console.log('[Day Nav] Device connected:', isConnected);
 
         if (isConnected && firstStepIndex !== null) {
           // Device is connected - send jump command
           // Step numbers are 1-indexed in the device command, but our index is 0-indexed
           const stepNumber = firstStepIndex + 1;
-          console.log('[Day Nav] Sending command: jump step', stepNumber);
           // Mark that we manually set the day - this prevents auto-detection from overriding
           window.__playheadCurrentDay = targetDay;
           // Sync the wrap count to match the target day so auto-detection doesn't override
@@ -18694,7 +18562,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         } else {
           // Device not connected or no steps found - just update the view
-          console.log('[Day Nav] Device not connected or no steps, updating view only');
           window.__playheadCurrentDay = targetDay;
           // Sync the wrap count to match the target day
           window.__dayWrapCount = targetDay - 1;
@@ -18799,29 +18666,22 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Function to scroll to next day
       window.__scrollToNextDay = async function () {
-        console.log('[Day Nav] scrollToNextDay called');
-        console.log('[Day Nav] Current day:', window.__playheadCurrentDay, 'Max days:', window.__maxProgramDays);
 
         if (window.__playheadCurrentDay >= window.__maxProgramDays) {
-          console.log('[Day Nav] Already at last day, returning');
           return;
         }
 
         const targetDay = window.__playheadCurrentDay + 1;
-        console.log('[Day Nav] Target day:', targetDay);
 
         const firstStepIndex = __getFirstStepOfDay(targetDay);
-        console.log('[Day Nav] First step index of day', targetDay, ':', firstStepIndex);
 
         // Check if device is connected
         const isConnected = state && state.port;
-        console.log('[Day Nav] Device connected:', isConnected);
 
         if (isConnected && firstStepIndex !== null) {
           // Device is connected - send jump command
           // Step numbers are 1-indexed in the device command, but our index is 0-indexed
           const stepNumber = firstStepIndex + 1;
-          console.log('[Day Nav] Sending command: jump step', stepNumber);
           // Mark that we manually set the day - this prevents auto-detection from overriding
           window.__playheadCurrentDay = targetDay;
           // Sync the wrap count to match the target day so auto-detection doesn't override
@@ -18842,7 +18702,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         } else {
           // Device not connected or no steps found - just update the view
-          console.log('[Day Nav] Device not connected or no steps, updating view only');
           window.__playheadCurrentDay = targetDay;
           // Sync the wrap count to match the target day
           window.__dayWrapCount = targetDay - 1;
@@ -18861,8 +18720,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Function to reset playhead to Day 1
       window.__resetPlayheadToDay1 = function () {
-        console.log('[DEBUG] resetPlayheadToDay1 called from:', new Error().stack);
-        console.log('[DEBUG] Resetting playhead to initial state');
 
         // When profile loads, device shows START_TIME but program hasn't started yet
         // This is "step 0" - before the first actual program step
@@ -18871,7 +18728,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         window.__playheadCurrentDay = 1; // START_TIME is always Day 1
         window.__playheadManuallySet = false; // Clear manual flag on reset
 
-        console.log('[DEBUG] Set to step 0 (before program starts), Day 1');
 
         // Set flag to prevent auto-day-detection until program actually starts
         window.__playheadDayLocked = true;
@@ -18892,7 +18748,6 @@ https://github.com/odeepllama/SolarSim/tree/main
       function clearHoldState() {
         if (!window.__holdState) return;
 
-        console.log('[HOLD] Clearing hold state');
         window.__holdState = null;
 
         // Stop the progress update interval
@@ -18915,7 +18770,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         window.__resetPlayheadTracking = function () {
           lastSimTime = null;
           lastSimMinutes = null;
-          console.log('[DEBUG] Reset playhead tracking (lastSimTime cleared)');
         };
 
         function parseSimTime(timeStr) {
@@ -18944,10 +18798,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           // This is more reliable than detecting time wraps
           // BUT: Skip auto-detection if playhead day is locked (after profile load, until program starts)
           if (window.__playheadDayLocked) {
-            console.log('[DEBUG] Playhead locked, currentTime:', currentSimTime, 'lastTime:', lastSimTime);
             // Initialize lastSimTime on first run while locked
             if (lastSimTime === null) {
-              console.log('[DEBUG] First run while locked, initializing lastSimTime');
               lastSimTime = currentSimTime;
               lastSimMinutes = currentSimMinutes;
               return;
@@ -18955,14 +18807,11 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Check if sim time has changed - if so, unlock and allow auto-detection
             if (currentSimTime !== lastSimTime) {
-              console.log('[DEBUG] Time changed from', lastSimTime, 'to', currentSimTime, '- UNLOCKING');
               window.__playheadDayLocked = false;
               // Don't clear manual flag here - let it clear naturally when auto-detection takes over
               // (Manual flag prevents auto-detection from overriding user's explicit day selection)
-              console.log('[DEBUG] Unlocked but keeping manual flag if set');
               // Continue to do day detection below
             } else {
-              console.log('[DEBUG] Time unchanged, staying locked on Day', window.__playheadCurrentDay);
               // Still locked and time hasn't changed, skip day detection
               return;
             }
@@ -18995,7 +18844,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             const currentStepArrayIndex = window.__currentStepIndex - 1; // Convert 1-based to 0-based
             const dayForCurrentStep = stepToDayMap.get(currentStepArrayIndex);
             if (dayForCurrentStep && dayForCurrentStep !== window.__playheadCurrentDay) {
-              console.log('[Step Index Match] Current step index', window.__currentStepIndex, '(array index', currentStepArrayIndex, ') is on Day', dayForCurrentStep);
               window.__playheadCurrentDay = dayForCurrentStep;
               foundDayFromStepIndex = true;
             } else if (dayForCurrentStep) {
@@ -19056,7 +18904,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (delta > 360) {
                 // Time jumped backward significantly - midnight crossing forward
                 window.__playheadCurrentDay++;
-                console.log('[Midnight Crossing] Time jumped from', lastSimTime, 'to', currentSimTime, '- advancing to Day', window.__playheadCurrentDay);
               }
             }
           }
@@ -19085,7 +18932,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                     startTimeMinutes = h * 60 + m;
                   }
                 }
-                console.log('[DEBUG] START_TIME_HHMM:', startTimeMinutes, 'minutes, currentSimMinutes:', currentSimMinutes);
 
                 // Find which day contains the current sim time
                 let foundDay = null;
@@ -19104,7 +18950,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                   const nextDay = dayData.days.find(d => d.dayNumber === day.dayNumber + 1);
                   const nextDayFirstTime = nextDay && nextDay.steps.length > 0 ? nextDay.steps[0].m : null;
 
-                  console.log(`[DEBUG] Checking Day ${day.dayNumber}: minTime=${minTime}, maxTime=${maxTime}, nextDayFirstTime=${nextDayFirstTime}, currentSimMinutes=${currentSimMinutes}`);
 
                   // Check if current time falls within this day's range
                   // A time belongs to this day if it's between this day's first step and next day's first step
@@ -19185,14 +19030,12 @@ https://github.com/odeepllama/SolarSim/tree/main
                 const delta = lastSimMinutes - currentSimMinutes;
                 if (delta > 360) {
                   window.__playheadCurrentDay++;
-                  console.log('[Playhead Day] Forward transition detected (fallback). Now on Day', window.__playheadCurrentDay);
                 }
               }
               else if (currentSimMinutes > lastSimMinutes) {
                 const delta = currentSimMinutes - lastSimMinutes;
                 if (delta > 360) {
                   window.__playheadCurrentDay--;
-                  console.log('[Playhead Day] Backward transition detected (fallback). Now on Day', window.__playheadCurrentDay);
                 }
               }
             }
@@ -19205,7 +19048,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Detect hold completion: if we're in a hold state and sim time changed
             // This means the hold ended and time is advancing again
             if (window.__holdState && window.__holdState.simTime !== currentSimTime) {
-              console.log('[HOLD] Completed - sim time advanced from', window.__holdState.simTime, 'to', currentSimTime);
               clearHoldState();
             }
 
@@ -19223,9 +19065,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
 
-        // Check for sim time updates every second
+        // Check for sim time updates every second (gated behind connection state)
         // (will only re-render when time actually changes, which is once per minute)
-        setInterval(updatePlayhead, 1000);
+        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) updatePlayhead(); }, 1000);
       })();
 
       // Background Color Chooser Logic
@@ -19683,7 +19525,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             });
           }
 
-          console.log('[Mode] System initialized. Current mode:', getCurrentMode());
         }
 
         // Initialize when DOM is ready
@@ -20251,7 +20092,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (imagingIlluminationContent) {
               const isExpanded = imagingIlluminationContent.style.display !== 'none';
               savedImagingIlluminationState = isExpanded;
-              console.log('[FTUE] Saved Imaging Illumination state:', isExpanded);
 
               // Expand the section if it's collapsed
               if (!isExpanded) {
@@ -20267,11 +20107,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Save current mode before starting guide
           if (typeof getCurrentMode === 'function') {
             savedMode = getCurrentMode();
-            console.log('[FTUE] Saved current mode:', savedMode);
 
             // For Full Tour, switch to Advanced mode to ensure all elements are visible
             if (path === 'full' && savedMode !== 'advanced') {
-              console.log('[FTUE] Switching to Advanced mode for Full Tour');
               if (typeof setCurrentMode === 'function' && typeof applyVisibility === 'function') {
                 setCurrentMode('advanced');
                 applyVisibility();
@@ -20284,7 +20122,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             steps: JSON.parse(JSON.stringify(programSteps)),
             enabled: !!state.PROGRAM_ENABLED
           };
-          console.log('[FTUE] Saved program state:', savedProgramState.steps.length, 'steps, enabled:', savedProgramState.enabled);
 
           // Inject demo program so guide steps show meaningful content
           programSteps.length = 0;
@@ -20312,7 +20149,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (arcWrapper) savedTileState.arcWasVisible = arcWrapper.style.display !== 'none';
 
             // Inject demo tiles via setKV
-            console.log('[FTUE] Injecting demo status tiles');
             if (typeof setKV === 'function') {
               setKV('sim', 'SimTime', '10:30');
               setKV('speed', 'Speed', '2');
@@ -20326,7 +20162,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Show the solar arc
             if (arcWrapper) {
               arcWrapper.style.display = '';
-              console.log('[FTUE] Showing solar arc with demo data');
             }
 
             // Trigger arc redraw and layout alignment
@@ -20336,7 +20171,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             }, 50);
           } else {
             savedTileState = { hadTiles: true, arcWasVisible: true };
-            console.log('[FTUE] Tiles already populated from device, skipping demo injection');
           }
 
           // Wait for all layout changes (mode, program, visibility) to settle
@@ -20721,7 +20555,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                 // Update localStorage to match restored state
                 localStorage.setItem('ImagingIlluminationExpanded', 'false');
               }
-              console.log('[FTUE] Restored Imaging Illumination state:', savedImagingIlluminationState);
             }
             savedImagingIlluminationState = null;
           }
@@ -20730,7 +20563,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (savedMode && typeof getCurrentMode === 'function' && typeof setCurrentMode === 'function') {
             const currentMode = getCurrentMode();
             if (currentMode !== savedMode) {
-              console.log('[FTUE] Restoring original mode:', savedMode);
               setCurrentMode(savedMode);
               if (typeof applyVisibility === 'function') {
                 applyVisibility();
@@ -20749,13 +20581,11 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (typeof refreshConditionalVisibility === 'function') refreshConditionalVisibility();
             if (typeof renderProgramSteps === 'function') renderProgramSteps();
             if (typeof updatePreview === 'function') updatePreview(true);
-            console.log('[FTUE] Restored program state:', savedProgramState.steps.length, 'steps, enabled:', savedProgramState.enabled);
             savedProgramState = null;
           }
 
           // Restore tile/arc state if demo data was injected
           if (savedTileState && !savedTileState.hadTiles) {
-            console.log('[FTUE] Clearing demo status tiles');
             if (window.kvCache) {
               const grid = document.getElementById('monitorStatusGrid');
               for (const [k, box] of window.kvCache.entries()) {
