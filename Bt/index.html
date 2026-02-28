@@ -2929,12 +2929,11 @@ https://github.com/odeepllama/SolarSim/tree/main
    ============================================================================ */
     .timeline-playhead {
       position: absolute;
-      top: 0;
-      width: 0;
-      height: 0;
-      border-left: 12px solid transparent;
-      border-right: 12px solid transparent;
-      border-top: 18px solid #d32f2f;
+      top: -9px;
+      width: 24px;
+      height: 27px;
+      background: #d32f2f;
+      clip-path: polygon(0 0, 100% 0, 100% 33.3%, 50% 100%, 0 33.3%);
       transform: translateX(-12px);
       filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
       pointer-events: auto;
