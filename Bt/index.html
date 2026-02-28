@@ -1966,10 +1966,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       text-align: center;
     }
 
-    /* SunColor tile keeps compact layout (icons + RGB text don't suit large text) */
-    .mon-kv.sun-color-tile span {
-      font-size: 1rem;
-    }
+    /* SunColor tile: uses default 2rem font like other tiles */
 
     /* SolarMode tile: text like SCIENTIFIC needs to fit */
     /* SolarMode tile: only shrink SCIENTIFIC text to fit */
@@ -2016,6 +2013,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .mon-kv.sun-natural span {
       color: #ffd95e;
+      font-size: 1.3rem;
+      padding-top: 0.35rem;
     }
 
     /* CUSTOM (purple accent) */
