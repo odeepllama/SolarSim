@@ -2815,22 +2815,55 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .program-lock-text {
-      color: #d32f2f;
-      font-weight: 500;
-      animation: lockPulse 2s ease-in-out infinite;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #28a745;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 3px 12px 3px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.02em;
+      vertical-align: middle;
+      white-space: nowrap;
     }
 
-    @keyframes lockPulse {
+    .program-lock-text::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #69f0ae;
+      box-shadow: 0 0 6px #69f0ae;
+      animation: liveDotPulse 1.5s ease-in-out infinite;
+    }
+
+    /* Pill-only variant (just the dot, no text) for editing section */
+    .program-lock-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #69f0ae;
+      box-shadow: 0 0 6px #69f0ae;
+      animation: liveDotPulse 1.5s ease-in-out infinite;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    @keyframes liveDotPulse {
 
       0%,
       100% {
         opacity: 1;
-        color: #ff1744;
+        box-shadow: 0 0 6px #69f0ae;
       }
 
       50% {
-        opacity: 0.5;
-        color: #d32f2f;
+        opacity: 0.4;
+        box-shadow: 0 0 2px #69f0ae;
       }
     }
 
@@ -9485,8 +9518,9 @@ https://github.com/odeepllama/SolarSim/tree/main
   .tl-seg.reverse::before{ content:'◀'; position:absolute; left:4px; top:50%; transform:translateY(-50%); font-size:18px; line-height:1; opacity:.9; text-shadow:0 0 2px #fff, 0 0 3px #fff; }
   .tl-seg.forward-arrow::before{ content:'▶'; position:absolute; left:4px; top:50%; transform:translateY(-50%); font-size:14px; line-height:1; opacity:.7; text-shadow:0 0 2px #fff, 0 0 3px #fff; }
   /* Jump marker — pin above bar with dashed line through it */
-  .tl-jump{ position:absolute; top:0; bottom:0; width:0; border-left:3px dashed #d08000; z-index:70; pointer-events:none; }
-  .tl-jump:after{ content:'⚡'; position:absolute; top:-30px; left:50%; transform:translateX(-50%); background:#fff3cd; border:3px solid #d08000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.3); pointer-events:auto; cursor:help; }
+  .tl-jump{ position:absolute; top:-30px; bottom:0; width:28px; margin-left:-14px; border-left:none; z-index:70; pointer-events:auto; cursor:default; }
+  .tl-jump::before{ content:''; position:absolute; top:28px; bottom:0; left:50%; width:0; border-left:3px dashed #d08000; transform:translateX(-50%); }
+  .tl-jump:after{ content:'⚡'; position:absolute; top:0; left:50%; transform:translateX(-50%); background:#fff3cd; border:3px solid #d08000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.3); pointer-events:none; }
     /* Axis placed above segments but below jump markers */
     .tl-axis{ position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:25; }
   /* Hour tick lines removed per request */
@@ -10789,7 +10823,12 @@ https://github.com/odeepllama/SolarSim/tree/main
             div.style.background = baseColor;
           }
           // Collect segment info for grouped labelling (done after both loops)
-          let speedLabel = hold ? 'HOLD' : (reverse ? ('−' + Math.abs(speed) + 'X') : (speed + 'X'));
+          const holdDurMin = hold ? Math.round(Math.abs(seg.endMin - seg.startMin)) : 0;
+          let holdDurStr = '';
+          if (hold && holdDurMin >= 60) {
+            holdDurStr = ' ' + Math.floor(holdDurMin / 60) + 'h' + (holdDurMin % 60 ? holdDurMin % 60 + 'm' : '');
+          }
+          let speedLabel = hold ? ('HOLD' + holdDurStr) : (reverse ? ('−' + Math.abs(speed) + 'X') : (speed + 'X'));
           if (!(isStartingDay && reverse)) {
             segmentMeta.push({ div, speed, speedLabel, dualSun, leftPct: parseFloat(div.style.left), widthPct: parseFloat(div.style.width), layer: 'negative' });
           }
@@ -10864,7 +10903,12 @@ https://github.com/odeepllama/SolarSim/tree/main
             div.style.background = baseColor;
           }
           // Collect segment info for grouped labelling (done after both loops)
-          let speedLabel = hold ? 'HOLD' : (reverse ? ('−' + Math.abs(speed) + 'X') : (speed + 'X'));
+          const holdDurMin = hold ? Math.round(Math.abs(seg.endMin - seg.startMin)) : 0;
+          let holdDurStr = '';
+          if (hold && holdDurMin >= 60) {
+            holdDurStr = ' ' + Math.floor(holdDurMin / 60) + 'h' + (holdDurMin % 60 ? holdDurMin % 60 + 'm' : '');
+          }
+          let speedLabel = hold ? ('HOLD' + holdDurStr) : (reverse ? ('−' + Math.abs(speed) + 'X') : (speed + 'X'));
           segmentMeta.push({ div, speed, speedLabel, dualSun, leftPct: parseFloat(div.style.left), widthPct: parseFloat(div.style.width), layer: 'positive' });
           // Tooltip with intensity info
           let intensityLabel = intensity.toFixed(2);
@@ -10992,7 +11036,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (j.m < WINDOW_START_MIN || j.m > WINDOW_END_MIN) return;
           const posPct = ((j.m - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
           const dispNum = stepOrder.get(j.index) || '?';
-          const mk = document.createElement('div'); mk.className = 'tl-jump'; mk.style.left = posPct + '%'; mk.title = `Step ${dispNum} JUMP ${formatHHMM(j.m)}`; host.appendChild(mk);
+          const jumpLabel = j.isImplicitHoldJump ? `⚡ HOLD ends → ${formatHHMM(j.m)}` : `⚡ JUMP → ${formatHHMM(j.m)}`;
+          const mk = document.createElement('div'); mk.className = 'tl-jump'; mk.style.left = posPct + '%'; mk.title = jumpLabel; host.appendChild(mk);
         });
 
         // Render playhead if device is connected and sim time is within visible range
@@ -18256,16 +18301,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           // Path B: Recreate structure when connection state changes or navigation visibility changes
           else {
-            const hasLockIcon = timelineTitle.querySelector('.program-lock-icon');
+            const hasLockIndicator = timelineTitle.querySelector('.program-lock-text');
 
             if (locked) {
-              // Need to recreate if: lock icon missing OR nav button visibility changed
-              if (!hasLockIcon || (hasNavBtns !== shouldShowNav)) {
-                timelineTitle.innerHTML = 'Program Step Timeline &nbsp;&nbsp; <span class="program-lock-text">!!!Running on Device!!!</span>' + navBtnHtml;
+              // Need to recreate if: lock indicator missing OR nav button visibility changed
+              if (!hasLockIndicator || (hasNavBtns !== shouldShowNav)) {
+                timelineTitle.innerHTML = 'Program Step Timeline &nbsp;&nbsp; <span class="program-lock-text">Live on Device</span>' + navBtnHtml;
               }
             } else {
-              // Need to recreate if: lock icon present OR nav button visibility changed
-              if (hasLockIcon || (hasNavBtns !== shouldShowNav)) {
+              // Need to recreate if: lock indicator present OR nav button visibility changed
+              if (hasLockIndicator || (hasNavBtns !== shouldShowNav)) {
                 timelineTitle.innerHTML = 'Program Step Timeline' + navBtnHtml;
               }
             }
@@ -18273,22 +18318,21 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Update editing/table title
           if (locked) {
-            if (!editingTitle.querySelector('.program-lock-icon')) {
-              editingTitle.innerHTML = 'Program Step Editing &nbsp;&nbsp; <span class="program-lock-text">!!!Running on Device!!!</span>';
+            if (!editingTitle.querySelector('.program-lock-dot')) {
+              editingTitle.innerHTML = 'Program Step Editing <span class="program-lock-dot" title="Live on Device"></span>';
             }
           } else {
             editingTitle.innerHTML = 'Program Step Editing';
           }
         }
 
-        // Flash the lock icon to alert user
+        // Flash the live indicator to alert user
         function flashLockIcon() {
-          const icons = document.querySelectorAll('.program-lock-icon');
-          icons.forEach(icon => {
-            icon.classList.remove('flash');
-            // Force reflow to restart animation
-            void icon.offsetWidth;
-            icon.classList.add('flash');
+          const indicators = document.querySelectorAll('.program-lock-text, .program-lock-dot');
+          indicators.forEach(el => {
+            el.style.transition = 'transform 0.15s ease';
+            el.style.transform = 'scale(1.2)';
+            setTimeout(() => { el.style.transform = 'scale(1)'; }, 300);
           });
         }
 
