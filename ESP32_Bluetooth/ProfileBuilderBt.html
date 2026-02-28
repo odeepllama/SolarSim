@@ -18260,7 +18260,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       window.__generateNavControlsHtml = function () {
         const currentDay = window.__playheadCurrentDay || 1;
         const maxDay = window.__maxProgramDays || 1;
-        const currentStep = window.__currentStepIndex || 0;
+        const currentStep = (typeof __getCurrentStepForNav === 'function') ? __getCurrentStepForNav() : (window.__currentStepIndex || 0);
         const totalSteps = (typeof programSteps !== 'undefined' && programSteps) ? programSteps.length : 0;
 
         // Check if device is connected
@@ -18277,7 +18277,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
         onclick="window.__scrollToPrevStep()"
         title="Jump device to previous step (sends 'jump step' command)"
-        ${currentStep <= 0 ? 'disabled' : ''}>◄ Prev</button>
+        >◄ Prev</button>
       <span style="font-size:0.85rem; color:#000; margin:0 3.6px;">Step Jump</span>
       <button class="playhead-nav-btn nav-next" style="font-size:0.8rem; padding:4px 8px; margin-left:2.4px;"
         onclick="window.__scrollToNextStep()"
@@ -18350,7 +18350,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               const stepButtons = stepNavContainer.querySelectorAll('.playhead-nav-btn');
               if (stepButtons.length === 2) {
                 // Update "Prev Step" button disabled state
-                stepButtons[0].disabled = (navControls.currentStep <= 0);
+                stepButtons[0].disabled = false; // Prev always enabled: step 1 = jump to start of step 1
                 // Update "Next Step" button disabled state
                 stepButtons[1].disabled = (navControls.currentStep >= navControls.totalSteps);
               }
@@ -18751,34 +18751,88 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Helper: get the current 1-based step index for navigation.
       // Uses window.__currentStepIndex which is maintained by [PROGRAM] Step N/M
-      // status messages from the device. The old sim-time-based lookup was unreliable
-      // for programs with both forward and reverse steps (same sim time appears in
-      // multiple steps, causing wrong matches).
+      // status messages from the device. When the index hasn't been synced yet (0),
+      // infer the step from the current SimTime to avoid jumping to step 1 on first use.
       function __getCurrentStepForNav() {
-        return window.__currentStepIndex || 0;
+        if (window.__currentStepIndex > 0) return window.__currentStepIndex;
+
+        // Fallback: infer step from SimTime when device hasn't sent Step N/M yet
+        if (typeof programSteps !== 'undefined' && programSteps && programSteps.length > 0) {
+          const simTimeValue = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
+          if (simTimeValue) {
+            const valueEl = simTimeValue.querySelector('span');
+            if (valueEl) {
+              const simTimeStr = valueEl.textContent.trim();
+              const parts = simTimeStr.split(':');
+              if (parts.length === 2) {
+                const simMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                if (!isNaN(simMin)) {
+                  // Find the last step whose start time <= current SimTime
+                  let bestStep = 1;
+                  for (let i = 0; i < programSteps.length; i++) {
+                    const stepHHMM = programSteps[i].sim_time_hhmm;
+                    const stepMin = Math.floor(stepHHMM / 100) * 60 + (stepHHMM % 100);
+                    if (stepMin <= simMin) bestStep = i + 1; // 1-based
+                  }
+                  // Sync the inferred value so future calls don't re-compute
+                  window.__currentStepIndex = bestStep;
+                  return bestStep;
+                }
+              }
+            }
+          }
+        }
+        return 0;
       }
 
-      // Function to scroll to previous step
+      // Function to scroll to previous step (media-player style):
+      // - If playhead is past the start of the current step, jump to START of current step
+      // - If playhead is already at/near the start of current step, jump to previous step
       window.__scrollToPrevStep = async function () {
         if (!programSteps || programSteps.length === 0) return;
         const currentStep = __getCurrentStepForNav();
         if (currentStep < 1) return;
-        const prevStep = Math.max(currentStep - 1, 1);
 
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
         if (!isConnected) return;
 
-        window.__currentStepIndex = prevStep;
-        const programIndex = prevStep - 1;
-        if (programIndex >= 0 && typeof __getDayForStep === 'function') {
-          window.__playheadCurrentDay = __getDayForStep(programIndex);
+        // Determine if we're already near the start of the current step
+        let targetStep = currentStep; // Default: jump to start of current step
+        const programIndex = currentStep - 1;
+        if (programIndex >= 0 && programIndex < programSteps.length) {
+          const stepStartHHMM = programSteps[programIndex].sim_time_hhmm;
+          const stepStartMin = Math.floor(stepStartHHMM / 100) * 60 + (stepStartHHMM % 100);
+
+          // Read current SimTime
+          const simTimeValue = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
+          if (simTimeValue) {
+            const valueEl = simTimeValue.querySelector('span');
+            if (valueEl) {
+              const parts = valueEl.textContent.trim().split(':');
+              if (parts.length === 2) {
+                const simMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                if (!isNaN(simMin)) {
+                  // If within 2 minutes of step start → go to previous step
+                  if (Math.abs(simMin - stepStartMin) <= 2) {
+                    targetStep = currentStep > 1 ? currentStep - 1 : 1;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        window.__currentStepIndex = targetStep;
+        const tgtProgramIndex = targetStep - 1;
+        if (tgtProgramIndex >= 0 && typeof __getDayForStep === 'function') {
+          window.__playheadCurrentDay = __getDayForStep(tgtProgramIndex);
           window.__dayWrapCount = window.__playheadCurrentDay - 1;
         }
         __setPlayheadManualFlag();
         const _ss2 = window.__serialState;
         if (_ss2) { _ss2.__navSuppressionActive = true; _ss2.__silentStatusUntil = performance.now() + 2000; }
-        await __sendDeviceCommand(`jump step ${prevStep}`);
+        await __sendDeviceCommand(`jump step ${targetStep}`);
         setTimeout(() => { if (_ss2) _ss2.__navSuppressionActive = false; }, 2000);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
