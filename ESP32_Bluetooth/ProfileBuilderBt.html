@@ -3458,7 +3458,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 </head>
 
 <body>
-  <h1 id="appTitle"></h1>
+  <h1 id="appTitle" style="text-align:center;"></h1>
   <div class="monitor-toggle-bar">
     <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" style="display:none"
       title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
@@ -3522,6 +3522,25 @@ https://github.com/odeepllama/SolarSim/tree/main
   <body>
     <div id="topButtonBar"
       style="position:absolute; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
+      <span id="versionDate" style="font-size:0.7rem; color:#888; margin-right:2px; white-space:nowrap;"></span>
+      <script>
+        (function () {
+          fetch('https://api.github.com/repos/odeepllama/SolarSim/commits?per_page=1')
+            .then(r => r.json())
+            .then(data => {
+              if (data[0] && data[0].commit && data[0].commit.committer) {
+                const d = new Date(data[0].commit.committer.date);
+                const yy = String(d.getFullYear()).slice(2);
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mi = String(d.getMinutes()).padStart(2, '0');
+                document.getElementById('versionDate').textContent = `v${yy}.${mm}.${dd} ${hh}:${mi}`;
+              }
+            })
+            .catch(() => { }); // Silently fail if offline or rate-limited
+        })();
+      </script>
       <button id="langToggleBtn" type="button" data-lang="en" style="vertical-align:middle;">JPN</button>
       <button id="guideToggleBtn" type="button" style="vertical-align:middle;">🎓 Guide</button>
       <button id="helpToggleBtn" type="button" class="secondary"
@@ -5172,7 +5191,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
       const TRANSLATIONS = {
         en: {
-          appTitle: 'SolaSim Studio 20260226',
+          appTitle: 'Welcome to SolaSim Studio',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
@@ -5331,7 +5350,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           toggleView: '(Toggle view)',
         },
         ja: {
-          appTitle: 'SolaSim Studio 20260226',
+          appTitle: 'SolaSim Studioへようこそ',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
