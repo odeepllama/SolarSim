@@ -3465,7 +3465,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
     <span id="monitorConnBadge" class="pill red" title=""></span>
     <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
-
+    <button id="quickEditBtn" type="button" class="secondary"
+      title="Connect, load profile, disconnect and jump to editor"></button>
     <button id="monitorRefreshBtn" type="button" class="secondary" title=""></button>
     <button id="monitorDisconnectBtn" type="button" class="secondary" disabled title=""></button>
     <!-- <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button> -->
@@ -5176,7 +5177,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
-
+          quickEdit: '✏️ Quick Edit',
+          quickEditLoading: '⏳ Loading...',
           refresh: 'Refresh',
           disconnect: 'Disconnect',
           showAllCommands: 'Show All Commands',
@@ -5334,7 +5336,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
-
+          quickEdit: '✏️ クイック編集',
+          quickEditLoading: '⏳ 読込中...',
           refresh: 'リフレッシュ',
           disconnect: '切断',
           showAllCommands: 'すべてのコマンドを表示',
@@ -5500,7 +5503,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         document.getElementById('appTitle').textContent = TRANSLATIONS[lang].appTitle;
         // Adjust monitor/toolbar button size for Japanese
         const monitorBtnIds = [
-          'toggleMonitorBtn', 'monitorConnectBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
+          'toggleMonitorBtn', 'monitorConnectBtn', 'quickEditBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
           'monitorCmdHelpBtn', 'monitorShowStatusBtn', 'simpleModeBtn', 'advancedModeBtn'
         ];
         monitorBtnIds.forEach(id => {
@@ -5557,6 +5560,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         document.getElementById('monitorConnectBtn').innerHTML = TRANSLATIONS[lang].connect;
         { const btBtn = document.getElementById('monitorBTConnectBtn'); if (btBtn) btBtn.innerHTML = (TRANSLATIONS[lang].connectBT || ''); }
         document.getElementById('monitorRefreshBtn').textContent = TRANSLATIONS[lang].refresh;
+        document.getElementById('quickEditBtn').textContent = TRANSLATIONS[lang].quickEdit;
         document.getElementById('monitorDisconnectBtn').textContent = TRANSLATIONS[lang].disconnect;
         document.getElementById('monitorCmdHelpBtn').textContent = TRANSLATIONS[lang].showAllCommands;
         document.getElementById('monitorShowStatusBtn').textContent = TRANSLATIONS[lang].showStatus;
@@ -17098,6 +17102,72 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         if (disconnectBtn) {
           disconnectBtn.addEventListener('click', performDisconnect);
+        }
+
+        // Quick Edit button handler
+        const quickEditBtn = document.getElementById('quickEditBtn');
+        if (quickEditBtn) {
+          // Helper: poll for profile data from device
+          function waitForProfile(timeoutMs) {
+            return new Promise(resolve => {
+              const start = Date.now();
+              const check = setInterval(() => {
+                if (window.__deviceProfile || Date.now() - start > timeoutMs) {
+                  clearInterval(check);
+                  resolve();
+                }
+              }, 200);
+            });
+          }
+          // Helper: smooth scroll to timeline section
+          function scrollToTimeline() {
+            const el = document.getElementById('programTimelineTitle');
+            if (el) {
+              const y = el.getBoundingClientRect().top + window.pageYOffset - 15;
+              window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+          }
+          // Helper: delay
+          function qeDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+          const lang = () => (document.getElementById('langToggleBtn')?.getAttribute('data-lang') || 'en');
+          const getLang = () => TRANSLATIONS[lang()] || TRANSLATIONS.en;
+
+          quickEditBtn.addEventListener('click', async () => {
+            const isConnected = state && (state.port || state.transport === 'ble');
+
+            if (isConnected) {
+              // Already connected → disconnect + scroll
+              await performDisconnect();
+              scrollToTimeline();
+              return;
+            }
+
+            // Not connected → connect, wait for profile, disconnect, scroll
+            quickEditBtn.disabled = true;
+            quickEditBtn.textContent = getLang().quickEditLoading;
+
+            state.transport = 'serial';
+            try {
+              await ensurePort();
+            } catch (e) {
+              // User cancelled serial picker or connection failed
+              quickEditBtn.disabled = false;
+              quickEditBtn.textContent = getLang().quickEdit;
+              state.transport = null;
+              return;
+            }
+
+            // Wait for profile data to arrive from device (max 8s)
+            await waitForProfile(8000);
+            // Anti-race delay before disconnecting
+            await qeDelay(400);
+            await performDisconnect();
+            scrollToTimeline();
+
+            quickEditBtn.disabled = false;
+            quickEditBtn.textContent = getLang().quickEdit;
+          });
         }
 
         // Same approach for unload handler - avoid port.close()
