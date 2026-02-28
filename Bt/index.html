@@ -7001,7 +7001,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Repeat cell - highlight if value is present
           const repBg = (step.repeat && step.repeat > 0) ? '#ffc107' : '';
           tr.appendChild(mkCell(`<input data-f='repeat' type='number' min='0' value='${step.repeat ?? ''}' style='width:55px'/>`, repBg, repBg ? '700' : ''));
-          tr.appendChild(mkCell(`<div style='text-align:center;'><button class='row-act' data-act='up' ${idx === 0 ? 'disabled' : ''} title='Move up'>↑</button><button class='row-act' data-act='down' ${idx === programSteps.length - 1 ? 'disabled' : ''} title='Move down'>↓</button><button class='row-act' data-act='dup' title='Duplicate step'>⧉</button><button class='row-act danger' data-act='del' title='Delete step'>✕</button></div>`));
+          tr.appendChild(mkCell(`<div style='text-align:center;'><button class='row-act' data-act='up' ${idx === 0 ? 'disabled' : ''} title='Move up'>▲</button><button class='row-act' data-act='down' ${idx === programSteps.length - 1 ? 'disabled' : ''} title='Move down'>▼</button><button class='row-act' data-act='dup' title='Duplicate step'><svg width='14' height='14' viewBox='0 0 14 14' style='vertical-align:middle'><rect x='0.5' y='0.5' width='8' height='8' rx='1' fill='#fff'/><rect x='5' y='5' width='8' height='8' rx='1' fill='#fff' stroke='#fff' stroke-width='0.5'/></svg></button><button class='row-act danger' data-act='del' title='Delete step'><svg width='12' height='12' viewBox='0 0 12 12' style='vertical-align:middle'><line x1='1' y1='1' x2='11' y2='11' stroke='#fff' stroke-width='2.5' stroke-linecap='round'/><line x1='11' y1='1' x2='1' y2='11' stroke='#fff' stroke-width='2.5' stroke-linecap='round'/></svg></button></div>`));
           tbody.appendChild(tr);
         });
         updateProgramSummaryUI();
@@ -7024,10 +7024,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         const s = document.createElement('style');
         s.id = 'rowActStyle';
         s.textContent = `
-    .program-steps-table button.row-act{ font-weight:700; font-size:14px; line-height:1; padding:2px 6px; margin:0 2px 0 0; cursor:pointer; }
+    .program-steps-table button.row-act{ font-weight:700; font-size:14px; line-height:1; padding:0; margin:0 2px 0 0; cursor:pointer; box-sizing:border-box; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; border:1px solid #999; border-radius:4px; background:#3272d2; color:#fff; }
     .program-steps-table button.row-act:disabled{ opacity:.35; cursor:default; }
-    .program-steps-table button.row-act:not(.danger):not(:disabled):hover{ background:#eef; }
-    .program-steps-table button.row-act.danger{ background:#c62828; color:#fff; border:none; }
+    .program-steps-table button.row-act:not(.danger):not(:disabled):hover{ background:#2860b8; }
+    .program-steps-table button.row-act.danger{ background:#c62828; border-color:transparent; }
     .program-steps-table button.row-act.danger:not(:disabled):hover{ background:#b71c1c; }
     .program-steps-table button.row-act.danger:active{ background:#9f1a1a; }
   `;
@@ -9433,8 +9433,12 @@ https://github.com/odeepllama/SolarSim/tree/main
         css.textContent = `
   /* Multi-day timeline container */
   .timeline-day-wrapper{ margin-bottom:8px; display:flex; gap:8px; align-items:stretch; }
-  .timeline-day-label{ flex:0 0 95px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-weight:600; font-size:1.235rem; color:#444; font-family:'Lucida Console', 'Courier New', monospace; white-space:nowrap; }
+  .timeline-day-label{ flex:0 0 auto; display:flex; align-items:center; justify-content:flex-end; padding-right:4px; font-weight:600; font-size:1.235rem; color:#444; font-family:'Lucida Console','Courier New',monospace; white-space:nowrap; }
   .timeline-day-label .day-num{ font-size:1.8em; font-weight:700; }
+  .timeline-bar-labels{ flex:0 0 70px; display:flex; flex-direction:column; }
+  .timeline-bar-labels .bar-label{ display:flex; align-items:center; justify-content:flex-end; font-size:15px; font-weight:700; text-transform:uppercase; color:#000; font-family:'Inter','Segoe UI',system-ui,sans-serif; text-align:right; line-height:1.15; padding-right:4px; white-space:nowrap; }
+  .timeline-bar-labels .speed-label{ height:56px; }
+  .timeline-bar-labels .color-label{ height:54px; margin-top:3px; }
   .timeline-day-actions{ flex:0 0 auto; display:flex; gap:4px; align-items:center; padding-left:8px; }
   .timeline-day-actions button{ font-size:16px; line-height:1; padding:6px 8px; cursor:pointer; font-weight:600; border:1px solid #ccc; background:#ffffff !important; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; }
   .timeline-day-actions button:hover{ background:#eef; }
@@ -9442,13 +9446,13 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-day-actions button.danger:hover{ background:#b71c1c !important; }
   .timeline-day-actions svg{ display:block; }
   /* Increased visualization font sizes ~1.5x */
-  .timeline-strip{ position:relative; background:#f4f5f7; border:1px solid #ccc; height:54px; border-radius:4px; overflow:visible; font-family:ui-monospace,monospace; font-size:1.2rem; flex:1 0 auto; }
+  .timeline-strip{ position:relative; background:#f4f5f7; border:1px solid #ccc; height:54px; border-radius:4px; overflow:visible; font-family:'Inter','Segoe UI',system-ui,sans-serif; font-variant-numeric:tabular-nums; font-size:1.2rem; flex:1 0 auto; }
     .timeline-strip.reverse-strip{ height:40px; border-radius:0; border-top:none; margin-top:5px; }
     .timeline-strip.empty{ display:none; }
     .timeline-strip.readonly *{ cursor: default !important; } /* No interactive cursors for read-only device status */
   /* Sun color strip below timeline - REMOVED (replaced by intensity bar graph) */
   /* Intensity bar graph strip */
-  .timeline-intensity-strip{ position:relative; height:38px; overflow:hidden; margin-top:0; background:#f0f0f0; border:1px solid #ddd; border-top:none; }
+  .timeline-intensity-strip{ position:relative; height:54px; overflow:hidden; margin-top:3px; background:#f0f0f0; border:1px solid #000; }
   .timeline-intensity-strip:first-of-type{ border-radius:0; }
   .timeline-intensity-strip.forward-intensity{ border-radius:0; }
   .timeline-intensity-strip.reverse-intensity{ border-radius:0 0 4px 4px; background:transparent; border:none; }
@@ -9493,7 +9497,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   .tl-label.edge-start{ transform:none; left:0 !important; }
   .tl-label.edge-end{ transform:none; right:0; left:auto !important; }
   .tl-hour.minor, .tl-hour.major{ display:none !important; }
-  .tl-label.major{ font-size:16px; font-weight:400; }
+  .tl-label.major{ font-size:16px; font-weight:400; color:#000; }
   .tl-label.minor{ font-size:13px; font-weight:500; opacity:1; }
   /* Mobile optimization: hide odd hours and adjust font size on narrow screens */
   @media (max-width: 1024px) {
@@ -9629,7 +9633,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           lab.className = 'tl-label ' + (major ? 'major' : 'minor');
           lab.textContent = ('' + h).padStart(2, '0') + '00';
           lab.style.left = posPct + '%';
-          lab.style.color = '#555'; // Match the actual timeline label color
+          if (!major) lab.style.color = '#555';
           lab.setAttribute('data-phone-restricted', isPhoneHour ? 'true' : 'false');
 
           if (minute === WINDOW_START_MIN) lab.classList.add('edge-start');
@@ -10123,7 +10127,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const wrapper = document.createElement('div');
           wrapper.className = 'timeline-day-wrapper';
 
-          // Day label
+          // Day label (horizontal, own column)
           const label = document.createElement('div');
           label.className = 'timeline-day-label';
           label.innerHTML = `Day&nbsp;<span class="day-num">${dayInfo.dayNumber}</span>`;
@@ -10140,27 +10144,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           barColumn.appendChild(bar);
           wrapper.appendChild(barColumn);
 
-          // Day action buttons (Duplicate and Delete)
-          const actions = document.createElement('div');
-          actions.className = 'timeline-day-actions';
-          actions.innerHTML = `
-      <button class="day-duplicate-btn" data-day="${dayInfo.dayNumber}" title="Duplicate this day">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1.5" y="1.5" width="10" height="10" rx="1.5" fill="#64B5F6" stroke="#42A5F5" stroke-width="1.5"/>
-          <rect x="6" y="6" width="10" height="10" rx="1.5" fill="#90CAF9" stroke="#42A5F5" stroke-width="1.5"/>
-        </svg>
-      </button>
-      <button class="day-delete-btn danger" data-day="${dayInfo.dayNumber}" title="Delete this day">✕</button>
-    `;
-          wrapper.appendChild(actions);
+
 
           container.appendChild(wrapper);
 
-          // Render this day's timeline with global window and orphaned time from previous day
-          // isStartingDay is true for the day with the highest dayNumber (the program's entry point)
+          // Render this day's timeline
           const isStartingDay = (dayInfo.dayNumber === highestDayNumber);
-
-          // Determine if this day has reverse steps
           const daySteps = dayInfo.steps;
           const hasReverse = daySteps.some(s => (s.step.speed !== undefined ? s.step.speed : 1) < 0);
           const hasAnyDayColor = daySteps.some(s => Array.isArray(s.step.sun_color_rgb) && s.step.sun_color_rgb.length === 3);
@@ -10168,7 +10157,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           const wStart = globalWindow.start;
           const wEnd = globalWindow.end;
 
-          // Forward speed bar (always render — filterDirection='forward' if reverse exists, undefined otherwise)
           renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, hasReverse ? 'forward' : undefined);
 
           // Forward intensity bar
@@ -10312,6 +10300,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         const wrapper = document.createElement('div');
         wrapper.className = 'timeline-day-wrapper';
 
+        // Bar labels column (no Day label for single-day)
+        const labelCol = document.createElement('div');
+        labelCol.className = 'timeline-bar-labels';
+        const speedLbl = document.createElement('div');
+        speedLbl.className = 'bar-label speed-label';
+        speedLbl.textContent = 'SPEED';
+        labelCol.appendChild(speedLbl);
+        wrapper.appendChild(labelCol);
+
         // Column container for timeline bar + color strip (so they stack vertically)
         const barColumn = document.createElement('div');
         barColumn.style.cssText = 'display:flex;flex-direction:column;flex:1;min-width:0;';
@@ -10329,22 +10326,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             index
           })).filter(s => s.m != null)
         };
-
-        // Add day action buttons if there are steps
-        if (dayInfo.steps.length > 0) {
-          const actions = document.createElement('div');
-          actions.className = 'timeline-day-actions';
-          actions.innerHTML = `
-      <button class="day-duplicate-btn" data-day="1" title="Duplicate this day">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1.5" y="1.5" width="10" height="10" rx="1.5" fill="#64B5F6" stroke="#42A5F5" stroke-width="1.5"/>
-          <rect x="6" y="6" width="10" height="10" rx="1.5" fill="#90CAF9" stroke="#42A5F5" stroke-width="1.5"/>
-        </svg>
-      </button>
-      <button class="day-delete-btn danger" data-day="1" title="Delete this day">✕</button>
-    `;
-          wrapper.appendChild(actions);
-        }
 
         container.appendChild(wrapper);
 
@@ -10376,6 +10357,11 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Forward intensity bar
             if (forward.length > 0) {
               barColumn.appendChild(buildIntensityStrip(forward, wStart, wEnd, hasReverse ? 'forward-intensity' : 'only-intensity'));
+              // Add COLOR/INTENSITY label
+              const colorLbl = document.createElement('div');
+              colorLbl.className = 'bar-label color-label';
+              colorLbl.innerHTML = 'COLOR/<br>INTENSITY';
+              labelCol.appendChild(colorLbl);
             }
 
             // Reverse speed bar + intensity - only if reverse steps exist
@@ -10983,7 +10969,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const translateX = '-50%';
 
           // Use setAttribute to set inline style with !important to override CSS z-index:100
-          span.setAttribute('style', `position: absolute !important; z-index: ${zIndex} !important; left: ${segCenter}% !important; top: 50% !important; transform: translate(${translateX}, -50%) !important; ${minWidthStyle}`);
+          span.setAttribute('style', `position: absolute !important; z-index: ${zIndex} !important; left: ${segCenter}% !important; top: 40% !important; transform: translate(${translateX}, -50%) !important; ${minWidthStyle}`);
           host.appendChild(span);
         });
 
