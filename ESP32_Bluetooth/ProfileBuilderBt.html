@@ -2025,6 +2025,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .mon-kv.sun-custom span {
       color: #d7a6ff;
+      font-size: 1rem;
     }
 
     /* Solar Mode tile color overrides (BASIC stays green via kv-active; SCIENTIFIC red) */
@@ -3525,20 +3526,17 @@ https://github.com/odeepllama/SolarSim/tree/main
       <span id="versionDate" style="font-size:0.7rem; color:#888; margin-right:2px; white-space:nowrap;"></span>
       <script>
         (function () {
-          fetch('https://api.github.com/repos/odeepllama/SolarSim/commits?per_page=1')
-            .then(r => r.json())
-            .then(data => {
-              if (data[0] && data[0].commit && data[0].commit.committer) {
-                const d = new Date(data[0].commit.committer.date);
-                const yy = String(d.getFullYear()).slice(2);
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                const hh = String(d.getHours()).padStart(2, '0');
-                const mi = String(d.getMinutes()).padStart(2, '0');
-                document.getElementById('versionDate').textContent = `v${yy}.${mm}.${dd} ${hh}:${mi}`;
-              }
-            })
-            .catch(() => { }); // Silently fail if offline or rate-limited
+          try {
+            const d = new Date(document.lastModified);
+            if (!isNaN(d.getTime())) {
+              const yy = String(d.getFullYear()).slice(2);
+              const mm = String(d.getMonth() + 1).padStart(2, '0');
+              const dd = String(d.getDate()).padStart(2, '0');
+              const hh = String(d.getHours()).padStart(2, '0');
+              const mi = String(d.getMinutes()).padStart(2, '0');
+              document.getElementById('versionDate').textContent = `v${yy}.${mm}.${dd} ${hh}:${mi}`;
+            }
+          } catch (e) { }
         })();
       </script>
       <button id="langToggleBtn" type="button" data-lang="en" style="vertical-align:middle;">JPN</button>
@@ -5191,7 +5189,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
       const TRANSLATIONS = {
         en: {
-          appTitle: 'Welcome to SolaSim Studio',
+          appTitle: 'Welcome to SolaSim Studio!',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
@@ -5350,7 +5348,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           toggleView: '(Toggle view)',
         },
         ja: {
-          appTitle: 'SolaSim Studioへようこそ',
+          appTitle: 'SolaSim Studioへようこそ！',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
