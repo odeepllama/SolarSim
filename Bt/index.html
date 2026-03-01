@@ -1802,6 +1802,16 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-color: #257b41 !important;
     }
 
+    #monitorBTConnectBtn {
+      background: #3b7dd8 !important;
+      border: 1px solid #2a5fa0 !important;
+      color: #fff !important;
+    }
+
+    #monitorBTConnectBtn:hover:not(:disabled) {
+      background: #5a9ae6 !important;
+      border-color: #2a5fa0 !important;
+    }
 
 
     /* Emoji sizing inside monitor toolbar connect buttons – 15% larger */
@@ -2754,6 +2764,78 @@ https://github.com/odeepllama/SolarSim/tree/main
     /* Upload connection picker modal (shown when Upload clicked while disconnected) */
 
 
+    /* Upload connection picker modal (shown when Upload clicked while disconnected) */
+    #uploadConnPickerOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100000;
+    }
+
+    #uploadConnPickerOverlay.open {
+      display: flex;
+    }
+
+    #uploadConnPickerDialog {
+      background: #ffffff !important;
+      color: #111;
+      border: 1px solid #c9d1dc;
+      border-radius: 10px;
+      width: min(92vw, 420px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      padding: 18px 20px;
+      text-align: center;
+    }
+
+    #uploadConnPickerDialog h4 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+    }
+
+    #uploadConnPickerDialog p {
+      margin: 0 0 14px;
+      line-height: 1.35;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    #uploadConnPickerDialog .picker-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    #uploadConnPickerDialog .picker-btns button {
+      flex: 1;
+      padding: 12px 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #222 !important;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid #c9d1dc;
+      background: #f5f7fa !important;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    #uploadConnPickerDialog .picker-btns button:hover {
+      background: #e8ecf1;
+      border-color: #9aa5b4;
+    }
+
+    #uploadConnPickerDialog .picker-cancel {
+      font-size: 0.85rem;
+      color: #666;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 4px 12px;
+    }
+
     /* Load from Device confirm modal (same styling as upload confirm) */
     #loadConfirmOverlay {
       position: fixed;
@@ -3516,7 +3598,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" style="display:none"
       title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
     <span id="monitorConnBadge" class="pill red" title=""></span>
-    <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
+    <button id="monitorConnectBtn" type="button" class="secondary" title="" style="display:none;"></button>
+    <button id="monitorBTConnectBtn" type="button" class="secondary" title=""></button>
     <button id="quickEditBtn" type="button" class="secondary"
       title="Connect, load profile, disconnect and jump to editor"></button>
     <button id="monitorRefreshBtn" type="button" class="secondary" title=""></button>
@@ -3777,17 +3860,29 @@ https://github.com/odeepllama/SolarSim/tree/main
               </div>
             </li>
             <li><strong>Show All Commands</strong>: Displays full list of available commands in the log.</li>
-            <li><strong>Device Connection</strong>: Connect via USB cable. <button class="help-expand-btn"
-                onclick="toggleHelpDetail(this)">Learn more ▼</button>
+            <li><strong>Device Connection</strong>: Connect via USB cable or Bluetooth (ESP32 only). <button
+                class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
-                <p>Connect your device using the <strong>🔌 Connect USB</strong> button:</p>
+                <p>Two connection methods are available:</p>
                 <ul>
                   <li><strong>🔌 Connect USB</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
                     ESP32-S3 devices. Requires Chrome, Edge, or Opera on a desktop computer.</li>
+                  <li><strong>📶 Connect BT</strong> (Bluetooth): Uses Web Bluetooth for wireless connection. Available
+                    only with ESP32-S3 hardware. Works on desktop Chrome and Android tablets/phones.
+                    <strong>iPad/iPhone:</strong> Use the free <a
+                      href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055" target="_blank">Bluefy
+                      browser</a>
+                    (Safari and Chrome on iOS do not support Web Bluetooth).
+                  </li>
                 </ul>
-                <p>The USB connection supports full status monitoring, command console, status tiles, solar arc,
+                <p>Both connection methods support full status monitoring, command console, status tiles, solar arc,
                   and profile upload. The status badge shows "Connected" when active. If connection fails, try
-                  unplugging/replugging the USB cable or pressing the RESET button on the device.</p>
+                  unplugging/replugging (USB) or power-cycling the device (Bluetooth).</p>
+                <p><strong>Switching from Bluetooth to USB (ESP32):</strong> If you previously connected via
+                  Bluetooth (e.g., from an iPad) and now want to connect via USB from a laptop, you will need to
+                  press the <strong>RESET</strong> button on the ESP32 device first. This is because the BLE radio
+                  remains active after disconnecting, which can interfere with the USB serial connection in the
+                  browser.</p>
               </div>
             </li>
           </ul>
@@ -3816,9 +3911,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <p>Creates a new timestamped profile file on the device and immediately runs it. This becomes the
                   "newest" profile for future auto-load on startup. Use this when you've made changes to a profile and
                   want them to persist.</p>
-                <p><strong>Upload to Device:</strong> When you click Upload, the device is automatically
-                  connected via USB (if not already connected) and the profile is sent directly.
-                  If you are already connected, the upload uses the active connection automatically.
+                <p><strong>Connection Picker:</strong> When you click Upload, a dialog lets you choose between
+                  <strong>📶 Connect BT</strong> (Bluetooth) and <strong>🔌 Connect USB</strong> (USB Serial). Bluetooth
+                  upload is
+                  available only with ESP32-S3 hardware. USB upload works with both RP2040 and ESP32-S3. If you are
+                  already connected, the upload will use the active connection automatically.
                 </p>
               </div>
             </li>
@@ -4689,6 +4786,19 @@ https://github.com/odeepllama/SolarSim/tree/main
     </div>
 
 
+    <!-- Upload connection picker modal (shown when Upload clicked while disconnected) -->
+    <div id="uploadConnPickerOverlay" aria-hidden="true" role="dialog" aria-labelledby="uploadConnPickerTitle">
+      <div id="uploadConnPickerDialog">
+        <h4 id="uploadConnPickerTitle">Connect to Upload</h4>
+        <p>No device connected. Choose a connection method to upload your profile.</p>
+        <div class="picker-btns">
+          <button type="button" id="uploadPickerBLE">📶 Connect BT</button>
+          <button type="button" id="uploadPickerCable">🔌 Connect USB</button>
+        </div>
+        <button type="button" class="picker-cancel" id="uploadPickerCancel">Cancel</button>
+      </div>
+    </div>
+
     <!-- Load from Device confirmation modal -->
     <div id="loadConfirmOverlay" aria-hidden="true" role="dialog" aria-labelledby="loadConfirmTitle">
       <div id="loadConfirmDialog">
@@ -4823,6 +4933,17 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li>If the device does not immediately connect, press the <strong>RESET</strong> button on the edge of the
                 board and try connecting again.</li>
             </ol>
+            <h4>Option B: Bluetooth (ESP32-S3 only)</h4>
+            <ol>
+              <li>Ensure the ESP32-S3 device is powered on (USB or external power). No cable to the computer is needed.
+              </li>
+              <li>Click the blue <strong>📶 Connect BT</strong> button in the top "Monitor / Interact" bar.</li>
+              <li>A browser dialog will appear showing nearby Bluetooth devices. Select <strong>SolarSim-BT</strong>.
+              </li>
+              <li>The status badge will turn green and show "Connected". Status tiles will begin populating
+                automatically.</li>
+            </ol>
+
 
 
             <h2>💡 Core Concepts</h2>
@@ -5245,6 +5366,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
+          connectBT: '<span class="btn-emoji">📶</span> Connect BT',
           quickEdit: '✏️ Quick Edit',
           quickEditLoading: '⏳ Loading...',
           refresh: 'Refresh',
@@ -5404,6 +5526,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
+          connectBT: '<span class="btn-emoji">📶</span> BT接続',
           quickEdit: '✏️ クイック編集',
           quickEditLoading: '⏳ 読込中...',
           refresh: 'リフレッシュ',
@@ -5571,7 +5694,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         document.getElementById('appTitle').textContent = TRANSLATIONS[lang].appTitle;
         // Adjust monitor/toolbar button size for Japanese
         const monitorBtnIds = [
-          'toggleMonitorBtn', 'monitorConnectBtn', 'quickEditBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
+          'toggleMonitorBtn', 'monitorConnectBtn', 'monitorBTConnectBtn', 'quickEditBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
           'monitorCmdHelpBtn', 'monitorShowStatusBtn', 'simpleModeBtn', 'advancedModeBtn'
         ];
         monitorBtnIds.forEach(id => {
@@ -5626,7 +5749,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         document.querySelector('#toggleMonitorBtn .txt').textContent = TRANSLATIONS[lang].monitorInteract;
         document.getElementById('monitorConnBadge').textContent = TRANSLATIONS[lang].disconnected;
         document.getElementById('monitorConnectBtn').innerHTML = TRANSLATIONS[lang].connect;
-        { const btBtn = document.getElementById('monitorBTConnectBtn'); if (btBtn) btBtn.innerHTML = (TRANSLATIONS[lang].connectBT || ''); }
+        document.getElementById('monitorBTConnectBtn').innerHTML = TRANSLATIONS[lang].connectBT;
         document.getElementById('monitorRefreshBtn').textContent = TRANSLATIONS[lang].refresh;
         document.getElementById('quickEditBtn').textContent = TRANSLATIONS[lang].quickEdit;
         document.getElementById('monitorDisconnectBtn').textContent = TRANSLATIONS[lang].disconnect;
@@ -12685,8 +12808,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                 }
 
                 // Automatically upload to device
-                if (typeof window.connectAndUpload === 'function') {
-                  setTimeout(() => window.connectAndUpload(), 100);
+                if (typeof showUploadConnectionPicker === 'function') {
+                  setTimeout(() => showUploadConnectionPicker(), 100);
                 }
               };
 
@@ -14118,79 +14241,38 @@ https://github.com/odeepllama/SolarSim/tree/main
       }
 
       // -----------------------------
-      // Device type detection from USB Vendor ID
+      // Upload Connection Picker (shown when Upload clicked while disconnected)
       // -----------------------------
-      function getDeviceType(port) {
-        if (!port || !port.getInfo) return 'unknown';
-        const info = port.getInfo();
-        if (!info) return 'unknown';
-        if (info.usbVendorId === 0x303A || info.usbVendorId === 0x1A86) return 'esp32';
-        if (info.usbVendorId === 0x2E8A) return 'rp2040';
-        return 'unknown';
-      }
-
-      // -----------------------------
-      // Connect via USB and upload (used when no connection exists)
-      // -----------------------------
-      async function connectAndUpload() {
-        // CRITICAL: Snapshot profile text BEFORE connecting.
-        if (typeof updatePreview === 'function') updatePreview(true);
-        const preConnectProfileText = document.getElementById('exportPreview').value;
-        try {
-          const monitorState = window.__solarSimMonitorState;
-          const knownDeviceType = monitorState && monitorState.deviceType;
-
-          // RP2040: disconnect if needed, then use paste-mode upload (opens its own port)
-          if (knownDeviceType === 'rp2040') {
-            if (monitorState && monitorState.port) {
-              try {
-                if (typeof performDisconnect === 'function') await performDisconnect();
-              } catch (_) { /* ignore */ }
-              await new Promise(r => setTimeout(r, 300));
+      function showUploadConnectionPicker() {
+        // iPad BLE-only: skip the connection picker modal and go straight to BLE
+        (async () => {
+          try {
+            // Disconnect existing connection first
+            if (typeof performDisconnect === 'function') {
+              const monitorState = window.__solarSimMonitorState;
+              if (monitorState && (monitorState.bleDevice || monitorState.port)) {
+                await performDisconnect();
+                await new Promise(r => setTimeout(r, 300));
+              }
             }
-            uploadProfileToBoard({ _preSnapshotText: preConnectProfileText });
-            return;
-          }
-
-          // ESP32: disconnect, reconnect, upload via writeprofile
-          window.__uploadInProgress = true;
-          if (monitorState) monitorState.autoRefreshEnabled = false;
-
-          if (monitorState && monitorState.port) {
-            try {
-              if (typeof performDisconnect === 'function') await performDisconnect();
-            } catch (_) { /* ignore disconnect errors */ }
+            // Snapshot profile text BEFORE connecting (BLE status updates can overwrite programSteps)
+            if (typeof updatePreview === 'function') updatePreview(true);
+            const preConnectProfileText = document.getElementById('exportPreview').value;
+            await window.__ensureBLE();
+            // Brief delay for connection to stabilise
             await new Promise(r => setTimeout(r, 300));
-          }
-
-          if (monitorState) monitorState.transport = 'serial';
-          await window.__ensurePort();
-          await new Promise(r => setTimeout(r, 500));
-
-          // Detect device type from USB VID
-          const deviceType = getDeviceType(monitorState && monitorState.port);
-          if (monitorState) monitorState.deviceType = deviceType;
-
-          if (deviceType === 'rp2040') {
-            // First time connecting to RP2040 — disconnect and use paste-mode
-            window.__uploadInProgress = false;
-            try {
-              if (typeof performDisconnect === 'function') await performDisconnect();
-            } catch (_) { /* ignore */ }
-            await new Promise(r => setTimeout(r, 300));
-            uploadProfileToBoard({ _preSnapshotText: preConnectProfileText });
-          } else {
             uploadProfileViaWriteCommand({ _preSnapshotText: preConnectProfileText });
+          } catch (e) {
+            const msg = e.message || String(e);
+            if (/cancel/i.test(msg)) {
+              if (typeof log === 'function') log('Upload cancelled by user', 'error');
+            } else {
+              if (typeof log === 'function') log('BLE connection failed: ' + msg, 'error');
+              else alert('BLE connection failed: ' + msg);
+            }
           }
-        } catch (e) {
-          const monitorState = window.__solarSimMonitorState;
-          if (monitorState) monitorState.transport = null;
-          const msg = e.message || String(e);
-          if (typeof log === 'function') log('Connection failed: ' + msg, 'error');
-          else alert('Connection failed: ' + msg);
-        }
+        })();
       }
-      window.connectAndUpload = connectAndUpload;
 
       // -----------------------------
       // Profile Upload via writeprofile command (BLE or Serial)
@@ -14549,7 +14631,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         uploadBtn.addEventListener('click', (e) => {
           if (uploadBtn.disabled) return;
           e.preventDefault();
-          connectAndUpload();
+          showUploadConnectionPicker();
         });
         proceed.addEventListener('click', () => { if (dontAsk && dontAsk.checked) setSkip(true); close(); uploadProfileToBoard(); });
         cancel.addEventListener('click', close);
@@ -17177,6 +17259,36 @@ https://github.com/odeepllama/SolarSim/tree/main
             log(msg, 'error');
           });
         });
+        btConnectBtn && btConnectBtn.addEventListener('click', () => {
+          ensureBLE().then(() => {
+            // Smart staggered status requests: retry until key tiles are populated
+            // (BLE at default MTU may drop some notifications in a burst)
+            const expectedTiles = ['sim', 'speed', 'intensity', 'solarMode', 'sunColor'];
+            const retryDelays = [1500, 5000, 8500, 12000, 16000];
+            const retryTimers = [];
+            function allTilesPopulated() {
+              if (!window.kvCache || !window.kvCache.get) return false;
+              return expectedTiles.every(k => {
+                const box = window.kvCache.get(k);
+                if (!box) return false;
+                const span = box.querySelector('span');
+                return span && span.textContent && span.textContent !== '—';
+              });
+            }
+            retryDelays.forEach(delay => {
+              retryTimers.push(setTimeout(() => {
+                if (!allTilesPopulated()) sendStatusSilent();
+              }, delay));
+            });
+          }).catch(e => {
+            const fullErr = (e.message || '').toLowerCase();
+            let msg = 'BLE connection failure';
+            if (fullErr.includes('cancelled') || fullErr.includes('canceled') || fullErr.includes('user cancelled')) {
+              msg = 'BLE connection cancelled by user';
+            }
+            log(msg, 'error');
+          });
+        });
 
         if (disconnectBtn) {
           disconnectBtn.addEventListener('click', performDisconnect);
@@ -17225,9 +17337,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             quickEditBtn.disabled = true;
             quickEditBtn.textContent = getLang().quickEditLoading;
 
-            state.transport = 'serial';
             try {
-              await ensurePort();
+              await ensureBLE();
             } catch (e) {
               // User cancelled serial picker or connection failed
               quickEditBtn.disabled = false;
@@ -17425,8 +17536,13 @@ https://github.com/odeepllama/SolarSim/tree/main
         function sendStatusSilent() {
           if (window.__uploadInProgress) return; // don't interfere with active upload
           if (!state.port && state.transport !== 'ble') return;
+          if (state._bleStatusPending) return; // debounce concurrent calls
+          if (state.transport === 'ble') state._bleStatusPending = true;
           state.__silentStatusUntil = performance.now() + 1500; // suppress typical status lines
-          sendLine('status', { silentEcho: true });
+          sendLine('status', { silentEcho: true }).finally(() => {
+            // Reset debounce flag after write completes (or fails)
+            setTimeout(() => { state._bleStatusPending = false; }, 500);
+          });
           // Request an immediate arc refresh in case day/night boundary just changed
           try { const ns = window.__solarSimMonitorState; if (ns && ns.__sunArc && ns.__sunArc.refresh) { ns.__sunArc.refresh(); ns.__sunArc.updateVisibility && ns.__sunArc.updateVisibility(); } } catch (_) { }
         }
@@ -19850,7 +19966,25 @@ https://github.com/odeepllama/SolarSim/tree/main
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
             allowInteraction: true,
-            adjustTarget: (el) => el
+            adjustTarget: (el) => {
+              const btBtn = document.getElementById('monitorBTConnectBtn');
+              if (!btBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const btRect = btBtn.getBoundingClientRect();
+
+              wrapper.style.top = Math.min(elRect.top, btRect.top) + window.scrollY + 'px';
+              wrapper.style.left = Math.min(elRect.left, btRect.left) + window.scrollX + 'px';
+              wrapper.style.width = (Math.max(elRect.right, btRect.right) - Math.min(elRect.left, btRect.left)) + 'px';
+              wrapper.style.height = (Math.max(elRect.bottom, btRect.bottom) - Math.min(elRect.top, btRect.top)) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '.mini-sect-title[data-section="monitor-status-tiles"]',
@@ -19949,7 +20083,25 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideConnectDevice',
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
-            adjustTarget: (el) => el
+            adjustTarget: (el) => {
+              const btBtn = document.getElementById('monitorBTConnectBtn');
+              if (!btBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const btRect = btBtn.getBoundingClientRect();
+
+              wrapper.style.top = Math.min(elRect.top, btRect.top) + window.scrollY + 'px';
+              wrapper.style.left = Math.min(elRect.left, btRect.left) + window.scrollX + 'px';
+              wrapper.style.width = (Math.max(elRect.right, btRect.right) - Math.min(elRect.left, btRect.left)) + 'px';
+              wrapper.style.height = (Math.max(elRect.bottom, btRect.bottom) - Math.min(elRect.top, btRect.top)) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '.mini-sect-title[data-section="monitor-status-tiles"]',
