@@ -710,6 +710,9 @@ class SolarSimulator:
             else:
                 self.start_real_time_ms = reanchor_start_time(tm, TIME_SCALE, now, START_TIME_HHMM, self.start_real_time_ms)
             self.output(f"[SERIAL CMD] Time jumped to {tm//60:02d}:{tm%60:02d}")
+            # Sync program step to match the new time
+            if self.program.program_running and self.program.program_steps:
+                self._sync_step_to_time(tm)
 
         elif param == "starttime":
             t = int(value)
@@ -930,6 +933,45 @@ class SolarSimulator:
             self.start_real_time_ms = reanchor_start_time(t_min, new_speed, now, START_TIME_HHMM, self.start_real_time_ms)
         self.program.step_start_sim_time = 0
         self.output(f"[SERIAL CMD] Jumped to step {idx+1} at {t_hhmm:04d}")
+
+    def _sync_step_to_time(self, time_minutes):
+        """Find and apply the program step that owns the given time.
+
+        Each step owns the range [step.sim_time, next_step.sim_time).
+        Sets current_step, applies speed/settings, and resets step_start_sim_time
+        so the program engine picks up cleanly.
+        """
+        global TIME_SCALE
+        steps = self.program.program_steps
+        if not steps:
+            return
+        # Convert step times to minutes and find which step owns this time
+        step_times = []
+        for s in steps:
+            hhmm = s["sim_time_hhmm"]
+            step_times.append((hhmm // 100) * 60 + (hhmm % 100))
+        # Walk backwards: the last step whose start time <= time_minutes owns this time
+        target_idx = 0
+        for i in range(len(step_times) - 1, -1, -1):
+            if time_minutes >= step_times[i]:
+                target_idx = i
+                break
+        # Only update if we've moved to a different step
+        if target_idx == self.program.current_step:
+            return
+        step = steps[target_idx]
+        new_speed = step.get("speed", 1)
+        self.program.current_step = target_idx
+        self.program.current_step_repeat = 0
+        self.program.step_start_sim_time = 0  # let update() re-initialise
+        now = ticks_ms()
+        if new_speed == 0:
+            self.frozen_sim_time_minutes = time_minutes
+        else:
+            TIME_SCALE = new_speed
+            self.start_real_time_ms = reanchor_start_time(
+                time_minutes, new_speed, now, START_TIME_HHMM, self.start_real_time_ms)
+        self.output(f"[SERIAL CMD] Program synced to step {target_idx + 1} (speed {new_speed}x)")
 
     # --- TRIGGER handler ---
     def _handle_trigger(self, target):
