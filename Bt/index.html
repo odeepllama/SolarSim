@@ -16141,25 +16141,27 @@ https://github.com/odeepllama/SolarSim/tree/main
             throw e;
           }
         }
+        // Shared BLE notification handler — defined once, reused on reconnect
+        function _bleNotificationHandler(e) {
+          const text = sharedDecoder.decode(e.target.value);
+          processIncoming(text);
+        }
         // Helper: subscribe to BLE characteristics after GATT connect
         async function _bleSubscribe(server) {
           const svc = await server.getPrimaryService(NUS_SERVICE);
           const rxChar = await svc.getCharacteristic(NUS_RX);
           const txChar = await svc.getCharacteristic(NUS_TX);
+          // Remove old listeners before adding (prevents duplicates on reconnect)
+          txChar.removeEventListener('characteristicvaluechanged', _bleNotificationHandler);
           await txChar.startNotifications();
-          txChar.addEventListener('characteristicvaluechanged', (e) => {
-            const text = sharedDecoder.decode(e.target.value);
-            processIncoming(text);
-          });
+          txChar.addEventListener('characteristicvaluechanged', _bleNotificationHandler);
           // Subscribe to Status characteristic for periodic status updates
           let statusChar = null;
           try {
             statusChar = await svc.getCharacteristic(NUS_STATUS);
+            statusChar.removeEventListener('characteristicvaluechanged', _bleNotificationHandler);
             await statusChar.startNotifications();
-            statusChar.addEventListener('characteristicvaluechanged', (e) => {
-              const text = sharedDecoder.decode(e.target.value);
-              processIncoming(text);
-            });
+            statusChar.addEventListener('characteristicvaluechanged', _bleNotificationHandler);
           } catch (e) {
             console.warn('[BLE] Status characteristic (6E400004) not available:', e.message);
           }
