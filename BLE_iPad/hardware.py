@@ -95,6 +95,7 @@ class Display:
         self._last_update_ms = 0
         self._last_scan_ms = 0
         self._last_hash = 0
+        self._display_warned = False
         if i2c:
             self._try_connect()
 
@@ -113,9 +114,13 @@ class Display:
                 self.show_message("Solar Sim", "Ready")
                 return True
             else:
-                print(f"[DISPLAY] No SSD1306 at 0x3C/0x3D (found: {[hex(d) for d in devices]})")
+                if not self._display_warned:
+                    print(f"[DISPLAY] No SSD1306 at 0x3C/0x3D (found: {[hex(d) for d in devices]})")
+                    self._display_warned = True
         except Exception as e:
-            print(f"[DISPLAY] Init error: {e}")
+            if not self._display_warned:
+                print(f"[DISPLAY] Init error: {e}")
+                self._display_warned = True
         return False
 
     def _text_scaled(self, s, x, y, scale=2):

@@ -587,14 +587,11 @@ class SolarSimulator:
                 if self.ble and getattr(self.ble, '_fresh_connect', False):
                     self._last_status_ms = 0
                     self.ble._fresh_connect = False
-                    print(f"[BLE-DIAG] STATUS fresh-connect reset at +{age}ms")
                 if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 3000:
                     self._last_status_ms = now_cmd
-                    print(f"[BLE-DIAG] STATUS EXEC at +{age}ms")
                     self.print_status()
                 else:
-                    gap = ticks_diff(now_cmd, self._last_status_ms)
-                    print(f"[BLE-DIAG] STATUS DEBOUNCED at +{age}ms (only {gap}ms since last)")
+                    pass  # debounced
 
             # === FILL PANEL ===
             elif command == "fillpanel" and len(parts) >= 4:
