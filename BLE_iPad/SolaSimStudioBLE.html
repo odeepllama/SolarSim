@@ -16768,13 +16768,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             // If CUSTOM and we already have an RGB triplet, include it in the tile
             if (val === 'CUSTOM') {
               let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
-              if (!rgb) {
-                // fallback to form
-                try {
-                  const rEl = document.getElementById('CUSTOM_SUN_R'); const gEl = document.getElementById('CUSTOM_SUN_G'); const bEl = document.getElementById('CUSTOM_SUN_B');
-                  if (rEl && gEl && bEl) { rgb = [parseInt(rEl.value, 10) || 0, parseInt(gEl.value, 10) || 0, parseInt(bEl.value, 10) || 0]; }
-                } catch (_) { }
-              }
+              // Don't fall back to form values — they may be stale/default.
+              // The actual RGB line arrives later in the status dump and will update the tile.
               setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM (${rgb[0]},${rgb[1]},${rgb[2]})` : icon + ' CUSTOM');
             } else {
               setKV('sunColor', 'SunColor', icon + ' ' + val);
