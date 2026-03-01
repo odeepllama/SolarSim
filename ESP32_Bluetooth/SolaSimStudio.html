@@ -18856,13 +18856,9 @@ https://github.com/odeepllama/SolarSim/tree/main
       };
 
       // Helper: get the current 1-based step index for navigation.
-      // Uses window.__currentStepIndex which is maintained by [PROGRAM] Step N/M
-      // status messages from the device. When the index hasn't been synced yet (0),
-      // infer the step from the current SimTime to avoid jumping to step 1 on first use.
+      // Always infers the step from the current SimTime to ensure accuracy,
+      // since the cached __currentStepIndex can go stale after 'set time' commands.
       function __getCurrentStepForNav() {
-        if (window.__currentStepIndex > 0) return window.__currentStepIndex;
-
-        // Fallback: infer step from SimTime when device hasn't sent Step N/M yet
         if (typeof programSteps !== 'undefined' && programSteps && programSteps.length > 0) {
           const simTimeValue = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
           if (simTimeValue) {
@@ -18880,7 +18876,6 @@ https://github.com/odeepllama/SolarSim/tree/main
                     const stepMin = Math.floor(stepHHMM / 100) * 60 + (stepHHMM % 100);
                     if (stepMin <= simMin) bestStep = i + 1; // 1-based
                   }
-                  // Sync the inferred value so future calls don't re-compute
                   window.__currentStepIndex = bestStep;
                   return bestStep;
                 }
@@ -18888,6 +18883,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
         }
+        // Last resort: use cached value if SimTime not available
+        if (window.__currentStepIndex > 0) return window.__currentStepIndex;
         return 0;
       }
 

@@ -595,6 +595,45 @@ def advance_program():
             start_real_time_ms = _reanchor_start_time(preserved, current_step.get("speed",1), now_ms, START_TIME_HHMM, start_real_time_ms)
     program_step_start_sim_time = 0
 
+def _sync_step_to_time(time_minutes):
+    """Find and apply the program step that owns the given time.
+
+    Each step owns the range [step.sim_time, next_step.sim_time).
+    Sets current_program_step, applies speed/settings, and resets
+    program_step_start_sim_time so the engine picks up cleanly.
+    """
+    global current_program_step, current_step_repeat, program_step_start_sim_time
+    global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes
+    if not PROGRAM_STEPS:
+        return
+    # Convert step times to minutes and find which step owns this time
+    step_times = []
+    for s in PROGRAM_STEPS:
+        hhmm = s["sim_time_hhmm"]
+        step_times.append((hhmm // 100) * 60 + (hhmm % 100))
+    # Walk backwards: the last step whose start time <= time_minutes owns this time
+    target_idx = 0
+    for i in range(len(step_times) - 1, -1, -1):
+        if time_minutes >= step_times[i]:
+            target_idx = i
+            break
+    # Only update if we've moved to a different step
+    if target_idx == current_program_step:
+        return
+    step = PROGRAM_STEPS[target_idx]
+    new_speed = step.get("speed", 1)
+    current_program_step = target_idx
+    current_step_repeat = 0
+    program_step_start_sim_time = 0  # let update reinitialise
+    now = ticks_ms()
+    if new_speed == 0:
+        frozen_sim_time_minutes = time_minutes
+    else:
+        TIME_SCALE = new_speed
+        start_real_time_ms = _reanchor_start_time(
+            time_minutes, new_speed, now, START_TIME_HHMM, start_real_time_ms)
+    print(f"[SERIAL CMD] Program synced to step {target_idx + 1} (speed {new_speed}x)")
+
 def print_program_status(now_ms, sim_time_minutes):
     """Print program status (supports reverse progress)."""
     global hold_step_start_ms, TIME_SCALE, INTENSITY_SCALE
@@ -1884,6 +1923,9 @@ def handle_command(command_str):
                             minutes_since_start = (start_time_minutes - target_minutes) % 1440
                         start_real_time_ms = now_ms - int((minutes_since_start * 60000) / max(0.0001, abs(TIME_SCALE)))
                         print(f"[SERIAL CMD] Time jumped to {target_minutes//60:02d}:{target_minutes%60:02d}")
+                    # Sync program step to match the new time
+                    if program_running and PROGRAM_STEPS:
+                        _sync_step_to_time(target_minutes)
                 except ValueError:
                     print(f"[SERIAL CMD] Error: Invalid time value '{value}'. Must be integer HHMM.")
 
