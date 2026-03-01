@@ -14521,7 +14521,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               try { state.bleDevice.gatt.disconnect(); } catch (_) { }
             }
             state.bleDevice = null; state.bleServer = null;
-            state.bleRxChar = null; state.bleTxChar = null;
+            state.bleRxChar = null; state.bleTxChar = null; state.bleStatusChar = null;
             state.transport = null;
 
             // Close the serial port with timeout
@@ -15753,6 +15753,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const NUS_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
         const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // write commands
         const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // notify responses
+        const NUS_STATUS = '6e400004-b5a3-f393-e0a9-e50e24dcca9e'; // notify status
 
         // Shared TextDecoder instance — reused across all serial/BLE reads to avoid GC pressure
         const sharedDecoder = new TextDecoder();
@@ -15763,7 +15764,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           stats: { jsonLines: 0, textLines: 0 }, scrollLock: false,
           statusOutputAllowed: false, // Only allow status output for explicit user requests
           transport: null, // 'serial' or 'ble'
-          bleDevice: null, bleServer: null, bleRxChar: null, bleTxChar: null,
+          bleDevice: null, bleServer: null, bleRxChar: null, bleTxChar: null, bleStatusChar: null,
           _bleWriteQueue: Promise.resolve(), // serialize BLE GATT writes
           _bleStatusPending: false, // debounce concurrent sendStatusSilent calls
           connectionHistory: {
@@ -15779,7 +15780,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Serialize BLE writes — Web Bluetooth throws "GATT operation already
         // in progress" if a second writeValue starts before the first resolves.
         function bleWrite(char, data) {
-          const p = state._bleWriteQueue.then(() => char.writeValue(data));
+          const p = state._bleWriteQueue.then(() => char.writeValueWithoutResponse(data));
           // Always settle the queue so future writes aren't blocked by errors
           state._bleWriteQueue = p.catch(() => { });
           return p;
@@ -16140,6 +16141,35 @@ https://github.com/odeepllama/SolarSim/tree/main
             throw e;
           }
         }
+        // Helper: subscribe to BLE characteristics after GATT connect
+        async function _bleSubscribe(server) {
+          const svc = await server.getPrimaryService(NUS_SERVICE);
+          const rxChar = await svc.getCharacteristic(NUS_RX);
+          const txChar = await svc.getCharacteristic(NUS_TX);
+          await txChar.startNotifications();
+          txChar.addEventListener('characteristicvaluechanged', (e) => {
+            const text = sharedDecoder.decode(e.target.value);
+            processIncoming(text);
+          });
+          // Subscribe to Status characteristic for periodic status updates
+          let statusChar = null;
+          try {
+            statusChar = await svc.getCharacteristic(NUS_STATUS);
+            await statusChar.startNotifications();
+            statusChar.addEventListener('characteristicvaluechanged', (e) => {
+              const text = sharedDecoder.decode(e.target.value);
+              processIncoming(text);
+            });
+          } catch (e) {
+            console.warn('[BLE] Status characteristic (6E400004) not available:', e.message);
+          }
+          state.bleRxChar = rxChar;
+          state.bleTxChar = txChar;
+          state.bleStatusChar = statusChar;
+          state.transport = 'ble';
+          state.connStartTs = performance.now();
+          setConnected(true);
+        }
         async function ensureBLE() {
           if (state.bleDevice && state.bleServer && state.bleServer.connected) return;
           if (!navigator.bluetooth) { log('Web Bluetooth unsupported in this browser', 'error'); throw new Error('No navigator.bluetooth'); }
@@ -16151,31 +16181,51 @@ https://github.com/odeepllama/SolarSim/tree/main
             });
             device.addEventListener('gattserverdisconnected', () => {
               log('BLE device disconnected', 'error');
-              state.bleDevice = null; state.bleServer = null;
-              state.bleRxChar = null; state.bleTxChar = null;
+              // Clean up notification listeners
+              try { if (state.bleTxChar) state.bleTxChar.stopNotifications().catch(() => { }); } catch (_) { }
+              try { if (state.bleStatusChar) state.bleStatusChar.stopNotifications().catch(() => { }); } catch (_) { }
+              state.bleServer = null;
+              state.bleRxChar = null; state.bleTxChar = null; state.bleStatusChar = null;
               state.transport = null;
               setConnected(false);
+              // Auto-reconnect on unexpected disconnect (max 3 attempts with backoff)
+              if (!state.connectionHistory?.wasUserInitiated && device.gatt) {
+                state.bleDevice = device; // keep device ref for reconnect
+                let attempt = 0;
+                const tryReconnect = () => {
+                  attempt++;
+                  if (attempt > 3) {
+                    log('Auto-reconnect failed after 3 attempts', 'error');
+                    state.bleDevice = null;
+                    return;
+                  }
+                  log(`Reconnecting (attempt ${attempt}/3)...`, 'connection');
+                  badge('CONNECTING', 'amber');
+                  device.gatt.connect()
+                    .then(server => {
+                      state.bleServer = server;
+                      return _bleSubscribe(server);
+                    })
+                    .then(() => {
+                      log('BLE reconnected to ' + device.name, 'connection');
+                    })
+                    .catch(() => {
+                      setTimeout(tryReconnect, 1000 * Math.pow(2, attempt - 1));
+                    });
+                };
+                setTimeout(tryReconnect, 1000);
+              } else {
+                state.bleDevice = null;
+              }
             });
             const server = await device.gatt.connect();
-            const svc = await server.getPrimaryService(NUS_SERVICE);
-            const rxChar = await svc.getCharacteristic(NUS_RX);
-            const txChar = await svc.getCharacteristic(NUS_TX);
-            await txChar.startNotifications();
-            txChar.addEventListener('characteristicvaluechanged', (e) => {
-              const text = sharedDecoder.decode(e.target.value);
-              processIncoming(text);
-            });
             state.bleDevice = device;
             state.bleServer = server;
-            state.bleRxChar = rxChar;
-            state.bleTxChar = txChar;
-            state.transport = 'ble';
-            state.connStartTs = performance.now();
-            setConnected(true);
+            await _bleSubscribe(server);
             log('BLE connected to ' + device.name);
           } catch (e) {
             state.bleDevice = null; state.bleServer = null;
-            state.bleRxChar = null; state.bleTxChar = null;
+            state.bleRxChar = null; state.bleTxChar = null; state.bleStatusChar = null;
             state.transport = null;
             throw e;
           }

@@ -222,7 +222,7 @@ class BLEComms:
         """Encode a single AD structure: length + type + data."""
         return bytes((len(data) + 1, adv_type)) + data
 
-    def _advertise(self, interval_us=250000):
+    def _advertise(self, interval_us=100000):
         """Start BLE advertising with iOS-compatible payloads.
 
         iOS requires explicit AD flags and the service UUID in
