@@ -428,6 +428,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       .program-steps-table th:last-child,
       .program-steps-table td:last-child {
         white-space: nowrap;
+        min-width: 130px;
       }
 
       /* Shrink Speed, Intensity, Hold, Repeat inputs by 10% */
@@ -445,6 +446,12 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       .program-steps-table input[data-f='repeat'] {
         width: 50px !important;
+      }
+
+      /* Hide Repeat column on iPad to free space for action buttons */
+      .program-steps-table th:nth-child(11),
+      .program-steps-table td:nth-child(11) {
+        display: none;
       }
     }
 
