@@ -5366,6 +5366,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
+          connectBT: '<span class="btn-emoji">📶</span> Connect BT',
           quickEdit: '✏️ Quick Edit',
           quickEditLoading: '⏳ Loading...',
           refresh: 'Refresh',
@@ -5525,6 +5526,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
+          connectBT: '<span class="btn-emoji">📶</span> BT接続',
           quickEdit: '✏️ クイック編集',
           quickEditLoading: '⏳ 読込中...',
           refresh: 'リフレッシュ',
@@ -5747,8 +5749,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         document.querySelector('#toggleMonitorBtn .txt').textContent = TRANSLATIONS[lang].monitorInteract;
         document.getElementById('monitorConnBadge').textContent = TRANSLATIONS[lang].disconnected;
         document.getElementById('monitorConnectBtn').innerHTML = TRANSLATIONS[lang].connect;
-        document.getElementById('monitorBTConnectBtn').innerHTML = TRANSLATIONS[lang].connectBT || '📶 Connect BT';
-        { const btBtn = document.getElementById('monitorBTConnectBtn'); if (btBtn) btBtn.innerHTML = (TRANSLATIONS[lang].connectBT || ''); }
+        document.getElementById('monitorBTConnectBtn').innerHTML = TRANSLATIONS[lang].connectBT;
         document.getElementById('monitorRefreshBtn').textContent = TRANSLATIONS[lang].refresh;
         document.getElementById('quickEditBtn').textContent = TRANSLATIONS[lang].quickEdit;
         document.getElementById('monitorDisconnectBtn').textContent = TRANSLATIONS[lang].disconnect;
