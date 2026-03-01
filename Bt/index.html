@@ -237,17 +237,16 @@ https://github.com/odeepllama/SolarSim/tree/main
       min-width: 160px;
     }
 
-    /* Program Control section: responsive grid layout */
+    /* Program Control section: force 4-column grid layout *****/
     .group-grid.program-control {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 14px;
     }
 
     .group-grid.program-control .field {
       flex: none;
       max-width: none;
-      min-width: 160px;
     }
 
     input[type=text],
@@ -3460,7 +3459,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 </head>
 
 <body>
-  <h1 id="appTitle"></h1>
+  <h1 id="appTitle" style="text-align:center;"></h1>
   <div class="monitor-toggle-bar">
     <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" style="display:none"
       title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
@@ -5190,7 +5189,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
       const TRANSLATIONS = {
         en: {
-          appTitle: 'SolaSim Studio',
+          appTitle: 'Welcome to SolaSim Studio!',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
@@ -5349,7 +5348,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           toggleView: '(Toggle view)',
         },
         ja: {
-          appTitle: 'SolaSim Studio',
+          appTitle: 'SolaSim Studioへようこそ！',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
@@ -6045,8 +6044,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         legend.setAttribute('data-group-name', 'Program Control');
         programFs.appendChild(legend);
         const grid = document.createElement('div');
-        // Layout handled by .group-grid.program-control CSS class
+        // Use 5-column grid layout for Program Control
         grid.className = 'group-grid program-control';
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = '1fr 1fr 1fr 1fr 1fr';
         // Move Program Enabled and Program Repeats to columns 1 and 2
         grid.appendChild(createInput('PROGRAM_ENABLED'));
         grid.appendChild(createInput('PROGRAM_REPEATS'));
@@ -20234,9 +20235,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Initialize FTUE on page load
         function initFTUE() {
-          // Skip FTUE on phone-sized screens (iPhone etc.) — too small for the guide
-          if (window.innerWidth < 768) return;
-
           const ftueComplete = localStorage.getItem(FTUE_STORAGE_KEY);
           const neverShow = localStorage.getItem(FTUE_NEVER_SHOW_KEY);
 
