@@ -17380,9 +17380,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             quickEditBtn.disabled = true;
             quickEditBtn.textContent = getLang().quickEditLoading;
 
-            state.transport = 'serial';
             try {
-              await ensurePort();
+              await ensureBLE();
             } catch (e) {
               // User cancelled serial picker or connection failed
               quickEditBtn.disabled = false;
