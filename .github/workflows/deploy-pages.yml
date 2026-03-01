@@ -14,46 +14,29 @@ jobs:
           mkdir -p deploy
 
           if [ "${{ github.ref_name }}" = "main" ]; then
-            # Root ProfileBuilder → /
-            if [ -f ProfileBuilder.html ]; then
-              cp ProfileBuilder.html deploy/index.html
+            # SolaSimStudio (unified wired USB) → /
+            if [ -f ESP32_Bluetooth/SolaSimStudio.html ]; then
+              cp ESP32_Bluetooth/SolaSimStudio.html deploy/index.html
+              cp -f planty.svg planty_b\&w.svg deploy/ 2>/dev/null || true
             fi
-            # ESP32_Bluetooth → /Bt/
-            if [ -f ESP32_Bluetooth/ProfileBuilderBt.html ]; then
+            # SolaSimStudioBLE (iPad BLE) → /Bt/
+            if [ -f BLE_iPad/SolaSimStudioBLE.html ]; then
               mkdir -p deploy/Bt
-              cp ESP32_Bluetooth/ProfileBuilderBt.html deploy/Bt/index.html
+              cp BLE_iPad/SolaSimStudioBLE.html deploy/Bt/index.html
               cp -f planty.svg planty_b\&w.svg deploy/Bt/ 2>/dev/null || true
             fi
-            # BLE_iPad → /ble/
-            if [ -f BLE_iPad/SolaSimStudioBLE.html ]; then
-              mkdir -p deploy/ble
-              cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/index.html
-              cp -f planty.svg planty_b\&w.svg deploy/ble/ 2>/dev/null || true
-            fi
-            # BLE_Working → /ble/working/
-            if [ -f BLE_Working/ProfileBuilderBt.html ]; then
-              mkdir -p deploy/ble/working
-              cp BLE_Working/ProfileBuilderBt.html deploy/ble/working/index.html
-              cp -f planty.svg planty_b\&w.svg deploy/ble/working/ 2>/dev/null || true
-            fi
           else
-            # ESP32_Bluetooth → /Bt/test/
-            if [ -f ESP32_Bluetooth/ProfileBuilderBt.html ]; then
-              mkdir -p deploy/Bt/test
-              cp ESP32_Bluetooth/ProfileBuilderBt.html deploy/Bt/test/index.html
-              cp -f planty.svg planty_b\&w.svg deploy/Bt/test/ 2>/dev/null || true
+            # SolaSimStudio (unified wired USB) → /test/
+            if [ -f ESP32_Bluetooth/SolaSimStudio.html ]; then
+              mkdir -p deploy/test
+              cp ESP32_Bluetooth/SolaSimStudio.html deploy/test/index.html
+              cp -f planty.svg planty_b\&w.svg deploy/test/ 2>/dev/null || true
             fi
-            # BLE_iPad → /ble/test/
+            # SolaSimStudioBLE (iPad BLE) → /Bt/test/
             if [ -f BLE_iPad/SolaSimStudioBLE.html ]; then
-              mkdir -p deploy/ble/test
-              cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/test/index.html
-              cp -f planty.svg planty_b\&w.svg deploy/ble/test/ 2>/dev/null || true
-            fi
-            # BLE_Working → /ble/working/test/
-            if [ -f BLE_Working/ProfileBuilderBt.html ]; then
-              mkdir -p deploy/ble/working/test
-              cp BLE_Working/ProfileBuilderBt.html deploy/ble/working/test/index.html
-              cp -f planty.svg planty_b\&w.svg deploy/ble/working/test/ 2>/dev/null || true
+              mkdir -p deploy/Bt/test
+              cp BLE_iPad/SolaSimStudioBLE.html deploy/Bt/test/index.html
+              cp -f planty.svg planty_b\&w.svg deploy/Bt/test/ 2>/dev/null || true
             fi
           fi
       - name: Deploy to GitHub Pages
