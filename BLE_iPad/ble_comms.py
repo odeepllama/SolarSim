@@ -16,6 +16,7 @@ MTU: 512 bytes (509 payload per notification after 3-byte ATT header)
 import ubluetooth
 from micropython import const
 from time import sleep_ms, ticks_ms, ticks_diff
+import gc
 
 # ======================================================
 # BLE Event Constants
@@ -154,17 +155,21 @@ class BLEComms:
             self._connections.add(conn_handle)
             self._conn_handle = conn_handle
             self._fresh_connect = True  # Signal simulator to skip status debounce
+            self._connect_ms = ticks_ms()
             addr_str = ':'.join(['%02X' % b for b in bytes(addr)])
             print(f"[BLE] Connected: {addr_str} (handle={conn_handle})")
+            print(f"[BLE-DIAG] CONNECT at t={self._connect_ms}ms")
 
         elif event == _IRQ_CENTRAL_DISCONNECT:
             conn_handle, _, _ = data
+            duration = ticks_diff(ticks_ms(), getattr(self, '_connect_ms', 0))
             self._connections.discard(conn_handle)
             if conn_handle == self._conn_handle:
                 self._conn_handle = None
             self._mtu = 23
             self._payload_size = DEFAULT_PAYLOAD
             print(f"[BLE] Disconnected (handle={conn_handle})")
+            print(f"[BLE-DIAG] DISCONNECT after {duration}ms ({duration/1000:.1f}s)")
             # Re-advertise for reconnection
             self._advertise()
 
@@ -177,6 +182,7 @@ class BLEComms:
             conn_handle, mtu = data
             self._mtu = mtu
             self._payload_size = mtu - ATT_HEADER_SIZE
+            print(f"[BLE-DIAG] MTU exchanged: {mtu} (payload={self._payload_size})")
 
 
     def _handle_incoming_command(self):
@@ -270,6 +276,8 @@ class BLEComms:
         """
         if not self._conn_handle or self._output_paused:
             return False
+        age = ticks_diff(ticks_ms(), getattr(self, '_connect_ms', 0))
+        print(f"[BLE-DIAG] send_response: {len(text)}B at +{age}ms")
         return self._send_chunked(self._resp_handle, text)
 
     def send_status(self, text):
@@ -295,6 +303,9 @@ class BLEComms:
         text = '\n'.join(lines)
         if text and not text.endswith('\n'):
             text += '\n'
+        age = ticks_diff(ticks_ms(), getattr(self, '_connect_ms', 0))
+        print(f"[BLE-DIAG] send_batch: {len(lines)} lines, {len(text)}B at +{age}ms")
+        gc.collect()
         return self._send_chunked(self._resp_handle, text)
 
     def _send_chunked(self, char_handle, text):
@@ -309,6 +320,7 @@ class BLEComms:
             chunk_size = self._payload_size
 
             chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+            t_start = ticks_ms()
             for idx, chunk in enumerate(chunks):
                 # Throttle: ensure minimum gap between notifications
                 now = ticks_ms()
@@ -319,17 +331,21 @@ class BLEComms:
                 try:
                     self._ble.gatts_notify(self._conn_handle, char_handle, chunk)
                 except Exception:
+                    age = ticks_diff(ticks_ms(), getattr(self, '_connect_ms', 0))
+                    print(f"[BLE-DIAG] GATT FAIL chunk {idx+1}/{len(chunks)} at +{age}ms, retry...")
                     # Single retry after a brief pause
                     sleep_ms(50)
                     try:
                         self._ble.gatts_notify(self._conn_handle, char_handle, chunk)
                     except Exception as e2:
-                        print(f"[BLE] Notify retry failed: {e2}")
+                        print(f"[BLE-DIAG] GATT RETRY FAIL chunk {idx+1}/{len(chunks)}: {e2}")
                         return False
 
                 self._last_notify_ms = ticks_ms()
                 if idx < len(chunks) - 1:
                     sleep_ms(CHUNK_DELAY_MS)
+            elapsed = ticks_diff(ticks_ms(), t_start)
+            print(f"[BLE-DIAG] chunked OK: {len(chunks)} chunks, {len(data)}B in {elapsed}ms")
             return True
         except Exception as e:
             print(f"[BLE] Send error: {e}")

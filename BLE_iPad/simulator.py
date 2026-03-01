@@ -342,6 +342,9 @@ class SolarSimulator:
             now = ticks_ms()
             if not hasattr(self, '_last_ble_output_ms'):
                 self._last_ble_output_ms = 0
+            # Skip messages that are irrelevant to the browser
+            if '[DISPLAY]' in text or 'Simulation time:' in text:
+                return
             # Always send command responses and important messages immediately
             is_important = ('[SERIAL CMD]' in text or '[PROGRAM]' in text or
                            '[BLE]' in text or 'Error' in text or 
@@ -579,13 +582,19 @@ class SolarSimulator:
             # === STATUS ===
             elif command == "status":
                 now_cmd = ticks_ms()
+                age = ticks_diff(now_cmd, getattr(self.ble, '_connect_ms', 0)) if self.ble else 0
                 # Reset debounce on fresh BLE connect so first status always works
                 if self.ble and getattr(self.ble, '_fresh_connect', False):
                     self._last_status_ms = 0
                     self.ble._fresh_connect = False
+                    print(f"[BLE-DIAG] STATUS fresh-connect reset at +{age}ms")
                 if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 3000:
                     self._last_status_ms = now_cmd
+                    print(f"[BLE-DIAG] STATUS EXEC at +{age}ms")
                     self.print_status()
+                else:
+                    gap = ticks_diff(now_cmd, self._last_status_ms)
+                    print(f"[BLE-DIAG] STATUS DEBOUNCED at +{age}ms (only {gap}ms since last)")
 
             # === FILL PANEL ===
             elif command == "fillpanel" and len(parts) >= 4:
