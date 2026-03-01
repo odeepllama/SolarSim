@@ -405,6 +405,32 @@ https://github.com/odeepllama/SolarSim/tree/main
       display: inline-block;
     }
 
+    /* iPad / tablet: compact program steps table so action buttons fit in one row */
+    @media (max-width: 1024px) {
+
+      .program-steps-table th,
+      .program-steps-table td {
+        padding: 4px 5px;
+      }
+
+      .program-steps-table button.row-act {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+        margin: 0 1px 0 0;
+      }
+
+      .program-steps-table button.row-act svg {
+        width: 10px;
+        height: 10px;
+      }
+
+      .program-steps-table th:last-child,
+      .program-steps-table td:last-child {
+        white-space: nowrap;
+      }
+    }
+
     button {
       cursor: pointer;
       font-size: 0.9rem;
