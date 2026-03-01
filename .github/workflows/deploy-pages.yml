@@ -30,6 +30,12 @@ jobs:
               cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/index.html
               cp -f planty.svg planty_b\&w.svg deploy/ble/ 2>/dev/null || true
             fi
+            # BLE_Working → /ble/working/
+            if [ -f BLE_Working/ProfileBuilderBt.html ]; then
+              mkdir -p deploy/ble/working
+              cp BLE_Working/ProfileBuilderBt.html deploy/ble/working/index.html
+              cp -f planty.svg planty_b\&w.svg deploy/ble/working/ 2>/dev/null || true
+            fi
           else
             # ESP32_Bluetooth → /Bt/test/
             if [ -f ESP32_Bluetooth/ProfileBuilderBt.html ]; then
@@ -42,6 +48,12 @@ jobs:
               mkdir -p deploy/ble/test
               cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/test/index.html
               cp -f planty.svg planty_b\&w.svg deploy/ble/test/ 2>/dev/null || true
+            fi
+            # BLE_Working → /ble/working/test/
+            if [ -f BLE_Working/ProfileBuilderBt.html ]; then
+              mkdir -p deploy/ble/working/test
+              cp BLE_Working/ProfileBuilderBt.html deploy/ble/working/test/index.html
+              cp -f planty.svg planty_b\&w.svg deploy/ble/working/test/ 2>/dev/null || true
             fi
           fi
       - name: Deploy to GitHub Pages
