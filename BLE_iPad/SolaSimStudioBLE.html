@@ -17580,8 +17580,13 @@ https://github.com/odeepllama/SolarSim/tree/main
         function sendStatusSilent() {
           if (window.__uploadInProgress) return; // don't interfere with active upload
           if (!state.port && state.transport !== 'ble') return;
+          if (state._bleStatusPending) return; // debounce concurrent calls
+          if (state.transport === 'ble') state._bleStatusPending = true;
           state.__silentStatusUntil = performance.now() + 1500; // suppress typical status lines
-          sendLine('status', { silentEcho: true });
+          sendLine('status', { silentEcho: true }).finally(() => {
+            // Reset debounce flag after write completes (or fails)
+            setTimeout(() => { state._bleStatusPending = false; }, 500);
+          });
           // Request an immediate arc refresh in case day/night boundary just changed
           try { const ns = window.__solarSimMonitorState; if (ns && ns.__sunArc && ns.__sunArc.refresh) { ns.__sunArc.refresh(); ns.__sunArc.updateVisibility && ns.__sunArc.updateVisibility(); } } catch (_) { }
         }
