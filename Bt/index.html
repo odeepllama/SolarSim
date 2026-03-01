@@ -17264,7 +17264,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Smart staggered status requests: retry until key tiles are populated
             // (BLE at default MTU may drop some notifications in a burst)
             const expectedTiles = ['sim', 'speed', 'intensity', 'solarMode', 'sunColor'];
-            const retryDelays = [1500, 5000, 8500, 12000, 16000];
+            const retryDelays = [800, 2500, 5000, 8000, 12000];
             const retryTimers = [];
             function allTilesPopulated() {
               if (!window.kvCache || !window.kvCache.get) return false;
