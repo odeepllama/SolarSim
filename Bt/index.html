@@ -6045,10 +6045,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         legend.setAttribute('data-group-name', 'Program Control');
         programFs.appendChild(legend);
         const grid = document.createElement('div');
-        // Use 5-column grid layout for Program Control
+        // Layout handled by .group-grid.program-control CSS class
         grid.className = 'group-grid program-control';
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = '1fr 1fr 1fr 1fr 1fr';
         // Move Program Enabled and Program Repeats to columns 1 and 2
         grid.appendChild(createInput('PROGRAM_ENABLED'));
         grid.appendChild(createInput('PROGRAM_REPEATS'));
