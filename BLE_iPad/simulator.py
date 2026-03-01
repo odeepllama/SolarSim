@@ -579,6 +579,10 @@ class SolarSimulator:
             # === STATUS ===
             elif command == "status":
                 now_cmd = ticks_ms()
+                # Reset debounce on fresh BLE connect so first status always works
+                if self.ble and getattr(self.ble, '_fresh_connect', False):
+                    self._last_status_ms = 0
+                    self.ble._fresh_connect = False
                 if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 3000:
                     self._last_status_ms = now_cmd
                     self.print_status()
