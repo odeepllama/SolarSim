@@ -362,6 +362,11 @@ class ProgramEngine:
 
             if new_speed != time_scale:
                 result['time_scale'] = new_speed
+                # Reanchor clock to preserve current sim time at the new speed
+                if new_speed != 0 and time_scale != 0:
+                    result['start_real_time_ms'] = reanchor_fn(
+                        sim_time_minutes, new_speed, now_ms,
+                        start_time_hhmm, start_real_time_ms)
                 time_scale = new_speed
 
             if time_scale == 0:
