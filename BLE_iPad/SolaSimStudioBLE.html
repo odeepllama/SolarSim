@@ -14516,7 +14516,10 @@ https://github.com/odeepllama/SolarSim/tree/main
               state.__statusTimer = null;
             }
 
-            // BLE disconnect
+            // BLE disconnect — set flag BEFORE disconnect so the gattserverdisconnected
+            // handler knows not to auto-reconnect (the wasUserInitiated flag gets reset
+            // before the async event fires)
+            state._userDisconnecting = true;
             if (state.bleDevice && state.bleDevice.gatt && state.bleDevice.gatt.connected) {
               try { state.bleDevice.gatt.disconnect(); } catch (_) { }
             }
@@ -16176,6 +16179,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (state.bleDevice && state.bleServer && state.bleServer.connected) return;
           if (!navigator.bluetooth) { log('Web Bluetooth unsupported in this browser', 'error'); throw new Error('No navigator.bluetooth'); }
           badge('CONNECTING', 'amber');
+          state._userDisconnecting = false; // reset for new connection
           try {
             const device = await navigator.bluetooth.requestDevice({
               filters: [{ namePrefix: 'SolarSim' }],
@@ -16191,7 +16195,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               state.transport = null;
               setConnected(false);
               // Auto-reconnect on unexpected disconnect (max 3 attempts with backoff)
-              if (!state.connectionHistory?.wasUserInitiated && device.gatt) {
+              if (!state.connectionHistory?.wasUserInitiated && !state._userDisconnecting && device.gatt) {
                 state.bleDevice = device; // keep device ref for reconnect
                 let attempt = 0;
                 const tryReconnect = () => {
