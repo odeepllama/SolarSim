@@ -406,7 +406,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     /* iPad / tablet: compact program steps table so action buttons fit in one row */
-    @media (max-width: 1024px) {
+    /* iPad = 2360 physical px = 1180 CSS px; Mac laptop = 2560 physical px ≈ 1280+ CSS px */
+    @media (max-width: 1199px) {
 
       .program-steps-table th,
       .program-steps-table td {
