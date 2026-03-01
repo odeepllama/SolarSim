@@ -16357,6 +16357,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         window.__autoloadEnabled = null; // Track device auto-load status
 
         function handlePlainTextLine(line) {
+          // Suppress BLE firmware diagnostics — not relevant when using serial connection
+          if (/^\s*\[BLE\]/.test(line)) return;
           // Suppress logging of full-length Simulation time lines
           if (reSimTime.test(line) || reSimWithSpeed.test(line)) {
             // Skip logging this line, but still parse it below for UI updates

@@ -347,7 +347,7 @@ class SolarSimulator:
                 return
             # Always send command responses and important messages immediately
             is_important = ('[SERIAL CMD]' in text or '[PROGRAM]' in text or
-                           '[BLE]' in text or 'Error' in text or 
+                           'Error' in text or 
                            'WRITE_OK' in text or 'PROGRAM_' in text or
                            '--- ' in text)
             if is_important or ticks_diff(now, self._last_ble_output_ms) > 1000:

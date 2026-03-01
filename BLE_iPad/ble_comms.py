@@ -331,14 +331,20 @@ class BLEComms:
 
                 try:
                     self._ble.gatts_notify(self._conn_handle, char_handle, chunk)
+                    self._gatt_fail_count = 0  # reset on success
                 except Exception:
                     # Single retry after a brief pause + gc
                     sleep_ms(50)
                     gc.collect()
                     try:
                         self._ble.gatts_notify(self._conn_handle, char_handle, chunk)
+                        self._gatt_fail_count = 0
                     except Exception as e2:
-                        print(f"[BLE] GATT fail chunk {idx+1}/{len(chunks)}: {e2}")
+                        if not hasattr(self, '_gatt_fail_count'):
+                            self._gatt_fail_count = 0
+                        self._gatt_fail_count += 1
+                        if self._gatt_fail_count <= 1:
+                            print(f"[BLE] GATT fail: {e2} (further errors suppressed)")
                         return False
 
                 self._last_notify_ms = ticks_ms()
