@@ -17632,10 +17632,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           function applyUI() { /* no-op: UI removed */ }
           // === Adaptive Status Polling Interval ===
           // Polling interval (ms) based on number of program steps
-          const STATUS_POLL_MIN_INTERVAL_MS = 2000;
-          const STATUS_POLL_MAX_INTERVAL_MS = 8000;
+          const STATUS_POLL_MIN_INTERVAL_MS = 5000;
+          const STATUS_POLL_MAX_INTERVAL_MS = 15000;
           const STATUS_POLL_THRESHOLDS = [20, 30, 40];
-          const STATUS_POLL_INTERVALS = [2000, 4000, 6000, 8000];
+          const STATUS_POLL_INTERVALS = [5000, 8000, 12000, 15000];
 
           function getStatusPollInterval(stepCount) {
             if (typeof stepCount !== 'number' || isNaN(stepCount)) return STATUS_POLL_MIN_INTERVAL_MS;
