@@ -48,7 +48,7 @@ STATUS_CHAR_UUID       = ubluetooth.UUID('6E400004-B5A3-F393-E0A9-E50E24DCCA9E')
 TARGET_MTU = 512          # Negotiated MTU target
 ATT_HEADER_SIZE = 3       # ATT notification header
 DEFAULT_PAYLOAD = 20      # Conservative fallback payload
-CHUNK_DELAY_MS = 20       # Delay between chunked notifications
+CHUNK_DELAY_MS = 50       # Delay between chunked notifications
 
 
 class BLEComms:
@@ -102,7 +102,7 @@ class BLEComms:
 
         # Notification throttle: minimum ms between gatts_notify calls
         self._last_notify_ms = 0
-        self._notify_min_gap_ms = 15
+        self._notify_min_gap_ms = 30
 
         # Characteristic handles (set during registration)
         self._cmd_handle = None
