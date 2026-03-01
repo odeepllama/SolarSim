@@ -563,7 +563,10 @@ class SolarSimulator:
 
             # === STATUS ===
             elif command == "status":
-                self.print_status()
+                now_cmd = ticks_ms()
+                if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 3000:
+                    self._last_status_ms = now_cmd
+                    self.print_status()
 
             # === FILL PANEL ===
             elif command == "fillpanel" and len(parts) >= 4:
