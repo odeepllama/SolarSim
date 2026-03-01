@@ -15958,9 +15958,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (disconnectBtn) disconnectBtn.disabled = !c;
           // Removed parseModePill reference as JSON functionality has been removed
 
-          // On disconnect: remove 'Live on Device' text and dot indicators
+          // On disconnect: clear device tracking and remove 'Live on Device' indicators
           if (!c) {
-            document.querySelectorAll('.program-lock-text, .program-lock-dot').forEach(el => el.remove());
+            try {
+              window.__deviceConfig = {};
+              window.__deviceProfile = null;
+              window.__loadedProfile = null;
+              if (typeof window.__updateProgramTitles === 'function') {
+                window.__updateProgramTitles();
+              }
+            } catch (_) { }
           }
         }
         async function ensurePort() {
