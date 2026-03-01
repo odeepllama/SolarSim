@@ -18770,6 +18770,35 @@ https://github.com/odeepllama/SolarSim/tree/main
         return firstStep.index;
       }
 
+      // Helper function to get the step on a specific day that "owns" a given time-of-day.
+      // Returns the step index (0-based) whose start time <= simMinutes, or the first step as fallback.
+      function __getStepForTimeOnDay(targetDay, simMinutes) {
+        if (typeof analyzeMultiDayProgram !== 'function') return null;
+        const dayData = analyzeMultiDayProgram();
+        if (!dayData || !dayData.days || dayData.days.length === 0) return null;
+        const day = dayData.days.find(d => d.dayNumber === targetDay);
+        if (!day || !day.steps || day.steps.length === 0) return null;
+        // Walk backwards: last step whose start time <= simMinutes owns this time
+        for (let i = day.steps.length - 1; i >= 0; i--) {
+          if (day.steps[i].m <= simMinutes) return day.steps[i].index;
+        }
+        // Fallback: first step of that day
+        return day.steps[0].index;
+      }
+
+      // Helper to read the current sim time in minutes from kvCache
+      function __getCurrentSimMinutes() {
+        const simTimeValue = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
+        if (!simTimeValue) return null;
+        const valueEl = simTimeValue.querySelector('span');
+        if (!valueEl) return null;
+        const parts = valueEl.textContent.trim().split(':');
+        if (parts.length !== 2) return null;
+        const h = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return h * 60 + m;
+      }
+
       // Function to scroll to previous day
       window.__scrollToPrevDay = async function () {
 
@@ -18778,31 +18807,32 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         const targetDay = window.__playheadCurrentDay - 1;
+        const simMinutes = __getCurrentSimMinutes();
 
-        const firstStepIndex = __getFirstStepOfDay(targetDay);
+        // Find step on target day that owns the current time (preserve playhead position)
+        const targetStepIndex = simMinutes !== null
+          ? __getStepForTimeOnDay(targetDay, simMinutes)
+          : __getFirstStepOfDay(targetDay);
 
         // Check if device is connected
         const _ss1 = window.__serialState || null;
         const isConnected = _ss1 && (_ss1.port || _ss1.bleDevice);
 
-        if (isConnected && firstStepIndex !== null) {
-          // Device is connected - send jump command
-          // Step numbers are 1-indexed in the device command, but our index is 0-indexed
-          const stepNumber = firstStepIndex + 1;
-          // Mark that we manually set the day - this prevents auto-detection from overriding
+        if (isConnected && targetStepIndex !== null) {
+          const stepNumber = targetStepIndex + 1;
           window.__playheadCurrentDay = targetDay;
-          // Sync the wrap count to match the target day so auto-detection doesn't override
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
-          // Suppress verbose status output for 2 seconds after jump command
           _ss1.__navSuppressionActive = true;
           _ss1.__silentStatusUntil = performance.now() + 2000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
-          // Clear navigation suppression flag after command completes
+          // Restore exact time position (jump step sets time to step start)
+          if (simMinutes !== null) {
+            const hh = Math.floor(simMinutes / 60), mm = simMinutes % 60;
+            await __sendDeviceCommand(`set time ${hh * 100 + mm}`);
+          }
           setTimeout(() => { _ss1.__navSuppressionActive = false; }, 2000);
-          // Refresh status tiles after suppression window to pick up new speed/time
           setTimeout(() => { try { window.__sendLine('status', { silentEcho: true }); } catch (_) { } }, 2100);
-          // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
           }
@@ -18810,9 +18840,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             try { window.__updateProgramTitles(); } catch (e) { }
           }
         } else {
-          // Device not connected or no steps found - just update the view
           window.__playheadCurrentDay = targetDay;
-          // Sync the wrap count to match the target day
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
           if (typeof renderTimelineStrip === 'function') {
@@ -18954,31 +18982,32 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         const targetDay = window.__playheadCurrentDay + 1;
+        const simMinutes = __getCurrentSimMinutes();
 
-        const firstStepIndex = __getFirstStepOfDay(targetDay);
+        // Find step on target day that owns the current time (preserve playhead position)
+        const targetStepIndex = simMinutes !== null
+          ? __getStepForTimeOnDay(targetDay, simMinutes)
+          : __getFirstStepOfDay(targetDay);
 
         // Check if device is connected
         const _ss4 = window.__serialState || null;
         const isConnected = _ss4 && (_ss4.port || _ss4.bleDevice);
 
-        if (isConnected && firstStepIndex !== null) {
-          // Device is connected - send jump command
-          // Step numbers are 1-indexed in the device command, but our index is 0-indexed
-          const stepNumber = firstStepIndex + 1;
-          // Mark that we manually set the day - this prevents auto-detection from overriding
+        if (isConnected && targetStepIndex !== null) {
+          const stepNumber = targetStepIndex + 1;
           window.__playheadCurrentDay = targetDay;
-          // Sync the wrap count to match the target day so auto-detection doesn't override
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
-          // Suppress verbose status output for 2 seconds after jump command
           _ss4.__navSuppressionActive = true;
           _ss4.__silentStatusUntil = performance.now() + 2000;
           await __sendDeviceCommand(`jump step ${stepNumber}`);
-          // Clear navigation suppression flag after command completes
+          // Restore exact time position (jump step sets time to step start)
+          if (simMinutes !== null) {
+            const hh = Math.floor(simMinutes / 60), mm = simMinutes % 60;
+            await __sendDeviceCommand(`set time ${hh * 100 + mm}`);
+          }
           setTimeout(() => { _ss4.__navSuppressionActive = false; }, 2000);
-          // Refresh status tiles after suppression window to pick up new speed/time
           setTimeout(() => { try { window.__sendLine('status', { silentEcho: true }); } catch (_) { } }, 2100);
-          // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
           }
@@ -18986,9 +19015,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             try { window.__updateProgramTitles(); } catch (e) { }
           }
         } else {
-          // Device not connected or no steps found - just update the view
           window.__playheadCurrentDay = targetDay;
-          // Sync the wrap count to match the target day
           window.__dayWrapCount = targetDay - 1;
           __setPlayheadManualFlag();
           if (typeof renderTimelineStrip === 'function') {
