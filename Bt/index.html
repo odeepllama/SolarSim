@@ -18970,6 +18970,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
           setTimeout(() => { _ss1.__navSuppressionActive = false; }, 2000);
+          // Refresh status tiles after suppression window to pick up new speed/time
+          setTimeout(() => { try { window.__sendLine('status', { silentEcho: true }); } catch (_) { } }, 2100);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
@@ -19080,6 +19082,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (_ss2) { _ss2.__navSuppressionActive = true; _ss2.__silentStatusUntil = performance.now() + 2000; }
         await __sendDeviceCommand(`jump step ${targetStep}`);
         setTimeout(() => { if (_ss2) _ss2.__navSuppressionActive = false; }, 2000);
+        // Refresh status tiles after suppression window to pick up new speed/time
+        setTimeout(() => { try { window.__sendLine('status', { silentEcho: true }); } catch (_) { } }, 2100);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -19106,6 +19110,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (_ss3) { _ss3.__navSuppressionActive = true; _ss3.__silentStatusUntil = performance.now() + 2000; }
         await __sendDeviceCommand(`jump step ${nextStep}`);
         setTimeout(() => { if (_ss3) _ss3.__navSuppressionActive = false; }, 2000);
+        // Refresh status tiles after suppression window to pick up new speed/time
+        setTimeout(() => { try { window.__sendLine('status', { silentEcho: true }); } catch (_) { } }, 2100);
         if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
         if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
       };
@@ -19140,6 +19146,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           await __sendDeviceCommand(`jump step ${stepNumber}`);
           // Clear navigation suppression flag after command completes
           setTimeout(() => { _ss4.__navSuppressionActive = false; }, 2000);
+          // Refresh status tiles after suppression window to pick up new speed/time
+          setTimeout(() => { try { window.__sendLine('status', { silentEcho: true }); } catch (_) { } }, 2100);
           // Update the UI to reflect the new day
           if (typeof renderTimelineStrip === 'function') {
             try { renderTimelineStrip(); } catch (e) { }
