@@ -347,7 +347,7 @@ class SolarSimulator:
                            '[BLE]' in text or 'Error' in text or 
                            'WRITE_OK' in text or 'PROGRAM_' in text or
                            '--- ' in text)
-            if is_important or ticks_diff(now, self._last_ble_output_ms) > 10000:
+            if is_important or ticks_diff(now, self._last_ble_output_ms) > 1000:
                 try:
                     self.ble.send_response(text + '\n')
                     self._last_ble_output_ms = now
