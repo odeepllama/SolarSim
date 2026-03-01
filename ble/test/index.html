@@ -14244,77 +14244,34 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Upload Connection Picker (shown when Upload clicked while disconnected)
       // -----------------------------
       function showUploadConnectionPicker() {
-        const overlay = document.getElementById('uploadConnPickerOverlay');
-        if (!overlay) { alert('Connection picker not found.'); return; }
-        const bleBtn = document.getElementById('uploadPickerBLE');
-        const cableBtn = document.getElementById('uploadPickerCable');
-        const cancelBtn = document.getElementById('uploadPickerCancel');
-
-        function closePicker() {
-          overlay.classList.remove('open');
-          overlay.setAttribute('aria-hidden', 'true');
-          // Remove listeners to avoid stacking
-          bleBtn.onclick = null;
-          cableBtn.onclick = null;
-          cancelBtn.onclick = null;
-        }
-
-        overlay.classList.add('open');
-        overlay.setAttribute('aria-hidden', 'false');
-
-        bleBtn.onclick = async () => {
-          closePicker();
-          // CRITICAL: Snapshot profile text BEFORE connecting.
-          // BLE status updates can overwrite programSteps with device data (which may have no steps),
-          // so we must capture the form state before the connection triggers any data exchange.
-          if (typeof updatePreview === 'function') updatePreview(true);
-          const preConnectProfileText = document.getElementById('exportPreview').value;
+        // iPad BLE-only: skip the connection picker modal and go straight to BLE
+        (async () => {
           try {
+            // Disconnect existing connection first
+            if (typeof performDisconnect === 'function') {
+              const monitorState = window.__solarSimMonitorState;
+              if (monitorState && (monitorState.bleDevice || monitorState.port)) {
+                await performDisconnect();
+                await new Promise(r => setTimeout(r, 300));
+              }
+            }
+            // Snapshot profile text BEFORE connecting (BLE status updates can overwrite programSteps)
+            if (typeof updatePreview === 'function') updatePreview(true);
+            const preConnectProfileText = document.getElementById('exportPreview').value;
             await window.__ensureBLE();
             // Brief delay for connection to stabilise
             await new Promise(r => setTimeout(r, 300));
             uploadProfileViaWriteCommand({ _preSnapshotText: preConnectProfileText });
           } catch (e) {
             const msg = e.message || String(e);
-            if (typeof log === 'function') log('BLE connection failed: ' + msg, 'error');
-            else alert('BLE connection failed: ' + msg);
+            if (/cancel/i.test(msg)) {
+              if (typeof log === 'function') log('Upload cancelled by user', 'error');
+            } else {
+              if (typeof log === 'function') log('BLE connection failed: ' + msg, 'error');
+              else alert('BLE connection failed: ' + msg);
+            }
           }
-        };
-
-        cableBtn.onclick = async () => {
-          closePicker();
-          // CRITICAL: Snapshot profile text BEFORE connecting.
-          // Serial status updates can overwrite programSteps with device data
-          // (which may have fewer/different steps), so we must capture the
-          // form state before the connection triggers any data exchange.
-          if (typeof updatePreview === 'function') updatePreview(true);
-          const preConnectProfileText = document.getElementById('exportPreview').value;
-          try {
-            const monitorState = window.__solarSimMonitorState;
-            if (monitorState) monitorState.transport = 'serial';
-            await window.__ensurePort();
-            // Proceed with upload using pre-snapshotted text
-            uploadProfileToBoard({ _preSnapshotText: preConnectProfileText });
-          } catch (e) {
-            const monitorState = window.__solarSimMonitorState;
-            if (monitorState) monitorState.transport = null;
-            const msg = e.message || String(e);
-            if (typeof log === 'function') log('Cable connection failed: ' + msg, 'error');
-            else alert('Cable connection failed: ' + msg);
-          }
-        };
-
-        cancelBtn.onclick = closePicker;
-
-        // Close on background click or Escape
-        overlay.onclick = (e) => { if (e.target === overlay) closePicker(); };
-        const escHandler = (e) => {
-          if (e.key === 'Escape' && overlay.classList.contains('open')) {
-            closePicker();
-            document.removeEventListener('keydown', escHandler);
-          }
-        };
-        document.addEventListener('keydown', escHandler);
+        })();
       }
 
       // -----------------------------
