@@ -18331,6 +18331,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           outsideTouchHandler = dismissHandler;
           document.addEventListener('mousedown', outsideClickHandler);
           document.addEventListener('touchstart', outsideTouchHandler, { passive: true });
+          // Auto-focus the first text/number input SYNCHRONOUSLY to preserve iOS user gesture chain for keyboard
+          const firstInput = pop.querySelector('input[type="text"], input[type="number"]');
+          if (firstInput) firstInput.focus();
         }
         function canSend() { return true; /* popover only opens when connected */ }
         async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { } catch (_) { } } }
@@ -18442,8 +18445,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             } else {
               // Input-bearing tiles: open immediately (preserves iOS user gesture chain for keyboard)
               e.stopPropagation(); hide(); show(box, builder);
-              // Auto-focus the first text/number input for keyboard accessibility
-              setTimeout(() => { const inp = pop.querySelector('input[type="text"], input[type="number"]'); if (inp) inp.focus(); }, 10);
             }
           });
           grid.addEventListener('dblclick', (e) => {
