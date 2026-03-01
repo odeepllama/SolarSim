@@ -16297,7 +16297,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const reMem = /mem(?:ory)?[_\s]*free\s*[:=]\s*(\d+)/i;
         const reSunColor = /sun\s*color\s*mode\s*[:=]\s*([A-Z_]+)/i;
         // Custom RGB variants (status lines, command echo, serial confirmations)
-        const reSunColorCustomStatus = /sun\s*color[^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
+        const reSunColorCustomStatus = /(?:sun\s*color[^\n]*custom|custom\s*sun\s*rgb\s*[:=]\s*\(?)[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
         const reSunColorCustomCmd = />?\s*set\s+suncolor\s+custom\s+(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})/i;
         const reSunColorCustomSerial = /\[serial\s*cmd\][^\n]*custom[^\d]*(\d{1,3})[^\d]+(\d{1,3})[^\d]+(\d{1,3})/i;
         const reSunColorProgram = /\[PROGRAM\]\s*Sun\s*color\s*set\s*to\s*RGB\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/i;
