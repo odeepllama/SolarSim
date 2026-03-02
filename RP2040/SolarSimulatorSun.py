@@ -786,7 +786,38 @@ def update_program_state(now_ms, sim_time_minutes):
                     current_eval_time -= 1440
                 if current_eval_time <= (target_eval_time + tolerance):
                     target_reached = True
-        # else: last step — hold configuration, don't auto-advance
+        else:
+            # Last step: if program repeats, target the first step's time
+            # so time naturally wraps around and the program restarts
+            will_repeat = (PROGRAM_REPEATS == -1 or
+                           current_program_repeat < PROGRAM_REPEATS - 1)
+            if will_repeat and len(PROGRAM_STEPS) > 0:
+                first_hhmm = PROGRAM_STEPS[0]["sim_time_hhmm"]
+                target_time_minutes = (first_hhmm // 100) * 60 + (first_hhmm % 100)
+                step_speed = step.get("speed", TIME_SCALE)
+                direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
+                speed_mag = abs(step_speed) if step_speed != 0 else 1
+                tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
+                if direction >= 0:
+                    current_eval_time = sim_time_minutes
+                    target_eval_time = target_time_minutes
+                    if target_time_minutes < program_step_start_sim_time:
+                        if sim_time_minutes < program_step_start_sim_time:
+                            current_eval_time += 1440
+                        target_eval_time += 1440
+                    if current_eval_time >= (target_eval_time - tolerance):
+                        target_reached = True
+                else:
+                    start_tod = program_step_start_sim_time
+                    target_eval_time = target_time_minutes
+                    if target_time_minutes > start_tod:
+                        target_eval_time -= 1440
+                    current_eval_time = sim_time_minutes
+                    if sim_time_minutes > start_tod:
+                        current_eval_time -= 1440
+                    if current_eval_time <= (target_eval_time + tolerance):
+                        target_reached = True
+            # else: last step, no repeats — hold configuration
     elif transition_type == "JUMP":
         target_reached = True
     if target_reached:
