@@ -6550,6 +6550,32 @@ https://github.com/odeepllama/SolarSim/tree/main
       let programSteps = [];
       // Note: programSteps is accessed directly by functions in this script scope
 
+      // Recent sun colors palette (max 8, most-recent-first, hex strings like '#0000ff')
+      let recentSunColors = [];
+      function addRecentSunColor(hex) {
+        hex = hex.toLowerCase();
+        recentSunColors = recentSunColors.filter(c => c !== hex);
+        recentSunColors.unshift(hex);
+        if (recentSunColors.length > 8) recentSunColors.length = 8;
+        refreshAllRecentSwatches();
+      }
+      function refreshAllRecentSwatches() {
+        document.querySelectorAll('.recent-sun-swatches').forEach(row => {
+          const swatches = row.querySelectorAll('.sun-swatch');
+          swatches.forEach((sw, i) => {
+            if (i < recentSunColors.length) {
+              sw.style.background = recentSunColors[i];
+              sw.style.visibility = 'visible';
+              sw.dataset.hex = recentSunColors[i];
+            } else {
+              sw.style.background = '#ddd';
+              sw.style.visibility = 'hidden';
+              sw.dataset.hex = '';
+            }
+          });
+        });
+      }
+
       // ============================================================================
       // UNDO/REDO SYSTEM
       // ============================================================================
@@ -7150,6 +7176,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         const tbody = document.querySelector('#programStepsTable tbody');
         tbody.innerHTML = '';
 
+        // Pre-populate recent sun colors from existing steps (if empty)
+        if (recentSunColors.length === 0) {
+          const seen = new Set();
+          programSteps.forEach(s => {
+            if (Array.isArray(s.sun_color_rgb) && s.sun_color_rgb.length === 3) {
+              const [r, g, b] = s.sun_color_rgb;
+              const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toLowerCase();
+              if (!seen.has(hex)) { seen.add(hex); recentSunColors.push(hex); }
+            }
+          });
+          if (recentSunColors.length > 8) recentSunColors.length = 8;
+        }
+
         // Analyze multi-day program to get day numbers for each step
         // Always use true day analysis for the table (ignore single-day visualization mode)
         const dayData = analyzeMultiDayProgram(true);
@@ -7205,7 +7244,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const inputBg = spd < 0 ? 'background-color:#ff6b6b;' : '';
           tr.appendChild(mkCell(`<input data-f='speed' type='number' step='0.1' value='${step.speed ?? ''}' style='width:60px;${inputBg}'/>`, speedBg, '700'));
           tr.appendChild(mkCell(`<input data-f='intensity_scale' type='number' step='0.1' min='0' value='${step.intensity_scale ?? ''}' style='width:70px'/>`));
-          // Sun color cell - color picker + R/G/B fields (inline layout)
+          // Sun color cell - color picker + R/G/B fields on top, recent swatches below
           const rgb = step.sun_color_rgb;
           const hasColor = Array.isArray(rgb) && rgb.length === 3;
           const rVal = hasColor ? rgb[0] : '';
@@ -7213,12 +7252,23 @@ https://github.com/odeepllama/SolarSim/tree/main
           const bVal = hasColor ? rgb[2] : '';
           const hexColor = hasColor ? `#${rgb[0].toString(16).padStart(2, '0')}${rgb[1].toString(16).padStart(2, '0')}${rgb[2].toString(16).padStart(2, '0')}` : '#4488ff';
           const cellBg = hasColor ? `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` : '';
+          // Build swatch dots HTML (8 slots)
+          let swatchHtml = '';
+          for (let si = 0; si < 8; si++) {
+            const hasSwatch = si < recentSunColors.length;
+            const bg = hasSwatch ? recentSunColors[si] : '#ddd';
+            const vis = hasSwatch ? 'visible' : 'hidden';
+            swatchHtml += `<span class="sun-swatch" data-hex="${hasSwatch ? recentSunColors[si] : ''}" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${bg};border:1px solid #999;cursor:pointer;visibility:${vis};flex-shrink:0;" title="Click to apply"></span>`;
+          }
           const colorCell = mkCell(
-            `<div style='display:flex;align-items:center;gap:1px;white-space:nowrap;'>`
+            `<div style='display:flex;flex-direction:column;gap:2px;'>`
+            + `<div style='display:flex;align-items:center;gap:1px;white-space:nowrap;'>`
             + `<input data-f='sun_color_picker' type='color' value='${hexColor}' style='width:42px;height:22px;padding:0;border:1px solid #aaa;cursor:pointer;flex-shrink:0;${hasColor ? '' : 'opacity:0.3;'}' title='Pick sun color'/>`
             + `<input data-f='sun_r' type='number' min='0' max='255' value='${rVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='R'/>`
             + `<input data-f='sun_g' type='number' min='0' max='255' value='${gVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='G'/>`
             + `<input data-f='sun_b' type='number' min='0' max='255' value='${bVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='B'/>`
+            + `</div>`
+            + `<div class="recent-sun-swatches" style='display:flex;gap:2px;align-items:center;min-height:18px;'>${swatchHtml}</div>`
             + `</div>`);
           if (hasColor) {
             colorCell.style.background = `linear-gradient(rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45), rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45)), #fff`;
@@ -7618,6 +7668,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               e.target.style.opacity = '1';
             }
             updatePreview(false);
+            addRecentSunColor(hex);
             if (typeof renderTimelineStrip === 'function') {
               try { renderTimelineStrip(); } catch (e) { }
             }
@@ -7652,6 +7703,10 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
             }
             updatePreview(false);
+            if (programSteps[row].sun_color_rgb) {
+              const [cr, cg, cb] = programSteps[row].sun_color_rgb;
+              addRecentSunColor(`#${cr.toString(16).padStart(2, '0')}${cg.toString(16).padStart(2, '0')}${cb.toString(16).padStart(2, '0')}`);
+            }
             if (typeof renderTimelineStrip === 'function') {
               try { renderTimelineStrip(); } catch (e) { }
             }
@@ -7824,6 +7879,41 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
         document.getElementById('programStepsTable').addEventListener('click', e => {
+          // Handle recent color swatch clicks
+          const swatch = e.target.closest('.sun-swatch');
+          if (swatch && swatch.dataset.hex) {
+            // Check if editing is locked
+            if (window.__programEditingLocked && window.__programEditingLocked()) {
+              if (window.__flashProgramLock) window.__flashProgramLock();
+              return;
+            }
+            const hex = swatch.dataset.hex;
+            const r = parseInt(hex.substr(1, 2), 16);
+            const g = parseInt(hex.substr(3, 2), 16);
+            const b = parseInt(hex.substr(5, 2), 16);
+            const cell = swatch.closest('td');
+            const tr = swatch.closest('tr');
+            if (!tr) return;
+            const row = Array.from(tr.parentNode.children).indexOf(tr);
+            programSteps[row].sun_color_rgb = [r, g, b];
+            if (cell) {
+              const picker = cell.querySelector('input[data-f="sun_color_picker"]');
+              const rIn = cell.querySelector('input[data-f="sun_r"]');
+              const gIn = cell.querySelector('input[data-f="sun_g"]');
+              const bIn = cell.querySelector('input[data-f="sun_b"]');
+              if (picker) { picker.value = hex; picker.style.opacity = '1'; }
+              if (rIn) rIn.value = r;
+              if (gIn) gIn.value = g;
+              if (bIn) bIn.value = b;
+              cell.style.background = `linear-gradient(rgba(${r},${g},${b},0.45), rgba(${r},${g},${b},0.45)), #fff`;
+            }
+            addRecentSunColor(hex);
+            updatePreview(false);
+            if (typeof renderTimelineStrip === 'function') {
+              try { renderTimelineStrip(); } catch (e) { }
+            }
+            return;
+          }
           const btn = e.target.closest('button'); if (!btn) return;
 
           // Check if editing is locked (device running)
@@ -11555,7 +11645,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             holdDurStr = ' ' + Math.floor(holdDurMin / 60) + 'h' + (holdDurMin % 60 ? holdDurMin % 60 + 'm' : '');
           }
           let speedLabel = hold ? ('HOLD' + holdDurStr) : (reverse ? ('−' + Math.abs(speed) + 'X') : (speed + 'X'));
-          if (!(isStartingDay && reverse)) {
+          if (!(isStartingDay && reverse) || filterDirection === 'reverse') {
             segmentMeta.push({ div, speed, speedLabel, dualSun, leftPct: parseFloat(div.style.left), widthPct: parseFloat(div.style.width), layer: 'negative' });
           }
           // Tooltip with intensity info
