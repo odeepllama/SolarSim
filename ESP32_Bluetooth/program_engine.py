@@ -370,20 +370,22 @@ class ProgramEngine:
                 time_scale = new_speed
 
             if time_scale == 0:
-                result['frozen_sim_time_minutes'] = sim_time_minutes
+                # Use step's declared time, not sim_time_minutes which may be stale
+                # after chained JUMP transitions within the same tick
+                result['frozen_sim_time_minutes'] = step_time_minutes
                 if "hold_minutes" in step:
                     self.hold_step_start_ms = now_ms
-                    self.output(f"[PROGRAM] Holding for {step['hold_minutes']} minutes")
+                    self.output(f"[PROGRAM] Holding at {step_time_hhmm//100:02d}:{step_time_hhmm%100:02d} for {step['hold_minutes']} minutes")
                 else:
                     # Calculate hold duration from next step
                     if self.current_step < len(self.program_steps) - 1:
                         next_step = self.program_steps[self.current_step + 1]
                         if "sim_time_hhmm" in next_step:
                             next_m = (next_step["sim_time_hhmm"] // 100) * 60 + (next_step["sim_time_hhmm"] % 100)
-                            hold_dur = (next_m - int(sim_time_minutes)) % 1440
+                            hold_dur = (next_m - int(step_time_minutes)) % 1440
                             step["hold_minutes"] = hold_dur
                             self.hold_step_start_ms = now_ms
-                            self.output(f"[PROGRAM] Holding for {hold_dur} minutes")
+                            self.output(f"[PROGRAM] Holding at {step_time_hhmm//100:02d}:{step_time_hhmm%100:02d} for {hold_dur} minutes")
 
                 self._print_status(now_ms, sim_time_minutes, time_scale, intensity_scale)
 
