@@ -42,7 +42,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
 <head>
   <meta charset="UTF-8" />
-  <title>SolaSim Studio</title>
+  <title>SolarSimStudio</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     /* Ensure language toggle button is always visible and styled */
@@ -14549,7 +14549,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (detail && detail.classList.contains('help-detail')) {
           const isVisible = detail.style.display !== 'none';
           detail.style.display = isVisible ? 'none' : 'block';
-          button.textContent = isVisible ? 'Learn more ▼' : 'Learn less ▲';
+          const isJa = (currentLang === 'ja');
+          const moreText = isJa ? '詳細を表示 ▼' : 'Learn more ▼';
+          const lessText = isJa ? '詳細を非表示 ▲' : 'Learn less ▲';
+          button.textContent = isVisible ? moreText : lessText;
         }
       }
 
