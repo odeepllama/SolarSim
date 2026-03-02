@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra Bar — Color Swatches</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #fff;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 20px 0 8px;
+            color: #333;
+        }
+
+        .swatch-row {
+            display: flex;
+            gap: 8px;
+            max-width: 750px;
+            margin-bottom: 6px;
+        }
+
+        .swatch {
+            flex: 1;
+            height: 65px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .swatch small {
+            font-size: 10px;
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        .bar-container {
+            background: #f0f0f0;
+            border: 1px solid #000;
+            border-radius: 4px;
+            height: 80px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            max-width: 750px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .bar-seg {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            border-right: 1px solid rgba(0, 0, 0, 0.12);
+            position: relative;
+        }
+
+        .bar-seg:last-child {
+            border-right: none;
+        }
+
+        .bar-seg .intlabel {
+            font-size: 10px;
+            font-weight: 500;
+            opacity: 0.85;
+            margin-top: 1px;
+        }
+
+        .bar-seg.light {
+            color: #333;
+            text-shadow: none;
+        }
+
+        .label-row {
+            display: flex;
+            max-width: 750px;
+            margin-bottom: 20px;
+        }
+
+        .label-row span {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Ultra Bar — Red, Green & Blue Swatches</h1>
+    <p class="subtitle">Picking display-friendly base colors for each sun_color_rgb value</p>
+
+    <h2>🔴 Red — sun_color_rgb [255,50,0] → display rgb(220, 60, 50)</h2>
+    <div class="swatch-row">
+        <div class="swatch" style="background: rgba(220,60,50,1.00); color:#fff;">i=1.0<small>opacity 1.00</small></div>
+        <div class="swatch" style="background: rgba(220,60,50,0.85); color:#fff;">i=0.8<small>opacity 0.85</small></div>
+        <div class="swatch" style="background: rgba(220,60,50,0.70); color:#fff;">i=0.6<small>opacity 0.70</small></div>
+        <div class="swatch" style="background: rgba(220,60,50,0.55); color:#333;">i=0.4<small>opacity 0.55</small></div>
+        <div class="swatch" style="background: rgba(220,60,50,0.40); color:#333;">i=0.2<small>opacity 0.40</small></div>
+    </div>
+
+    <h2>🟢 Green — sun_color_rgb [0,255,0] → display rgb(50, 175, 80)</h2>
+    <div class="swatch-row">
+        <div class="swatch" style="background: rgba(50,175,80,1.00); color:#fff;">i=1.0<small>opacity 1.00</small></div>
+        <div class="swatch" style="background: rgba(50,175,80,0.85); color:#fff;">i=0.8<small>opacity 0.85</small></div>
+        <div class="swatch" style="background: rgba(50,175,80,0.70); color:#fff;">i=0.6<small>opacity 0.70</small></div>
+        <div class="swatch" style="background: rgba(50,175,80,0.55); color:#333;">i=0.4<small>opacity 0.55</small></div>
+        <div class="swatch" style="background: rgba(50,175,80,0.40); color:#333;">i=0.2<small>opacity 0.40</small></div>
+    </div>
+
+    <h2>🔵 Blue — sun_color_rgb [0,0,255] → display rgb(30, 130, 235) (approved)</h2>
+    <div class="swatch-row">
+        <div class="swatch" style="background: rgba(30,130,235,1.00); color:#fff;">i=1.0<small>opacity 1.00</small>
+        </div>
+        <div class="swatch" style="background: rgba(30,130,235,0.85); color:#fff;">i=0.8<small>opacity 0.85</small>
+        </div>
+        <div class="swatch" style="background: rgba(30,130,235,0.70); color:#fff;">i=0.6<small>opacity 0.70</small>
+        </div>
+        <div class="swatch" style="background: rgba(30,130,235,0.55); color:#333;">i=0.4<small>opacity 0.55</small>
+        </div>
+        <div class="swatch" style="background: rgba(30,130,235,0.40); color:#333;">i=0.2<small>opacity 0.40</small>
+        </div>
+    </div>
+
+    <h2>U-shaped Bar Graph — Mixed Colors (Sunrise Program)</h2>
+    <div class="bar-container">
+        <div class="bar-seg light" style="height:80%; background: rgba(220,60,50,0.40);">4x<span class="intlabel">🔴
+                i=0.2</span></div>
+        <div class="bar-seg" style="height:60%; background: rgba(220,60,50,0.70);">3x<span class="intlabel">🔴
+                i=0.6</span></div>
+        <div class="bar-seg" style="height:40%; background: rgba(50,175,80,0.85);">2x<span class="intlabel">🟢
+                i=0.8</span></div>
+        <div class="bar-seg" style="height:20%; background: rgba(30,130,235,1.00);">1x<span class="intlabel">🔵
+                i=1.0</span></div>
+        <div class="bar-seg" style="height:20%; background: rgba(30,130,235,1.00);">1x<span class="intlabel">🔵
+                i=1.0</span></div>
+        <div class="bar-seg" style="height:40%; background: rgba(50,175,80,0.85);">2x<span class="intlabel">🟢
+                i=0.8</span></div>
+        <div class="bar-seg" style="height:60%; background: rgba(220,60,50,0.70);">3x<span class="intlabel">🔴
+                i=0.6</span></div>
+        <div class="bar-seg light" style="height:80%; background: rgba(220,60,50,0.40);">4x<span class="intlabel">🔴
+                i=0.2</span></div>
+    </div>
+    <div class="label-row">
+        <span>0600</span><span>0800</span><span>1000</span><span>1200</span><span>1400</span><span>1600</span><span>1800</span><span>2000</span>
+    </div>
+
+</body>
+
+</html>
