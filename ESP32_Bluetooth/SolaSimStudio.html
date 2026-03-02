@@ -3150,7 +3150,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       transform: translateX(-50%);
       font-size: 13px;
       font-weight: 500;
-      color: #555;
+      color: #000;
       white-space: nowrap;
       z-index: 100;
       pointer-events: none;
@@ -10250,9 +10250,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // CLOCK row: [CLOCK label] [bar]
         const clockRow = document.createElement('div');
-        clockRow.style.cssText = 'display:flex;align-items:stretch;gap:6px;';
+        clockRow.className = 'clock-row';
+        clockRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;';
         const clockLbl = document.createElement('div');
-        clockLbl.style.cssText = 'flex:0 0 80px;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;text-transform:uppercase;color:#000;font-family:Inter,system-ui,sans-serif;padding-right:4px;white-space:nowrap;';
+        clockLbl.style.cssText = 'flex:0 0 90px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;text-transform:uppercase;color:#000;font-family:Inter,system-ui,sans-serif;padding-right:4px;white-space:nowrap;';
         clockLbl.textContent = 'CLOCK';
         clockRow.appendChild(clockLbl);
 
@@ -12789,9 +12790,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           const speedBg = spd <= 1 ? '#4DA6FF' : spd <= 1.5 ? '#A8D5BA' : spd <= 2 ? '#90be6d' : spd <= 2.5 ? '#A8C968' : spd <= 3.5 ? '#E5D55E' : spd <= 6 ? '#f9c74f' : '#f9844a';
           html += `<td style="background:${speedBg}"><div class="cell-value-box">${spd}</div></td>`;
 
-          // Intensity cell - with day background if even day (no custom color)
+          // Intensity cell - with ultra bar color preview (sun color at intensity opacity)
           const intensity = step.intensity_scale != null ? step.intensity_scale : 1;
-          const intensityBg = isEvenDay ? evenDayBg : 'white';
+          let intensityBg = isEvenDay ? evenDayBg : 'white';
+          const iSunRgb = step.sun_color_rgb;
+          if (Array.isArray(iSunRgb) && iSunRgb.length === 3 && intensity != null) {
+            const dc = (typeof sunColorToDisplayColor === 'function') ? sunColorToDisplayColor(iSunRgb) : { r: iSunRgb[0], g: iSunRgb[1], b: iSunRgb[2] };
+            const opac = (typeof intensityToOpacity === 'function') ? intensityToOpacity(intensity) : Math.min(1, Math.max(0.1, intensity));
+            intensityBg = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+          }
           html += `<td style="background:${intensityBg}"><div class="cell-value-box">${intensity}</div></td>`;
 
           // Dual Sun cell - has custom color when true, day background when false
@@ -12903,19 +12910,19 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     body {
       font-family: system-ui, Arial, sans-serif;
-      margin: 0.4in 0.5in;
+      margin: 0.25in 0.4in;
       padding: 0;
       background: white;
       color: #222;
-      font-size: 11pt;
+      font-size: 10pt;
     }
 
     h1 {
-      font-size: 18pt;
-      margin: 0 0 12pt 0;
+      font-size: 15pt;
+      margin: 0 0 6pt 0;
       text-align: left;
       border-bottom: 2px solid #333;
-      padding-bottom: 8pt;
+      padding-bottom: 4pt;
     }
 
     h1 .profile-name {
@@ -12924,15 +12931,15 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     h2 {
-      font-size: 13pt;
-      margin: 14pt 0 6pt 0;
+      font-size: 11pt;
+      margin: 6pt 0 3pt 0;
       border-bottom: 1px solid #999;
-      padding-bottom: 3pt;
+      padding-bottom: 2pt;
     }
 
     /* Timeline container */
     .timeline-section {
-      margin: 12pt 0;
+      margin: 4pt 0;
       page-break-inside: avoid;
       width: 100%;
       overflow: hidden;
@@ -12948,8 +12955,87 @@ https://github.com/odeepllama/SolarSim/tree/main
     /* Copy timeline styles */
     ${timelineStyles}
 
-    /* Hide Copy and Delete buttons in print view - not useful on paper! */
-    .timeline-day-actions {
+    /* Clock bar CSS (not in dynamic timelineStyle, so must be included explicitly) */
+    .clock-timeline-strip {
+      position: relative;
+      background: #f4f5f7;
+      border: 1px solid #ccc;
+      height: 54px;
+      border-radius: 4px;
+      overflow: visible;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-variant-numeric: tabular-nums;
+      font-size: 1.2rem;
+      flex: 1 0 auto;
+    }
+    .clock-tl-seg {
+      position: absolute;
+      bottom: 0;
+      border: 1px solid #000;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+      white-space: nowrap;
+      overflow: visible;
+      padding: 0;
+      z-index: 50;
+    }
+    .clock-tl-seg:last-of-type { border-right: none; }
+    .clock-tl-seg.hold-seg {
+      background: repeating-linear-gradient(45deg, #ddd, #ddd 4px, #cfcfcf 4px, #cfcfcf 8px);
+      color: #444;
+    }
+    .clock-tl-seg .clock-seg-label {
+      background-color: #ffffff;
+      border: 1px solid #ffffff;
+      border-radius: 12px;
+      padding: 1px 2px;
+      display: inline-block;
+      position: relative;
+      z-index: 100;
+      font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .clock-tl-axis-label {
+      position: absolute;
+      bottom: -1px;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 500;
+      color: #000;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .clock-tl-axis-label.edge-start {
+      transform: none;
+      left: 0 !important;
+    }
+    .clock-tl-total-label {
+      text-align: center;
+      font-size: 11px;
+      color: #777;
+      margin-top: 2px;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+    .clock-tl-seg.reverse-seg {
+      border-top: 2px solid red;
+    }
+    #clockTimelineWrapper,
+    #clockTimelineWrapperMirror {
+      margin-top: 4px;
+    }
+
+    /* Hide Copy/Delete buttons and view toggle in print view - not useful on paper! */
+    .timeline-day-actions,
+    .timeline-view-toggle {
       display: none !important;
     }
 
@@ -12957,6 +13043,10 @@ https://github.com/odeepllama/SolarSim/tree/main
     .timeline-day-wrapper {
       gap: 2pt !important;
       margin-bottom: 8pt;
+    }
+
+    .clock-row {
+      gap: 2pt !important;
     }
 
     .timeline-day-label {
@@ -12968,11 +13058,11 @@ https://github.com/odeepllama/SolarSim/tree/main
       justify-content: flex-start !important;
     }
 
-    /* Settings grid */
+    /* Settings grid — 4 columns for landscape */
     .settings-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4pt 12pt;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 3pt 10pt;
       margin: 8pt 0;
       font-size: 9pt;
     }
@@ -12996,7 +13086,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-weight: 700;
     }
 
-    /* Program steps table */
+    /* Program steps table — matches main page styling */
     .print-steps-table {
       width: 100%;
       border-collapse: collapse;
@@ -13006,15 +13096,15 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .print-steps-table th,
     .print-steps-table td {
-      border: 1px solid #999;
+      border: 1px solid #000;
       padding: 4pt 6pt;
       text-align: center;
     }
 
     .print-steps-table th {
-      background: #e8e8e8;
+      background: #c6c4c4;
       font-weight: 600;
-      font-size: 9.5pt;
+      font-size: 10pt;
     }
 
     .print-steps-table td {
@@ -13053,11 +13143,11 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     /* Summary stats */
     .summary-stats {
-      margin: 10pt 0;
-      padding: 8pt;
+      margin: 4pt 0;
+      padding: 4pt 8pt;
       background: #f5f5f5;
       border-left: 3px solid #3478f6;
-      font-size: 10pt;
+      font-size: 9pt;
       page-break-inside: avoid;
       display: inline;
     }
@@ -13074,11 +13164,11 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     /* Notes section */
     .notes-section {
-      margin: 12pt 0;
-      padding: 8pt;
+      margin: 4pt 0;
+      padding: 4pt 8pt;
       background: #fffbf0;
       border-left: 3px solid #ffc107;
-      font-size: 10pt;
+      font-size: 9pt;
       page-break-inside: avoid;
       display: inline;
     }
@@ -13098,18 +13188,18 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     /* Footer with date/time */
     .print-footer {
-      margin-top: 20pt;
-      padding-top: 8pt;
+      margin-top: 6pt;
+      padding-top: 4pt;
       border-top: 1px solid #ccc;
       text-align: right;
-      font-size: 8pt;
+      font-size: 7pt;
       color: #666;
     }
 
     /* Print-specific */
     @media print {
       body {
-        margin: 0.3in 0.4in;
+        margin: 0.2in 0.35in;
       }
 
       .timeline-section,
@@ -13153,21 +13243,21 @@ https://github.com/odeepllama/SolarSim/tree/main
   </div>
   ` : ''}
 
-  ${noteContent ? `
-  <div class="notes-section">
-    <p>${noteContent}</p>
-  </div>
-  ` : ''}
-
-  <h2>Key Settings</h2>
-  ${generatePrintSettingsHTML()}
-
   <h2>Program Steps</h2>
   ${generatePrintStepsTableHTML()}
 
   ${summary.text !== 'Program disabled' ? `
   <div class="summary-stats">
     <p>${summary.text}</p>
+  </div>
+  ` : ''}
+
+  <h2>Key Settings</h2>
+  ${generatePrintSettingsHTML()}
+
+  ${noteContent ? `
+  <div class="notes-section">
+    <p>${noteContent}</p>
   </div>
   ` : ''}
 
