@@ -11029,9 +11029,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!hasReverse) {
             // === NO REVERSE: Day N + SPEED stacked in the label, within bar height ===
             const fwdRow = document.createElement('div');
-            fwdRow.style.cssText = 'display:flex;align-items:stretch;gap:6px;';
+            fwdRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;';
             const labelStack = document.createElement('div');
-            labelStack.style.cssText = 'flex:0 0 80px;max-width:80px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
+            labelStack.style.cssText = 'flex:0 0 90px;max-width:90px;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
             const dayLbl = document.createElement('div');
             dayLbl.style.cssText = 'font-weight:600;font-size:1.56rem;color:#444;font-family:"Lucida Console","Courier New",monospace;line-height:1.1;';
             dayLbl.innerHTML = `Day&nbsp;<span style="font-size:2.34rem;font-weight:700">${dayInfo.dayNumber}</span>`;
@@ -11054,9 +11054,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           } else {
             // === WITH REVERSE: Day N + SPEED stacked in label, then REVERSE row below ===
             const fwdRow = document.createElement('div');
-            fwdRow.style.cssText = 'display:flex;align-items:stretch;gap:6px;';
+            fwdRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;';
             const labelStack = document.createElement('div');
-            labelStack.style.cssText = 'flex:0 0 80px;max-width:80px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
+            labelStack.style.cssText = 'flex:0 0 90px;max-width:90px;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
             const dayLbl = document.createElement('div');
             dayLbl.style.cssText = 'font-weight:600;font-size:1.56rem;color:#444;font-family:"Lucida Console","Courier New",monospace;line-height:1.1;';
             dayLbl.innerHTML = `Day&nbsp;<span style="font-size:2.34rem;font-weight:700">${dayInfo.dayNumber}</span>`;
@@ -11076,9 +11076,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // REVERSE row
             const revRow = document.createElement('div');
-            revRow.style.cssText = 'display:flex;align-items:stretch;gap:6px;margin-top:3px;';
+            revRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;margin-top:3px;';
             const reverseLbl = document.createElement('div');
-            reverseLbl.style.cssText = 'flex:0 0 80px;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;text-transform:uppercase;color:#000;font-family:Inter,system-ui,sans-serif;padding-right:4px;white-space:nowrap;';
+            reverseLbl.style.cssText = 'flex:0 0 90px;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;text-transform:uppercase;color:#000;font-family:Inter,system-ui,sans-serif;padding-right:4px;white-space:nowrap;';
             reverseLbl.textContent = 'REVERSE';
             revRow.appendChild(reverseLbl);
 
