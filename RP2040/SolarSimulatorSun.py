@@ -705,14 +705,15 @@ def update_program_state(now_ms, sim_time_minutes):
     if program_step_start_sim_time == 0:
         program_step_start_sim_time = sim_time_minutes
         apply_step_settings(step)
-        # Always freeze at the current simulation time for HOLD steps, ignore sim_time_hhmm
+        # Freeze at the step's declared time for HOLD steps (not sim_time_minutes,
+        # which may be stale after chained JUMP transitions within the same tick)
         if TIME_SCALE == 0:
             global frozen_time_initialized
-            frozen_sim_time_minutes = sim_time_minutes
+            frozen_sim_time_minutes = step_time_minutes
             frozen_time_initialized = True
             if "hold_minutes" in step:
                 hold_step_start_ms = now_ms
-                print(f"[PROGRAM] Holding for {step['hold_minutes']} minutes")
+                print(f"[PROGRAM] Holding at {step_time_hhmm//100:02d}:{step_time_hhmm%100:02d} for {step['hold_minutes']} minutes")
             else:
                 # Calculate hold duration from next step's time
                 if current_program_step < len(PROGRAM_STEPS) - 1:
@@ -724,7 +725,7 @@ def update_program_state(now_ms, sim_time_minutes):
                         # Store calculated duration as if it were hold_minutes
                         step["hold_minutes"] = hold_duration
                         hold_step_start_ms = now_ms
-                        print(f"[PROGRAM] Holding for {hold_duration} minutes")
+                        print(f"[PROGRAM] Holding at {step_time_hhmm//100:02d}:{step_time_hhmm%100:02d} for {hold_duration} minutes")
             # Force immediate status print
             print_program_status(now_ms, sim_time_minutes)
         if transition_type == "JUMP":
