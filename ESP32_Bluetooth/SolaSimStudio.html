@@ -7856,44 +7856,71 @@ https://github.com/odeepllama/SolarSim/tree/main
         // --- Example Programs Registry ---
         const PROGRAM_EXAMPLES = [
           {
-            id: 'dual_sun_demo', label: 'Dual Sun Demo',
-            desc: 'Enables dual sun mid-day; showcases forward run, jump, and speed change.',
+            id: 'speed_tracking', label: 'Sun Speed Tracking',
+            desc: '3-pass ramp: 1×→2×→4×→5×, JUMP to noon + 2 h hold between passes. 12 h wall time.',
             steps: [
-              { sim_time_hhmm: 600, speed: 1, dual_sun: false },
-              { sim_time_hhmm: 1200, speed: 1, dual_sun: true },
-              { sim_time_hhmm: 1400, speed: 2, dual_sun: true },
-              { sim_time_hhmm: 1000, dual_sun: true, transition: 'JUMP' },
-              { sim_time_hhmm: 1200, speed: 2, dual_sun: false },
-              { sim_time_hhmm: 1800, speed: 2, dual_sun: false }
+              { sim_time_hhmm: 600, speed: 1, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 700, speed: 2, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 900, speed: 4, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1300, speed: 5, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 1, transition: 'JUMP', sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 1, transition: 'JUMP', sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 0, hold_minutes: 120, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 2, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1400, speed: 4, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 1, transition: 'JUMP', sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 1, transition: 'JUMP', sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 0, hold_minutes: 120, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 2, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1400, speed: 4, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 4, sun_color_rgb: [0, 0, 255] }
             ]
           },
           {
-            id: 'hold_pause_demo', label: 'Hold / Pause Demo',
-            desc: 'Demonstrates HOLD (speed 0) for 10 simulated minutes at midday, then resume.',
+            id: 'blue_intensity', label: 'Blue Light Intensity',
+            desc: 'Varies blue-light intensity (0.25→1.0→0.1) to find phototropin tracking threshold. Speed 1×.',
             steps: [
-              { sim_time_hhmm: 600, speed: 1, dual_sun: false },
-              { sim_time_hhmm: 1200, speed: 1, dual_sun: true },
-              { sim_time_hhmm: 1200, speed: 0, hold_minutes: 10, dual_sun: true },
-              { sim_time_hhmm: 1500, speed: 1, dual_sun: true }
+              { sim_time_hhmm: 600, speed: 1, intensity_scale: 0.25, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 800, speed: 1, intensity_scale: 0.5, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1000, speed: 1, intensity_scale: 1.0, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 1, intensity_scale: 0.75, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1400, speed: 1, intensity_scale: 0.5, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1600, speed: 1, intensity_scale: 0.25, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 1, intensity_scale: 0.1, sun_color_rgb: [0, 0, 255] }
             ]
           },
           {
-            id: 'reverse_transition', label: 'Reverse Transition',
-            desc: 'Shows negative speed reverse run back toward morning before a jump.',
+            id: 'wavelength_response', label: 'Wavelength Response',
+            desc: 'Symmetric colour arc: red dawn → amber → white → blue noon → white → amber → red sunset. Speed 1×.',
             steps: [
-              { sim_time_hhmm: 600, speed: 1, dual_sun: false },
-              { sim_time_hhmm: 1801, speed: -1, hold_minutes: 719, dual_sun: false, transition: 'JUMP' }
+              { sim_time_hhmm: 600, speed: 1, sun_color_rgb: [255, 50, 0] },
+              { sim_time_hhmm: 800, speed: 1, sun_color_rgb: [255, 160, 40] },
+              { sim_time_hhmm: 1000, speed: 1, sun_color_rgb: [255, 240, 220] },
+              { sim_time_hhmm: 1200, speed: 1, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1400, speed: 1, sun_color_rgb: [255, 240, 220] },
+              { sim_time_hhmm: 1600, speed: 1, sun_color_rgb: [255, 160, 40] },
+              { sim_time_hhmm: 1800, speed: 1, sun_color_rgb: [255, 50, 0] }
             ]
           },
           {
-            id: 'intensity_scale_demo', label: 'Intensity Scale Demo',
-            desc: 'Illustrates intensity scaling and dual sun toggling over the day.',
+            id: 'dual_sun_split', label: 'Dual Sun Split',
+            desc: 'Single sun to noon (1.5×), dual sun diverges 2 h, reverse merges back, single sun sets (1.5×). 12 h wall time.',
             steps: [
-              { sim_time_hhmm: 600, speed: 1, intensity_scale: 1, dual_sun: false },
-              { sim_time_hhmm: 900, speed: 1, intensity_scale: 0.5, dual_sun: false },
-              { sim_time_hhmm: 1200, speed: 1, intensity_scale: 0.25, dual_sun: false },
-              { sim_time_hhmm: 1500, speed: 1, intensity_scale: 0.125, dual_sun: false },
-              { sim_time_hhmm: 1800, speed: 1, intensity_scale: 0.0625, dual_sun: false }
+              { sim_time_hhmm: 600, speed: 1.5, dual_sun: false, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 1, dual_sun: true, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1400, speed: -1, dual_sun: true, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 1.5, dual_sun: false, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 1, dual_sun: false, sun_color_rgb: [0, 0, 255] }
+            ]
+          },
+          {
+            id: 'night_recovery', label: 'Night Recovery',
+            desc: '2-day program: Day 1 at 2× then full night at 1× for recovery imaging, Day 2 at 2×. Enable IMAGE_AT_NIGHT.',
+            steps: [
+              { sim_time_hhmm: 600, speed: 2, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 1 },
+              { sim_time_hhmm: 600, speed: 2, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 1, sun_color_rgb: [0, 0, 255] }
             ]
           }
         ];
