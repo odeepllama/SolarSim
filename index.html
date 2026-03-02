@@ -6554,9 +6554,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       let recentSunColors = [];
       function addRecentSunColor(hex) {
         hex = hex.toLowerCase();
-        recentSunColors = recentSunColors.filter(c => c !== hex);
-        recentSunColors.unshift(hex);
-        if (recentSunColors.length > 8) recentSunColors.length = 8;
+        if (recentSunColors.includes(hex)) return; // already exists, don't reorder
+        if (recentSunColors.length < 8) {
+          recentSunColors.push(hex); // append to end
+        } else {
+          recentSunColors[7] = hex; // replace last slot
+        }
         refreshAllRecentSwatches();
       }
       function refreshAllRecentSwatches() {
