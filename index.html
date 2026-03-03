@@ -10389,30 +10389,31 @@ https://github.com/odeepllama/SolarSim/tree/main
               simColor: step.sun_color_rgb
             });
           } else {
-            // Last step (no next step) — estimate duration to 18:00 (or wrap)
-            const endOfDay = 18 * 60; // 18:00 in minutes
+            // Last step (no next step) — estimate duration to end of day
+            const endOfDay = 18 * 60; // 18:00 in minutes (sunset)
             let estimatedSimDur;
             if (speed > 0) {
               estimatedSimDur = endOfDay - simTime;
-              if (estimatedSimDur <= 0) estimatedSimDur += 1440; // wrap to next day
+              if (estimatedSimDur < 0) estimatedSimDur += 1440; // wrap to next day
             } else {
               estimatedSimDur = simTime - (6 * 60); // run back to 06:00
-              if (estimatedSimDur <= 0) estimatedSimDur += 1440;
+              if (estimatedSimDur < 0) estimatedSimDur += 1440;
             }
-            // Minimum 30 min sim-time to ensure visibility
-            estimatedSimDur = Math.max(estimatedSimDur, 30);
-            const realSec = (estimatedSimDur * 60) / Math.abs(speed);
-            segments.push({
-              simLabel: simLabel + '→…',
-              speedLabel: speed + 'x',
-              speed: speed,
-              realSeconds: realSec,
-              isHold: false,
-              isJump: false,
-              stepIndex: i,
-              isLastStep: true,
-              simColor: step.sun_color_rgb
-            });
+            // If last step is already at the end boundary, no tail needed
+            if (estimatedSimDur > 0) {
+              const realSec = (estimatedSimDur * 60) / Math.abs(speed);
+              segments.push({
+                simLabel: simLabel + '→…',
+                speedLabel: speed + 'x',
+                speed: speed,
+                realSeconds: realSec,
+                isHold: false,
+                isJump: false,
+                stepIndex: i,
+                isLastStep: true,
+                simColor: step.sun_color_rgb
+              });
+            }
           }
           activeSpeed = speed;
         }
