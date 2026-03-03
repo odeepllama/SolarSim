@@ -6341,12 +6341,19 @@ https://github.com/odeepllama/SolarSim/tree/main
        * @returns {void}
        * @sideeffects Updates state, validates field, triggers preview update, saves undo state
        */
+      let _pendingUndoSnapshot = null; // Holds pre-edit state for capture-before-mutation
+
       function handleInputChange(key, input, opts = {}) {
         const meta = FIELDS[key];
         let value;
         if (meta.type === 'checkbox') value = input.checked;
         else if (meta.type === 'number') value = input.value === '' ? '' : (input.step && input.step.indexOf('.') !== -1 ? parseFloat(input.value) : parseFloat(input.value));
         else value = input.value;
+
+        // Capture pre-edit snapshot on first keystroke (before state mutation)
+        if (!_pendingUndoSnapshot && (opts.debounced || opts.force)) {
+          _pendingUndoSnapshot = createAppStateSnapshot();
+        }
 
         state[key] = value;
         // Special logic
@@ -6358,9 +6365,15 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         validateField(key);
 
-        // Save undo state on force (blur/change events) to capture complete edits
+        // Commit pre-edit snapshot to undo buffer on blur/change (completing the edit)
         if (opts.force) {
-          saveUndoState();
+          if (_pendingUndoSnapshot) {
+            undoBuffer.push(_pendingUndoSnapshot);
+            if (undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE) undoBuffer.shift();
+            redoBuffer.length = 0;
+            try { localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer)); } catch (e) { }
+            _pendingUndoSnapshot = null;
+          }
           updatePreview(true); // immediate validation
         } else if (opts.debounced) {
           // Debounce the entire updatePreview for keystroke input events.
@@ -6999,7 +7012,18 @@ https://github.com/odeepllama/SolarSim/tree/main
         if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
           e.preventDefault();
 
-          // Priority: use unified undo/redo for form + program steps, then fall back to timeline-specific
+          // If mid-edit, commit the pending pre-edit snapshot so undo has something to restore
+          if (_pendingUndoSnapshot) {
+            undoBuffer.push(_pendingUndoSnapshot);
+            if (undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE) undoBuffer.shift();
+            redoBuffer.length = 0;
+            _pendingUndoSnapshot = null;
+          }
+          // Blur active input so restored values are reflected in the DOM
+          if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+            document.activeElement.blur();
+          }
+
           performUndo();
         }
         // Redo: Ctrl-Y (Windows/Linux) or Cmd-Y (Mac)
@@ -7733,6 +7757,16 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Handle blur events for hold_minutes and sim_time_hhmm to trigger validation after typing
         document.getElementById('programStepsTable').addEventListener('blur', e => {
           const field = e.target.getAttribute('data-f');
+
+          // Commit pending undo snapshot on blur (edit complete)
+          if (_pendingUndoSnapshot) {
+            undoBuffer.push(_pendingUndoSnapshot);
+            if (undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE) undoBuffer.shift();
+            redoBuffer.length = 0;
+            try { localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer)); } catch (ex) { }
+            _pendingUndoSnapshot = null;
+          }
+
           if (field === 'hold_minutes') {
             const td = e.target.closest('td'); if (!td) return;
             const tr = e.target.closest('tr'); const row = Array.from(tr.parentNode.children).indexOf(tr);
@@ -7822,6 +7856,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           const td = e.target.closest('td'); if (!td) return;
           const tr = e.target.closest('tr'); const row = Array.from(tr.parentNode.children).indexOf(tr);
           const field = e.target.getAttribute('data-f'); if (!field) return;
+
+          // Capture pre-edit snapshot on first input event (before any mutation)
+          if (!_pendingUndoSnapshot) {
+            _pendingUndoSnapshot = createAppStateSnapshot();
+          }
+
           // Sun color picker → update R/G/B fields and step data
           if (field === 'sun_color_picker') {
             const hex = e.target.value;
