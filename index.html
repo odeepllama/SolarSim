@@ -4799,13 +4799,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         <button id="printSummaryBtn2" type="button" class="secondary"
           title="Generate and print a summary of current configuration and program steps">Print Summary</button>
       </div>
-      <div
-        style="margin: 8px 0; padding: 6px 10px; background: #f0f0f0; border-left: 3px solid #3478f6; border-radius: 3px;">
-        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
-          <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
-          <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
-        </label>
-      </div>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer; margin-top:-4px;">
+        <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
+        <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
+      </label>
       <div id="errorBannerInline"></div>
       <table class="program-steps-table" id="programStepsTable">
         <thead>
@@ -11667,8 +11664,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           const keyRow = document.createElement('div');
           keyRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:3px;margin-left:4px;font-size:11px;color:#000;font-family:Inter,system-ui,sans-serif;';
           keyRow.innerHTML = '<span style="font-weight:600;margin-right:2px;">Intensity:</span>';
-          // Use first step's sun color for the key swatches
-          const keyColor = sunColorToDisplayColor(programSteps[0] ? programSteps[0].sun_color_rgb : null);
+          // Determine key swatch color: use the step color if all steps share the same RGB, else grey
+          const stepsWithColor = programSteps.filter(s => s.sun_color_rgb);
+          const firstRgb = stepsWithColor.length ? stepsWithColor[0].sun_color_rgb : null;
+          const allSameColor = firstRgb && stepsWithColor.every(s =>
+            s.sun_color_rgb[0] === firstRgb[0] && s.sun_color_rgb[1] === firstRgb[1] && s.sun_color_rgb[2] === firstRgb[2]
+          );
+          const keyColor = allSameColor
+            ? sunColorToDisplayColor(firstRgb)
+            : { r: 128, g: 128, b: 128 };
           [0.1, 0.5, 1.0].forEach(val => {
             // Composite against white so page background doesn't bleed through
             const sr = Math.round(keyColor.r * val + 255 * (1 - val));
