@@ -7319,12 +7319,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         else if (s >= 5) frac = MAX_INTENSITY;
         else frac = ((s - 1) / 4) * MAX_INTENSITY; // linear 0→0.6 over 1×→5×
         if (speed < 0) {
-          // Red gradient: -1× = light red, -5× = 60% red
-          const r2 = Math.round(255 * (1 - frac));
+          // Red gradient: -1× already shows visible red, -5× = 60% red
+          // Shifted ramp: starts at 0.15 (old -2× level) so -1× is immediately visible
+          const negFrac = 0.15 + ((s - 1) / 4) * 0.45;
+          const clampedFrac = Math.min(MAX_INTENSITY, negFrac);
+          const r2 = Math.round(255 * (1 - clampedFrac));
           return `rgb(255, ${r2}, ${r2})`;
         }
-        // Blue gradient: 1×=white, 5×=60% blue
-        const r = Math.round(255 * (1 - frac));
+        // Blue gradient: 1×=white, 5×=60% blue (green drops faster for purer blue)
+        const r = Math.round(255 * (1 - frac * 0.8));
         const g = Math.round(255 * (1 - frac));
         return `rgb(${r}, ${g}, 255)`;
       }
@@ -8210,7 +8213,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             simTime = 600;
           }
 
-          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN' });
+          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', intensity_scale: 1, sun_color_rgb: [0, 0, 255] });
         });
 
         // Add Step button - creates step with last step's simtime + 60 minutes
@@ -8249,7 +8252,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
 
-          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', sun_color_rgb: inheritedColor });
+          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', sun_color_rgb: inheritedColor || [0, 0, 255], intensity_scale: 1 });
         });
 
         // Single-day visualization checkbox
@@ -10039,7 +10042,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   /* Jump marker — pin above bar with dashed line through it */
   .tl-jump{ position:absolute; top:-30px; bottom:0; width:28px; margin-left:-14px; border-left:none; z-index:70; pointer-events:auto; cursor:default; }
   .tl-jump::before{ content:''; position:absolute; top:28px; bottom:0; left:50%; width:0; border-left:3px dashed #d08000; transform:translateX(-50%); }
-  .tl-jump:after{ content:'⚡'; position:absolute; top:0; left:50%; transform:translateX(-50%); background:#fff3cd; border:3px solid #d08000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.3); pointer-events:none; }
+  .tl-jump:after{ content:attr(data-label); position:absolute; top:0; left:50%; transform:translateX(-50%); background:#fff3cd; border:3px solid #d08000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#d08000; box-shadow:0 2px 6px rgba(0,0,0,0.3); pointer-events:none; }
     /* Axis placed above segments but below jump markers */
     .tl-axis{ position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:25; }
   /* Hour tick lines removed per request */
@@ -11150,7 +11153,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Render multi-day timeline with stacked bars
       // readOnly parameter disables drag interactions for device status mirror
+      let __globalJumpNum = 0; // Global jump counter across all days, reset each render pass
+
       function renderMultiDayTimeline(container, dayData, readOnly = false) {
+        __globalJumpNum = 0; // Reset global jump numbering for this render pass
         container.innerHTML = '';
 
         const MAX_DISPLAY_DAYS = 7;
@@ -11410,6 +11416,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Render single day timeline (original behavior)
       // readOnly parameter disables drag interactions for device status mirror
       function renderSingleDayTimeline(container, readOnly = false) {
+        __globalJumpNum = 0; // Reset global jump numbering for this render pass
         container.innerHTML = '';
 
         const wrapper = document.createElement('div');
@@ -12098,13 +12105,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (firstFwdSeg) firstFwdSeg.classList.add('forward-arrow');
         }
 
-        // Render jump markers inside window
+        // Render jump markers inside window — globally numbered across all days
         jumps.forEach(j => {
           if (j.m < WINDOW_START_MIN || j.m > WINDOW_END_MIN) return;
+          __globalJumpNum++;
           const posPct = ((j.m - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
-          const dispNum = stepOrder.get(j.index) || '?';
-          const jumpLabel = j.isImplicitHoldJump ? `⚡ HOLD ends → ${formatHHMM(j.m)}` : `⚡ JUMP → ${formatHHMM(j.m)}`;
-          const mk = document.createElement('div'); mk.className = 'tl-jump'; mk.style.left = posPct + '%'; mk.title = jumpLabel; host.appendChild(mk);
+          const jumpLabel = j.isImplicitHoldJump
+            ? `Jump #${__globalJumpNum}: HOLD ends → ${formatHHMM(j.m)}`
+            : `Jump #${__globalJumpNum}: JUMP → ${formatHHMM(j.m)}`;
+          const mk = document.createElement('div');
+          mk.className = 'tl-jump';
+          mk.style.left = posPct + '%';
+          mk.setAttribute('data-label', `⚡${__globalJumpNum}`);
+          mk.title = jumpLabel;
+          host.appendChild(mk);
         });
 
         // Render playhead if device is connected and sim time is within visible range
@@ -21208,21 +21222,21 @@ https://github.com/odeepllama/SolarSim/tree/main
             position: 'bottom',
             tooltipOffsetX: 0.67,  // Shift tooltip right by 2/3 of its width
             adjustTarget: (el) => {
-              // Target the h2, buttons bar, and meta-options-container together
-              const metaContainer = document.querySelector('.meta-options-container');
-              if (!metaContainer) return el;
+              // Target the h2 and profile defaults buttons bar together (not meta-options below)
+              const defaultsBar = document.getElementById('profileDefaultsBar');
+              if (!defaultsBar) return el;
 
               const wrapper = document.createElement('div');
               wrapper.style.cssText = 'position:absolute; pointer-events:none;';
               wrapper.className = 'ftue-highlight-wrapper';
 
               const elRect = el.getBoundingClientRect();
-              const metaRect = metaContainer.getBoundingClientRect();
+              const barRect = defaultsBar.getBoundingClientRect();
 
               wrapper.style.top = elRect.top + window.scrollY + 'px';
-              wrapper.style.left = Math.min(elRect.left, metaRect.left) + window.scrollX + 'px';
-              wrapper.style.width = Math.max(elRect.width, metaRect.width) + 'px';
-              wrapper.style.height = (metaRect.bottom - elRect.top) + 'px';
+              wrapper.style.left = Math.min(elRect.left, barRect.left) + window.scrollX + 'px';
+              wrapper.style.width = Math.max(elRect.width, barRect.width) + 'px';
+              wrapper.style.height = (barRect.bottom - elRect.top) + 'px';
 
               document.body.appendChild(wrapper);
               return wrapper;
@@ -21613,12 +21627,27 @@ https://github.com/odeepllama/SolarSim/tree/main
           };
 
           // Inject demo program so guide steps show meaningful content
+          // If page was empty, load the Blue Light Intensity example (more interesting to explore)
+          const wasEmpty = savedProgramState.steps.length === 0;
           programSteps.length = 0;
-          programSteps.push(
-            { sim_time_hhmm: '06:00', speed: 1, transition: 'RUN', sun_r: 255, sun_g: 140, sun_b: 0 },
-            { sim_time_hhmm: '07:00', speed: 2, transition: 'RUN', sun_r: 100, sun_g: 160, sun_b: 255 },
-            { sim_time_hhmm: '09:00', speed: 3, transition: 'RUN', sun_r: 30, sun_g: 80, sun_b: 255 }
-          );
+          if (wasEmpty) {
+            // Blue Light Intensity example — varies intensity 0.25→1.0→0.1
+            programSteps.push(
+              { sim_time_hhmm: 600, speed: 1, intensity_scale: 0.25, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 800, speed: 1, intensity_scale: 0.5, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1000, speed: 1, intensity_scale: 1.0, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1200, speed: 1, intensity_scale: 0.75, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1400, speed: 1, intensity_scale: 0.5, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1600, speed: 1, intensity_scale: 0.25, sun_color_rgb: [0, 0, 255] },
+              { sim_time_hhmm: 1800, speed: 1, intensity_scale: 0.1, sun_color_rgb: [0, 0, 255] }
+            );
+          } else {
+            programSteps.push(
+              { sim_time_hhmm: '06:00', speed: 1, transition: 'RUN', sun_r: 255, sun_g: 140, sun_b: 0 },
+              { sim_time_hhmm: '07:00', speed: 2, transition: 'RUN', sun_r: 100, sun_g: 160, sun_b: 255 },
+              { sim_time_hhmm: '09:00', speed: 3, transition: 'RUN', sun_r: 30, sun_g: 80, sun_b: 255 }
+            );
+          }
           state.PROGRAM_ENABLED = true;
           const programCheckbox = document.getElementById('PROGRAM_ENABLED');
           if (programCheckbox) programCheckbox.checked = true;
