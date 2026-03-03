@@ -4678,6 +4678,11 @@ https://github.com/odeepllama/SolarSim/tree/main
     <div id="formContainer"></div>
     <div id="programSection" data-section="program-steps-section" style="display:none;">
       <h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
+      <div class="timeline-view-toggle" id="timelineViewToggle">
+        <button data-mode="sim" class="active" title="Simulation time axis">Sim</button>
+        <button data-mode="clock" title="Real-world clock time axis">Clock</button>
+        <button data-mode="both" title="Show both timelines">Both</button>
+      </div>
       <div id="timelineContainer" style="margin:6px 0 10px;"></div>
       <h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
       <div class="toolbar">
@@ -5932,10 +5937,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       ];
 
       const FIELDS = {
-        START_TIME_HHMM: { label: 'Start Time (HHMM)', tooltip: 'Simulation clock start (HHMM local).', type: 'text', default: '600', validate: v => /^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
+        START_TIME_HHMM: { label: 'Start Time (HHMM)', tooltip: 'Simulation clock start (HHMM local).', type: 'number', default: '600', validate: v => /^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
         TIME_SCALE: { label: 'Time Scale', tooltip: 'Speed multiplier (0=Hold, negative=reverse).', type: 'select', options: [0, 1, 6, 60, 600], allowCustom: true, default: 1 },
         INTENSITY_SCALE: { label: 'Intensity Scale', tooltip: 'Global light intensity multiplier (0.0-1.0). Values above 1.0 are not permitted. CAUTION: High intensity values (>0.8) in DUAL SUN mode can cause over-current issues.', type: 'number', step: '0.1', min: 0, max: 1.0, default: 1.0 },
-        SIMULATION_DATE: { label: 'Simulation Date (YYYYMMDD)', tooltip: 'Date used for sun path / future calc.', type: 'text', default: '20250320', validate: v => /^20\d{6}$/.test(v) },
+        SIMULATION_DATE: { label: 'Simulation Date (YYYYMMDD)', tooltip: 'Date used for sun path / future calc.', type: 'number', default: '20250320', validate: v => /^20\d{6}$/.test(v) },
         LATITUDE: { label: 'Latitude', tooltip: 'Observer latitude (-90 to 90).', type: 'number', step: '0.1', min: -90, max: 90, default: 0 },
         SOLAR_MODE: { label: 'Solar Mode', tooltip: 'BASIC constant; SCIENTIFIC astronomical calc.', type: 'select', options: ['BASIC', 'SCIENTIFIC'], default: 'BASIC' },
         SUN_COLOR_MODE: { label: 'Sun Color Mode', tooltip: 'BLUE fixed; CUSTOM uses RGB; NATURAL future.', type: 'select', options: ['BLUE', 'NATURAL', 'CUSTOM'], default: 'BLUE' },
@@ -6538,6 +6543,44 @@ https://github.com/odeepllama/SolarSim/tree/main
       // -----------------------------
       let programSteps = [];
       // Note: programSteps is accessed directly by functions in this script scope
+
+      // Recent sun colors palette (max 8, hex strings like '#0000ff')
+      let recentSunColors = [
+        '#ff0000', // Red
+        '#00ff00', // Green
+        '#0000ff', // Blue
+        '#ffff00', // Yellow
+        '#00ffff', // Cyan
+        '#ff00ff', // Magenta
+        '#ff8800', // Orange
+        '#ffffff'  // White
+      ];
+      function addRecentSunColor(hex) {
+        hex = hex.toLowerCase();
+        if (recentSunColors.includes(hex)) return; // already exists, don't reorder
+        if (recentSunColors.length < 8) {
+          recentSunColors.push(hex); // append to end
+        } else {
+          recentSunColors[7] = hex; // replace last slot
+        }
+        refreshAllRecentSwatches();
+      }
+      function refreshAllRecentSwatches() {
+        document.querySelectorAll('.recent-sun-swatches').forEach(row => {
+          const swatches = row.querySelectorAll('.sun-swatch');
+          swatches.forEach((sw, i) => {
+            if (i < recentSunColors.length) {
+              sw.style.background = recentSunColors[i];
+              sw.style.visibility = 'visible';
+              sw.dataset.hex = recentSunColors[i];
+            } else {
+              sw.style.background = '#ddd';
+              sw.style.visibility = 'hidden';
+              sw.dataset.hex = '';
+            }
+          });
+        });
+      }
 
       // ============================================================================
       // UNDO/REDO SYSTEM
@@ -7187,7 +7230,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           tr.appendChild(dayCell);
           // Format time with 4-digit padding for display (1 -> 0001, 600 -> 0600)
           const simTimeDisplay = step.sim_time_hhmm != null ? String(step.sim_time_hhmm).padStart(4, '0') : '';
-          const simCell = mkCell(`<input data-f='sim_time_hhmm' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
+          const simCell = mkCell(`<input data-f='sim_time_hhmm' type='number' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
           // Speed cell with color coding
           const spd = step.speed != null ? step.speed : 1;
           const speedBg = spd <= 1 ? '#4DA6FF' : spd <= 1.5 ? '#A8D5BA' : spd <= 2 ? '#90be6d' : spd <= 2.5 ? '#A8C968' : spd <= 3.5 ? '#E5D55E' : spd <= 6 ? '#f9c74f' : '#f9844a';
@@ -7202,12 +7245,23 @@ https://github.com/odeepllama/SolarSim/tree/main
           const bVal = hasColor ? rgb[2] : '';
           const hexColor = hasColor ? `#${rgb[0].toString(16).padStart(2, '0')}${rgb[1].toString(16).padStart(2, '0')}${rgb[2].toString(16).padStart(2, '0')}` : '#4488ff';
           const cellBg = hasColor ? `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` : '';
+          // Build swatch dots HTML (8 slots)
+          let swatchHtml = '';
+          for (let si = 0; si < 8; si++) {
+            const hasSwatch = si < recentSunColors.length;
+            const bg = hasSwatch ? recentSunColors[si] : '#ddd';
+            const vis = hasSwatch ? 'visible' : 'hidden';
+            swatchHtml += `<span class="sun-swatch" data-hex="${hasSwatch ? recentSunColors[si] : ''}" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${bg};border:1px solid #999;cursor:pointer;visibility:${vis};flex-shrink:0;" title="Click to apply"></span>`;
+          }
           const colorCell = mkCell(
-            `<div style='display:flex;align-items:center;gap:1px;white-space:nowrap;'>`
+            `<div style='display:flex;flex-direction:column;gap:2px;'>`
+            + `<div style='display:flex;align-items:center;gap:1px;white-space:nowrap;'>`
             + `<input data-f='sun_color_picker' type='color' value='${hexColor}' style='width:42px;height:22px;padding:0;border:1px solid #aaa;cursor:pointer;flex-shrink:0;${hasColor ? '' : 'opacity:0.3;'}' title='Pick sun color'/>`
             + `<input data-f='sun_r' type='number' min='0' max='255' value='${rVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='R'/>`
             + `<input data-f='sun_g' type='number' min='0' max='255' value='${gVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='G'/>`
             + `<input data-f='sun_b' type='number' min='0' max='255' value='${bVal}' style='width:44px;font-size:1.05em;padding:1px' placeholder='B'/>`
+            + `</div>`
+            + `<div class="recent-sun-swatches" style='display:flex;gap:2px;align-items:center;min-height:18px;'>${swatchHtml}</div>`
             + `</div>`);
           if (hasColor) {
             colorCell.style.background = `linear-gradient(rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45), rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45)), #fff`;
@@ -7607,6 +7661,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               e.target.style.opacity = '1';
             }
             updatePreview(false);
+            addRecentSunColor(hex);
             if (typeof renderTimelineStrip === 'function') {
               try { renderTimelineStrip(); } catch (e) { }
             }
@@ -7639,6 +7694,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 picker.value = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
                 picker.style.opacity = '1';
               }
+              addRecentSunColor(`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`);
             }
             updatePreview(false);
             if (typeof renderTimelineStrip === 'function') {
@@ -7813,6 +7869,41 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
         document.getElementById('programStepsTable').addEventListener('click', e => {
+          // Handle recent color swatch clicks
+          const swatch = e.target.closest('.sun-swatch');
+          if (swatch && swatch.dataset.hex) {
+            // Check if editing is locked
+            if (window.__programEditingLocked && window.__programEditingLocked()) {
+              if (window.__flashProgramLock) window.__flashProgramLock();
+              return;
+            }
+            const hex = swatch.dataset.hex;
+            const r = parseInt(hex.substr(1, 2), 16);
+            const g = parseInt(hex.substr(3, 2), 16);
+            const b = parseInt(hex.substr(5, 2), 16);
+            const cell = swatch.closest('td');
+            const tr = swatch.closest('tr');
+            if (!tr) return;
+            const row = Array.from(tr.parentNode.children).indexOf(tr);
+            programSteps[row].sun_color_rgb = [r, g, b];
+            if (cell) {
+              const picker = cell.querySelector('input[data-f="sun_color_picker"]');
+              const rIn = cell.querySelector('input[data-f="sun_r"]');
+              const gIn = cell.querySelector('input[data-f="sun_g"]');
+              const bIn = cell.querySelector('input[data-f="sun_b"]');
+              if (picker) { picker.value = hex; picker.style.opacity = '1'; }
+              if (rIn) rIn.value = r;
+              if (gIn) gIn.value = g;
+              if (bIn) bIn.value = b;
+              cell.style.background = `linear-gradient(rgba(${r},${g},${b},0.45), rgba(${r},${g},${b},0.45)), #fff`;
+            }
+            addRecentSunColor(hex);
+            updatePreview(false);
+            if (typeof renderTimelineStrip === 'function') {
+              try { renderTimelineStrip(); } catch (e) { }
+            }
+            return;
+          }
           const btn = e.target.closest('button'); if (!btn) return;
 
           // Check if editing is locked (device running)
@@ -9661,10 +9752,147 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-day-wrapper{ margin-bottom:8px; display:flex; gap:8px; align-items:stretch; }
   .timeline-day-label{ flex:0 0 auto; display:flex; align-items:center; justify-content:flex-end; padding-right:4px; font-weight:600; font-size:1.235rem; color:#444; font-family:'Lucida Console','Courier New',monospace; white-space:nowrap; }
   .timeline-day-label .day-num{ font-size:1.8em; font-weight:700; }
-  .timeline-bar-labels{ flex:0 0 70px; display:flex; flex-direction:column; }
+  .timeline-bar-labels{ flex:0 0 90px; display:flex; flex-direction:column; }
   .timeline-bar-labels .bar-label{ display:flex; align-items:center; justify-content:flex-end; font-size:15px; font-weight:700; text-transform:uppercase; color:#000; font-family:'Inter','Segoe UI',system-ui,sans-serif; text-align:right; line-height:1.15; padding-right:4px; white-space:nowrap; }
   .timeline-bar-labels .speed-label{ height:56px; }
   .timeline-bar-labels .color-label{ height:54px; margin-top:3px; }
+
+  /* ============================================================================
+   CLOCK-TIME TIMELINE & VIEW MODE TOGGLE
+   ============================================================================ */
+    .timeline-view-toggle {
+      display: inline-flex;
+      gap: 0;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-left: 12px;
+      vertical-align: middle;
+      font-size: 12px;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .timeline-view-toggle button {
+      border: none;
+      background: #f4f5f7;
+      color: #555;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+      border-right: 1px solid #ccc;
+    }
+
+    .timeline-view-toggle button:last-child {
+      border-right: none;
+    }
+
+    .timeline-view-toggle button.active {
+      background: #3272d2;
+      color: #fff;
+    }
+
+    .timeline-view-toggle button:hover:not(.active) {
+      background: #e0e4ea;
+    }
+
+    .clock-time-label {
+      height: 56px;
+    }
+
+    .clock-timeline-strip {
+      position: relative;
+      background: #f4f5f7;
+      border: 1px solid #ccc;
+      height: 54px;
+      border-radius: 4px;
+      overflow: visible;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-variant-numeric: tabular-nums;
+      font-size: 1.2rem;
+      flex: 1 0 auto;
+    }
+
+    .clock-tl-seg {
+      position: absolute;
+      bottom: 0;
+      border: 1px solid #000;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+      white-space: nowrap;
+      overflow: visible;
+      padding: 0;
+      z-index: 50;
+    }
+
+    .clock-tl-seg:last-of-type {
+      border-right: none;
+    }
+
+    .clock-tl-seg.hold-seg {
+      background: repeating-linear-gradient(45deg, #ddd, #ddd 4px, #cfcfcf 4px, #cfcfcf 8px);
+      color: #444;
+    }
+
+    .clock-tl-seg .clock-seg-label {
+      background-color: #ffffff;
+      border: 1px solid #ffffff;
+      border-radius: 12px;
+      padding: 1px 2px;
+      display: inline-block;
+      position: relative;
+      z-index: 100;
+      font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .clock-tl-axis-label {
+      position: absolute;
+      bottom: -1px;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 500;
+      color: #000;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    /* Extra spacing above the clock-time bar (below color/intensity row) */
+    #clockTimelineWrapper,
+    #clockTimelineWrapperMirror {
+      margin-top: 4px;
+    }
+
+    .clock-tl-axis-label.edge-start {
+      transform: none;
+      left: 0 !important;
+    }
+
+    .clock-tl-total-label {
+      text-align: center;
+      font-size: 11px;
+      color: #777;
+      margin-top: 2px;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .clock-tl-seg.reverse-seg {
+      border-top: 2px solid red;
+    }
+
+    .clock-row {
+      gap: 2pt !important;
+    }
   .timeline-day-actions{ flex:0 0 auto; display:flex; gap:4px; align-items:center; padding-left:8px; }
   .timeline-day-actions button{ font-size:16px; line-height:1; padding:6px 8px; cursor:pointer; font-weight:600; border:1px solid #ccc; background:#ffffff !important; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; }
   .timeline-day-actions button:hover{ background:#eef; }
@@ -9872,11 +10100,524 @@ https://github.com/odeepllama/SolarSim/tree/main
         bar.appendChild(axis);
       }
 
+      // ============================================================================
+      // CLOCK-TIME TIMELINE & VIEW MODE TOGGLE
+      // ============================================================================
+
+      // View mode state: 'sim' (default), 'clock', or 'both'
+      window.__timelineViewMode = localStorage.getItem('timelineViewMode') || 'sim';
+
+      // Toggle wiring
+      (function initTimelineToggle() {
+        document.addEventListener('click', function (e) {
+          const btn = e.target.closest('#timelineViewToggle button');
+          if (!btn) return;
+          const mode = btn.dataset.mode;
+          if (!mode) return;
+          window.__timelineViewMode = mode;
+          try { localStorage.setItem('timelineViewMode', mode); } catch (_) { }
+          // Update active state
+          const toggle = document.getElementById('timelineViewToggle');
+          if (toggle) {
+            toggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+          }
+          // Re-render timeline
+          _renderTimelineStripImmediate();
+        });
+        // Restore active button state on load
+        requestAnimationFrame(() => {
+          const toggle = document.getElementById('timelineViewToggle');
+          if (toggle) {
+            const saved = window.__timelineViewMode;
+            toggle.querySelectorAll('button').forEach(b => {
+              b.classList.toggle('active', b.dataset.mode === saved);
+            });
+          }
+        });
+      })();
+
+      /**
+       * Get speed → color, matching the sim-time timeline's color scheme exactly.
+       */
+      function getSpeedColor(speed) {
+        const s = Math.abs(speed);
+        if (s <= 1) return '#4DA6FF';
+        if (s <= 1.5) return '#A8D5BA';
+        if (s <= 2) return '#90be6d';
+        if (s <= 2.5) return '#A8C968';
+        if (s <= 3.5) return '#E5D55E';
+        if (s <= 6) return '#f9c74f';
+        return '#f9844a';
+      }
+
+      /**
+       * Map device sun_color_rgb to softer display-friendly colors.
+       * Returns {r, g, b} for use in rgba().
+       */
+      function sunColorToDisplayColor(rgb) {
+        if (!Array.isArray(rgb) || rgb.length !== 3) return { r: 30, g: 130, b: 235 }; // default sky blue
+        const [r, g, b] = rgb;
+        // Known mappings: device RGB → display-friendly RGB
+        if (r === 0 && g === 0 && b === 255) return { r: 30, g: 130, b: 235 };    // blue → sky blue
+        if (r === 255 && g <= 80 && b <= 30) return { r: 220, g: 60, b: 50 };     // red → warm red
+        if (r === 0 && g === 255 && b === 0) return { r: 50, g: 175, b: 80 };     // green → leafy green
+        // Fallback: soften by blending 80% toward a lighter version
+        return {
+          r: Math.round(r * 0.8 + 40),
+          g: Math.round(g * 0.8 + 40),
+          b: Math.round(b * 0.8 + 40)
+        };
+      }
+
+      /**
+       * Map intensity_scale (0–1) to CSS opacity (0–1).
+       * intensity 0 = fully transparent (white), intensity 1 = fully opaque (vivid).
+       */
+      function intensityToOpacity(intensity) {
+        const val = parseFloat(intensity);
+        if (isNaN(val)) return 1.0;
+        return Math.max(0, Math.min(1, val));
+      }
+
+      /**
+       * Compute clock-time segments from program steps.
+       * Each segment has: { simLabel, speedLabel, speed, realSeconds, isHold, isJump, stepIndex }
+       * JUMP steps have realSeconds = 0 (instant). HOLD steps use hold_minutes.
+       * RUN steps: realSeconds = simMinutes / speed.
+       */
+      function computeClockTimeSegments() {
+        const parseHHMM_clk = v => {
+          const s = String(v).padStart(4, '0');
+          return parseInt(s.slice(0, 2), 10) * 60 + parseInt(s.slice(2), 10);
+        };
+        const fmtHHMM = m => {
+          const h = Math.floor(((m % 1440) + 1440) % 1440 / 60);
+          const mm = ((m % 1440) + 1440) % 1440 % 60;
+          return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+        };
+
+        const segments = [];
+        if (!programSteps || programSteps.length === 0) return { segments, totalRealSeconds: 0 };
+
+        let activeSpeed = programSteps[0].speed !== undefined ? programSteps[0].speed : 1;
+
+        for (let i = 0; i < programSteps.length; i++) {
+          const step = programSteps[i];
+          const speed = step.speed !== undefined ? step.speed : 1;
+          const trans = (step.transition || 'RUN').toUpperCase();
+          const simTime = parseHHMM_clk(step.sim_time_hhmm);
+          const simLabel = fmtHHMM(simTime);
+
+          // What's the next step's time? (needed for RUN duration)
+          const nextStep = programSteps[i + 1];
+          const nextSimTime = nextStep ? parseHHMM_clk(nextStep.sim_time_hhmm) : null;
+
+          if (trans === 'JUMP') {
+            // JUMP: instant, zero real time
+            segments.push({
+              simLabel: simLabel,
+              speedLabel: 'JUMP',
+              speed: speed,
+              realSeconds: 0,
+              isHold: false,
+              isJump: true,
+              stepIndex: i,
+              simColor: step.sun_color_rgb
+            });
+            activeSpeed = speed;
+            continue;
+          }
+
+          if (speed === 0) {
+            // HOLD step
+            const holdMin = step.hold_minutes || 0;
+            const holdSeconds = holdMin * 60;
+            const durLabel = holdMin >= 60
+              ? Math.floor(holdMin / 60) + 'h' + (holdMin % 60 ? holdMin % 60 + 'm' : '')
+              : holdMin + 'm';
+            segments.push({
+              simLabel: simLabel,
+              speedLabel: 'HOLD ' + durLabel,
+              speed: 0,
+              realSeconds: holdSeconds,
+              isHold: true,
+              isJump: false,
+              stepIndex: i,
+              holdMinutes: holdMin,
+              simColor: step.sun_color_rgb
+            });
+            activeSpeed = speed;
+            continue;
+          }
+
+          // RUN step: calculate sim duration to next step
+          if (nextSimTime !== null) {
+            let simDuration;
+            if (speed > 0) {
+              simDuration = nextSimTime - simTime;
+              if (simDuration < 0) simDuration += 1440; // wrap forward
+            } else {
+              simDuration = simTime - nextSimTime;
+              if (simDuration < 0) simDuration += 1440; // wrap backward
+            }
+            const realSec = (simDuration * 60) / Math.abs(speed);
+
+            // Build label: simTime range + speed
+            const nextSimLabel = fmtHHMM(nextSimTime);
+            const speedStr = speed < 0 ? '−' + Math.abs(speed) + 'x' : speed + 'x';
+
+            segments.push({
+              simLabel: simLabel + '→' + nextSimLabel,
+              speedLabel: speedStr,
+              speed: speed,
+              realSeconds: realSec,
+              isHold: false,
+              isJump: false,
+              stepIndex: i,
+              simColor: step.sun_color_rgb
+            });
+          } else {
+            // Last step (no next step) — estimate duration to 18:00 (or wrap)
+            const endOfDay = 18 * 60; // 18:00 in minutes
+            let estimatedSimDur;
+            if (speed > 0) {
+              estimatedSimDur = endOfDay - simTime;
+              if (estimatedSimDur <= 0) estimatedSimDur += 1440; // wrap to next day
+            } else {
+              estimatedSimDur = simTime - (6 * 60); // run back to 06:00
+              if (estimatedSimDur <= 0) estimatedSimDur += 1440;
+            }
+            // Minimum 30 min sim-time to ensure visibility
+            estimatedSimDur = Math.max(estimatedSimDur, 30);
+            const realSec = (estimatedSimDur * 60) / Math.abs(speed);
+            segments.push({
+              simLabel: simLabel + '→…',
+              speedLabel: speed + 'x',
+              speed: speed,
+              realSeconds: realSec,
+              isHold: false,
+              isJump: false,
+              stepIndex: i,
+              isLastStep: true,
+              simColor: step.sun_color_rgb
+            });
+          }
+          activeSpeed = speed;
+        }
+
+        // Apply repeats to segments
+        for (let i = 0; i < segments.length; i++) {
+          const step = programSteps[segments[i].stepIndex];
+          const repeatCount = step.repeat || 0;
+          if (repeatCount > 0 && !segments[i].isJump) {
+            // Multiply the real duration by (1 + repeatCount)
+            segments[i].realSeconds *= (1 + repeatCount);
+            if (repeatCount > 0) {
+              segments[i].speedLabel += ' ×' + (1 + repeatCount);
+            }
+          }
+        }
+
+        const totalRealSeconds = segments.reduce((sum, s) => sum + s.realSeconds, 0);
+        return { segments, totalRealSeconds };
+      }
+
+      /**
+       * Render the clock-time timeline bar into the given container.
+       * Segments are sized proportional to their real-world duration.
+       */
+      function renderClockTimeTimeline(container, isReadOnly) {
+        const { segments, totalRealSeconds } = computeClockTimeSegments();
+        if (totalRealSeconds <= 0 || segments.length === 0) return;
+
+        // Clock section: matches multi-day layout with 75px label + bar
+        const clockSection = document.createElement('div');
+        clockSection.style.cssText = 'margin-bottom:10px;margin-top:6px;';
+        clockSection.id = isReadOnly ? 'clockTimelineWrapperMirror' : 'clockTimelineWrapper';
+
+        // CLOCK row: [CLOCK label] [bar]
+        const clockRow = document.createElement('div');
+        clockRow.className = 'clock-row';
+        clockRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;';
+        const clockLbl = document.createElement('div');
+        clockLbl.style.cssText = 'flex:0 0 90px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;text-transform:uppercase;color:#000;font-family:Inter,system-ui,sans-serif;padding-right:4px;white-space:nowrap;';
+        clockLbl.textContent = 'CLOCK';
+        clockRow.appendChild(clockLbl);
+
+        const bar = document.createElement('div');
+        bar.className = 'clock-timeline-strip';
+        bar.style.flex = '1';
+
+        let cumulativePct = 0;
+
+        // Compute max absolute speed for proportional height scaling (capped at 5)
+        const clockMaxAbsSpeed = Math.min(5, Math.max(1, ...segments.filter(s => !s.isHold && !s.isJump && s.speed !== 0).map(s => Math.abs(s.speed))));
+
+        segments.forEach((seg, idx) => {
+          if (seg.isJump) return; // Skip zero-width JUMP segments
+
+          const widthPct = (seg.realSeconds / totalRealSeconds) * 100;
+          if (widthPct < 0.1) return; // Skip negligible segments
+
+          const div = document.createElement('div');
+          div.className = 'clock-tl-seg' + (seg.isHold ? ' hold-seg' : '') + (seg.speed < 0 ? ' reverse-seg' : '');
+          div.style.left = cumulativePct + '%';
+          div.style.width = widthPct + '%';
+
+          // Ultra bar: sun color + intensity opacity + speed height
+          if (!seg.isHold) {
+            const dc = sunColorToDisplayColor(seg.simColor);
+            const stepData = programSteps[seg.stepIndex] || {};
+            const rawInt = stepData.intensity_scale;
+            const intensity = rawInt != null ? (isNaN(parseFloat(rawInt)) ? 1.0 : parseFloat(rawInt)) : 1.0;
+            const opac = intensityToOpacity(intensity);
+            div.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+            // Speed-proportional height from bottom
+            const heightPct = Math.min(1, Math.abs(seg.speed) / clockMaxAbsSpeed) * 100;
+            div.style.height = heightPct + '%';
+            div.style.top = 'auto';
+            div.style.bottom = '0';
+          }
+
+          // Store data attributes for playhead calculation
+          div.dataset.stepIndex = seg.stepIndex;
+          div.dataset.cumulativeRealSec = segments.slice(0, idx).reduce((s, x) => s + x.realSeconds, 0);
+          div.dataset.segRealSec = seg.realSeconds;
+
+          // Format real duration
+          const durMin = Math.round(seg.realSeconds / 60);
+          let durStr = '';
+          if (durMin >= 60) {
+            durStr = Math.floor(durMin / 60) + 'h' + (durMin % 60 ? durMin % 60 + 'm' : '');
+          } else {
+            durStr = durMin + 'm';
+          }
+
+          // Direction arrow for reverse segments
+          if (seg.speed < 0) {
+            const arrow = document.createElement('span');
+            arrow.textContent = '◀';
+            arrow.style.cssText = 'position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:16px;opacity:0.85;text-shadow:0 0 2px #fff,0 0 3px #fff;pointer-events:none;';
+            div.appendChild(arrow);
+          }
+
+          // Label using same pill style as sim-time bar (tl-seg-label-bg)
+          const label = document.createElement('span');
+          label.className = 'tl-seg-label-bg';
+
+          // Build label text based on available space
+          // Lower thresholds than before — labels are absolutely positioned in strip,
+          // so they're not clipped by narrow segments (consistent with ultra-bar)
+          if (seg.isHold) {
+            label.textContent = 'HOLD ' + durStr;
+          } else if (widthPct > 10) {
+            label.textContent = seg.speedLabel + ' (' + durStr + ')';
+          } else if (widthPct > 2) {
+            label.textContent = seg.speedLabel;
+          } else {
+            label.textContent = '';
+          }
+
+          // Position label at fixed 40% from top of strip (matches ultra-bar)
+          // Centered on the segment's midpoint
+          const segCenter = cumulativePct + widthPct / 2;
+          label.setAttribute('style', `position:absolute !important; z-index:100 !important; left:${segCenter}% !important; top:40% !important; transform:translate(-50%,-50%) !important;`);
+
+          // Tooltip
+          const intensityStr = programSteps[seg.stepIndex] ? (programSteps[seg.stepIndex].intensity_scale != null ? programSteps[seg.stepIndex].intensity_scale : 1.0) : '?';
+          div.title = `Step ${seg.stepIndex + 1}: ${seg.simLabel}\nSpeed: ${seg.speedLabel}\nIntensity: ${intensityStr}\nReal duration: ${durStr}`;
+
+          bar.appendChild(div);
+          if (label.textContent) bar.appendChild(label);
+
+          cumulativePct += widthPct;
+        });
+
+        // Add time axis labels along the bottom
+        const totalMinutes = Math.round(totalRealSeconds / 60);
+        const totalHours = totalRealSeconds / 3600;
+
+        // Choose appropriate tick interval
+        let tickIntervalMin;
+        if (totalHours <= 1) tickIntervalMin = 10;
+        else if (totalHours <= 4) tickIntervalMin = 30;
+        else if (totalHours <= 12) tickIntervalMin = 60;
+        else tickIntervalMin = 120;
+
+        for (let t = 0; t <= totalMinutes; t += tickIntervalMin) {
+          const pct = (t / totalMinutes) * 100;
+          if (pct > 100) break;
+          const axisLbl = document.createElement('div');
+          axisLbl.className = 'clock-tl-axis-label';
+          if (t === 0) axisLbl.classList.add('edge-start');
+          axisLbl.style.left = pct + '%';
+
+          const h = Math.floor(t / 60);
+          const m = t % 60;
+          axisLbl.textContent = h + 'h' + (m > 0 ? m + 'm' : '');
+          bar.appendChild(axisLbl);
+        }
+
+        clockRow.appendChild(bar);
+        clockSection.appendChild(clockRow);
+
+        // Total duration label
+        const totalLabel = document.createElement('div');
+        totalLabel.className = 'clock-tl-total-label';
+        const totH = Math.floor(totalRealSeconds / 3600);
+        const totM = Math.floor((totalRealSeconds % 3600) / 60);
+        const totS = Math.round(totalRealSeconds % 60);
+        totalLabel.textContent = 'Total real time: ' + totH + 'h ' + totM + 'm' + (totS > 0 ? ' ' + totS + 's' : '');
+        clockSection.appendChild(totalLabel);
+
+        container.appendChild(clockSection);
+      }
+
+      /**
+       * Render a playhead on the clock-time bar.
+       * Maps the current program step + progress to a position on the real-time axis.
+       */
+      function renderClockTimePlayhead() {
+        // Find ALL clock timeline bars (main + mirror) and draw playhead on each
+        const bars = document.querySelectorAll('.clock-timeline-strip');
+        if (bars.length === 0) return;
+
+        // Get current step index (1-based, 0 = before program starts)
+        const currentStep1 = window.__currentStepIndex || 0;
+        if (currentStep1 <= 0) {
+          // No active step — clear any stale playheads
+          bars.forEach(bar => {
+            const ex = bar.querySelector('.timeline-playhead');
+            if (ex) ex.remove();
+            const exH = bar.querySelector('.timeline-hold-progress');
+            if (exH) exH.remove();
+          });
+          return;
+        }
+        const currentStepIdx = currentStep1 - 1; // 0-based
+
+        // Get current sim time from kvCache
+        const simTile = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
+        if (!simTile) return;
+        const simSpan = simTile.querySelector('span');
+        if (!simSpan) return;
+        const simTimeStr = simSpan.textContent.trim();
+        if (!simTimeStr || !simTimeStr.includes(':')) return;
+        const [hStr, mStr] = simTimeStr.split(':');
+        const simTimeMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+
+        // Compute segments for position mapping
+        const { segments, totalRealSeconds } = computeClockTimeSegments();
+        if (totalRealSeconds <= 0) return;
+
+        // Find the segment for the current step
+        let completedRealSec = 0;
+        let currentSegRealSec = 0;
+        let currentSegProgress = 0;
+        let foundSegIdx = -1;
+        let isInHold = false;
+
+        for (let i = 0; i < segments.length; i++) {
+          if (segments[i].stepIndex === currentStepIdx) {
+            foundSegIdx = i;
+            currentSegRealSec = segments[i].realSeconds;
+            isInHold = segments[i].isHold;
+
+            if (segments[i].isHold) {
+              const holdState = window.__holdState;
+              if (holdState && holdState.durationMinutes > 0) {
+                const elapsed = (Date.now() - holdState.startTime) / 60000;
+                currentSegProgress = Math.min(1, elapsed / holdState.durationMinutes);
+              } else {
+                currentSegProgress = 0;
+              }
+            } else if (!segments[i].isJump && !segments[i].isLastStep) {
+              const parseHHMM2 = v => {
+                const s2 = String(v).padStart(4, '0');
+                return parseInt(s2.slice(0, 2), 10) * 60 + parseInt(s2.slice(2), 10);
+              };
+              const stepSimTime = parseHHMM2(programSteps[currentStepIdx].sim_time_hhmm);
+              const nextIdx = currentStepIdx + 1;
+              if (nextIdx < programSteps.length) {
+                const nextSimTime = parseHHMM2(programSteps[nextIdx].sim_time_hhmm);
+                const spd = programSteps[currentStepIdx].speed || 1;
+                let totalSimSpan;
+                if (spd > 0) {
+                  totalSimSpan = nextSimTime - stepSimTime;
+                  if (totalSimSpan < 0) totalSimSpan += 1440;
+                  let progress = simTimeMinutes - stepSimTime;
+                  if (progress < 0) progress += 1440;
+                  currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                } else {
+                  totalSimSpan = stepSimTime - nextSimTime;
+                  if (totalSimSpan < 0) totalSimSpan += 1440;
+                  let progress = stepSimTime - simTimeMinutes;
+                  if (progress < 0) progress += 1440;
+                  currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                }
+              }
+            }
+            break;
+          }
+          completedRealSec += segments[i].realSeconds;
+        }
+
+        if (foundSegIdx < 0) return;
+
+        const playheadRealSec = completedRealSec + currentSegRealSec * currentSegProgress;
+        const posPct = (playheadRealSec / totalRealSeconds) * 100;
+
+        const elapsedH = Math.floor(playheadRealSec / 3600);
+        const elapsedM = Math.floor((playheadRealSec % 3600) / 60);
+        const tooltipText = `Elapsed: ${elapsedH}h ${elapsedM}m\nSim Time: ${simTimeStr}\nStep: ${currentStep1}/${programSteps.length}`;
+
+        // Draw playhead on every clock-timeline-strip in the page
+        bars.forEach(bar => {
+          // Remove existing playhead & hold progress
+          const ex = bar.querySelector('.timeline-playhead');
+          if (ex) ex.remove();
+          const exH = bar.querySelector('.timeline-hold-progress');
+          if (exH) exH.remove();
+
+          // Draw HOLD progress bar if in hold
+          if (isInHold && currentSegRealSec > 0) {
+            const segStartPct = (completedRealSec / totalRealSeconds) * 100;
+            const segWidthPct = (currentSegRealSec / totalRealSeconds) * 100;
+            const holdProgress = document.createElement('div');
+            holdProgress.className = 'timeline-hold-progress';
+            holdProgress.style.left = segStartPct + '%';
+            holdProgress.style.width = (segWidthPct * currentSegProgress) + '%';
+            holdProgress.style.pointerEvents = 'auto';
+            holdProgress.style.cursor = 'help';
+            const holdState2 = window.__holdState;
+            if (holdState2) {
+              const elMin = (Date.now() - holdState2.startTime) / 60000;
+              const rem = holdState2.durationMinutes - elMin;
+              holdProgress.title = `HOLD: ${(currentSegProgress * 100).toFixed(1)}%\nElapsed: ${elMin.toFixed(1)} min\nRemaining: ${rem.toFixed(1)} min`;
+            }
+            bar.appendChild(holdProgress);
+          }
+
+          // Draw playhead (same red marker as sim-time playhead)
+          const playhead = document.createElement('div');
+          playhead.className = 'timeline-playhead';
+          playhead.style.left = posPct + '%';
+          playhead.style.cursor = 'help';
+          playhead.title = tooltipText;
+          bar.appendChild(playhead);
+        });
+      }
+      // Make globally accessible
+      window.renderClockTimePlayhead = renderClockTimePlayhead;
+
       // Core timeline render logic (called by debounced wrapper)
       function _renderTimelineStripImmediate() {
         ensureTimelineStyle();
         const container = document.getElementById('timelineContainer');
         if (!container) return;
+
+        const viewMode = window.__timelineViewMode || 'sim';
 
         if (!state.PROGRAM_ENABLED || !programSteps.length) {
           // Render empty placeholder to reserve vertical space
@@ -9890,22 +10631,42 @@ https://github.com/odeepllama/SolarSim/tree/main
           return;
         }
 
-        // Determine if program spans multiple days
-        const dayData = analyzeMultiDayProgram();
+        container.innerHTML = '';
 
-        // Update global max days counter
-        window.__maxProgramDays = dayData.days.length || 1;
+        // Render sim-time timeline if mode is 'sim' or 'both'
+        if (viewMode === 'sim' || viewMode === 'both') {
+          // Create a sub-container for sim timeline
+          const simContainer = document.createElement('div');
+          simContainer.id = 'simTimelineSubContainer';
+          container.appendChild(simContainer);
 
-        // Automatically use multi-day view if program spans multiple days
-        if (dayData.days.length > 1) {
-          renderMultiDayTimeline(container, dayData);
+          const dayData = analyzeMultiDayProgram();
+          window.__maxProgramDays = dayData.days.length || 1;
+
+          if (dayData.days.length > 1) {
+            renderMultiDayTimeline(simContainer, dayData);
+          } else {
+            renderSingleDayTimeline(simContainer);
+          }
         } else {
-          renderSingleDayTimeline(container);
+          // Even in 'clock' mode, we need day data for mirror timeline
+          const dayData = analyzeMultiDayProgram();
+          window.__maxProgramDays = dayData.days.length || 1;
+        }
+
+        // Render clock-time timeline if mode is 'clock' or 'both'
+        if (viewMode === 'clock' || viewMode === 'both') {
+          renderClockTimeTimeline(container);
         }
 
         // Update mirror timeline in Device Program Status section
         if (typeof window.__renderDeviceProgramStatusTimeline === 'function') {
           window.__renderDeviceProgramStatusTimeline();
+        }
+
+        // Update clock-time playhead if visible
+        if (viewMode === 'clock' || viewMode === 'both') {
+          renderClockTimePlayhead();
         }
       }
 
@@ -12280,8 +13041,90 @@ https://github.com/odeepllama/SolarSim/tree/main
     ${timelineStyles}
 
     /* Hide Copy and Delete buttons in print view - not useful on paper! */
-    .timeline-day-actions {
+    .timeline-day-actions,
+    .timeline-view-toggle {
       display: none !important;
+    }
+
+    /* Clock bar CSS for print */
+    .clock-timeline-strip {
+      position: relative;
+      background: #f4f5f7;
+      border: 1px solid #ccc;
+      height: 54px;
+      border-radius: 4px;
+      overflow: visible;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-variant-numeric: tabular-nums;
+      font-size: 1.2rem;
+      flex: 1 0 auto;
+    }
+    .clock-tl-seg {
+      position: absolute;
+      bottom: 0;
+      border: 1px solid #000;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+      white-space: nowrap;
+      overflow: visible;
+      padding: 0;
+      z-index: 50;
+    }
+    .clock-tl-seg:last-of-type { border-right: none; }
+    .clock-tl-seg.hold-seg {
+      background: repeating-linear-gradient(45deg, #ddd, #ddd 4px, #cfcfcf 4px, #cfcfcf 8px);
+      color: #444;
+    }
+    .clock-tl-seg .clock-seg-label {
+      background-color: #ffffff;
+      border: 1px solid #ffffff;
+      border-radius: 12px;
+      padding: 1px 2px;
+      display: inline-block;
+      position: relative;
+      z-index: 100;
+      font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .clock-tl-axis-label {
+      position: absolute;
+      bottom: -1px;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 500;
+      color: #000;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .clock-tl-axis-label.edge-start {
+      transform: none;
+      left: 0 !important;
+    }
+    .clock-tl-total-label {
+      text-align: center;
+      font-size: 11px;
+      color: #777;
+      margin-top: 2px;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+    .clock-tl-seg.reverse-seg {
+      border-top: 2px solid red;
+    }
+    #clockTimelineWrapper,
+    #clockTimelineWrapperMirror {
+      margin-top: 4px;
+    }
+    .clock-row {
+      gap: 2pt !important;
     }
 
     /* Move day titles to far left margin for maximum timeline width */
@@ -12302,7 +13145,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     /* Settings grid */
     .settings-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 4pt 12pt;
       margin: 8pt 0;
       font-size: 9pt;
@@ -13790,7 +14633,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (detail && detail.classList.contains('help-detail')) {
           const isVisible = detail.style.display !== 'none';
           detail.style.display = isVisible ? 'none' : 'block';
-          button.textContent = isVisible ? 'Learn more ▼' : 'Learn less ▲';
+          const isJa = (currentLang === 'ja');
+          const moreText = isJa ? '詳細を表示 ▼' : 'Learn more ▼';
+          const lessText = isJa ? '詳細を非表示 ▲' : 'Learn less ▲';
+          button.textContent = isVisible ? moreText : lessText;
         }
       }
 
@@ -18751,14 +19597,24 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Update fieldset visibility
           updateFieldsetVisibility();
 
-          // Determine if program spans multiple days (same logic as main timeline)
-          const dayData = analyzeMultiDayProgram();
+          const viewMode = window.__timelineViewMode || 'sim';
 
-          // Render same view as main timeline (single or multi-day) in READ-ONLY mode
-          if (dayData.days.length > 1) {
-            renderMultiDayTimeline(timelineEl, dayData, true); // true = readOnly
-          } else {
-            renderSingleDayTimeline(timelineEl, true); // true = readOnly
+          // Render sim-time timeline if mode is 'sim' or 'both'
+          if (viewMode === 'sim' || viewMode === 'both') {
+            const simContainer = document.createElement('div');
+            timelineEl.appendChild(simContainer);
+
+            const dayData = analyzeMultiDayProgram();
+            if (dayData.days.length > 1) {
+              renderMultiDayTimeline(simContainer, dayData, true);
+            } else {
+              renderSingleDayTimeline(simContainer, true);
+            }
+          }
+
+          // Render clock-time timeline if mode is 'clock' or 'both'
+          if (viewMode === 'clock' || viewMode === 'both') {
+            renderClockTimeTimeline(timelineEl, true);
           }
         };
 

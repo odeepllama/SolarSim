@@ -6551,7 +6551,16 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Note: programSteps is accessed directly by functions in this script scope
 
       // Recent sun colors palette (max 8, most-recent-first, hex strings like '#0000ff')
-      let recentSunColors = [];
+      let recentSunColors = [
+        '#ff0000', // Red
+        '#00ff00', // Green
+        '#0000ff', // Blue
+        '#ffff00', // Yellow
+        '#00ffff', // Cyan
+        '#ff00ff', // Magenta
+        '#ff8800', // Orange
+        '#ffffff'  // White
+      ];
       function addRecentSunColor(hex) {
         hex = hex.toLowerCase();
         if (recentSunColors.includes(hex)) return; // already exists, don't reorder
@@ -10331,22 +10340,29 @@ https://github.com/odeepllama/SolarSim/tree/main
           label.className = 'tl-seg-label-bg';
 
           // Build label text based on available space
+          // Lower thresholds than before — labels are absolutely positioned in strip,
+          // so they're not clipped by narrow segments (consistent with ultra-bar)
           if (seg.isHold) {
             label.textContent = 'HOLD ' + durStr;
-          } else if (widthPct > 15) {
+          } else if (widthPct > 10) {
             label.textContent = seg.speedLabel + ' (' + durStr + ')';
-          } else if (widthPct > 6) {
+          } else if (widthPct > 2) {
             label.textContent = seg.speedLabel;
           } else {
             label.textContent = '';
           }
 
+          // Position label at fixed 40% from top of strip (matches ultra-bar)
+          // Centered on the segment's midpoint
+          const segCenter = cumulativePct + widthPct / 2;
+          label.setAttribute('style', `position:absolute !important; z-index:100 !important; left:${segCenter}% !important; top:40% !important; transform:translate(-50%,-50%) !important;`);
+
           // Tooltip
           const intensityStr = programSteps[seg.stepIndex] ? (programSteps[seg.stepIndex].intensity_scale != null ? programSteps[seg.stepIndex].intensity_scale : 1.0) : '?';
           div.title = `Step ${seg.stepIndex + 1}: ${seg.simLabel}\nSpeed: ${seg.speedLabel}\nIntensity: ${intensityStr}\nReal duration: ${durStr}`;
 
-          div.appendChild(label);
           bar.appendChild(div);
+          if (label.textContent) bar.appendChild(label);
 
           cumulativePct += widthPct;
         });
