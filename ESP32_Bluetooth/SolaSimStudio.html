@@ -10160,12 +10160,24 @@ https://github.com/odeepllama/SolarSim/tree/main
               simColor: step.sun_color_rgb
             });
           } else {
-            // Last step (no next step) — show as open-ended
+            // Last step (no next step) — estimate duration to 18:00 (or wrap)
+            const endOfDay = 18 * 60; // 18:00 in minutes
+            let estimatedSimDur;
+            if (speed > 0) {
+              estimatedSimDur = endOfDay - simTime;
+              if (estimatedSimDur <= 0) estimatedSimDur += 1440; // wrap to next day
+            } else {
+              estimatedSimDur = simTime - (6 * 60); // run back to 06:00
+              if (estimatedSimDur <= 0) estimatedSimDur += 1440;
+            }
+            // Minimum 30 min sim-time to ensure visibility
+            estimatedSimDur = Math.max(estimatedSimDur, 30);
+            const realSec = (estimatedSimDur * 60) / Math.abs(speed);
             segments.push({
               simLabel: simLabel + '→…',
               speedLabel: speed + 'x',
               speed: speed,
-              realSeconds: 0, // unknown duration
+              realSeconds: realSec,
               isHold: false,
               isJump: false,
               stepIndex: i,
@@ -11031,7 +11043,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const fwdRow = document.createElement('div');
             fwdRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;';
             const labelStack = document.createElement('div');
-            labelStack.style.cssText = 'flex:0 0 90px;max-width:90px;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
+            labelStack.style.cssText = 'flex:0 0 90px;box-sizing:border-box;max-width:90px;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
             const dayLbl = document.createElement('div');
             dayLbl.style.cssText = 'font-weight:600;font-size:1.56rem;color:#444;font-family:"Lucida Console","Courier New",monospace;line-height:1.1;';
             dayLbl.innerHTML = `Day&nbsp;<span style="font-size:2.34rem;font-weight:700">${dayInfo.dayNumber}</span>`;
@@ -11056,7 +11068,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const fwdRow = document.createElement('div');
             fwdRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;';
             const labelStack = document.createElement('div');
-            labelStack.style.cssText = 'flex:0 0 90px;max-width:90px;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
+            labelStack.style.cssText = 'flex:0 0 90px;box-sizing:border-box;max-width:90px;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding-right:4px;white-space:nowrap;';
             const dayLbl = document.createElement('div');
             dayLbl.style.cssText = 'font-weight:600;font-size:1.56rem;color:#444;font-family:"Lucida Console","Courier New",monospace;line-height:1.1;';
             dayLbl.innerHTML = `Day&nbsp;<span style="font-size:2.34rem;font-weight:700">${dayInfo.dayNumber}</span>`;
@@ -11078,7 +11090,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const revRow = document.createElement('div');
             revRow.style.cssText = 'display:flex;align-items:stretch;gap:8px;margin-top:3px;';
             const reverseLbl = document.createElement('div');
-            reverseLbl.style.cssText = 'flex:0 0 90px;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;text-transform:uppercase;color:#000;font-family:Inter,system-ui,sans-serif;padding-right:4px;white-space:nowrap;';
+            reverseLbl.style.cssText = 'flex:0 0 90px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;text-transform:uppercase;color:#000;font-family:Inter,system-ui,sans-serif;padding-right:4px;white-space:nowrap;';
             reverseLbl.textContent = 'REVERSE';
             revRow.appendChild(reverseLbl);
 
