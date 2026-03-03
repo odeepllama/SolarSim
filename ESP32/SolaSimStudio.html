@@ -3704,7 +3704,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     <span id="monitorConnBadge" class="pill red" title=""></span>
     <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
     <button id="quickEditBtn" type="button" class="secondary"
-      title="Connect, load profile, disconnect and jump to editor"></button>
+      title="Connect, load profile, disconnect and jump to editor — or browse examples offline"></button>
     <button id="monitorRefreshBtn" type="button" class="secondary" title=""></button>
     <button id="monitorDisconnectBtn" type="button" class="secondary" disabled title=""></button>
     <!-- <button id="monitorScrollLockBtn" type="button" class="secondary hidden-collapsed" title="Toggle auto-scroll of log">Scroll Lock: Off</button> -->
@@ -5459,7 +5459,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect USB',
-          quickEdit: '✏️ Quick Edit',
+          quickEdit: '✏️ Quick Edit / Examples',
           quickEditLoading: '⏳ Loading...',
           refresh: 'Refresh',
           disconnect: 'Disconnect',
@@ -5622,7 +5622,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
-          quickEdit: '✏️ クイック編集',
+          quickEdit: '✏️ クイック編集 / 例',
           quickEditLoading: '⏳ 読込中...',
           refresh: 'リフレッシュ',
           disconnect: '切断',
@@ -8389,7 +8389,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // --- Example Programs Registry ---
         const PROGRAM_EXAMPLES = [
           {
-            id: 'rainbow_spectrum', label: '🌈 Rainbow Spectrum',
+            id: 'rainbow_spectrum', label: 'Rainbow Spectrum',
             desc: 'AI-generated 96-step demo: full-spectrum colour cycle with oscillating intensity (0.1–0.8) across forward + reverse passes at 600×. Visually striking but not scientifically targeted.',
             steps: [
               { sim_time_hhmm: 600, speed: 600, intensity_scale: 0.1, sun_color_rgb: [255, 0, 0] },
@@ -18513,6 +18513,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           // Helper: delay
           function qeDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+          // Helper: scroll to Examples button and open the examples popover
+          function scrollToExamplesAndOpen() {
+            const exBtn = document.getElementById('exampleStepsBtn');
+            if (exBtn) {
+              const y = exBtn.getBoundingClientRect().top + window.pageYOffset - 80;
+              window.scrollTo({ top: y, behavior: 'smooth' });
+              setTimeout(() => exBtn.click(), 500);
+            }
+          }
 
           const lang = () => (document.getElementById('langToggleBtn')?.getAttribute('data-lang') || 'en');
           const getLang = () => TRANSLATIONS[lang()] || TRANSLATIONS.en;
@@ -18524,6 +18533,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Already connected → disconnect + scroll
               await performDisconnect();
               scrollToTimeline();
+              return;
+            }
+
+            // If Web Serial is not available (e.g. iPad), go straight to examples
+            if (!('serial' in navigator)) {
+              scrollToExamplesAndOpen();
               return;
             }
 
