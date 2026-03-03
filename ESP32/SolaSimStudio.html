@@ -18616,6 +18616,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         // When user requests full command list, temporarily disable scroll lock,
         // then re-enable after the output settles so user can see new content
         helpBtn && helpBtn.addEventListener('click', () => {
+          // If the log window is hidden (Simple mode), reveal it for this session (not persisted)
+          const logSections = document.querySelectorAll('[data-section="monitor-log"]');
+          logSections.forEach(el => el.classList.remove('mode-hidden'));
+
           // Disable output suppression so commands are visible
           state.__silentStatusUntil = 0;
           state.__suppressDisabledUntil = performance.now() + 2400;
