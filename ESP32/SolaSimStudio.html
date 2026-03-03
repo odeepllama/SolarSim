@@ -10742,6 +10742,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         totalLabel.textContent = 'Total real time: ' + totH + 'h ' + totM + 'm' + (totS > 0 ? ' ' + totS + 's' : '');
         clockSection.appendChild(totalLabel);
 
+        // Intensity key — added by _renderTimelineStripImmediate via flag
+        if (window.__appendClockIntensityKey) {
+          const keyEl = buildIntensityKey(programSteps);
+          if (keyEl) {
+            keyEl.style.marginTop = '0';
+            clockSection.appendChild(keyEl);
+          }
+        }
+
         container.appendChild(clockSection);
       }
 
@@ -10920,9 +10929,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           window.__maxProgramDays = dayData.days.length || 1;
 
           if (dayData.days.length > 1) {
-            renderMultiDayTimeline(simContainer, dayData);
+            // Multi-day: per-day intensity keys are added inside renderMultiDayTimeline
+            // but only in sim-only mode (in 'both' mode, key goes beneath clock bar)
+            renderMultiDayTimeline(simContainer, dayData, false, viewMode !== 'sim');
           } else {
             renderSingleDayTimeline(simContainer);
+            // Single-day, sim-only: add intensity key beneath all bars
+            if (viewMode === 'sim') {
+              const keyEl = buildIntensityKey(programSteps);
+              if (keyEl) simContainer.appendChild(keyEl);
+            }
           }
         } else {
           // Even in 'clock' mode, we need day data for mirror timeline
@@ -10932,7 +10948,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Render clock-time timeline if mode is 'clock' or 'both'
         if (viewMode === 'clock' || viewMode === 'both') {
+          window.__appendClockIntensityKey = true;
           renderClockTimeTimeline(container);
+          window.__appendClockIntensityKey = false;
         }
 
         // Update mirror timeline in Device Program Status section
@@ -11319,7 +11337,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // readOnly parameter disables drag interactions for device status mirror
       let __globalJumpNum = 0; // Global jump counter across all days, reset each render pass
 
-      function renderMultiDayTimeline(container, dayData, readOnly = false) {
+      function renderMultiDayTimeline(container, dayData, readOnly = false, suppressIntensityKey = false) {
         __globalJumpNum = 0; // Reset global jump numbering for this render pass
         container.innerHTML = '';
 
@@ -11468,6 +11486,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'forward');
             renderDayTimeline(reverseBar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'reverse');
           }
+
+          // Intensity key beneath this day's bars (only for editable view)
+          if (!readOnly && !suppressIntensityKey) {
+            const dayRawSteps = daySteps.map(s => s.step);
+            const keyEl = buildIntensityKey(dayRawSteps);
+            if (keyEl) daySection.appendChild(keyEl);
+          }
         });
       }
 
@@ -11577,6 +11602,39 @@ https://github.com/odeepllama/SolarSim/tree/main
         return { forward, reverse };
       }
 
+      // Build intensity color key row — returns a DOM element or null
+      // steps: array of step objects to inspect for color uniformity
+      function buildIntensityKey(steps) {
+        const hasVaryingIntensity = steps.some(s => s.intensity_scale != null && s.intensity_scale !== 1);
+        if (!hasVaryingIntensity) return null;
+        const keyRow = document.createElement('div');
+        keyRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:4px;margin-left:98px;font-size:16px;color:#000;font-family:Inter,system-ui,sans-serif;';
+        keyRow.innerHTML = '<span style="font-weight:600;margin-right:3px;">Intensity:</span>';
+        // Determine swatch color: use step color if all share the same RGB, else grey
+        const stepsWithColor = steps.filter(s => s.sun_color_rgb);
+        const firstRgb = stepsWithColor.length ? stepsWithColor[0].sun_color_rgb : null;
+        const allSameColor = firstRgb && stepsWithColor.every(s =>
+          s.sun_color_rgb[0] === firstRgb[0] && s.sun_color_rgb[1] === firstRgb[1] && s.sun_color_rgb[2] === firstRgb[2]
+        );
+        const keyColor = allSameColor
+          ? sunColorToDisplayColor(firstRgb)
+          : { r: 128, g: 128, b: 128 };
+        [0.1, 0.5, 1.0].forEach(val => {
+          // Composite against white so page background doesn't bleed through
+          const sr = Math.round(keyColor.r * val + 255 * (1 - val));
+          const sg = Math.round(keyColor.g * val + 255 * (1 - val));
+          const sb = Math.round(keyColor.b * val + 255 * (1 - val));
+          const swatch = document.createElement('span');
+          swatch.style.cssText = `display:inline-block;width:27px;height:18px;border:1px solid #999;border-radius:2px;vertical-align:middle;margin-right:3px;background:rgb(${sr},${sg},${sb});`;
+          keyRow.appendChild(swatch);
+          const label = document.createElement('span');
+          label.textContent = val.toString();
+          label.style.marginRight = '9px';
+          keyRow.appendChild(label);
+        });
+        return keyRow;
+      }
+
       // Render single day timeline (original behavior)
       // readOnly parameter disables drag interactions for device status mirror
       function renderSingleDayTimeline(container, readOnly = false) {
@@ -11633,37 +11691,6 @@ https://github.com/odeepllama/SolarSim/tree/main
           reverseBar.className = readOnly ? 'timeline-strip reverse-strip readonly' : 'timeline-strip reverse-strip';
           barColumn.appendChild(reverseBar);
           renderDayTimeline(reverseBar, dayInfo, null, readOnly, null, false, undefined, 'reverse');
-        }
-
-        // Intensity color key — 3 swatches showing opacity mapping
-        const hasVaryingIntensity = programSteps.some(s => s.intensity_scale != null && s.intensity_scale !== 1);
-        if (hasVaryingIntensity && !readOnly) {
-          const keyRow = document.createElement('div');
-          keyRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:3px;margin-left:4px;font-size:11px;color:#000;font-family:Inter,system-ui,sans-serif;';
-          keyRow.innerHTML = '<span style="font-weight:600;margin-right:2px;">Intensity:</span>';
-          // Determine key swatch color: use the step color if all steps share the same RGB, else grey
-          const stepsWithColor = programSteps.filter(s => s.sun_color_rgb);
-          const firstRgb = stepsWithColor.length ? stepsWithColor[0].sun_color_rgb : null;
-          const allSameColor = firstRgb && stepsWithColor.every(s =>
-            s.sun_color_rgb[0] === firstRgb[0] && s.sun_color_rgb[1] === firstRgb[1] && s.sun_color_rgb[2] === firstRgb[2]
-          );
-          const keyColor = allSameColor
-            ? sunColorToDisplayColor(firstRgb)
-            : { r: 128, g: 128, b: 128 };
-          [0.1, 0.5, 1.0].forEach(val => {
-            // Composite against white so page background doesn't bleed through
-            const sr = Math.round(keyColor.r * val + 255 * (1 - val));
-            const sg = Math.round(keyColor.g * val + 255 * (1 - val));
-            const sb = Math.round(keyColor.b * val + 255 * (1 - val));
-            const swatch = document.createElement('span');
-            swatch.style.cssText = `display:inline-block;width:18px;height:12px;border:1px solid #999;border-radius:2px;vertical-align:middle;margin-right:2px;background:rgb(${sr},${sg},${sb});`;
-            keyRow.appendChild(swatch);
-            const label = document.createElement('span');
-            label.textContent = val.toString();
-            label.style.marginRight = '6px';
-            keyRow.appendChild(label);
-          });
-          barColumn.appendChild(keyRow);
         }
       }
 
