@@ -4894,6 +4894,12 @@ https://github.com/odeepllama/SolarSim/tree/main
         <h4 id="uploadSuccessTitle" data-i18n="uploadSuccessTitle">✓ Upload Successful</h4>
         <p data-i18n="profileUploaded">The profile has been uploaded to the device.</p>
         <p data-i18n="refreshConnection">The next step is to refresh the connection between the page and the device.</p>
+        <p id="uploadSuccessResetAdvice"
+          style="margin-top:12px; padding:10px; background:#fff3e0; border-left:3px solid #f57c00; border-radius:4px; font-size:0.9rem; display:none;">
+          ⚠️ <strong data-i18n="resetAdviceTitle">Press RESET on the board</strong>
+          <span data-i18n="resetAdviceBody"> before reconnecting. The board needs to reboot after a serial upload so it
+            can load the new profile.</span>
+        </p>
         <p id="uploadSuccessConnectInstructions"
           style="margin-top:12px; padding:10px; background:#f0f8ff; border-left:3px solid #2196F3; border-radius:4px; font-size:0.9rem; display:none;">
           <strong data-i18n="afterClickConnect">After clicking "Connect to Device Now":</strong> <span
@@ -5495,6 +5501,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           uploadSuccessTitle: '✓ Upload Successful',
           profileUploaded: 'The profile has been uploaded to the device.',
           refreshConnection: 'The next step is to refresh the connection between the page and the device.',
+          resetAdviceTitle: 'Press RESET on the board',
+          resetAdviceBody: ' before reconnecting. The board needs to reboot after a serial upload so it can load the new profile.',
           afterClickConnect: 'After clicking "Connect to Device Now":',
           pageWillRefresh: 'The page will refresh. Then look for the <strong>"Connect"</strong> button in the Monitor section at the top of the page and click it to select your device.',
           autoloadReenabled: 'Auto-load has been re-enabled on the device.',
@@ -5707,6 +5715,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           uploadSuccessTitle: '✓ アップロード成功',
           profileUploaded: 'プロファイルがデバイスにアップロードされました。',
           refreshConnection: '次のステップはページとデバイスの接続をリフレッシュすることです。',
+          resetAdviceTitle: 'ボードのRESETボタンを押してください',
+          resetAdviceBody: '。再接続する前にボードを再起動する必要があります。シリアルアップロード後、新しいプロファイルを読み込むためにリセットが必要です。',
           afterClickConnect: '「今すぐデバイスに接続」をクリック後:',
           pageWillRefresh: 'ページがリフレッシュされます。その後、上部のモニター欄にある<strong>「接続」</strong>ボタンをクリックしてデバイスを選択してください。',
           autoloadReenabled: 'デバイスの自動ロードが再有効化されました。',
@@ -14998,13 +15008,17 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (uploadedMsg) uploadedMsg.textContent = 'Profile uploaded and active on the device! No reconnect needed.';
           // Relabel Cancel → Done for BLE since there's nothing to cancel
           if (cancelBtn) cancelBtn.textContent = 'Done';
+          const resetAdvice = document.getElementById('uploadSuccessResetAdvice');
+          if (resetAdvice) resetAdvice.style.display = 'none';
         } else {
-          // Serial: show reconnect instructions
+          // Serial: show reconnect instructions + reset advice
           if (instructionsMsg) instructionsMsg.style.display = 'block';
           if (refreshMsg) refreshMsg.style.display = '';
           if (connectBtn) connectBtn.style.display = '';
           if (uploadedMsg) uploadedMsg.textContent = 'The profile has been uploaded to the device.';
           if (cancelBtn) cancelBtn.textContent = 'Cancel';
+          const resetAdvice = document.getElementById('uploadSuccessResetAdvice');
+          if (resetAdvice) resetAdvice.style.display = 'block';
         }
 
         // Store transport for the close handler
