@@ -4759,7 +4759,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         <button id="addStepBtn" type="button">Add Step</button>
         <button id="addDayBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;"
           title="Add a new step with the same simtime as the last step">Add Day</button>
-        <button id="exampleStepsBtn" type="button" class="secondary">Examples…</button>
+        <button id="exampleStepsBtn" type="button" class="secondary" style="font-weight:600;">Examples…</button>
         <button id="undoExampleBtn" type="button" class="secondary" disabled
           title="Revert to previous steps before loading example">Revert</button>
         <button id="clearStepsBtn" type="button" class="danger">Clear Steps</button>
@@ -10505,10 +10505,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           label.className = 'tl-seg-label-bg';
 
           // Build label text based on available space
-          // Lower thresholds than before — labels are absolutely positioned in strip,
-          // so they're not clipped by narrow segments (consistent with ultra-bar)
+          // HOLD labels only shown if segment is wide enough (≥8%), matching ultra bar behaviour
           if (seg.isHold) {
-            label.textContent = 'HOLD ' + durStr;
+            if (widthPct >= 8) {
+              label.textContent = 'HOLD ' + durStr;
+            } else {
+              label.textContent = ''; // too narrow — tooltip only
+            }
           } else if (widthPct > 10) {
             label.textContent = seg.speedLabel + ' (' + durStr + ')';
           } else if (widthPct > 2) {
@@ -10522,7 +10525,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const segCenter = cumulativePct + widthPct / 2;
           label.setAttribute('style', `position:absolute !important; z-index:100 !important; left:${segCenter}% !important; top:40% !important; transform:translate(-50%,-50%) !important;`);
 
-          // Tooltip
+          // Tooltip — always present with full info (especially useful for narrow HOLD segments)
           const intensityStr = programSteps[seg.stepIndex] ? (programSteps[seg.stepIndex].intensity_scale != null ? programSteps[seg.stepIndex].intensity_scale : 1.0) : '?';
           div.title = `Step ${seg.stepIndex + 1}: ${seg.simLabel}\nSpeed: ${seg.speedLabel}\nIntensity: ${intensityStr}\nReal duration: ${durStr}`;
 
