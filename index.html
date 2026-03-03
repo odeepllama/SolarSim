@@ -8390,6 +8390,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const PROGRAM_EXAMPLES = [
           {
             id: 'rainbow_spectrum', label: 'Rainbow Spectrum',
+            bg: 'linear-gradient(135deg, #ffe8e8, #fff3e0, #fffde7, #e8f5e9, #e3f2fd, #ede7f6)',
             desc: 'AI-generated 96-step demo: full-spectrum colour cycle with oscillating intensity (0.1–0.8) across forward + reverse passes at 600×. Visually striking but not scientifically targeted.',
             steps: [
               { sim_time_hhmm: 600, speed: 600, intensity_scale: 0.1, sun_color_rgb: [255, 0, 0] },
@@ -8493,6 +8494,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'speed_tracking', label: 'Sun Speed Tracking',
+            bg: 'linear-gradient(135deg, #e8eaf6, #c5cae9, #e8eaf6)',
             desc: '3-pass ramp: 1×→2×→4×→5×, JUMP to noon + 2 h hold between passes. 12 h wall time.',
             steps: [
               { sim_time_hhmm: 600, speed: 1, sun_color_rgb: [0, 0, 255] },
@@ -8514,6 +8516,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'blue_intensity', label: 'Blue Light Intensity',
+            bg: 'linear-gradient(135deg, #e3f2fd, #bbdefb)',
             desc: 'Varies blue-light intensity (0.25→1.0→0.1) to find phototropin tracking threshold. Speed 1×.',
             steps: [
               { sim_time_hhmm: 600, speed: 1, intensity_scale: 0.25, sun_color_rgb: [0, 0, 255] },
@@ -8527,6 +8530,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'wavelength_response', label: 'Wavelength Response',
+            bg: 'linear-gradient(135deg, #fce4ec, #fff8e1, #e3f2fd)',
             desc: 'Symmetric colour arc: red dawn → amber → white → blue noon → white → amber → red sunset. Speed 1×.',
             steps: [
               { sim_time_hhmm: 600, speed: 1, sun_color_rgb: [255, 50, 0] },
@@ -8540,6 +8544,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'dual_sun_split', label: 'Dual Sun Split',
+            bg: 'linear-gradient(135deg, #e3f2fd, #e1f5fe)',
             desc: 'Single sun to noon (1.5×), dual sun diverges 2 h, reverse merges back, single sun sets (1.5×). 12 h wall time.',
             steps: [
               { sim_time_hhmm: 600, speed: 1.5, dual_sun: false, sun_color_rgb: [0, 0, 255] },
@@ -8551,6 +8556,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'night_recovery', label: 'Night Recovery',
+            bg: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 35%, #5c6bc0 70%, #434978 100%)',
             desc: '2-day program: Day 1 at 2× then full night at 1× for recovery imaging, Day 2 at 2×. Enable IMAGE_AT_NIGHT.',
             steps: [
               { sim_time_hhmm: 600, speed: 2, sun_color_rgb: [0, 0, 255] },
@@ -8603,19 +8609,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           }); examplePopover.appendChild(list);
 
           PROGRAM_EXAMPLES.forEach(ex => {
+            const baseBg = ex.bg || '#f8f9fa';
             const item = document.createElement('div'); item.className = 'example-item'; Object.assign(item.style, {
               border: '1px solid #bbb',
               padding: '10px 12px',
               borderRadius: '6px',
-              background: '#f8f9fa',
+              background: baseBg,
               cursor: 'pointer',
               position: 'relative',
               fontSize: '.9rem'
             }); item.setAttribute('data-id', ex.id); item.tabIndex = 0;
-            item.addEventListener('mouseenter', () => { item.style.background = '#f1f3f5'; });
-            item.addEventListener('mouseleave', () => { if (document.activeElement !== item) item.style.background = '#f8f9fa'; });
-            item.addEventListener('focus', () => { item.style.background = '#e6f4ff'; });
-            item.addEventListener('blur', () => { item.style.background = '#f8f9fa'; });
+            item.addEventListener('mouseenter', () => { item.style.filter = 'brightness(0.96)'; });
+            item.addEventListener('mouseleave', () => { if (document.activeElement !== item) item.style.filter = ''; });
+            item.addEventListener('focus', () => { item.style.outline = '2px solid #3478f6'; item.style.outlineOffset = '-1px'; });
+            item.addEventListener('blur', () => { item.style.outline = ''; item.style.filter = ''; });
             const title = document.createElement('div'); Object.assign(title.style, { fontWeight: 600, fontSize: '1.0rem', marginBottom: '2px' }); title.textContent = ex.label; item.appendChild(title);
             const desc = document.createElement('div'); desc.textContent = ex.desc; Object.assign(desc.style, { opacity: .82, lineHeight: '1.25', fontSize: '.8rem' }); item.appendChild(desc);
             // Removed step count meta line to reduce vertical height usage
