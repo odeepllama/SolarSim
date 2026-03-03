@@ -3095,17 +3095,36 @@ https://github.com/odeepllama/SolarSim/tree/main
       overflow: hidden;
       margin-left: 12px;
       vertical-align: middle;
-      font-size: 12px;
+      font-size: 14.4px;
       font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .timeline-header-row {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 1rem;
+      border-bottom: 1px solid #1f1e1f;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-top: 2rem;
+    }
+
+    .timeline-header-row h2 {
+      background: none;
+      border: none;
+      box-shadow: none;
+      margin: 0;
+      padding: 0;
     }
 
     .timeline-view-toggle button {
       border: none;
       background: #f4f5f7;
       color: #555;
-      padding: 3px 10px;
+      padding: 4px 12px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 14.4px;
       font-weight: 600;
       transition: background 0.15s, color 0.15s;
       border-right: 1px solid #ccc;
@@ -4759,11 +4778,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     <div id="formContainer"></div>
     <div id="programSection" data-section="program-steps-section" style="display:none;">
-      <h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
-      <div class="timeline-view-toggle" id="timelineViewToggle">
-        <button data-mode="sim" class="active" title="Simulation time axis">Sim</button>
-        <button data-mode="clock" title="Real-world clock time axis">Clock</button>
-        <button data-mode="both" title="Show both timelines">Both</button>
+      <div class="timeline-header-row">
+        <h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
+        <div class="timeline-view-toggle" id="timelineViewToggle">
+          <button data-mode="sim" class="active" title="Simulation time axis">Sim-Time</button>
+          <button data-mode="clock" title="Real-world clock time axis">Clock-Time</button>
+          <button data-mode="both" title="Show both timelines">Both</button>
+        </div>
       </div>
       <div id="timelineContainer" style="margin:6px 0 10px;"></div>
       <h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
@@ -4814,12 +4835,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         <ul style="margin:6px 0 0 18px; padding:0;">
           <li><strong data-i18n="speed">Speed:</strong> <span data-i18n="speedDesc">Applies from step's start until next
               speed change</span></li>
+          <li><strong data-i18n="sunColorBehavior">Sun Color:</strong> <span data-i18n="sunColorBehaviorDesc">Per-step
+              color overrides global setting; persists until next step with a color</span></li>
           <li><strong data-i18n="runTransitions">RUN transitions:</strong> <span data-i18n="runTransitionsDesc">Advance
               simulated time using active speed</span></li>
-          <li><strong data-i18n="backwardRun">Backward RUN:</strong> <span data-i18n="backwardRunDesc">Negative speed
-              runs to earlier time/day when next step is later</span></li>
           <li><strong data-i18n="jumpTransitions">JUMP transitions:</strong> <span
               data-i18n="jumpTransitionsDesc">Instantaneous reposition, no simulated time added</span></li>
+          <li><strong data-i18n="backwardRun">Backward RUN:</strong> <span data-i18n="backwardRunDesc">Negative speed
+              runs to earlier time/day when next step is later</span></li>
           <li><strong data-i18n="runJumpSameOrEarlier">RUN/JUMP to same or earlier time:</strong> <span
               data-i18n="runJumpSameOrEarlierDesc">Creates new day</span></li>
           <li><strong data-i18n="holdSpeedZero">HOLD (Speed=0):</strong> <span data-i18n="holdSpeedZeroDesc">Adds
@@ -5486,6 +5509,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           runJumpSameOrEarlierDesc: 'Creates new day',
           holdSpeedZero: 'HOLD (Speed=0):',
           holdSpeedZeroDesc: 'Adds real-time duration only',
+          sunColorBehavior: 'Sun Color:',
+          sunColorBehaviorDesc: 'Per-step color overrides global setting; persists until next step with a color',
           typeCommand: 'Type command (e.g. set, toggle, jump, trigger)',
           filenameOptions: 'Filename Options',
           tagLabel: 'Tag (optional)',
@@ -5647,6 +5672,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           runJumpSameOrEarlierDesc: '新しい日を作成',
           holdSpeedZero: 'HOLD（スピード=0）:',
           holdSpeedZeroDesc: '実時間のみ加算',
+          sunColorBehavior: '太陽色:',
+          sunColorBehaviorDesc: 'ステップごとの色がグローバル設定を上書き。次の色指定ステップまで継続',
           typeCommand: 'コマンドを入力（例: set, toggle, jump, trigger）',
           filenameOptions: 'ファイル名オプション',
           tagLabel: 'タグ（任意）',
