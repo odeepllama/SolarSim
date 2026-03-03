@@ -7307,22 +7307,23 @@ https://github.com/odeepllama/SolarSim/tree/main
        */
       /**
        * Get speed → cell background color for the step table.
-       * Positive: white → blue linear ramp (1×=white, 2×=40% blue, 3×=60%, 5×=80%, ≥5×=100% blue)
-       * Negative: mid-red at -1× → full red at -5× (same ramp shape, red channel)
+       * Positive: white → muted blue ramp (1×=white, ≥5×=60% blue)
+       * Negative: light red at -1× → muted red at -5× (same ramp shape, red channel)
+       * Max intensity capped at 0.6 so colors stay subtle and non-distracting.
        */
       function getStepTableSpeedColor(speed) {
+        const MAX_INTENSITY = 0.6; // cap at 60% so colours stay soft
         const s = Math.abs(speed);
         let frac;
         if (s <= 1) frac = 0;
-        else if (s >= 5) frac = 1;
-        else frac = (s - 1) / 4; // linear 0→1 over 1×→5×
+        else if (s >= 5) frac = MAX_INTENSITY;
+        else frac = ((s - 1) / 4) * MAX_INTENSITY; // linear 0→0.6 over 1×→5×
         if (speed < 0) {
-          // Red gradient: -1× starts at 50% (mid-red), -5× = 100%
-          const redFrac = 0.5 + frac * 0.5; // 0.5→1.0
-          const g = Math.round(255 * (1 - redFrac));
-          return `rgb(255, ${g}, ${g})`;
+          // Red gradient: -1× = light red, -5× = 60% red
+          const r2 = Math.round(255 * (1 - frac));
+          return `rgb(255, ${r2}, ${r2})`;
         }
-        // Blue gradient: 1×=white, 5×=full blue
+        // Blue gradient: 1×=white, 5×=60% blue
         const r = Math.round(255 * (1 - frac));
         const g = Math.round(255 * (1 - frac));
         return `rgb(${r}, ${g}, 255)`;
