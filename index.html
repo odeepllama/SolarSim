@@ -11600,10 +11600,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           jump: (s.step.transition || 'RUN').toUpperCase() === 'JUMP'
         }));
 
-        // Determine initial active speed & intensity & dual sun
+        // Determine initial active speed & intensity & dual sun & sun color
         let initialSpeed = 1;
         let initialIntensity = 1.0;
         let initialDualSun = false;
+        let initialSunColorRgb = undefined;
 
         // If starting day (program entry point), force initialSpeed = 1, no negative speed head
         if (isStartingDay === true) {
@@ -11623,6 +11624,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (ps.speed !== undefined) initialSpeed = ps.speed;
             if (ps.intensity_scale !== undefined) { const _v = parseFloat(ps.intensity_scale); initialIntensity = isNaN(_v) ? 1.0 : _v; }
             initialDualSun = ps.dual_sun === true || ps.dual_sun === 'true' || ps.dual_sun === 1;
+            if (ps.sun_color_rgb !== undefined) initialSunColorRgb = ps.sun_color_rgb;
           }
         } else {
           // For starting day, only get intensity and dual sun from prior steps, not speed
@@ -11631,6 +11633,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const ps = priorCandidates[0].step;
             if (ps.intensity_scale !== undefined) { const _v2 = parseFloat(ps.intensity_scale); initialIntensity = isNaN(_v2) ? 1.0 : _v2; }
             initialDualSun = ps.dual_sun === true || ps.dual_sun === 'true' || ps.dual_sun === 1;
+            if (ps.sun_color_rgb !== undefined) initialSunColorRgb = ps.sun_color_rgb;
           }
         }
 
@@ -11639,6 +11642,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         let activeSpeed = initialSpeed;
         let activeIntensity = initialIntensity;
         let activeDualSun = initialDualSun;
+        let activeSunColorRgb = initialSunColorRgb;
 
         // Build segments from consecutive steps in this day
         for (let i = 0; i < allSteps.length; ++i) {
@@ -11651,11 +11655,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           const speed = step.speed !== undefined ? step.speed : 1;
           const intensity = step.intensity_scale !== undefined ? (isNaN(parseFloat(step.intensity_scale)) ? 1.0 : parseFloat(step.intensity_scale)) : 1.0;
           const dualSun = step.dual_sun === true || step.dual_sun === 'true' || step.dual_sun === 1;
+          const sunColorRgb = step.sun_color_rgb;
 
           // Track active state for tail segment (must be before continue check)
           activeSpeed = speed;
           activeIntensity = intensity;
           activeDualSun = dualSun;
+          activeSunColorRgb = sunColorRgb;
 
           if (m == null || mNext == null) continue;
 
@@ -11681,6 +11687,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 speed,
                 intensity,
                 dualSun,
+                sunColorRgb,
                 index: stepInfo.i,
                 labelType: (i === 0 ? 'start' : 'normal'),
                 temporalStart: timeStart,  // preserve original temporal direction for reference
@@ -11701,7 +11708,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
                 // Create HOLD segment only for the hold_minutes duration
                 if (holdEndMin > segStart && holdEndMin - segStart >= 5) {
-                  segments.push({ type: 'interval', startMin: segStart, endMin: holdEndMin, speed, intensity, dualSun, index: stepInfo.i, labelType: (i === 0 ? 'start' : 'normal') });
+                  segments.push({ type: 'interval', startMin: segStart, endMin: holdEndMin, speed, intensity, dualSun, sunColorRgb, index: stepInfo.i, labelType: (i === 0 ? 'start' : 'normal') });
                 }
 
                 // Add implicit jump marker at the start of next step (where time jumps TO)
@@ -11715,7 +11722,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Normal segment creation (if not already handled by HOLD logic above)
             if (segEnd !== null && segEnd > segStart && segEnd - segStart >= 5) {
-              segments.push({ type: 'interval', startMin: segStart, endMin: segEnd, speed, intensity, dualSun, index: stepInfo.i, labelType: (i === 0 ? 'start' : 'normal') });
+              segments.push({ type: 'interval', startMin: segStart, endMin: segEnd, speed, intensity, dualSun, sunColorRgb, index: stepInfo.i, labelType: (i === 0 ? 'start' : 'normal') });
             }
           }
         }
@@ -11726,6 +11733,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (lastStep.speed !== undefined) activeSpeed = lastStep.speed;
           if (lastStep.intensity_scale !== undefined) { const _v3 = parseFloat(lastStep.intensity_scale); activeIntensity = isNaN(_v3) ? 1.0 : _v3; }
           activeDualSun = lastStep.dual_sun === true || lastStep.dual_sun === 'true' || lastStep.dual_sun === 1;
+          activeSunColorRgb = lastStep.sun_color_rgb;
         }
 
         // Head segment from window start to first step (if there's a gap at the beginning)
@@ -11753,7 +11761,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           } else {
             // Normal case: Insert head segment at beginning with initial state
-            segments.unshift({ type: 'interval', startMin: WINDOW_START_MIN, endMin: minSegmentStart, speed: initialSpeed, intensity: initialIntensity, dualSun: initialDualSun, index: -1, labelType: 'head' });
+            segments.unshift({ type: 'interval', startMin: WINDOW_START_MIN, endMin: minSegmentStart, speed: initialSpeed, intensity: initialIntensity, dualSun: initialDualSun, sunColorRgb: initialSunColorRgb, index: -1, labelType: 'head' });
           }
         }
 
@@ -11775,6 +11783,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                   speed: activeSpeed,
                   intensity: activeIntensity,
                   dualSun: activeDualSun,
+                  sunColorRgb: activeSunColorRgb,
                   index: lastStepInfo.i,
                   labelType: 'tail',
                   temporalStart: lastStepTime,     // temporal start (where time begins flowing backward)
@@ -11804,6 +11813,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                   speed: activeSpeed,
                   intensity: activeIntensity,
                   dualSun: activeDualSun,
+                  sunColorRgb: activeSunColorRgb,
                   index: lastStepInfo.i,
                   labelType: 'tail'
                 });
@@ -11836,9 +11846,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               bgDiv.style.left = leftPct + '%';
               bgDiv.style.width = widthPct + '%';
               // Ultra bar: sun color + intensity opacity + speed height
-              const stepIdx = seg.index >= 0 ? seg.index : (allSteps.length > 0 ? allSteps[0].i : 0);
-              const stepData = programSteps[stepIdx] || programSteps[0] || {};
-              const dc = sunColorToDisplayColor(stepData.sun_color_rgb);
+              const dc = sunColorToDisplayColor(seg.sunColorRgb);
               const opac = intensityToOpacity(intensity);
               bgDiv.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
               // Speed-proportional height
@@ -11944,9 +11952,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Ultra bar: sun color + intensity opacity + speed height
           if (!hold) {
-            const stepIdx = seg.index >= 0 ? seg.index : (allSteps.length > 0 ? allSteps[0].i : 0);
-            const stepData = programSteps[stepIdx] || programSteps[0] || {};
-            const dc = sunColorToDisplayColor(stepData ? stepData.sun_color_rgb : null);
+            const dc = sunColorToDisplayColor(seg.sunColorRgb);
             const opac = intensityToOpacity(intensity);
             div.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
             // Speed-proportional height (capped at 5x)
@@ -12017,9 +12023,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Ultra bar: sun color + intensity opacity + speed height
           if (!hold) {
-            const stepIdx2 = seg.index >= 0 ? seg.index : (allSteps.length > 0 ? allSteps[0].i : 0);
-            const stepData2 = programSteps[stepIdx2] || programSteps[0] || {};
-            const dc2 = sunColorToDisplayColor(stepData2 ? stepData2.sun_color_rgb : null);
+            const dc2 = sunColorToDisplayColor(seg.sunColorRgb);
             const opac2 = intensityToOpacity(intensity);
             div.style.background = `rgba(${dc2.r},${dc2.g},${dc2.b},${opac2})`;
             // Speed-proportional height (capped at 5x)
