@@ -5943,10 +5943,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       ];
 
       const FIELDS = {
-        START_TIME_HHMM: { label: 'Start Time (HHMM)', tooltip: 'Simulation clock start (HHMM local).', type: 'text', default: '600', validate: v => /^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
+        START_TIME_HHMM: { label: 'Start Time (HHMM)', tooltip: 'Simulation clock start (HHMM local).', type: 'number', min: 0, max: 2359, default: 600, validate: v => /^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
         TIME_SCALE: { label: 'Time Scale', tooltip: 'Speed multiplier (0=Hold, negative=reverse).', type: 'select', options: [0, 1, 6, 60, 600], allowCustom: true, default: 1 },
         INTENSITY_SCALE: { label: 'Intensity Scale', tooltip: 'Global light intensity multiplier (0.0-1.0). Values above 1.0 are not permitted. CAUTION: High intensity values (>0.8) in DUAL SUN mode can cause over-current issues.', type: 'number', step: '0.1', min: 0, max: 1.0, default: 1.0 },
-        SIMULATION_DATE: { label: 'Simulation Date (YYYYMMDD)', tooltip: 'Date used for sun path / future calc.', type: 'text', default: '20250320', validate: v => /^20\d{6}$/.test(v) },
+        SIMULATION_DATE: { label: 'Simulation Date (YYYYMMDD)', tooltip: 'Date used for sun path / future calc.', type: 'number', min: 20000101, max: 20991231, default: 20250320, validate: v => /^20\d{6}$/.test(v) },
         LATITUDE: { label: 'Latitude', tooltip: 'Observer latitude (-90 to 90).', type: 'number', step: '0.1', min: -90, max: 90, default: 0 },
         SOLAR_MODE: { label: 'Solar Mode', tooltip: 'BASIC constant; SCIENTIFIC astronomical calc.', type: 'select', options: ['BASIC', 'SCIENTIFIC'], default: 'BASIC' },
         SUN_COLOR_MODE: { label: 'Sun Color Mode', tooltip: 'BLUE fixed; CUSTOM uses RGB; NATURAL future.', type: 'select', options: ['BLUE', 'NATURAL', 'CUSTOM'], default: 'BLUE' },
@@ -7240,7 +7240,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           tr.appendChild(dayCell);
           // Format time with 4-digit padding for display (1 -> 0001, 600 -> 0600)
           const simTimeDisplay = step.sim_time_hhmm != null ? String(step.sim_time_hhmm).padStart(4, '0') : '';
-          const simCell = mkCell(`<input data-f='sim_time_hhmm' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
+          const simCell = mkCell(`<input data-f='sim_time_hhmm' type='number' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
           // Speed cell with color coding
           const spd = step.speed != null ? step.speed : 1;
           const speedBg = spd <= 1 ? '#4DA6FF' : spd <= 1.5 ? '#A8D5BA' : spd <= 2 ? '#90be6d' : spd <= 2.5 ? '#A8C968' : spd <= 3.5 ? '#E5D55E' : spd <= 6 ? '#f9c74f' : '#f9844a';
