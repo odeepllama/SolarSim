@@ -3375,6 +3375,54 @@ https://github.com/odeepllama/SolarSim/tree/main
       display: none !important;
     }
 
+    /* Live on Device badge */
+    .live-on-device-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-left: 12px;
+      padding: 4px 14px 4px 10px;
+      background: #28a745;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: Inter, system-ui, sans-serif;
+      border-radius: 999px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .live-on-device-badge.visible {
+      display: inline-flex;
+    }
+
+    .mini-sect-title[data-section="monitor-status-tiles"] {
+      display: flex;
+      align-items: center;
+    }
+
+    .live-on-device-dot {
+      width: 8px;
+      height: 8px;
+      background: #a5f3a5;
+      border-radius: 50%;
+      animation: lod-pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes lod-pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.7);
+      }
+    }
+
     /* Mode Configuration Modal */
     #modeConfigModal {
       display: none;
@@ -3729,7 +3777,8 @@ https://github.com/odeepllama/SolarSim/tree/main
   <div id="monitorPanel" aria-hidden="true">
     <div id="monitorControls"></div>
     <!-- Sun Position removed -->
-    <div class="mini-sect-title" data-section="monitor-status-tiles">Status Tiles</div>
+    <div class="mini-sect-title" data-section="monitor-status-tiles">Status Tiles <span id="liveOnDeviceBadge"
+        class="live-on-device-badge"><span class="live-on-device-dot"></span>Live on Device</span></div>
     <div id="monitorStatusGrid" data-section="monitor-status-tiles"></div>
     <!-- Sun Arc + Log side-by-side -->
     <div id="monitorVisLogRow" class="vislog-row">
@@ -17312,6 +17361,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           badge(c ? 'CONNECTED' : 'DISCONNECTED', c ? 'green' : 'red');
+          // Show/hide Live on Device badge (suppress during Quick Edit)
+          const lodBadge = document.getElementById('liveOnDeviceBadge');
+          if (lodBadge) {
+            if (c && !state.__quickEditActive) {
+              lodBadge.classList.add('visible');
+            } else {
+              lodBadge.classList.remove('visible');
+            }
+          }
           const loadFromDeviceBtn = document.getElementById('loadFromDeviceBtn');
           [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b => { if (b) b.disabled = !c; }); // helpBtn removed from disabling logic
           // When connected: disable both Connect buttons, enable Disconnect button
@@ -18560,6 +18618,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Not connected → connect, wait for profile, disconnect, scroll
             quickEditBtn.disabled = true;
             quickEditBtn.textContent = getLang().quickEditLoading;
+            state.__quickEditActive = true;
 
             state.transport = 'serial';
             try {
@@ -18567,6 +18626,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             } catch (e) {
               // User cancelled serial picker or connection failed → reset UI and fall back to examples
               await performDisconnect();
+              state.__quickEditActive = false;
               quickEditBtn.disabled = false;
               quickEditBtn.textContent = getLang().quickEdit;
               scrollToExamplesAndOpen();
@@ -18580,6 +18640,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             await performDisconnect();
             scrollToTimeline();
 
+            state.__quickEditActive = false;
             quickEditBtn.disabled = false;
             quickEditBtn.textContent = getLang().quickEdit;
           });
