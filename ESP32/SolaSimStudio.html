@@ -21262,8 +21262,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             position: 'bottom',
             tooltipOffsetX: 0.67,  // Shift tooltip right by 2/3 of its width
             adjustTarget: (el) => {
-              // Target the h2 and profile defaults buttons bar together (not meta-options below)
+              // Target the h2, profile defaults bar, and recent profiles together (not meta-options below)
               const defaultsBar = document.getElementById('profileDefaultsBar');
+              const recentDiv = document.getElementById('recentProfiles');
               if (!defaultsBar) return el;
 
               const wrapper = document.createElement('div');
@@ -21272,11 +21273,14 @@ https://github.com/odeepllama/SolarSim/tree/main
 
               const elRect = el.getBoundingClientRect();
               const barRect = defaultsBar.getBoundingClientRect();
+              // Use recent profiles bottom if available, otherwise fall back to defaults bar
+              const bottomEl = recentDiv ? recentDiv.parentElement || recentDiv : defaultsBar;
+              const bottomRect = bottomEl.getBoundingClientRect();
 
               wrapper.style.top = elRect.top + window.scrollY + 'px';
-              wrapper.style.left = Math.min(elRect.left, barRect.left) + window.scrollX + 'px';
-              wrapper.style.width = Math.max(elRect.width, barRect.width) + 'px';
-              wrapper.style.height = (barRect.bottom - elRect.top) + 'px';
+              wrapper.style.left = Math.min(elRect.left, barRect.left, bottomRect.left) + window.scrollX + 'px';
+              wrapper.style.width = Math.max(elRect.width, barRect.width, bottomRect.width) + 'px';
+              wrapper.style.height = (bottomRect.bottom - elRect.top) + 'px';
 
               document.body.appendChild(wrapper);
               return wrapper;
