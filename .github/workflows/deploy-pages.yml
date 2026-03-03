@@ -15,8 +15,8 @@ jobs:
 
           if [ "${{ github.ref_name }}" = "main" ]; then
             # SolaSimStudio (unified wired USB) → /
-            if [ -f ESP32_Bluetooth/SolaSimStudio.html ]; then
-              cp ESP32_Bluetooth/SolaSimStudio.html deploy/index.html
+            if [ -f ESP32/SolaSimStudio.html ]; then
+              cp ESP32/SolaSimStudio.html deploy/index.html
               cp -f planty.svg planty_b\&w.svg deploy/ 2>/dev/null || true
             fi
             # SolaSimStudioBLE (iPad BLE) → /Bt/
@@ -27,9 +27,9 @@ jobs:
             fi
           else
             # SolaSimStudio (unified wired USB) → /test/
-            if [ -f ESP32_Bluetooth/SolaSimStudio.html ]; then
+            if [ -f ESP32/SolaSimStudio.html ]; then
               mkdir -p deploy/test
-              cp ESP32_Bluetooth/SolaSimStudio.html deploy/test/index.html
+              cp ESP32/SolaSimStudio.html deploy/test/index.html
               cp -f planty.svg planty_b\&w.svg deploy/test/ 2>/dev/null || true
             fi
             # SolaSimStudioBLE (iPad BLE) → /Bt/test/

@@ -27,9 +27,9 @@ esptool.py --chip esp32s3 --port /dev/cu.wchusbserial5AB90101341 write_flash -z 
    - Press the physical **RESET** button on the ESP32-S3 board.
    - Wait 3 seconds for the device to reboot.
 
-5. Upload all the required Solar Simulator Python files from the `ESP32_Bluetooth` directory to the root of the device.
+5. Upload all the required Solar Simulator Python files from the `ESP32` directory to the root of the device.
 ```bash
-mpremote connect /dev/cu.wchusbserial5AB90101341 cp ESP32_Bluetooth/boot.py :boot.py + cp ESP32_Bluetooth/main.py :main.py + cp ESP32_Bluetooth/hardware.py :hardware.py + cp ESP32_Bluetooth/ble_comms.py :ble_comms.py + cp ESP32_Bluetooth/program_engine.py :program_engine.py + cp ESP32_Bluetooth/simulator.py :simulator.py
+mpremote connect /dev/cu.wchusbserial5AB90101341 cp ESP32/boot.py :boot.py + cp ESP32/main.py :main.py + cp ESP32/hardware.py :hardware.py + cp ESP32/ble_comms.py :ble_comms.py + cp ESP32/program_engine.py :program_engine.py + cp ESP32/simulator.py :simulator.py
 ```
 
 6. The upload is complete! The device is now running the updated firmware and code.

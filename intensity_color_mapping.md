@@ -53,4 +53,4 @@ background: rgba(sun_r, sun_g, sun_b, opacity);
 
 ## Preview
 
-See `oklch_grid.html` in `ESP32_Bluetooth/` for a live interactive preview.
+See `oklch_grid.html` in `ESP32/` for a live interactive preview.

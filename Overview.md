@@ -16,7 +16,7 @@ Solar simulation hardware control system with two firmware targets and two web i
            │ USB Serial                    │ BLE (NUS)
 ┌──────────▼──────────┐      ┌─────────────▼──────────────┐
 │  ESP32-S3 Firmware  │      │  ESP32-S3 BLE Firmware     │
-│  (ESP32_Bluetooth/) │      │  (BLE_iPad/)               │
+│  (ESP32/) │      │  (BLE_iPad/)               │
 │  USB + BLE capable  │      │  BLE-optimised, debounced  │
 └─────────────────────┘      └────────────────────────────┘
 ┌─────────────────────┐
@@ -50,7 +50,7 @@ USB serial only. Monolithic single-file design due to memory constraints on the 
 
 ## Folder Structure
 
-### `ESP32_Bluetooth/` — ESP32 Firmware + Wired Web Interface
+### `ESP32/` — ESP32 Firmware + Wired Web Interface
 
 > **Note:** Folder name is a historical misnomer — this is the **wired USB** variant. The HTML file connects via Web Serial, not Bluetooth.
 
@@ -70,7 +70,7 @@ USB serial only. Monolithic single-file design due to memory constraints on the 
 
 ### `BLE_iPad/` — ESP32 BLE Firmware + BLE Web Interface
 
-Optimised for iPad use over Bluetooth Low Energy. Key differences from `ESP32_Bluetooth/`:
+Optimised for iPad use over Bluetooth Low Energy. Key differences from `ESP32/`:
 - `main.py` initialises BLE **before** large imports (prevents heap fragmentation)
 - `simulator.py` has BLE-specific status debouncing and output throttling
 - HTML has wider retry delays, fresh-connect handling, no USB button
@@ -80,8 +80,8 @@ Optimised for iPad use over Bluetooth Low Energy. Key differences from `ESP32_Bl
 | `SolaSimStudioBLE.html` | Web interface (BLE via Web Bluetooth API) |
 | `main.py` | Entry point — BLE-first init order to prevent bootloops |
 | `simulator.py` | Core engine with BLE status debounce (3s) and output throttle |
-| `hardware.py` | Hardware abstraction (shared with ESP32_Bluetooth) |
-| `program_engine.py` | Program sequencer (shared with ESP32_Bluetooth) |
+| `hardware.py` | Hardware abstraction (shared with ESP32) |
+| `program_engine.py` | Program sequencer (shared with ESP32) |
 | `ble_comms.py` | BLE GATT server — NUS service, 512-byte MTU, chunked sends |
 | `ssd1306.py` | SSD1306 OLED display driver |
 | `boot.py` | MicroPython boot configuration |
