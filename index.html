@@ -502,8 +502,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     #clearDefaultBtn:hover:not(:disabled),
     #loadFromDeviceBtn:hover:not(:disabled),
     #resetUploadConfirmBtn:hover:not(:disabled),
-    #exampleStepsBtn:hover:not(:disabled),
-    #undoExampleBtn:hover:not(:disabled) {
+    #exampleStepsBtn:hover:not(:disabled) {
       background: #f0f0f0 !important;
       border-color: #666 !important;
     }
@@ -4793,8 +4792,6 @@ https://github.com/odeepllama/SolarSim/tree/main
         <button id="addDayBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;"
           title="Add a new step with the same simtime as the last step">Add Day</button>
         <button id="exampleStepsBtn" type="button" class="secondary" style="font-weight:600;">Examples…</button>
-        <button id="undoExampleBtn" type="button" class="secondary" disabled
-          title="Revert to previous steps before loading example">Revert</button>
         <button id="clearStepsBtn" type="button" class="danger">Clear Steps</button>
         <button id="printSummaryBtn2" type="button" class="secondary"
           title="Generate and print a summary of current configuration and program steps">Print Summary</button>
@@ -7701,8 +7698,7 @@ https://github.com/odeepllama/SolarSim/tree/main
        */
       function addProgramStep(step) { saveUndoState(); programSteps.push(step || {}); renderProgramSteps(); updatePreview(true); updateMaxStepsUI(); }
 
-      // Holds last programSteps snapshot before an example Replace so user can undo once
-      let previousProgramSteps = null;
+
 
       /**
        * Shows a popover warning when the maximum step limit is reached.
@@ -8630,8 +8626,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 hideExample();
                 return;
               }
-              previousProgramSteps = JSON.parse(JSON.stringify(programSteps));
-              const undoBtn = document.getElementById('undoExampleBtn'); if (undoBtn) undoBtn.disabled = false;
+
               programSteps = JSON.parse(JSON.stringify(ex.steps));
               renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
               const tbl = document.getElementById('programStepsTable'); if (tbl) { tbl.classList.add('flash-replaced'); setTimeout(() => tbl.classList.remove('flash-replaced'), 600); }
@@ -8664,25 +8659,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           programSteps = []; renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
         });
-        // Undo button logic
-        const undoBtn = document.getElementById('undoExampleBtn');
-        if (undoBtn) {
-          undoBtn.addEventListener('click', () => {
-            // Check if editing is locked (device running)
-            if (window.__programEditingLocked && window.__programEditingLocked()) {
-              if (window.__flashProgramLock) window.__flashProgramLock();
-              return;
-            }
-            if (!previousProgramSteps) return;
-            // Restore
-            programSteps = JSON.parse(JSON.stringify(previousProgramSteps));
-            previousProgramSteps = null;
-            undoBtn.disabled = true;
-            renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
-            const tbl = document.getElementById('programStepsTable');
-            if (tbl) { tbl.classList.add('flash-undo'); setTimeout(() => tbl.classList.remove('flash-undo'), 600); }
-          });
-        }
+
       }
 
       // -----------------------------
