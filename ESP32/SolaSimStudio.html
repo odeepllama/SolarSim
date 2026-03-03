@@ -4141,6 +4141,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><code>hold_minutes</code>: Real-time pause duration (only applies if speed=0)</li>
               <li><code>repeat</code>: Repeat this step N additional times before moving to the next</li>
             </ul>
+            <p><strong>Cell color coding:</strong> The <strong>intensity cell</strong> previews the step's sun color at
+              its opacity level. The <strong>speed cell</strong> uses blue (forward) or red (reverse) shading
+              proportional to speed magnitude.</p>
             <p><strong>Step and Day Navigation:</strong></p>
             <ul>
               <li>Use the <strong>Step</strong> navigation buttons to move between individual steps in the timeline.
@@ -4157,14 +4160,23 @@ https://github.com/odeepllama/SolarSim/tree/main
           </div>
 
           <h4>Timeline Visualization</h4>
-          <p>Visual preview of your program sequence with color-coded steps. <button class="help-expand-btn"
-              onclick="toggleHelpDetail(this)">Learn more ▼</button></p>
+          <p>Visual preview of your program sequence using the Ultra Bar — a color-coded strip that encodes
+            three dimensions at once. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more
+              ▼</button></p>
           <div class="help-detail" style="display:none;">
-            <p>The timeline provides a graphical overview of your program steps, showing how simulated time and device
-              actions progress:</p>
+            <p>The timeline provides an at-a-glance graphical overview of your entire experiment:</p>
             <ul>
-              <li><strong>Color Legend:</strong> Blue ≤1x, Green ≤2x, Yellow ≤6x, Orange 7x+. Saturation indicates
-                intensity (pale = low, vibrant = high).</li>
+              <li><strong>Ultra Bar Encoding:</strong> Each segment's <strong>color</strong> reflects the step's sun
+                color,
+                <strong>opacity</strong> shows intensity (faint = low, solid = full), and <strong>height</strong>
+                indicates
+                speed (taller = faster). This lets you see color, brightness, and speed simultaneously.
+              </li>
+              <li><strong>Sim / Clock / Both Toggle:</strong> Switch the timeline axis between <strong>Sim</strong>
+                (simulated hours of the day), <strong>Clock</strong> (real-world wall-clock duration of the experiment),
+                or show <strong>Both</strong> bars together. The clock-time bar is especially useful for planning how
+                long
+                your experiment will actually take.</li>
               <li><strong>Markers:</strong> ⚡ (JUMP transitions), hatched bars (HOLD segments), ↺ (day wrap/new day).
               </li>
               <li><strong>Step Navigation:</strong> Use navigation buttons to move the playhead between steps and days
