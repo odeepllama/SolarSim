@@ -8390,7 +8390,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const PROGRAM_EXAMPLES = [
           {
             id: 'rainbow_spectrum', label: 'Rainbow Spectrum',
-            bg: 'linear-gradient(135deg, #ffe8e8, #fff3e0, #fffde7, #e8f5e9, #e3f2fd, #ede7f6)',
+            bg: 'linear-gradient(135deg, #ffe3e3, #fff1da, #fffde2, #e3f3e5, #ddeffd, #e9e2f4)',
             desc: 'AI-generated 96-step demo: full-spectrum colour cycle with oscillating intensity (0.1–0.8) across forward + reverse passes at 600×. Visually striking but not scientifically targeted.',
             steps: [
               { sim_time_hhmm: 600, speed: 600, intensity_scale: 0.1, sun_color_rgb: [255, 0, 0] },
@@ -8516,7 +8516,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'blue_intensity', label: 'Blue Light Intensity',
-            bg: 'linear-gradient(135deg, #e3f2fd, #bbdefb)',
+            bg: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #6a9fd8 100%)',
             desc: 'Varies blue-light intensity (0.25→1.0→0.1) to find phototropin tracking threshold. Speed 1×.',
             steps: [
               { sim_time_hhmm: 600, speed: 1, intensity_scale: 0.25, sun_color_rgb: [0, 0, 255] },
@@ -8530,7 +8530,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'wavelength_response', label: 'Wavelength Response',
-            bg: 'linear-gradient(135deg, #fce4ec, #fff8e1, #e3f2fd)',
+            bg: 'linear-gradient(135deg, #ffc2d6, #fff1c2, #c2e4ff)',
             desc: 'Symmetric colour arc: red dawn → amber → white → blue noon → white → amber → red sunset. Speed 1×.',
             steps: [
               { sim_time_hhmm: 600, speed: 1, sun_color_rgb: [255, 50, 0] },
@@ -8544,7 +8544,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           },
           {
             id: 'dual_sun_split', label: 'Dual Sun Split',
-            bg: 'linear-gradient(135deg, #e3f2fd, #e1f5fe)',
+            bg: 'linear-gradient(to right, #fff9c4 0%, #bbdefb 35%, #90caf9 50%, #bbdefb 65%, #fff9c4 100%)',
             desc: 'Single sun to noon (1.5×), dual sun diverges 2 h, reverse merges back, single sun sets (1.5×). 12 h wall time.',
             steps: [
               { sim_time_hhmm: 600, speed: 1.5, dual_sun: false, sun_color_rgb: [0, 0, 255] },
@@ -18557,10 +18557,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             try {
               await ensurePort();
             } catch (e) {
-              // User cancelled serial picker or connection failed → fall back to examples
+              // User cancelled serial picker or connection failed → reset UI and fall back to examples
+              await performDisconnect();
               quickEditBtn.disabled = false;
               quickEditBtn.textContent = getLang().quickEdit;
-              state.transport = null;
               scrollToExamplesAndOpen();
               return;
             }
