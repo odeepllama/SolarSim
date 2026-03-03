@@ -18550,10 +18550,11 @@ https://github.com/odeepllama/SolarSim/tree/main
             try {
               await ensurePort();
             } catch (e) {
-              // User cancelled serial picker or connection failed
+              // User cancelled serial picker or connection failed → fall back to examples
               quickEditBtn.disabled = false;
               quickEditBtn.textContent = getLang().quickEdit;
               state.transport = null;
+              scrollToExamplesAndOpen();
               return;
             }
 
