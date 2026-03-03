@@ -1627,7 +1627,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       background: #ffecec;
     }
 
-    #errorBanner {
+    #errorBanner,
+    #errorBannerInline {
       display: none;
       background: #c62828;
       color: #fff;
@@ -1635,6 +1636,13 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-radius: 6px;
       margin-top: 1rem;
       font-size: .75rem;
+    }
+
+    #errorBannerInline {
+      margin: 8px 0 4px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
 
     #errorBanner ul {
@@ -4765,6 +4773,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
         </label>
       </div>
+      <div id="errorBannerInline"></div>
       <table class="program-steps-table" id="programStepsTable">
         <thead>
           <tr>
@@ -6569,12 +6578,20 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       function renderErrorBanner() {
         const banner = document.getElementById('errorBanner');
-        if (!errorState.hasErrors) { banner.style.display = 'none'; banner.innerHTML = ''; highlightStepTableErrors(); return; }
+        const inlineBanner = document.getElementById('errorBannerInline');
+        if (!errorState.hasErrors) {
+          banner.style.display = 'none'; banner.innerHTML = '';
+          if (inlineBanner) { inlineBanner.style.display = 'none'; inlineBanner.innerHTML = ''; }
+          highlightStepTableErrors();
+          return;
+        }
         const lines = [];
         Object.entries(errorState.fieldErrors).forEach(([k, msg]) => { lines.push(`<li>${k}: ${msg}</li>`); });
         errorState.programErrors.forEach(m => lines.push(`<li>${m}</li>`));
-        banner.innerHTML = `<strong>Cannot export – fix ${lines.length} error(s):</strong><ul>${lines.join('')}</ul>`;
+        const html = `<strong>Cannot export – fix ${lines.length} error(s):</strong><ul>${lines.join('')}</ul>`;
+        banner.innerHTML = html;
         banner.style.display = 'block';
+        if (inlineBanner) { inlineBanner.innerHTML = html; inlineBanner.style.display = 'block'; }
         highlightStepTableErrors();
       }
 
@@ -6638,10 +6655,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
 
-        // Scroll first error cell into view
-        if (firstErrorCell) {
-          firstErrorCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        // Don't scroll — inline error banner and red cell highlight are sufficient
+        // (scrollIntoView was causing disruptive page jumps)
       }
 
       function setExportButtonsState() {
