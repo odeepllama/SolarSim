@@ -2447,8 +2447,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: .6px;
-      color: #111;
-      opacity: .7;
+      color: rgba(17, 17, 17, 0.7);
       margin: -0.8em 0 3px 0;
     }
 
@@ -4110,9 +4109,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             <li><strong>Device Connection</strong>: Connect via USB cable. <button class="help-expand-btn"
                 onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
-                <p>Connect your device using the <strong>🔌 Connect USB</strong> button:</p>
+                <p>Connect your device using the <strong>🔌 Connect Device</strong> button:</p>
                 <ul>
-                  <li><strong>🔌 Connect USB</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
+                  <li><strong>🔌 Connect Device</strong>: Uses the Web Serial API over USB. Works with both RP2040 and
                     ESP32-S3 devices. Requires Chrome, Edge, or Opera on a desktop computer.</li>
                 </ul>
                 <p>The USB connection supports full status monitoring, command console, status tiles, solar arc,
@@ -5115,7 +5114,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         <p style="margin:0; font-size:0.85rem; opacity:0.8;">Would you like to save your profile first?</p>
         <div class="btn-row">
           <button type="button" class="secondary" id="saveFirstCancelBtn">Cancel</button>
-          <button type="button" class="secondary" id="saveFirstSkipBtn">Connect Without Saving</button>
+          <button type="button" class="secondary" id="saveFirstSkipBtn"
+            style="background:#5cb85c; color:#fff; border-color:#4cae4c;">Connect Without Saving</button>
           <button type="button" class="upload-green" id="saveFirstSaveBtn">💾 Save &amp; Connect</button>
         </div>
       </div>
@@ -5183,7 +5183,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             <h4>Option A: USB Cable (all devices)</h4>
             <ol>
               <li>Connect the device to your computer via USB cable.</li>
-              <li>Click the green <strong>🔌 Connect USB</strong> button in the top "Monitor / Interact" bar.</li>
+              <li>Click the green <strong>🔌 Connect Device</strong> button in the top "Monitor / Interact" bar.</li>
               <li>A browser window will pop up asking permission to connect to a serial device.</li>
               <li>Select your device (often listed as "Board in FS node") and click <strong>Connect</strong>.</li>
               <li>The status badge will turn green and show <strong>CONNECTED</strong>.</li>
@@ -5611,13 +5611,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           appTitle: 'SolaSim Studio',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
-          connect: '<span class="btn-emoji">🔌</span> Connect USB',
+          connect: '<span class="btn-emoji">🔌</span> Connect Device',
           quickEdit: '✏️ Quick Edit / Examples',
           quickEditLoading: '⏳ Loading...',
           refresh: 'Refresh',
           disconnect: 'Disconnect',
-          showAllCommands: 'Show All Commands',
-          showStatus: 'Show Status',
+          showAllCommands: '📋 Commands',
+          showStatus: '📊 Status',
           simple: 'Simple',
           advanced: 'Advanced',
           langToggle: 'JPN',
@@ -5713,7 +5713,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           finish: 'Finish ✓',
           // Guide step translations
           guideConnectDevice: 'Connect Your Device',
-          guideConnectDeviceDesc: 'Click the green <strong>🔌 Connect USB</strong> button to connect to your device via USB cable.',
+          guideConnectDeviceDesc: 'Click the green <strong>🔌 Connect Device</strong> button to connect to your device via USB cable.',
           guideStatusTiles: 'Status Tiles',
           guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more. Click on a tile to quickly adjust its setting.',
           guideSolarArc: 'Solar Arc Simulation',
@@ -5779,8 +5779,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           quickEditLoading: '⏳ 読込中...',
           refresh: 'リフレッシュ',
           disconnect: '切断',
-          showAllCommands: 'すべてのコマンドを表示',
-          showStatus: 'ステータスを表示',
+          showAllCommands: '📋 コマンド',
+          showStatus: '📊 ステータス',
           simple: 'シンプル',
           advanced: '詳細',
           langToggle: 'ENG',
