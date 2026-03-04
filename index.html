@@ -10268,8 +10268,16 @@ https://github.com/odeepllama/SolarSim/tree/main
         });
 
         // Load into Form button (form-only: no upload to device)
-        loadFormBtn.addEventListener('click', () => {
+        loadFormBtn.addEventListener('click', async () => {
           try {
+            // Disconnect from device first so live status doesn't overwrite loaded form
+            const state = window.__solarSimMonitorState;
+            const isConnected = state && (state.port || state.bleDevice);
+            if (isConnected && typeof performDisconnect === 'function') {
+              if (window.log) window.log('🔌 Disconnecting from device before loading profile into form…', 'update');
+              await performDisconnect();
+            }
+
             const profileData = modal.__profileData;
             if (profileData && typeof window.__applyProfileObject === 'function') {
               const profileObj = typeof profileData === 'string'
