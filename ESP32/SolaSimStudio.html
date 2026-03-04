@@ -4310,6 +4310,11 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li>Dragging the <span style="user-select:none;">⠿</span> handle reorders steps; you can also drag day
                 boundaries to adjust timing.</li>
             </ul>
+            <p><strong>☀️ Sun cycle note:</strong> The sun's natural arc always governs LED brightness. In
+              <strong>BASIC</strong> mode the sun rises at 06:00 and sets at 18:00; in <strong>SCIENTIFIC</strong> mode
+              these times vary by date and latitude. Steps that run past sunset will have no light output even at full
+              intensity — the sun is simply below the horizon. Use this to your advantage for dark/recovery periods.
+            </p>
             <p>Validation ensures correct formats and prevents unsafe device actions. Errors are shown inline and must
               be resolved before exporting or uploading.</p>
           </div>
@@ -8712,7 +8717,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             desc: '2-day program: Day 1 at 2× then full night at 1× for recovery imaging, Day 2 at 2×. Enable IMAGE_AT_NIGHT.',
             steps: [
               { sim_time_hhmm: 600, speed: 2, sun_color_rgb: [0, 0, 255] },
-              { sim_time_hhmm: 1800, speed: 1 },
+              { sim_time_hhmm: 1800, speed: 1, intensity_scale: 0 },
               { sim_time_hhmm: 600, speed: 2, sun_color_rgb: [0, 0, 255] },
               { sim_time_hhmm: 1800, speed: 1, sun_color_rgb: [0, 0, 255] }
             ]
@@ -8787,6 +8792,11 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
 
               programSteps = JSON.parse(JSON.stringify(ex.steps));
+              // Fill in default speed & intensity so form columns aren't blank
+              programSteps.forEach(s => {
+                if (s.speed == null) s.speed = 1;
+                if (s.intensity_scale == null) s.intensity_scale = 1;
+              });
               renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
               const tbl = document.getElementById('programStepsTable'); if (tbl) { tbl.classList.add('flash-replaced'); setTimeout(() => tbl.classList.remove('flash-replaced'), 600); }
               hideExample();
@@ -10016,6 +10026,7 @@ https://github.com/odeepllama/SolarSim/tree/main
        * @param {string} profileName - Display name of the loaded profile
        */
       function renderComparisonTimelines(comparisonData, profileName) {
+        __globalJumpNum = 0; // Reset global jump numbering for comparison render
         const container = document.getElementById('compareTimelinePreview');
         if (!container) return;
 
@@ -10157,6 +10168,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           profileRow.appendChild(noSteps);
           container.appendChild(profileRow);
         }
+        stripSoloJumpNumber(container);
       }
 
       // Parse profile text (may already exist, but including here for safety)
@@ -11526,6 +11538,19 @@ https://github.com/odeepllama/SolarSim/tree/main
       // readOnly parameter disables drag interactions for device status mirror
       let __globalJumpNum = 0; // Global jump counter across all days, reset each render pass
 
+      // After a full render pass, if only one JUMP exists in the whole program,
+      // strip the number from its label (show ⚡ instead of ⚡1)
+      function stripSoloJumpNumber(container) {
+        if (__globalJumpNum === 1 && container) {
+          container.querySelectorAll('.tl-jump').forEach(el => {
+            el.setAttribute('data-label', '⚡');
+            // Also simplify tooltip
+            const title = el.getAttribute('title') || '';
+            el.title = title.replace(/^Jump #\d+: /, '');
+          });
+        }
+      }
+
       function renderMultiDayTimeline(container, dayData, readOnly = false, suppressIntensityKey = false) {
         __globalJumpNum = 0; // Reset global jump numbering for this render pass
         container.innerHTML = '';
@@ -11683,6 +11708,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (keyEl) daySection.appendChild(keyEl);
           }
         });
+        stripSoloJumpNumber(container);
       }
 
       // Build a sun color strip element from step data
@@ -11891,6 +11917,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           barColumn.appendChild(reverseBar);
           renderDayTimeline(reverseBar, dayInfo, null, readOnly, null, false, undefined, 'reverse');
         }
+        stripSoloJumpNumber(container);
       }
 
       // Render timeline for a single day bar
