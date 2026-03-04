@@ -1809,7 +1809,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-color: #257b41 !important;
     }
 
-    /* Download Profile button hover: 15% lighter blue */
+    /* Save Profile button hover: 15% lighter blue */
     button[data-export-ref="downloadBtn"]:hover:not(:disabled),
     button#downloadBtn:hover:not(:disabled) {
       background: #4a8cf8 !important;
@@ -2059,15 +2059,16 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     /* SolarMode tile: text like SCIENTIFIC needs to fit */
     /* SolarMode tile: only shrink SCIENTIFIC text to fit */
-    .mon-kv.solar-mode.mode-scientific span {
+    .mon-kv.solar-mode.mode-advanced span {
       font-size: 1.2rem;
+      padding-top: 0.45rem;
     }
 
     /* Active (ON) tile highlight */
     .mon-kv.kv-active {
-      background: #28853e !important;
-      border-color: #3cc85a !important;
-      box-shadow: 0 0 0 1px #3cc85a, 0 0 0 3px rgba(60, 200, 90, 0.35), 0 2px 6px -1px rgba(0, 0, 0, 0.55);
+      background: #28a745 !important;
+      border-color: #34d058 !important;
+      box-shadow: 0 0 0 1px #34d058, 0 0 0 3px rgba(52, 208, 88, 0.35), 0 2px 6px -1px rgba(0, 0, 0, 0.55);
     }
 
     .mon-kv.kv-active b {
@@ -2118,15 +2119,67 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     /* Solar Mode tile color overrides (BASIC stays green via kv-active; SCIENTIFIC red) */
-    .mon-kv.solar-mode.mode-scientific {
+    .mon-kv.solar-mode.mode-advanced {
       background: #b32828 !important;
       border-color: #d94b4b !important;
     }
 
     /* When Solar Mode is active, use an outline lighter than the interior and matching the mode hue (red), not green */
-    .mon-kv.solar-mode.mode-scientific.kv-active {
+    .mon-kv.solar-mode.mode-advanced.kv-active {
       border-color: #d94b4b !important;
       box-shadow: 0 0 0 1px #f36f6f, 0 0 0 3px rgba(243, 111, 111, 0.35), 0 2px 6px -1px rgba(0, 0, 0, 0.55);
+    }
+
+    /* Offline (grey) tile — not connected to device */
+    .mon-kv.tile-offline {
+      background: #d0d0d0 !important;
+      color: #222 !important;
+      border-color: #bbb !important;
+      box-shadow: none !important;
+      cursor: default;
+    }
+
+    .mon-kv.tile-offline b {
+      color: #444 !important;
+      opacity: .8 !important;
+    }
+
+    .mon-kv.tile-offline span {
+      color: #222 !important;
+    }
+
+    /* Override all mode-specific backgrounds/colors for offline tiles — keep only font-size */
+    .mon-kv.tile-offline.sun-blue,
+    .mon-kv.tile-offline.sun-natural,
+    .mon-kv.tile-offline.sun-custom,
+    .mon-kv.tile-offline.solar-mode.mode-advanced,
+    .mon-kv.tile-offline.solar-mode.mode-advanced.kv-active,
+    .mon-kv.tile-offline.kv-active {
+      background: #d0d0d0 !important;
+      border-color: #bbb !important;
+      box-shadow: none !important;
+    }
+
+    .mon-kv.tile-offline.sun-blue span,
+    .mon-kv.tile-offline.sun-natural span,
+    .mon-kv.tile-offline.sun-custom span,
+    .mon-kv.tile-offline.kv-active span {
+      color: #222 !important;
+    }
+
+    /* Grey→live flash animation */
+    @keyframes tileGoLive {
+      0% {
+        background: #fff;
+      }
+
+      100% {
+        background: inherit;
+      }
+    }
+
+    .mon-kv.tile-go-live {
+      animation: tileGoLive 0.4s ease-out forwards;
     }
 
     /* Tile popover */
@@ -2873,6 +2926,49 @@ https://github.com/odeepllama/SolarSim/tree/main
       gap: 8px;
       justify-content: flex-end;
       margin-top: 12px;
+    }
+
+    /* Save-First warning modal (matches Upload Success styling) */
+    #saveFirstOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      z-index: 100000;
+    }
+
+    #saveFirstOverlay.open {
+      display: block;
+    }
+
+    #saveFirstDialog {
+      position: absolute;
+      background: #ffffff !important;
+      color: #111;
+      border: 1px solid #c9d1dc;
+      border-radius: 10px;
+      width: min(92vw, 420px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      padding: 14px 16px;
+    }
+
+    #saveFirstDialog h4 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    #saveFirstDialog p {
+      margin: 0 0 10px;
+      line-height: 1.4;
+      font-size: 0.9rem;
+    }
+
+    #saveFirstDialog .btn-row {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 14px;
+      flex-wrap: wrap;
     }
 
     /* Lock icon for editing disabled state */
@@ -4064,7 +4160,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                   collaborators. Available from both the Profile Management toolbar and the Program Steps toolbar.</p>
               </div>
             </li>
-            <li><strong>Download Profile</strong>: Save the current form as a .txt file to your computer. <button
+            <li><strong>Save Profile</strong>: Save the current form as a .txt file to your computer. <button
                 class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
                 <p>Creates a .txt file with all current settings in a format compatible with the device. Useful for
@@ -4801,7 +4897,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     </div>
 
     <div class="toolbar" id="topExportBar" style="margin:8px 0 14px;">
-      <button type="button" data-export-ref="downloadBtn" class="mirror-export" data-i18n="downloadProfile">Download
+      <button type="button" data-export-ref="downloadBtn" class="mirror-export" data-i18n="downloadProfile">Save
         Profile</button>
       <button type="button" data-export-ref="importBtn" class="mirror-export"
         style="background:#ffc107; color:#000; font-weight:600;" title="Import a profile .txt file from your computer"
@@ -4896,7 +4992,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     <h2 data-section="export-section" data-i18n="exportSection">Download, Import & Upload</h2>
     <div class="toolbar" id="bottomExportBar" data-section="export-section">
-      <button id="downloadBtn" type="button" data-i18n="downloadProfile">Download Profile</button>
+      <button id="downloadBtn" type="button" data-i18n="downloadProfile">Save Profile</button>
       <button id="importBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;"
         title="Import a profile .txt file from your computer" data-i18n="importProfile">Import Profile</button>
       <input id="importFileInput" type="file" accept=".txt" style="display:none;" />
@@ -5007,6 +5103,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           <button type="button" class="secondary" id="uploadSuccessCancelBtn" data-i18n="cancel">Cancel</button>
           <button type="button" class="upload-green" id="uploadSuccessConnectBtn" data-i18n="connectToDeviceNow">Connect
             to Device Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save-First warning modal -->
+    <div id="saveFirstOverlay" aria-hidden="true" role="dialog" aria-labelledby="saveFirstTitle">
+      <div id="saveFirstDialog">
+        <h4 id="saveFirstTitle">⚠ Unsaved Profile</h4>
+        <p>Your current profile has unsaved changes that will be lost when connecting to a device.</p>
+        <p style="margin:0; font-size:0.85rem; opacity:0.8;">Would you like to save your profile first?</p>
+        <div class="btn-row">
+          <button type="button" class="secondary" id="saveFirstCancelBtn">Cancel</button>
+          <button type="button" class="secondary" id="saveFirstSkipBtn">Connect Without Saving</button>
+          <button type="button" class="upload-green" id="saveFirstSaveBtn">💾 Save &amp; Connect</button>
         </div>
       </div>
     </div>
@@ -5211,7 +5321,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             <h3>Saving & Importing</h3>
             <ul>
-              <li><strong>Download Profile</strong>: Saves your current settings as a text file (<code>.txt</code>) to
+              <li><strong>Save Profile</strong>: Saves your current settings as a text file (<code>.txt</code>) to
                 your computer. Useful for sharing experiments or backups.</li>
               <li><strong>Import Profile</strong>: Loads a <code>.txt</code> file from your computer into the web form.
               </li>
@@ -5563,7 +5673,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           profileMeta: 'Profile Meta',
           noteLabel: 'Note (optional)',
           notePlaceholder: 'Experiment description...',
-          downloadProfile: 'Download Profile',
+          downloadProfile: 'Save Profile',
           importProfile: 'Import Profile',
           uploadToDevice: 'Upload to Device',
           printSummary: 'Print Summary',
@@ -5636,7 +5746,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here before uploading to the device.',
           guideRecentProfiles: 'Recent Profiles',
           guideRecentProfilesDesc: 'Quickly access previously saved profiles here. You can pin frequently-used profiles with the star icon.',
-          guideDownloadProfile: 'Download Profile',
+          guideDownloadProfile: 'Save Profile',
           guideDownloadProfileDesc: 'Save your current settings as a .txt file to your computer. Great for backup, sharing, or manual editing.',
           guideImportProfile: 'Import Profile',
           guideImportProfileDesc: 'Load a previously saved profile file. This updates the form only—you\'ll need to Upload to Device to apply changes to hardware.',
@@ -5762,7 +5872,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProfileTextWindowDesc: '生のプロファイルテキストを表示・編集します。上級ユーザーはここでパラメータを直接編集し、フォームに反映してからデバイスにアップロードできます。',
           guideRecentProfiles: '最近のプロファイル',
           guideRecentProfilesDesc: '以前に保存したプロファイルにすばやくアクセスできます。星アイコンで頻繁に使用するプロファイルをピン留めできます。',
-          guideDownloadProfile: 'プロファイルをダウンロード',
+          guideDownloadProfile: 'プロファイルを保存',
           guideDownloadProfileDesc: '現在の設定を.txtファイルとしてコンピュータに保存します。バックアップ、共有、手動編集に最適です。',
           guideImportProfile: 'プロファイルをインポート',
           guideImportProfileDesc: '以前に保存したプロファイルファイルを読み込みます。これはフォームのみを更新します—ハードウェアに変更を適用するには、デバイスにアップロードする必要があります。',
@@ -5779,7 +5889,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideUploadToDevice: '<strong>重要:</strong> このボタンは設定をデバイスにアップロードします。アップロードされたプロファイルは「最新」ファイルとなり、自動ロードが有効な場合はデバイス起動時に自動的にロードされます。',
           noteLabel: 'メモ（任意）',
           notePlaceholder: '実験の説明...',
-          downloadProfile: 'プロファイルをダウンロード',
+          downloadProfile: 'プロファイルを保存',
           importProfile: 'プロファイルをインポート',
           uploadToDevice: 'デバイスにアップロード',
           printSummary: '印刷用サマリー',
@@ -6139,6 +6249,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         Object.keys(FIELDS).forEach(k => { state[k] = FIELDS[k].default; });
         // Derived initial
         recomputeDegreesPerImage();
+        // Expose form state globally for offline tiles
+        window.__profileBuilderState = state;
       }
 
       /**
@@ -6387,6 +6499,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Initialize state and build form immediately on script load (before any user interaction)
       initState();
       buildForm();
+      // Don't treat initial form build as a user edit
+      window.__formDirty = false;
 
       /**
        * Shows or hides form sections based on current state values.
@@ -9275,6 +9389,12 @@ https://github.com/odeepllama/SolarSim/tree/main
         updateFilenamePreview();
         updateProgramSummaryUI();
         renderTimelineStrip();
+
+        // Sync offline tiles with form state
+        if (typeof window.updateOfflineTiles === 'function') window.updateOfflineTiles();
+
+        // Track form dirty state for save-first prompt
+        window.__formDirty = true;
 
         // Update diff highlighting
         updateDiffHighlighting();
@@ -13794,6 +13914,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const file = new File([blob], name, { type: 'text/plain' });
           if (navigator.canShare({ files: [file] })) {
             navigator.share({ files: [file], title: name }).then(() => {
+              window.__formDirty = false;
               if (typeof recordRecentProfile === 'function') {
                 try { recordRecentProfile(name, text.trimEnd(), { downloaded: true }); } catch (e) { console.warn('recent save failed', e); }
               }
@@ -13817,6 +13938,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (typeof recordRecentProfile === 'function') {
           try { recordRecentProfile(name, text.trimEnd(), { downloaded: true }); } catch (e) { console.warn('recent save failed', e); }
         }
+        // Clear dirty flag after successful save
+        window.__formDirty = false;
       }
 
       // (Autoload preference UI removed; use manual serial command 'set autoload on|off' if needed.)
@@ -17370,6 +17493,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               lodBadge.classList.remove('visible');
             }
           }
+          // Transition tiles between offline (grey) and live modes
+          if (c && !state.__quickEditActive) {
+            if (typeof window.__removeOfflineTileStyle === 'function') window.__removeOfflineTileStyle();
+          } else if (!c) {
+            if (typeof window.__applyOfflineTileStyle === 'function') window.__applyOfflineTileStyle();
+          }
           const loadFromDeviceBtn = document.getElementById('loadFromDeviceBtn');
           [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b => { if (b) b.disabled = !c; }); // helpBtn removed from disabling logic
           // When connected: disable both Connect buttons, enable Disconnect button
@@ -18462,8 +18591,142 @@ https://github.com/odeepllama/SolarSim/tree/main
             setTimeout(() => { box.classList.remove('tile-appearing'); }, 500);
           }
         }
-        // Make setKV accessible for visualization wrappers
-        try { window.setKV = setKV; } catch (_) { }
+        // Make setKV and reorderTiles accessible for visualization wrappers
+        try { window.setKV = setKV; window.reorderTiles = reorderTiles; } catch (_) { }
+
+        // ============================================================================
+        // OFFLINE (GREY) TILES — show form state when no device is connected
+        // ============================================================================
+
+        /**
+         * Populate status tiles from form state on page load (grey/offline mode).
+         * Reads the profile builder's state object and populates tiles.
+         */
+        function seedOfflineTiles() {
+          // Bail if already connected
+          if (state.port || state.transport === 'ble') return;
+          // Bail if tiles are already live (populated by device data)
+          if (kvCache.size > 0) return;
+
+          // Read form state from the profile builder (global 'state' may be in a different scope)
+          const formState = window.__profileBuilderState;
+          if (!formState) return;
+
+          // Format HHMM int to HH:MM string
+          function fmtHHMM(v) {
+            const n = parseInt(v, 10); if (isNaN(n)) return '—';
+            return String(Math.floor(n / 100)).padStart(2, '0') + ':' + String(n % 100).padStart(2, '0');
+          }
+
+          // Seed each tile
+          setKV('sim', 'SimTime', fmtHHMM(formState.START_TIME_HHMM || 600));
+          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1));
+          setKV('intensity', 'Intensity', String(formState.INTENSITY_SCALE ?? 1));
+          setKV('sunColor', 'SunColor', String(formState.SUN_COLOR_MODE || 'BLUE'));
+          setKV('program', 'Program', formState.PROGRAM_ENABLED ? 'ON' : 'OFF');
+          setKV('solarMode', 'SolarMode', String(formState.SOLAR_MODE || 'BASIC'));
+          setKV('dualSun', 'DualSun', formState.DUAL_SUN_ENABLED ? 'ON' : 'OFF');
+          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120));
+          setKV('rotation', 'RotationImaging', formState.ROTATION_ENABLED ? 'ON' : 'OFF');
+          reorderTiles();
+
+          // Mark all tiles as offline (grey)
+          applyOfflineTileStyle();
+
+          // Show solar arc
+          const arcWrapper = document.getElementById('sunArcWrapper');
+          if (arcWrapper) {
+            arcWrapper.style.display = '';
+            setTimeout(() => {
+              window.dispatchEvent(new Event('resize'));
+              try { scheduleVisLogAlign(); } catch (_) { }
+            }, 100);
+          }
+        }
+
+        /**
+         * Apply/remove offline (grey) styling to all tiles.
+         */
+        function applyOfflineTileStyle() {
+          for (const [, box] of kvCache.entries()) {
+            box.classList.add('tile-offline');
+            box.title = 'Connect to device or edit form below';
+          }
+        }
+        function removeOfflineTileStyle() {
+          for (const [, box] of kvCache.entries()) {
+            box.classList.remove('tile-offline');
+            box.classList.add('tile-go-live');
+            box.title = '';
+          }
+          // Remove flash class after animation
+          setTimeout(() => {
+            for (const [, box] of kvCache.entries()) {
+              box.classList.remove('tile-go-live');
+            }
+          }, 500);
+        }
+
+        /**
+         * Update tiles from form state when not connected (one-way form→tile).
+         * Called from updatePreview() hook.
+         */
+        window.updateOfflineTiles = function () {
+          // Only update if not connected to a device
+          if (state.port || state.transport === 'ble') return;
+          // Only update if tiles exist (seeded)
+          if (kvCache.size === 0) return;
+
+          const formState = window.__profileBuilderState;
+          if (!formState) return;
+
+          function fmtHHMM(v) {
+            const n = parseInt(v, 10); if (isNaN(n)) return '—';
+            return String(Math.floor(n / 100)).padStart(2, '0') + ':' + String(n % 100).padStart(2, '0');
+          }
+
+          setKV('sim', 'SimTime', fmtHHMM(formState.START_TIME_HHMM || 600));
+          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1));
+          setKV('intensity', 'Intensity', String(formState.INTENSITY_SCALE ?? 1));
+          setKV('sunColor', 'SunColor', String(formState.SUN_COLOR_MODE || 'BLUE'));
+          // Apply sun-color CSS classes for font sizing (matches live tile logic)
+          const sunEl = kvCache && kvCache.get ? kvCache.get('sunColor') : null;
+          if (sunEl) {
+            const scm = (formState.SUN_COLOR_MODE || 'BLUE').toUpperCase();
+            sunEl.classList.remove('sun-blue', 'sun-natural', 'sun-custom');
+            if (scm === 'BLUE') sunEl.classList.add('sun-blue');
+            else if (scm === 'NATURAL') sunEl.classList.add('sun-natural');
+            else if (scm === 'CUSTOM') sunEl.classList.add('sun-custom');
+          }
+          setKV('program', 'Program', formState.PROGRAM_ENABLED ? 'ON' : 'OFF');
+          setKV('solarMode', 'SolarMode', String(formState.SOLAR_MODE || 'BASIC'));
+          // Apply solar-mode CSS classes for font sizing (matches live tile logic)
+          const smEl = kvCache && kvCache.get ? kvCache.get('solarMode') : null;
+          if (smEl) {
+            smEl.classList.add('solar-mode');
+            const sm = (formState.SOLAR_MODE || 'BASIC').toUpperCase();
+            smEl.classList.remove('mode-advanced');
+            if (sm === 'SCIENTIFIC') smEl.classList.add('mode-advanced');
+          }
+          setKV('dualSun', 'DualSun', formState.DUAL_SUN_ENABLED ? 'ON' : 'OFF');
+          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120));
+          setKV('rotation', 'RotationImaging', formState.ROTATION_ENABLED ? 'ON' : 'OFF');
+
+          // Refresh sun arc visualization to reflect updated tile state
+          try {
+            const arcNs = window.__solarSimMonitorState;
+            if (arcNs && arcNs.__sunArc && arcNs.__sunArc.refresh) {
+              arcNs.__sunArc.refresh();
+            }
+          } catch (_) { }
+        };
+
+        // Expose for setConnected transitions
+        window.__applyOfflineTileStyle = applyOfflineTileStyle;
+        window.__removeOfflineTileStyle = removeOfflineTileStyle;
+
+        // Seed offline tiles after everything is initialised
+        setTimeout(seedOfflineTiles, 500);
 
         // Align log column left edge with the left edge of the Intensity tile
         function scheduleVisLogAlign() {
@@ -18543,7 +18806,19 @@ https://github.com/odeepllama/SolarSim/tree/main
           state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 1500));
         })();
         connectBtn && connectBtn.addEventListener('click', () => {
+          // Save-first prompt if form has unsaved changes
+          if (window.__formDirty) {
+            showSaveFirstModal(() => {
+              // Proceed to connect after modal resolves
+              state.transport = 'serial';
+              doSerialConnect();
+            });
+            return;
+          }
           state.transport = 'serial';
+          doSerialConnect();
+        });
+        function doSerialConnect() {
           ensurePort().catch(e => {
             const fullErr = (e.message || '').toLowerCase();
             let msg = 'Connection failure';
@@ -18555,7 +18830,49 @@ https://github.com/odeepllama/SolarSim/tree/main
             state.transport = null;
             log(msg, 'error');
           });
-        });
+        }
+        // Save-first modal logic
+        function showSaveFirstModal(onConnect) {
+          const overlay = document.getElementById('saveFirstOverlay');
+          if (!overlay) { onConnect(); return; }
+          overlay.classList.add('open');
+          overlay.setAttribute('aria-hidden', 'false');
+          // Position dialog near the Connect button (midway between button and center)
+          const dialog = document.getElementById('saveFirstDialog');
+          const btn = document.getElementById('monitorConnectBtn');
+          if (dialog && btn) {
+            const btnRect = btn.getBoundingClientRect();
+            const vpW = window.innerWidth, vpH = window.innerHeight;
+            // Midpoint between button bottom and viewport center
+            const targetY = Math.round((btnRect.bottom + 8 + vpH / 2) / 2);
+            // Align left edge near button, but keep within viewport
+            dialog.style.left = Math.max(10, Math.min(btnRect.left, vpW - 440)) + 'px';
+            dialog.style.top = Math.min(targetY, vpH - 200) + 'px';
+          }
+          const saveBtn = document.getElementById('saveFirstSaveBtn');
+          const skipBtn = document.getElementById('saveFirstSkipBtn');
+          const cancelBtn = document.getElementById('saveFirstCancelBtn');
+          function close() {
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+            saveBtn.onclick = null;
+            skipBtn.onclick = null;
+            cancelBtn.onclick = null;
+          }
+          saveBtn.onclick = () => {
+            close();
+            try { if (typeof downloadProfile === 'function') downloadProfile(); } catch (_) { }
+            onConnect();
+          };
+          skipBtn.onclick = () => {
+            close();
+            onConnect();
+          };
+          cancelBtn.onclick = () => {
+            close();
+            // Don't connect
+          };
+        }
 
         if (disconnectBtn) {
           disconnectBtn.addEventListener('click', performDisconnect);
@@ -19494,7 +19811,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         ns.__sunArc.updateVisibility = updateVisibility;
-        setInterval(() => { const ns = window.__solarSimMonitorState; if (!(ns && (ns.port || ns.transport === 'ble'))) return; updateVisibility(); if (wrapper.style.display !== 'none') draw(); }, 1500);
+        setInterval(() => { updateVisibility(); if (wrapper.style.display !== 'none') draw(); }, 1500);
         window.addEventListener('resize', () => { if (wrapper.style.display !== 'none') draw(); });
         // Hook into setKV to trigger redraw on relevant changes
         if (typeof window.setKV === 'function' && !window.setKV.__sunArcWrapped) {
@@ -19565,8 +19882,54 @@ https://github.com/odeepllama/SolarSim/tree/main
           document.addEventListener('mousedown', outsideClickHandler);
           document.addEventListener('touchstart', outsideTouchHandler, { passive: true });
         }
-        function canSend() { return true; /* popover only opens when connected */ }
-        async function sendSilent(line) { try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { } catch (_) { } } }
+        function canSend() { return true; }
+        // Dual-mode sendSilent: when offline, parse the serial command and update form state instead
+        async function sendSilent(line) {
+          // Check if any tile is offline (= not connected to device)
+          const anyOffline = document.querySelector('.mon-kv.tile-offline');
+          if (anyOffline) {
+            // Parse serial command and route to form state
+            const fs = window.__profileBuilderState; if (!fs) return;
+            const parts = line.trim().split(/\s+/);
+            const cmd = parts[0];
+            if (cmd === 'set' && parts.length >= 3) {
+              const prop = parts[1].toLowerCase();
+              const val = parts.slice(2).join(' ');
+              if (prop === 'time') { fs.START_TIME_HHMM = parseInt(val, 10) || 600; }
+              else if (prop === 'speed') { const sv = parseFloat(val); fs.TIME_SCALE = isNaN(sv) ? 1 : sv; }
+              else if (prop === 'intensity') { fs.INTENSITY_SCALE = parseFloat(val); }
+              else if (prop === 'solarmode') { fs.SOLAR_MODE = val.toUpperCase(); }
+              else if (prop === 'suncolor') {
+                const mode = parts[2].toUpperCase();
+                if (mode === 'CUSTOM' && parts.length >= 6) {
+                  fs.SUN_COLOR_MODE = 'CUSTOM';
+                  fs.CUSTOM_SUN_R = parseInt(parts[3], 10) || 0;
+                  fs.CUSTOM_SUN_G = parseInt(parts[4], 10) || 0;
+                  fs.CUSTOM_SUN_B = parseInt(parts[5], 10) || 0;
+                } else {
+                  fs.SUN_COLOR_MODE = mode;
+                }
+              }
+              else if (prop === 'servo2dayinterval') { fs.SERVO2_INTERVAL_DAY_SEC = parseInt(val, 10) || 0; }
+              else if (prop === 'servo2nightinterval') { fs.SERVO2_INTERVAL_NIGHT_SEC = parseInt(val, 10) || 0; }
+            } else if (cmd === 'toggle') {
+              const what = (parts[1] || '').toLowerCase();
+              if (what === 'program') fs.PROGRAM_ENABLED = !fs.PROGRAM_ENABLED;
+              else if (what === 'dualsun') fs.DUAL_SUN_ENABLED = !fs.DUAL_SUN_ENABLED;
+              else if (what === 'rotation') fs.ROTATION_ENABLED = !fs.ROTATION_ENABLED;
+            }
+            // Sync form UI and tiles
+            try {
+              if (typeof syncFormFromState === 'function') syncFormFromState();
+              else if (typeof updatePreview === 'function') updatePreview(true);
+            } catch (_) {
+              if (typeof window.updateOfflineTiles === 'function') window.updateOfflineTiles();
+            }
+            return;
+          }
+          // Online mode: send via serial/BLE
+          try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { } catch (_) { } }
+        }
         // Touch device detection — prompt() for custom input on touch, inline inputs on desktop
         const _isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         function hhmmRow() { const row = document.createElement('div'); row.className = 'row'; const lab = document.createElement('label'); lab.textContent = 'HHMM:'; row.appendChild(lab); const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = '0730'; inp.maxLength = 4; inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9]/g, '').slice(0, 4); }); row.appendChild(inp); return { row, input: inp, get: () => inp.value }; }
@@ -19692,7 +20055,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           });
           grid.addEventListener('dblclick', (e) => {
-            const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if (!box) return; const k = keyFromBox(box); if (!k) return; clearTimeout(clickTimer); e.stopPropagation(); hide(); // Confirm for toggle-capable tiles
+            const box = e.target && e.target.closest ? e.target.closest('.mon-kv') : null; if (!box) return;
+            const k = keyFromBox(box); if (!k) return; clearTimeout(clickTimer); e.stopPropagation();
+            hide();
             const toggleMap = { program: 'toggle program', dualSun: 'toggle dualsun', rotation: 'toggle rotation' };
             // Handle solarMode toggle specially - switch between BASIC and SCIENTIFIC
             if (k === 'solarMode') {
