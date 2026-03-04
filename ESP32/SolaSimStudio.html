@@ -1418,7 +1418,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     #compareProfileModal .modal-content {
       background: #ffffff !important;
       border-radius: 8px;
-      max-width: 660px;
+      max-width: 688px;
       max-height: 85%;
       width: 95%;
       display: flex;
@@ -2030,6 +2030,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-size: .8rem;
       line-height: 1.3;
       text-align: center;
+      transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
 
     /* Animation only applied when tile is newly created */
@@ -2168,19 +2169,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     /* Grey→live flash animation */
-    @keyframes tileGoLive {
-      0% {
-        background: #fff;
-      }
 
-      100% {
-        background: inherit;
-      }
-    }
-
-    .mon-kv.tile-go-live {
-      animation: tileGoLive 0.4s ease-out forwards;
-    }
 
     /* Tile popover */
     #tilePopover {
@@ -3252,6 +3241,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-variant-numeric: tabular-nums;
       font-size: 1.2rem;
       flex: 1 0 auto;
+      margin-top: 6px;
+
     }
 
     .clock-tl-seg {
@@ -4211,8 +4202,10 @@ https://github.com/odeepllama/SolarSim/tree/main
                   green.</p>
                 <p><strong>Actions:</strong></p>
                 <ul>
-                  <li><strong>Apply Profile:</strong> Load the selected profile into your form, replacing current
-                    settings</li>
+                  <li><strong>Load into Form:</strong> Load the selected profile into your form for editing, without
+                    uploading to the device</li>
+                  <li><strong>Upload to Device:</strong> Load the profile and automatically upload it to the connected
+                    device</li>
                   <li><strong>Cancel:</strong> Close the modal without making changes</li>
                   <li><strong>X (close):</strong> Same as Cancel - dismisses the comparison</li>
                 </ul>
@@ -4799,22 +4792,24 @@ https://github.com/odeepllama/SolarSim/tree/main
           <div id="compareProfileContent"></div>
         </div>
         <div class="modal-footer">
-          <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
-            <div id="compareProfileFilters" style="display:flex; gap:16px; font-size:0.9rem;">
-              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                <input type="checkbox" id="compareHideEmptyCheckbox" style="cursor:pointer;">
-                <span>Hide (empty) entries</span>
-              </label>
-              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                <input type="checkbox" id="compareOnlyDifferencesCheckbox" style="cursor:pointer;">
-                <span>Only show differences</span>
-              </label>
-            </div>
-            <div class="diff-summary" id="compareDiffSummary"></div>
+          <div style="display:flex; align-items:center; gap:14px; flex:1; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; cursor:pointer; font-size:0.82rem;">
+              <input type="checkbox" id="compareHideEmptyCheckbox" style="cursor:pointer; margin:0 8px 0 0;">
+              <span>Hide empty</span>
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer; font-size:0.82rem;">
+              <input type="checkbox" id="compareOnlyDifferencesCheckbox" style="cursor:pointer; margin:0 8px 0 0;">
+              <span>Differences only</span>
+            </label>
+            <div class="diff-summary" id="compareDiffSummary" style="margin-left:4px;"></div>
           </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button id="compareApplyBtn" type="button" class="upload-green">Apply Profile</button>
-            <button id="compareCancelBtn" type="button" class="secondary">Cancel</button>
+          <div style="display:flex; gap:6px; align-items:center; white-space:nowrap;">
+            <button id="compareLoadFormBtn" type="button" class="secondary"
+              style="background:#5cb85c !important; color:#fff !important; border-color:#4cae4c; white-space:nowrap;">Load
+              into Form</button>
+            <button id="compareApplyBtn" type="button" class="upload-green" style="white-space:nowrap;">Upload to
+              Device</button>
+            <button id="compareCancelBtn" type="button" class="secondary" style="white-space:nowrap;">Cancel</button>
           </div>
         </div>
       </div>
@@ -5115,7 +5110,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         <div class="btn-row">
           <button type="button" class="secondary" id="saveFirstCancelBtn">Cancel</button>
           <button type="button" class="secondary" id="saveFirstSkipBtn"
-            style="background:#5cb85c; color:#fff; border-color:#4cae4c;">Connect Without Saving</button>
+            style="background:#5cb85c !important; color:#fff !important; border-color:#4cae4c;">Connect Without
+            Saving</button>
           <button type="button" class="upload-green" id="saveFirstSaveBtn">💾 Save &amp; Connect</button>
         </div>
       </div>
@@ -10228,10 +10224,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         const closeBtn = document.getElementById('compareProfileModalClose');
         const cancelBtn = document.getElementById('compareCancelBtn');
         const applyBtn = document.getElementById('compareApplyBtn');
+        const loadFormBtn = document.getElementById('compareLoadFormBtn');
         const hideEmptyCheckbox = document.getElementById('compareHideEmptyCheckbox');
         const onlyDifferencesCheckbox = document.getElementById('compareOnlyDifferencesCheckbox');
 
-        if (!modal || !closeBtn || !cancelBtn || !applyBtn) {
+        if (!modal || !closeBtn || !cancelBtn || !applyBtn || !loadFormBtn) {
           console.warn('[Compare Modal] Elements not found, will retry...');
           setTimeout(initComparisonModal, 100);
           return;
@@ -10250,10 +10247,33 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Cancel button
         cancelBtn.addEventListener('click', closeModal);
 
-        // Apply button
+        // Upload to Device button (full callback: load into form + upload)
         applyBtn.addEventListener('click', () => {
           if (modal.__applyCallback && typeof modal.__applyCallback === 'function') {
             modal.__applyCallback();
+          }
+          closeModal();
+        });
+
+        // Load into Form button (form-only: no upload to device)
+        loadFormBtn.addEventListener('click', () => {
+          try {
+            const profileData = modal.__profileData;
+            if (profileData && typeof window.__applyProfileObject === 'function') {
+              const profileObj = typeof profileData === 'string'
+                ? parseProfileText(profileData)
+                : profileData;
+              window.__applyProfileObject(profileObj);
+              if (window.log) window.log('📝 Profile loaded into form (not uploaded to device)', 'update');
+              // Reset diff banner
+              if (typeof diffBannerDismissed !== 'undefined') diffBannerDismissed = false;
+              // Update recent profiles display
+              if (typeof window.renderRecentProfiles === 'function') {
+                setTimeout(() => window.renderRecentProfiles(), 50);
+              }
+            }
+          } catch (e) {
+            console.error('[Compare Modal] Load into form error:', e);
           }
           closeModal();
         });
@@ -10325,7 +10345,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-day-label .day-num{ font-size:1.8em; font-weight:700; }
   .timeline-bar-labels{ flex:0 0 90px; display:flex; flex-direction:column; }
   .timeline-bar-labels .bar-label{ display:flex; align-items:center; justify-content:flex-end; font-size:15px; font-weight:700; text-transform:uppercase; color:#000; font-family:'Inter','Segoe UI',system-ui,sans-serif; text-align:right; line-height:1.15; padding-right:4px; white-space:nowrap; }
-  .timeline-bar-labels .speed-label{ height:56px; }
+  .timeline-bar-labels .speed-label{ height:56px; margin-top:6px; }
   .timeline-bar-labels .reverse-label{ height:54px; margin-top:5px; }
   .timeline-bar-labels .color-label{ height:54px; margin-top:3px; }
   .timeline-day-actions{ flex:0 0 auto; display:flex; gap:4px; align-items:center; padding-left:8px; }
@@ -10335,7 +10355,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-day-actions button.danger:hover{ background:#b71c1c !important; }
   .timeline-day-actions svg{ display:block; }
   /* Increased visualization font sizes ~1.5x */
-  .timeline-strip{ position:relative; background:#f4f5f7; border:1px solid #ccc; height:54px; border-radius:4px; overflow:visible; font-family:'Inter','Segoe UI',system-ui,sans-serif; font-variant-numeric:tabular-nums; font-size:1.2rem; flex:1 0 auto; }
+  .timeline-strip{ position:relative; background:#f4f5f7; border:1px solid #ccc; height:54px; border-radius:4px; overflow:visible; font-family:'Inter','Segoe UI',system-ui,sans-serif; font-variant-numeric:tabular-nums; font-size:1.2rem; flex:1 0 auto; margin-top:6px; }
     .timeline-strip.reverse-strip{ height:54px; border-radius:0; border-top:none; margin-top:5px; }
     .timeline-strip.empty{ display:none; }
     .timeline-strip.readonly *{ cursor: default !important; } /* No interactive cursors for read-only device status */
@@ -11779,15 +11799,25 @@ https://github.com/odeepllama/SolarSim/tree/main
         const keyRow = document.createElement('div');
         keyRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:4px;margin-left:98px;font-size:16px;color:#000;font-family:Inter,system-ui,sans-serif;';
         keyRow.innerHTML = '<span style="font-weight:600;margin-right:3px;">Intensity:</span>';
-        // Determine swatch color: use step color if all share the same RGB, else grey
+        // Determine swatch color: use the most common step color, fall back to grey only if no steps have color
         const stepsWithColor = steps.filter(s => s.sun_color_rgb);
-        const firstRgb = stepsWithColor.length ? stepsWithColor[0].sun_color_rgb : null;
-        const allSameColor = firstRgb && stepsWithColor.every(s =>
-          s.sun_color_rgb[0] === firstRgb[0] && s.sun_color_rgb[1] === firstRgb[1] && s.sun_color_rgb[2] === firstRgb[2]
-        );
-        const keyColor = allSameColor
-          ? sunColorToDisplayColor(firstRgb)
-          : { r: 128, g: 128, b: 128 };
+        let keyColor;
+        if (stepsWithColor.length) {
+          // Find the most common RGB value among steps
+          const colorCounts = new Map();
+          stepsWithColor.forEach(s => {
+            const key = s.sun_color_rgb.join(',');
+            colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+          });
+          let bestKey = null, bestCount = 0;
+          for (const [k, count] of colorCounts) {
+            if (count > bestCount) { bestKey = k; bestCount = count; }
+          }
+          const bestRgb = bestKey.split(',').map(Number);
+          keyColor = sunColorToDisplayColor(bestRgb);
+        } else {
+          keyColor = { r: 128, g: 128, b: 128 };
+        }
         [0.1, 0.5, 1.0].forEach(val => {
           // Composite against white so page background doesn't bleed through
           const sr = Math.round(keyColor.r * val + 255 * (1 - val));
@@ -13556,6 +13586,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-variant-numeric: tabular-nums;
       font-size: 1.2rem;
       flex: 1 0 auto;
+      margin-top: 6px;
     }
     .clock-tl-seg {
       position: absolute;
@@ -18656,15 +18687,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         function removeOfflineTileStyle() {
           for (const [, box] of kvCache.entries()) {
             box.classList.remove('tile-offline');
-            box.classList.add('tile-go-live');
             box.title = '';
           }
-          // Remove flash class after animation
-          setTimeout(() => {
-            for (const [, box] of kvCache.entries()) {
-              box.classList.remove('tile-go-live');
-            }
-          }, 500);
         }
 
         /**
@@ -20360,15 +20384,22 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             const dayData = analyzeMultiDayProgram();
             if (dayData.days.length > 1) {
-              renderMultiDayTimeline(simContainer, dayData, true);
+              renderMultiDayTimeline(simContainer, dayData, true, viewMode !== 'sim');
             } else {
               renderSingleDayTimeline(simContainer, true);
+              // Single-day, sim-only: add intensity key beneath sim bar
+              if (viewMode === 'sim') {
+                const keyEl = buildIntensityKey(programSteps);
+                if (keyEl) simContainer.appendChild(keyEl);
+              }
             }
           }
 
           // Render clock-time timeline if mode is 'clock' or 'both'
           if (viewMode === 'clock' || viewMode === 'both') {
+            window.__appendClockIntensityKey = true;
             renderClockTimeTimeline(timelineEl, true);
+            window.__appendClockIntensityKey = false;
           }
         };
 
