@@ -18724,14 +18724,15 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Seed each tile
           setKV('sim', 'SimTime', fmtHHMM(formState.START_TIME_HHMM || 600));
-          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1));
+          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1) + 'X');
           setKV('intensity', 'Intensity', String(formState.INTENSITY_SCALE ?? 1));
           setKV('sunColor', 'SunColor', String(formState.SUN_COLOR_MODE || 'BLUE'));
           setKV('program', 'Program', formState.PROGRAM_ENABLED ? 'ON' : 'OFF');
           setKV('solarMode', 'SolarMode', String(formState.SOLAR_MODE || 'BASIC'));
           setKV('dualSun', 'DualSun', formState.DUAL_SUN_ENABLED ? 'ON' : 'OFF');
-          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120));
+          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120) + 's');
           setKV('rotation', 'RotationImaging', formState.ROTATION_ENABLED ? 'ON' : 'OFF');
+          setKV('servo2NightInt', 'Servo2NightInt', String(formState.SERVO2_INTERVAL_NIGHT_SEC ?? 0) + 's');
           reorderTiles();
 
           // Mark all tiles as offline (grey)
@@ -18783,7 +18784,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           setKV('sim', 'SimTime', fmtHHMM(formState.START_TIME_HHMM || 600));
-          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1));
+          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1) + 'X');
           setKV('intensity', 'Intensity', String(formState.INTENSITY_SCALE ?? 1));
           setKV('sunColor', 'SunColor', String(formState.SUN_COLOR_MODE || 'BLUE'));
           // Apply sun-color CSS classes for font sizing (matches live tile logic)
@@ -18807,8 +18808,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (sm === 'CUSTOM') smEl.classList.add('mode-custom');
           }
           setKV('dualSun', 'DualSun', formState.DUAL_SUN_ENABLED ? 'ON' : 'OFF');
-          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120));
+          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120) + 's');
           setKV('rotation', 'RotationImaging', formState.ROTATION_ENABLED ? 'ON' : 'OFF');
+          setKV('servo2NightInt', 'Servo2NightInt', String(formState.SERVO2_INTERVAL_NIGHT_SEC ?? 0) + 's');
 
           // Refresh sun arc visualization to reflect updated tile state
           try {
