@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-SolarSim Studio - Solar Simulator Profile Builder
+SolaSim Studio - Solar Simulator Profile Builder
 ================================================================================
 
 Copyright (C) 2026 Andy Crofts
@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 Project Description:
 ================================================================================
 
-SolarSim Studio is a web-based profile builder and real-time device monitor
+SolaSim Studio is a web-based profile builder and real-time device monitor
 for solar simulation hardware. It provides:
 
 - Visual timeline editor for multi-day solar simulation programs
@@ -166,6 +166,19 @@ https://github.com/odeepllama/SolarSim/tree/main
     .jp-heading {
       font-size: 1.25rem !important;
       letter-spacing: 0.01em;
+    }
+
+    #appTitle {
+      display: flex;
+      align-items: center;
+      gap: 0.15em;
+      margin: 14px 0 0.25em 0;
+    }
+
+    #appTitle .logo-img {
+      height: 1.1em;
+      width: auto;
+      vertical-align: middle;
     }
 
     #appTitle.jp-heading {
@@ -3948,7 +3961,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     <!-- FTUE Welcome Modal -->
     <div id="ftueWelcomeModal" role="dialog" aria-labelledby="ftueWelcomeTitle" aria-modal="true">
       <div class="modal-content">
-        <h2 id="ftueWelcomeTitle">Welcome to SolarSim Studio! 🌞</h2>
+        <h2 id="ftueWelcomeTitle">Welcome to SolaSim Studio! 🌞</h2>
         <p class="subtitle">Let's get you started with solar simulation</p>
         <div class="role-buttons">
           <button class="role-btn" data-path="quick" style="border: 2px solid #28a745; background: #f0fff4;">
@@ -4020,7 +4033,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <p>Quick reference for building and managing profiles. Press <code>Esc</code> to close.</p>
 
           <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
-            <strong style="color:#0d47a1;">🎓 New to SolarSim Studio?</strong>
+            <strong style="color:#0d47a1;">🎓 New to SolaSim Studio?</strong>
             <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
               <a href="#" id="helpRestartGuide" style="color:#2196f3; text-decoration:underline; font-weight:500;">Click
                 here to restart the guide</a> and get a guided walkthrough of all features.
@@ -4486,7 +4499,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <p>プロファイルの構築と管理に関するクイックリファレンス。<code>Esc</code>キーで閉じます。</p>
 
           <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
-            <strong style="color:#0d47a1;">🎓 SolarSim Studio が初めてですか？</strong>
+            <strong style="color:#0d47a1;">🎓 SolaSim Studio が初めてですか？</strong>
             <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
               <a href="#" id="helpRestartGuideJa"
                 style="color:#2196f3; text-decoration:underline; font-weight:500;">ここをクリックしてガイドを再開</a>し、すべての機能のガイドを参照してください。
@@ -5132,7 +5145,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           <div id="guide-en">
             <!-- English guide content start -->
             <h1 id="userGuideTitle">Solar Simulator User Guide</h1>
-            <p>Welcome to the <strong>SolarSim Studio</strong> user guide. This document provides everything you need to
+            <p>Welcome to the <strong>SolaSim Studio</strong> user guide. This document provides everything you need to
               set up your solar simulation hardware and use the web interface to control lighting, rotation, and imaging
               for your experiments.</p>
 
@@ -5151,7 +5164,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             <h4>RP2040:bit Firmware Installation</h4>
             <ol>
               <li><strong>Download the Firmware</strong>: Obtain the latest <code>SolarSimulator_YYYYMMDD.uf2</code>
-                file from the SolarSim GitHub repository.</li>
+                file from the SolaSim GitHub repository.</li>
               <li><strong>Enter Bootloader Mode</strong>:
                 <ul>
                   <li>Hold down the <strong>BOOT</strong> button on the edge of the board.</li>
@@ -5169,7 +5182,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               </li>
             </ol>
 
-            <h3>2. Open SolarSim Studio</h3>
+            <h3>2. Open SolaSim Studio</h3>
             <p>You do not need to install any software on your computer to control the device.</p>
             <ul>
               <li><strong>Recommended</strong>: Open <a href="https://odeepllama.github.io/SolarSim/"
@@ -5219,7 +5232,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 settings (single sun, 1X speed, sunrise 0600, sunset 1800, etc).</li>
             </ul>
 
-            <h2>🎮 Three Ways to Use SolarSim Studio</h2>
+            <h2>🎮 Three Ways to Use SolaSim Studio</h2>
 
             <h3 class="guide-pill-title">1. Real-Time Interaction (Monitor Mode)</h3>
             <p><em>Best for: Quick adjustments, testing hardware, and checking status.</em></p>
@@ -5396,7 +5409,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           </div>
           <div id="guide-ja" style="display:none">
             <h1 id="userGuideTitle-ja">ソーラーシミュレーター ユーザーガイド</h1>
-            <p><strong>SolarSim Studio</strong>
+            <p><strong>SolaSim Studio</strong>
               ユーザーガイドへようこそ。このドキュメントは、ソーラーシミュレーションハードウェアのセットアップ方法と、ウェブインターフェースを使った照明、回転、イメージング制御の手順をすべて説明します。</p>
 
             <h2>🚀 クイックスタート：インストールとセットアップ</h2>
@@ -5412,7 +5425,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 </ul>
                 <strong>RP2040:bit ファームウェアのインストール：</strong><br>
                 <ol>
-                  <li><strong>ファームウェアのダウンロード：</strong> SolarSim GitHubリポジトリから最新のSolarSimulator_YYYYMMDD.uf2ファイルを取得します。
+                  <li><strong>ファームウェアのダウンロード：</strong> SolaSim GitHubリポジトリから最新のSolarSimulator_YYYYMMDD.uf2ファイルを取得します。
                   </li>
                   <li><strong>ブートローダーモードに入る：</strong>
                     <ul>
@@ -5430,7 +5443,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                   </li>
                 </ol>
               </li>
-              <li><strong>SolarSim Studioを開く</strong><br>
+              <li><strong>SolaSim Studioを開く</strong><br>
                 デバイスを操作するためにPCへソフトウェアをインストールする必要はありません。<br>
                 <ul>
                   <li>推奨：<a href="https://odeepllama.github.io/SolarSim/"
@@ -5468,7 +5481,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               </li>
             </ul>
 
-            <h2>🎮 SolarSim Studioの3つの使い方</h2>
+            <h2>🎮 SolaSim Studioの3つの使い方</h2>
             <ol>
               <li><strong>リアルタイム操作（モニターモード）</strong><br>
                 <em>最適：素早い調整、ハードウェアのテスト、状態確認</em><br>
@@ -5606,10 +5619,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // ============================================================================
 
 
+      const SOLASIM_LOGO_B64 = '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';
+
       // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
       const TRANSLATIONS = {
         en: {
-          appTitle: 'SolarSim Studio',
+          appTitle: 'SolaSim Studio',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
           connect: '<span class="btn-emoji">🔌</span> Connect Device',
@@ -5624,7 +5639,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           langToggle: 'JPN',
           guide: '🎓 Guide',
           help: 'Help',
-          welcomeTitle: 'Welcome to SolarSim Studio! 🌞',
+          welcomeTitle: 'Welcome to SolaSim Studio! 🌞',
           welcomeSubtitle: "Let's get you started with solar simulation",
           quickStartTour: 'Quick Start Tour',
           quickStartTourDesc: 'Essential walkthrough in just 6 steps: connect device, set time & intensity, add program steps, and upload (5 minutes)',
@@ -5772,7 +5787,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           toggleView: '(Toggle view)',
         },
         ja: {
-          appTitle: 'SolarSim Studio',
+          appTitle: 'SolaSim Studio',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
           connect: '<span class="btn-emoji">🔌</span> USB接続',
@@ -5787,7 +5802,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           langToggle: 'ENG',
           guide: '🎓 ガイド',
           help: 'ヘルプ',
-          welcomeTitle: 'SolarSim Studio へようこそ！🌞',
+          welcomeTitle: 'SolaSim Studio へようこそ！🌞',
           welcomeSubtitle: '太陽シミュレーションを始めましょう',
           quickStartTour: 'クイックスタートツアー',
           quickStartTourDesc: 'わずか6ステップで基本を習得：デバイス接続、時間と強度の設定、プログラムステップの追加、アップロード（5分）',
@@ -5944,7 +5959,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         currentLang = lang;
         localStorage.setItem(LANG_STORAGE_KEY, lang);
         // Main navigation and monitor controls (legacy direct mapping)
-        document.getElementById('appTitle').textContent = TRANSLATIONS[lang].appTitle;
+        document.getElementById('appTitle').innerHTML = '<img class="logo-img" src="data:image/jpeg;base64,' + SOLASIM_LOGO_B64 + '" alt="SolaSim"> Studio';
         // Adjust monitor/toolbar button size for Japanese
         const monitorBtnIds = [
           'toggleMonitorBtn', 'monitorConnectBtn', 'quickEditBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
