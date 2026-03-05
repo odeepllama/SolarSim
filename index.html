@@ -4233,12 +4233,14 @@ https://github.com/odeepllama/SolarSim/tree/main
                   parameters.</p>
               </div>
             </li>
-            <li><strong>Save/Apply/Clear Default</strong>: Manage your baseline configuration. <button
+            <li><strong>Save / Restore / Reset Default</strong>: Manage your baseline configuration. <button
                 class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
-                <p><strong>Save Default:</strong> Store current form as your preferred baseline. <strong>Apply
-                    Default:</strong> Restore the form to your saved baseline. <strong>Clear Default:</strong> Remove
-                  the baseline (resets to empty form). Defaults are stored locally in your browser.</p>
+                <p><strong>Save as Default:</strong> Store current form as your preferred baseline. <strong>Restore
+                    Defaults:</strong> Restore the form to your saved baseline. <strong>Reset to Original:</strong>
+                  Remove
+                  the saved baseline and restore the built-in original values. Defaults are stored locally in your
+                  browser.</p>
               </div>
             </li>
             <li><strong>Reset Dialogs</strong>: Clear "Don't ask again" preferences. <button class="help-expand-btn"
@@ -4687,11 +4689,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                 </ul>
               </div>
             </li>
-            <li><strong>デフォルトの保存/適用/クリア</strong>: 基本構成を管理します。<button class="help-expand-btn"
+            <li><strong>デフォルトの保存/復元/リセット</strong>: 基本構成を管理します。<button class="help-expand-btn"
                 onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
               <div class="help-detail" style="display:none;">
                 <p>
-                  <strong>デフォルトとして保存：</strong>現在のフォームを標準構成として保存します。<strong>デフォルトを適用：</strong>保存した標準構成にフォームを戻します。<strong>デフォルトをクリア：</strong>標準構成を削除します。デフォルトはブラウザにローカルで保存されます。
+                  <strong>デフォルトとして保存：</strong>現在のフォームを標準構成として保存します。<strong>デフォルトを復元：</strong>保存した標準構成にフォームを戻します。<strong>初期値にリセット：</strong>保存した標準構成を削除し、組み込みの初期値に戻します。デフォルトはブラウザにローカルで保存されます。
                 </p>
               </div>
             </li>
@@ -4908,9 +4910,9 @@ https://github.com/odeepllama/SolarSim/tree/main
     <div id="profileDefaultsBar"
       style="margin:0 0 10px 0; display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:.7rem;">
       <button id="saveDefaultBtn" type="button" data-i18n="saveDefault">Save as Default</button>
-      <button id="applyDefaultBtn" type="button" disabled data-i18n="applyDefault">Apply Default</button>
-      <button id="clearDefaultBtn" type="button" class="secondary" disabled data-i18n="clearDefault">Clear
-        Default</button>
+      <button id="applyDefaultBtn" type="button" disabled data-i18n="applyDefault">Restore Defaults</button>
+      <button id="clearDefaultBtn" type="button" class="secondary" disabled data-i18n="clearDefault">Reset to
+        Original</button>
       <!-- <button id="loadCurrentProfileBtn" type="button" class="secondary" disabled title="Load the profile currently running on the device">⚡ Load Current</button> -->
       <span id="autoloadStatusBadge"
         style="display:none; border-radius:4px; font-size:0.9rem; font-weight:600; border:1px solid transparent;"
@@ -5732,8 +5734,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           deviceProgramStatus: 'Device Program Status',
           profileManagement: 'Profile Management',
           saveDefault: 'Save as Default',
-          applyDefault: 'Apply Default',
-          clearDefault: 'Clear Default',
+          applyDefault: 'Restore Defaults',
+          clearDefault: 'Reset to Original',
           loadDefaultOnStartup: 'Load default on page at startup',
           programStepTimeline: 'Program Step Timeline',
           programStepEditing: 'Program Step Editing',
@@ -5804,7 +5806,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideConnectDevice: 'Connect Your Device',
           guideConnectDeviceDesc: 'Click the green <strong>🔌 Connect Device</strong> button to connect to your device via USB cable.',
           guideStatusTiles: 'Status Tiles',
-          guideStatusTilesDesc: 'View real-time key parameters at a glance—connection status, program state, time, intensity, and more. Click on a tile to quickly adjust its setting.',
+          guideStatusTilesDesc: 'Key parameters at a glance — connection status, program state, time, intensity, and more. Live tiles appear black with white text when connected to a device; grey tiles indicate the data is not live. Tiles are always interactive: click any tile to quickly adjust its setting.',
           guideSolarArc: 'Solar Arc Simulation',
           guideSolarArcDesc: 'Visual sun path showing current time and day/night shading. The arc updates in real-time to display sun position, color, and intensity.',
           guideLogWindow: 'Log Window and Command Entry',
@@ -5812,7 +5814,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideDeviceProgramStatus: 'Device Program Status',
           guideDeviceProgramStatusDesc: 'When connected to a device running a program, this read-only display mirrors real-time progress using the same color-coded visualization as the editing timeline — sun color, intensity opacity, and speed height. The red playhead arrow tracks the current position. A clock-time bar can also appear here, showing elapsed wall-clock time.',
           guideProfileManagement: 'Profile Management',
-          guideProfileManagementDesc: 'Save, load, and manage default profiles. Use "Save as Default" to set a profile that loads automatically on page startup.',
+          guideProfileManagementDesc: 'Save, load, and manage default profiles. Use "Save as Default" to store your baseline, "Restore Defaults" to reload it, or "Reset to Original" to return to the built-in values.',
           guideAutoLoad: 'Auto-Load Control',
           guideAutoLoadDesc: 'The auto-load badge shows whether the device will automatically load the newest profile on startup. Use the lock button to enable/disable auto-load behavior on the device.',
           guideKeySettings: 'Basic Settings',
@@ -5830,7 +5832,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProgramTimeline: 'Program Step Timeline Visualization',
           guideProgramTimelineDesc: 'The timeline visualizes your program as a color-coded strip. Each segment\u2019s <strong>color reflects the sun color</strong>, <strong>opacity shows intensity</strong>, and <strong>height indicates speed</strong> \u2014 giving an at-a-glance view of the entire experiment. Drag segment edges to adjust timing. Use the <strong>Sim / Clock / Both</strong> toggle to switch between simulation time and clock time. When <strong>Per-Step Day Length</strong> is enabled, \u2600\ufe0f and \u263d markers show sunrise/sunset positions, and dark overlays indicate nighttime periods. Multi-day programs display separate bars for each day.',
           guideProgramSteps: 'Program Step Editing',
-          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, sun colors, and transition behaviors (RUN, JUMP, or HOLD). Enable <strong>Per-Step Day Length</strong> to set custom sunrise/sunset times per step for CUSTOM solar mode. The <strong>intensity cell</strong> previews the sun color at the step\u2019s opacity, and the <strong>speed cell</strong> uses blue (forward) or red (reverse) shading. Nighttime steps have greyed-out intensity and sun color cells.',
+          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, sun colors, and transition behaviors (RUN, JUMP, or HOLD). Enable <strong>Per-Step Day Length</strong> to set custom sunrise/sunset times per step for CUSTOM solar mode. The <strong>intensity cell</strong> previews the sun color at the step\u2019s opacity, and the <strong>speed cell</strong> uses blue (forward) or red (reverse) shading. Nighttime steps have greyed-out intensity and sun color cells. The effective sunrise and sunset for each day are highlighted in <strong style="background:#fff9c4;padding:0 3px">yellow</strong> and <strong style="background:#1a237e;color:#fff;padding:0 3px">blue</strong> respectively.',
           guideProfileTextWindow: 'Profile Text Window',
           guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here before uploading to the device.',
           guideRecentProfiles: 'Recent Profiles',
@@ -5846,7 +5848,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideSimpleAdvanced: 'Simple vs Advanced Mode',
           guideSimpleAdvancedDesc: 'Toggle between Simple mode (streamlined) and Advanced mode (all features). Click the gear icon to customize which sections appear in Simple mode.',
           guideDeviceIdentity: 'Device Identity',
-          guideDeviceIdentityDesc: 'Click this badge to name your device. Useful when working with multiple devices across different tabs.',
+          guideDeviceIdentityDesc: 'Click this badge to name your device. When running multiple devices in separate tabs, assign each a unique colour theme to tell them apart at a glance.',
           guideHelpPanel: 'Help Panel',
           guideHelpPanelDesc: 'Click here anytime to access detailed help documentation, including workflow tips and feature explanations.',
           guideUploadToDevice: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
@@ -5895,8 +5897,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           deviceProgramStatus: 'デバイスプログラムステータス',
           profileManagement: 'プロファイル管理',
           saveDefault: 'デフォルトとして保存',
-          applyDefault: 'デフォルトを適用',
-          clearDefault: 'デフォルトをクリア',
+          applyDefault: 'デフォルトを復元',
+          clearDefault: '初期値にリセット',
           loadDefaultOnStartup: '起動時にデフォルトを読み込む',
           programStepTimeline: 'プログラムステップタイムライン',
           programStepEditing: 'プログラムステップ編集',
@@ -5930,7 +5932,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideConnectDevice: 'デバイスを接続',
           guideConnectDeviceDesc: '緑色の<strong>🔌 USB接続</strong>ボタンをクリックして、USBケーブルでデバイスに接続してください。',
           guideStatusTiles: 'ステータスタイル',
-          guideStatusTilesDesc: '接続状態、プログラム状態、時刻、強度など、主要なパラメータをひと目で確認できます。タイルをクリックすると設定をすばやく調整できます。',
+          guideStatusTilesDesc: '主要パラメータをひと目で確認 — 接続状態、プログラム状態、時刻、強度など。デバイス接続中のライブタイルは黒背景に白文字で表示され、グレーのタイルはデータがライブでないことを示します。タイルは常にインタラクティブで、クリックすると設定をすばやく調整できます。',
           guideSolarArc: 'ソーラーアークシミュレーション',
           guideSolarArcDesc: '現在時刻と昼夜の陰影を示す視覚的な太陽経路です。アークは太陽の位置、色、強度をリアルタイムで表示するように更新されます。',
           guideLogWindow: 'ログウィンドウとコマンド入力',
@@ -5938,7 +5940,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideDeviceProgramStatus: 'デバイスプログラムステータス',
           guideDeviceProgramStatusDesc: 'プログラム実行中のデバイスに接続すると、この読み取り専用ディスプレイが編集タイムラインと同じカラーバー（太陽色・強度の透明度・速度の高さ）を使ってリアルタイムの進行状況を表示します。赤い再生ヘッドが現在位置を示します。クロックタイムバーも表示でき、経過した実時間を確認できます。',
           guideProfileManagement: 'プロファイル管理',
-          guideProfileManagementDesc: 'デフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」を使用すると、ページ起動時に自動的に読み込むことができるプロファイルを設定できます。',
+          guideProfileManagementDesc: 'デフォルトプロファイルの保存、読み込み、管理ができます。「デフォルトとして保存」で基本構成を保存、「デフォルトを復元」で保存した構成に戻し、「初期値にリセット」で組み込みの初期値に戻せます。',
           guideAutoLoad: '自動ロード制御',
           guideAutoLoadDesc: '自動ロードバッジは、デバイスが起動時に最新のプロファイルを自動的に読み込むかどうかを示します。ロックボタンを使用して、デバイスの自動ロード動作を有効/無効にします。',
           guideKeySettings: '基本設定',
@@ -5956,7 +5958,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProgramTimeline: 'プログラムステップタイムライン視覚化',
           guideProgramTimelineDesc: 'タイムラインはプログラムをカラーバーとして視覚化します。各セグメントの<strong>色は太陽色</strong>、<strong>透明度は強度</strong>、<strong>高さは速度</strong>を反映し、実験全体をひと目で把握できます。セグメントの端をドラッグしてタイミングを調整できます。<strong>Sim / Clock / Both</strong>トグルで、シミュレーション時間とクロック時間を切り替えられます。<strong>ステップごとのDay Length</strong>が有効な場合、☀️と☽マーカーが日の出/日の入り位置を示し、暗いオーバーレイが夜間を表します。マルチDayプログラムは各Dayごとに個別のバーで表示されます。',
           guideProgramSteps: 'プログラムステップ編集',
-          guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、太陽色、遷移動作（RUN、JUMP、HOLD）を持てます。<strong>ステップごとのDay Length</strong>を有効にすると、CUSTOMソーラーモード用にステップごとのSunrise/Sunset時刻を設定できます。<strong>強度セル</strong>はその透明度で太陽色をプレビューし、<strong>速度セル</strong>は青（順方向）または赤（逆方向）で表示されます。夜間のステップは強度と太陽色のセルがグレーアウトされます。',
+          guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、太陽色、遷移動作（RUN、JUMP、HOLD）を持てます。<strong>ステップごとのDay Length</strong>を有効にすると、CUSTOMソーラーモード用にステップごとのSunrise/Sunset時刻を設定できます。<strong>強度セル</strong>はその透明度で太陽色をプレビューし、<strong>速度セル</strong>は青（順方向）または赤（逆方向）で表示されます。夜間のステップは強度と太陽色のセルがグレーアウトされます。各日の有効なSunriseとSunsetは、それぞれ<strong style="background:#fff9c4;padding:0 3px">黄色</strong>と<strong style="background:#1a237e;color:#fff;padding:0 3px">青色</strong>で強調表示されます。',
           guideProfileTextWindow: 'プロファイルテキストウィンドウ',
           guideProfileTextWindowDesc: '生のプロファイルテキストを表示・編集します。上級ユーザーはここでパラメータを直接編集し、フォームに反映してからデバイスにアップロードできます。',
           guideRecentProfiles: '最近のプロファイル',
@@ -7684,6 +7686,25 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
         });
 
+        // Pre-compute effective sunrise (earliest) and sunset (latest) per day
+        // so we can highlight which step defines the day boundaries
+        const dayEffectiveRise = new Map(); // dayNumber -> { value, stepIdx }
+        const dayEffectiveSet = new Map();  // dayNumber -> { value, stepIdx }
+        if (document.getElementById('perStepDayLength')?.checked) {
+          dayData.days.forEach(day => {
+            let earliestRise = Infinity, earliestRiseIdx = -1;
+            let latestSet = -Infinity, latestSetIdx = -1;
+            day.steps.forEach(stepInfo => {
+              const s = programSteps[stepInfo.index];
+              const rise = s.sunrise != null ? s.sunrise : 600;
+              const set = s.sunset != null ? s.sunset : 1800;
+              if (rise < earliestRise) { earliestRise = rise; earliestRiseIdx = stepInfo.index; }
+              if (set > latestSet) { latestSet = set; latestSetIdx = stepInfo.index; }
+            });
+            if (earliestRiseIdx >= 0) dayEffectiveRise.set(day.dayNumber, { value: earliestRise, stepIdx: earliestRiseIdx });
+            if (latestSetIdx >= 0) dayEffectiveSet.set(day.dayNumber, { value: latestSet, stepIdx: latestSetIdx });
+          });
+        }
 
         programSteps.forEach((step, idx) => {
           const tr = document.createElement('tr');
@@ -7821,9 +7842,23 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (dayLenVisible && step.sunset == null) step.sunset = 1800;
           const riseTd = mkCell(`<input data-f='sunrise' type='number' min='0' max='2359' value='${riseVal}' style='width:60px' placeholder='—'/>`);
           riseTd.className = 'day-length-col'; riseTd.style.cssText = riseDisplay;
+          // Highlight effective sunrise cell (earliest in the day) with yellow fill
+          if (dayLenVisible && dayNum !== undefined) {
+            const eff = dayEffectiveRise.get(dayNum);
+            if (eff && eff.stepIdx === idx) {
+              const inp = riseTd.querySelector('input'); if (inp) inp.style.background = '#fff9c4';
+            }
+          }
           tr.appendChild(riseTd);
           const setTd = mkCell(`<input data-f='sunset' type='number' min='0' max='2359' value='${setVal}' style='width:60px' placeholder='—'/>`);
           setTd.className = 'day-length-col'; setTd.style.cssText = riseDisplay;
+          // Highlight effective sunset cell (latest in the day) with dark blue fill + white text
+          if (dayLenVisible && dayNum !== undefined) {
+            const eff = dayEffectiveSet.get(dayNum);
+            if (eff && eff.stepIdx === idx) {
+              const inp = setTd.querySelector('input'); if (inp) { inp.style.background = '#1a237e'; inp.style.color = '#fff'; }
+            }
+          }
           tr.appendChild(setTd);
           const transitionVal = (step.transition || 'RUN').toUpperCase();
           tr.appendChild(mkCell(`<select data-f='transition'>
@@ -14828,10 +14863,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           try {
             localStorage.removeItem(SAVE_KEY);
             localStorage.removeItem(AUTOLOAD_KEY);
+            // Restore all fields to built-in original values
+            Object.keys(FIELDS).forEach(k => { state[k] = FIELDS[k].default; });
+            programSteps.length = 0;
+            state.PROGRAM_ENABLED = false;
+            renderForm(); renderProgramSteps(); updatePreview(true);
             updateButtons();
-            $clear.title = 'Default cleared';
+            $clear.title = 'Reset to original values';
           }
-          catch (e) { console.warn('Clear default failed', e); }
+          catch (e) { console.warn('Reset to original failed', e); }
         }
 
         // Wire buttons
@@ -22388,7 +22428,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideProgramTimeline',
             contentKey: 'guideProgramTimelineDesc',
             position: 'bottom',
-            rightTooltip: true,
+            tooltipTopCenter: true,
+            tooltipMinWidth: 800,
             adjustTarget: (el) => {
               // Wrap the timeline title + timeline container strip together
               const container = document.getElementById('timelineContainer');
@@ -22407,6 +22448,41 @@ https://github.com/odeepllama/SolarSim/tree/main
 
               document.body.appendChild(wrapper);
               el._guideWrapper = wrapper;
+              return wrapper;
+            }
+          },
+          {
+            target: '#programStepsTable',
+            titleKey: 'guideProgramSteps',
+            contentKey: 'guideProgramStepsDesc',
+            position: 'top',
+            tooltipBottomCenter: true,
+            scrollBlock: 'start',
+            tooltipMinWidth: 800,
+            adjustTarget: (el) => {
+              const editTitle = document.getElementById('programEditingTitle');
+              if (!editTitle) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const titleRect = editTitle.getBoundingClientRect();
+              const tableRect = el.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+
+              const left = Math.min(titleRect.left, tableRect.left) + window.scrollX;
+              const rawWidth = Math.max(titleRect.width, tableRect.width);
+              const maxWidth = viewportWidth - Math.min(titleRect.left, tableRect.left) - 20;
+              const clampedWidth = Math.min(rawWidth, maxWidth);
+              const fullHeight = tableRect.bottom - titleRect.top;
+
+              wrapper.style.top = titleRect.top + window.scrollY + 'px';
+              wrapper.style.left = left + 'px';
+              wrapper.style.width = clampedWidth + 'px';
+              wrapper.style.height = fullHeight + 'px';
+
+              document.body.appendChild(wrapper);
               return wrapper;
             }
           },
@@ -22437,6 +22513,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideConnectDevice',
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
+            tooltipMinWidth: 500,
             adjustTarget: (el) => el
           },
           {
@@ -22444,6 +22521,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideStatusTiles',
             contentKey: 'guideStatusTilesDesc',
             position: 'bottom',
+            tooltipMinWidth: 500,
             adjustTarget: (el) => {
               // Target the title and grid together
               const grid = document.getElementById('monitorStatusGrid');
@@ -22469,19 +22547,23 @@ https://github.com/odeepllama/SolarSim/tree/main
             target: '.vis-col[data-section="monitor-solar-arc"]',
             titleKey: 'guideSolarArc',
             contentKey: 'guideSolarArcDesc',
-            position: 'bottom'
+            position: 'bottom',
+            tooltipMinWidth: 500
           },
           {
             target: '.log-col[data-section="monitor-log"]',
             titleKey: 'guideLogWindow',
             contentKey: 'guideLogWindowDesc',
-            position: 'right'
+            position: 'right',
+            tooltipMinWidth: 500
           },
           {
             target: '#deviceProgramStatusFieldset',
             titleKey: 'guideDeviceProgramStatus',
             contentKey: 'guideDeviceProgramStatusDesc',
-            position: 'bottom'
+            position: 'bottom',
+            tooltipTopCenter: true,  // Position at top center of screen
+            tooltipMinWidth: 800
           },
           {
             target: 'h2[data-i18n="profileManagement"]',
@@ -22490,9 +22572,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             position: 'bottom',
             tooltipOffsetX: 0.67,  // Shift tooltip right by 2/3 of its width
             adjustTarget: (el) => {
-              // Target the h2, profile defaults bar, and recent profiles together (not meta-options below)
+              // Target the h2, profile defaults bar, recent profiles, and filename/meta options together
               const defaultsBar = document.getElementById('profileDefaultsBar');
               const recentDiv = document.getElementById('recentProfiles');
+              const metaOptions = document.querySelector('.meta-options-container');
               if (!defaultsBar) return el;
 
               const wrapper = document.createElement('div');
@@ -22501,14 +22584,19 @@ https://github.com/odeepllama/SolarSim/tree/main
 
               const elRect = el.getBoundingClientRect();
               const barRect = defaultsBar.getBoundingClientRect();
-              // Use recent profiles bottom if available, otherwise fall back to defaults bar
-              const bottomEl = recentDiv ? recentDiv.parentElement || recentDiv : defaultsBar;
-              const bottomRect = bottomEl.getBoundingClientRect();
+              const recentRect = recentDiv ? (recentDiv.parentElement || recentDiv).getBoundingClientRect() : barRect;
+              // Extend to include filename options + profile meta if present
+              const metaRect = metaOptions ? metaOptions.getBoundingClientRect() : recentRect;
 
-              wrapper.style.top = elRect.top + window.scrollY + 'px';
-              wrapper.style.left = Math.min(elRect.left, barRect.left, bottomRect.left) + window.scrollX + 'px';
-              wrapper.style.width = Math.max(elRect.width, barRect.width, bottomRect.width) + 'px';
-              wrapper.style.height = (bottomRect.bottom - elRect.top) + 'px';
+              const top = elRect.top;
+              const left = Math.min(elRect.left, barRect.left, recentRect.left, metaRect.left);
+              const right = Math.max(elRect.right, barRect.right, recentRect.right, metaRect.right);
+              const bottom = Math.max(recentRect.bottom, metaRect.bottom);
+
+              wrapper.style.top = top + window.scrollY + 'px';
+              wrapper.style.left = left + window.scrollX + 'px';
+              wrapper.style.width = (right - left) + 'px';
+              wrapper.style.height = (bottom - top - 15) + 'px'; // Trim slightly to avoid stretching past fieldsets
 
               document.body.appendChild(wrapper);
               return wrapper;
@@ -22518,50 +22606,58 @@ https://github.com/odeepllama/SolarSim/tree/main
             target: '[data-export-ref="downloadBtn"]',
             titleKey: 'guideDownloadProfile',
             contentKey: 'guideDownloadProfileDesc',
-            position: 'bottom'
+            position: 'bottom',
+            tooltipMinWidth: 500
           },
           {
             target: '[data-export-ref="importBtn"]',
             titleKey: 'guideImportProfile',
             contentKey: 'guideImportProfileDesc',
-            position: 'bottom'
+            position: 'bottom',
+            tooltipMinWidth: 500
           },
           {
             target: '[data-export-ref="uploadBtn"]',
             titleKey: 'uploadToDevice',
             contentKey: 'guideUploadToDevice',
             position: 'bottom',
+            tooltipMinWidth: 500,
             highlight: true
           },
           {
             target: 'fieldset[data-section="time-and-date"]',
             titleKey: 'guideKeySettings',
             contentKey: 'guideKeySettingsDesc',
-            position: 'top'
+            position: 'top',
+            tooltipMinWidth: 500
           },
           {
             target: 'fieldset[data-section="solar-mode-and-sun-color"]',
             titleKey: 'guideSolarMode',
             contentKey: 'guideSolarModeDesc',
-            position: 'top'
+            position: 'top',
+            tooltipMinWidth: 500
           },
           {
             target: 'fieldset[data-section="imaging-illumination"]',
             titleKey: 'guideImagingIllumination',
             contentKey: 'guideImagingIlluminationDesc',
-            position: 'top'
+            position: 'top',
+            tooltipMinWidth: 500
           },
           {
             target: 'fieldset[data-section="imaging-servo-operation-and-timing"]',
             titleKey: 'guideImagingServos',
             contentKey: 'guideImagingServosDesc',
-            position: 'top'
+            position: 'top',
+            tooltipMinWidth: 500
           },
           {
-            target: 'fieldset[data-section="rotation-and-imaging"]',
+            target: 'fieldset[data-section="rotation-imaging"]',
             titleKey: 'guideRotationImaging',
             contentKey: 'guideRotationImagingDesc',
-            position: 'top'
+            position: 'top',
+            tooltipMinWidth: 500
           },
           {
             target: 'fieldset[data-section="program-control"]',
@@ -22573,7 +22669,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             target: '#programTimelineTitle',
             titleKey: 'guideProgramTimeline',
             contentKey: 'guideProgramTimelineDesc',
-            position: 'bottom',
+            position: 'top',
+            tooltipTopCenter: true,  // Position tooltip at top center of screen, above the timeline
+            tooltipMinWidth: 800,  // Wide tooltip to reduce vertical height
             adjustTarget: (el) => {
               // Create wrapper that extends to bottom of timeline container
               const timelineContainer = document.getElementById('timelineContainer');
@@ -22586,9 +22684,13 @@ https://github.com/odeepllama/SolarSim/tree/main
               const elRect = el.getBoundingClientRect();
               const containerRect = timelineContainer.getBoundingClientRect();
 
+              const left = elRect.left;
               wrapper.style.top = elRect.top + window.scrollY + 'px';
-              wrapper.style.left = elRect.left + window.scrollX + 'px';
-              wrapper.style.width = Math.max(elRect.width, containerRect.width) + 'px';
+              wrapper.style.left = left + window.scrollX + 'px';
+              // Clamp width to viewport to prevent right overflow
+              const viewportWidth = window.innerWidth;
+              const maxWidth = viewportWidth - left - 40;
+              wrapper.style.width = maxWidth + 'px';
               wrapper.style.height = (containerRect.bottom - elRect.top) + 'px';
 
               document.body.appendChild(wrapper);
@@ -22600,7 +22702,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideProgramSteps',
             contentKey: 'guideProgramStepsDesc',
             position: 'top',
-            tooltipOffsetX: 1.0,  // Shift tooltip right by full width to avoid blocking title
+            tooltipBottomCenter: true,  // Position tooltip at bottom center of screen, below the table
+            scrollBlock: 'start',  // Scroll table to top so it's visible
+            tooltipMinWidth: 800,  // Wide tooltip to clear the table and reduce vertical height
             adjustTarget: (el) => {
               // Wrap from editing title through toolbar down to the table
               const editTitle = document.getElementById('programEditingTitle');
@@ -22612,11 +22716,20 @@ https://github.com/odeepllama/SolarSim/tree/main
 
               const titleRect = editTitle.getBoundingClientRect();
               const tableRect = el.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+
+              const left = Math.min(titleRect.left, tableRect.left) + window.scrollX;
+              // Clamp width to viewport to prevent right overflow
+              const rawWidth = Math.max(titleRect.width, tableRect.width);
+              const maxWidth = viewportWidth - Math.min(titleRect.left, tableRect.left) - 20;
+              const clampedWidth = Math.min(rawWidth, maxWidth);
+              // Use full table height — highlight extends adaptively to bottom of step table
+              const fullHeight = tableRect.bottom - titleRect.top;
 
               wrapper.style.top = titleRect.top + window.scrollY + 'px';
-              wrapper.style.left = Math.min(titleRect.left, tableRect.left) + window.scrollX + 'px';
-              wrapper.style.width = Math.max(titleRect.width, tableRect.width) + 'px';
-              wrapper.style.height = (tableRect.bottom - titleRect.top) + 'px';
+              wrapper.style.left = left + 'px';
+              wrapper.style.width = clampedWidth + 'px';
+              wrapper.style.height = fullHeight + 'px';
 
               document.body.appendChild(wrapper);
               return wrapper;
@@ -22626,13 +22739,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             target: '[data-section="profile-text-window"]',
             titleKey: 'guideProfileTextWindow',
             contentKey: 'guideProfileTextWindowDesc',
-            position: 'top'
+            position: 'top',
+            tooltipMinWidth: 500
           },
           {
             target: '#recentProfiles',
             titleKey: 'guideRecentProfiles',
             contentKey: 'guideRecentProfilesDesc',
             position: 'top',
+            tooltipMinWidth: 500,
             offsetY: 7,
             heightAdjust: -15,
             adjustTarget: (el) => {
@@ -22645,6 +22760,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             titleKey: 'guideAutoLoad',
             contentKey: 'guideAutoLoadDesc',
             position: 'bottom',
+            tooltipMinWidth: 500,
             adjustTarget: (el) => {
               // Target badge and lock button together
               const lockBtn = document.getElementById('autoloadLockBtn');
@@ -22670,7 +22786,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             target: '#loadFromDeviceBtn',
             titleKey: 'guideLoadFromDevice',
             contentKey: 'guideLoadFromDeviceDesc',
-            position: 'top'
+            position: 'top',
+            tooltipMinWidth: 500
           },
           {
             target: 'h2[data-section="program-settings-header"]',
@@ -23089,7 +23206,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           if (needsScroll) {
             // Scroll target into view first, then position after scroll settles
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetEl.scrollIntoView({ behavior: 'smooth', block: stepConfig.scrollBlock || 'center' });
 
             // Wait for scroll to settle before positioning
             let scrollTimeout;
@@ -23194,11 +23311,40 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Position tooltip intelligently to avoid blocking target
           tooltip.style.position = 'fixed';
+          // Reset width from any previous step to ensure consistent sizing
+          tooltip.style.width = '';
+          tooltip.style.minWidth = '';
+          tooltip.style.maxWidth = '';
+          // Apply fixed width immediately if specified, before measuring
+          if (stepConfig.tooltipMinWidth) {
+            tooltip.style.width = stepConfig.tooltipMinWidth + 'px';
+            tooltip.style.maxWidth = stepConfig.tooltipMinWidth + 'px';
+          }
           const tooltipRect = tooltip.getBoundingClientRect();
           const tooltipWidth = tooltipRect.width;
           const tooltipHeight = tooltipRect.height;
           const viewportWidth = window.innerWidth;
           const margin = 20;
+
+          // Check for fixed center positioning modes (top/bottom center of screen)
+          if (stepConfig.tooltipTopCenter || stepConfig.tooltipBottomCenter) {
+            // Re-measure after width is set
+            const updatedRect = tooltip.getBoundingClientRect();
+            const updatedWidth = updatedRect.width;
+            const updatedHeight = updatedRect.height;
+            // Center horizontally
+            const finalLeft = Math.max(margin, (viewportWidth - updatedWidth) / 2);
+            let finalTop;
+            if (stepConfig.tooltipTopCenter) {
+              finalTop = margin;  // Pin to top of viewport
+            } else {
+              finalTop = viewportHeight - updatedHeight - margin;  // Pin to bottom of viewport
+            }
+            tooltip.style.left = finalLeft + 'px';
+            tooltip.style.top = finalTop + 'px';
+            tooltip.classList.add('positioned');
+            return;
+          }
 
           // Check if tooltip should be right-aligned on screen (for timeline and other wide elements)
           if (stepConfig.rightTooltip) {
@@ -23207,7 +23353,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Move tooltip up by 60px (20px higher than previous)
             const verticalOffset = 60;
             const finalLeft = viewportWidth - tooltipWidth - margin;
-            let finalTop = Math.max(margin, Math.min(targetVerticalCenter - (tooltipHeight / 2) - verticalOffset, viewportHeight - tooltipHeight - margin));
+            let finalTop;
+            if (stepConfig.tooltipAboveTarget) {
+              // Position tooltip above the target highlight area
+              finalTop = Math.max(margin, rect.top - tooltipHeight - 10);
+            } else {
+              finalTop = Math.max(margin, Math.min(targetVerticalCenter - (tooltipHeight / 2) - verticalOffset, viewportHeight - tooltipHeight - margin));
+            }
             // Ensure tooltip doesn't go above the top margin
             if (finalTop < margin) finalTop = margin;
             tooltip.style.left = finalLeft + 'px';
