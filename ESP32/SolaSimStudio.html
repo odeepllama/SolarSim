@@ -4257,9 +4257,13 @@ https://github.com/odeepllama/SolarSim/tree/main
               <div class="help-detail" style="display:none;">
                 <p><strong>Start Time:</strong> Initial simulated time (HHMM, 24-hour format). <strong>Time
                     Scale:</strong> Speed multiplier for time progression. <strong>Intensity Scale:</strong> Global
-                  light multiplier (0.0–1.0). <strong>Simulation Date & Latitude:</strong> Geographic parameters for sun
-                  path calculations. <strong>Solar Mode:</strong> BASIC (constant) or SCIENTIFIC (astronomical
-                  calculations). <strong>Sun Color Mode:</strong> Color temperature settings (BLUE, NATURAL, or CUSTOM
+                  light multiplier (0.0–1.0). <strong>Simulation Date &amp; Latitude:</strong> Geographic parameters for
+                  sun
+                  path calculations. <strong>Solar Mode:</strong> BASIC (fixed 06:00–18:00 day), SCIENTIFIC
+                  (astronomical
+                  calculations based on date and latitude), or CUSTOM (user-defined sunrise &amp; sunset times via the
+                  per-step Sunrise/Sunset columns). <strong>Sun Color Mode:</strong> Color temperature settings (BLUE,
+                  NATURAL, or CUSTOM
                   RGB).</p>
               </div>
             </li>
@@ -4307,12 +4311,28 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><code>sun_color</code>: Per-step sun color override (R,G,B). Use the color picker or enter RGB values
                 directly. Leave empty to use the global sun color setting.</li>
               <li><code>dual_sun</code>: Enable mirrored sun for this segment</li>
+              <li><code>sunrise</code> / <code>sunset</code>: Per-step sunrise and sunset times (HHMM). These columns
+                appear when the <strong>Per-Step Day Length</strong> checkbox is enabled. Each step can define its own
+                sunrise/sunset to simulate different day lengths. New steps inherit values from the previous step.</li>
               <li><code>hold_minutes</code>: Real-time pause duration (only applies if speed=0)</li>
               <li><code>repeat</code>: Repeat this step N additional times before moving to the next</li>
             </ul>
             <p><strong>Cell color coding:</strong> The <strong>intensity cell</strong> previews the step's sun color at
               its opacity level. The <strong>speed cell</strong> uses blue (forward) or red (reverse) shading
-              proportional to speed magnitude.</p>
+              proportional to speed magnitude. Steps that run entirely during nighttime (before sunrise or after sunset)
+              have their <strong>intensity</strong> and <strong>sun color</strong> cells greyed out, indicating that
+              light output
+              will be zero during those periods.</p>
+            <p><strong>Multi-Day Programs:</strong></p>
+            <ul>
+              <li>Use <strong>Add Day</strong> to create a new day — this adds a step with the same simulation time as
+                the
+                last step, marking the start of the next day.</li>
+              <li>When a program has multiple days, the view automatically switches to multi-day mode showing separate
+                bars for each day.</li>
+              <li>Check <strong>Visualize all steps on a single day</strong> to flatten everything onto one bar
+                (useful for comparing step timing across days).</li>
+            </ul>
             <p><strong>Step and Day Navigation:</strong></p>
             <ul>
               <li>Use the <strong>Step</strong> navigation buttons to move between individual steps in the timeline.
@@ -4326,7 +4346,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             </ul>
             <p><strong>☀️ Sun cycle note:</strong> The sun's natural arc always governs LED brightness. In
               <strong>BASIC</strong> mode the sun rises at 06:00 and sets at 18:00; in <strong>SCIENTIFIC</strong> mode
-              these times vary by date and latitude. Steps that run past sunset will have no light output even at full
+              these times vary by date and latitude; in <strong>CUSTOM</strong> mode you define sunrise and sunset
+              per step using the Sunrise/Sunset columns. Steps that run past sunset will have no light output even at
+              full
               intensity — the sun is simply below the horizon. Use this to your advantage for dark/recovery periods.
             </p>
             <p>Validation ensures correct formats and prevents unsafe device actions. Errors are shown inline and must
@@ -4353,6 +4375,15 @@ https://github.com/odeepllama/SolarSim/tree/main
                 your experiment will actually take.</li>
               <li><strong>Markers:</strong> ⚡ (JUMP transitions), hatched bars (HOLD segments), ↺ (day wrap/new day).
               </li>
+              <li><strong>☀️ and ☽ Icons:</strong> When <strong>Per-Step Day Length</strong> is enabled, sun (☀️)
+                and moon (☽) markers appear on the timeline to indicate sunrise and sunset positions. These help you
+                visually confirm where daytime begins and ends for each day.</li>
+              <li><strong>Night Overlays:</strong> Dark shaded regions on the timeline represent nighttime — periods
+                before sunrise or after sunset where the simulated sun is below the horizon and no light is produced.
+                These overlays appear on both the sim-time and clock-time bars.</li>
+              <li><strong>Multi-Day Layout:</strong> Programs spanning multiple days are displayed as separate bars
+                (Day 1, Day 2, etc.) with a shared time axis for easy comparison. Each day shows its own sunrise,
+                sunset, and night overlay based on its steps' sunrise/sunset values.</li>
               <li><strong>Step Navigation:</strong> Use navigation buttons to move the playhead between steps and days
                 for focused editing and review.</li>
               <li><strong>Drag to Edit:</strong> Drag segment boundaries or entire segments to adjust timing and order
@@ -4720,8 +4751,20 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><code>intensity_scale</code>: このステップの光量倍率（0.0～1.0）。空欄でグローバル設定を使用</li>
               <li><code>sun_color</code>: ステップごとの太陽色オーバーライド（R,G,B）。カラーピッカーまたはRGB値で指定。空欄でグローバル太陽色設定を使用</li>
               <li><code>dual_sun</code>: ミラーリングされた太陽を有効化</li>
+              <li><code>sunrise</code> / <code>sunset</code>: ステップごとの日の出・日の入り時刻（HHMM）。<strong>ステップごとのDay
+                  Length</strong>チェックボックスを有効にすると表示されます。各ステップに独自の日の出/日の入りを設定して、異なるDay
+                Lengthをシミュレートできます。新しいステップは前のステップの値を引き継ぎます。</li>
               <li><code>hold_minutes</code>: 実時間の一時停止時間（speed=0の場合のみ適用）</li>
               <li><code>repeat</code>: 次に進む前にこのステップをN回繰り返す</li>
+            </ul>
+            <p>
+              <strong>セルの色分け：</strong><strong>強度セル</strong>はその透明度で太陽色をプレビューし、<strong>速度セル</strong>は青（順方向）または赤（逆方向）のシェーディングで速度の大きさを反映します。夜間（日の出前または日の入り後）に完全に実行されるステップは、<strong>強度</strong>と<strong>太陽色</strong>のセルがグレーアウトされ、光出力がゼロになることを示します。
+            </p>
+            <p><strong>マルチDayプログラム：</strong></p>
+            <ul>
+              <li><strong>Add Day</strong>で新しいDayを作成します — 最後のステップと同じシミュレーション時刻でステップが追加され、次のDayの開始を示します。</li>
+              <li>プログラムに複数のDayがある場合、各Dayごとに個別のバーが表示されるマルチDayモードに自動的に切り替わります。</li>
+              <li><strong>すべてのステップを1日で表示</strong>をチェックすると、すべてを1つのバーにまとめて表示します（Day間のステップタイミングを比較するのに便利）。</li>
             </ul>
             <p><strong>ステップとDayのナビゲーション：</strong></p>
             <ul>
@@ -4729,6 +4772,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><strong>Day</strong>ナビゲーションボタンでプログラムが複数の模擬日にまたがる場合にDay間をジャンプ</li>
               <li><span style="user-select:none;">⠿</span>ハンドルをドラッグしてステップの並び替えが可能</li>
             </ul>
+            <p><strong>☀️
+                太陽サイクルについて：</strong>太陽の自然な弧が常にLEDの明るさを制御します。<strong>BASIC</strong>モードでは日の出06:00、日の入り18:00。<strong>SCIENTIFIC</strong>モードでは日付と緯度により変化。<strong>CUSTOM</strong>モードではSunrise/Sunset列でステップごとに日の出と日の入りを定義します。日の入り後に実行されるステップは、フル強度でも光出力がありません
+              — 太陽は地平線の下にあるためです。暗期/回復期間として活用できます。</p>
             <p>バリデーションにより正しい形式と安全なデバイス操作が保証されます。エラーはインラインで表示され、エクスポートやアップロード前に解決する必要があります。</p>
           </div>
 
@@ -4736,11 +4782,24 @@ https://github.com/odeepllama/SolarSim/tree/main
           <p>色分けされたステップによるプログラムシーケンスのビジュアルプレビュー。<button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示
               ▼</button></p>
           <div class="help-detail" style="display:none;">
-            <p>タイムラインは、シミュレーション時間とデバイスアクションの進行を示すプログラムステップのグラフィカルな概要を提供します：</p>
+            <p>タイムラインは、実験全体のグラフィカルな概要を提供します：</p>
             <ul>
-              <li><strong>色の凡例：</strong>青≤1x、緑≤2x、黄≤6x、オレンジ7x以上。彩度は強度を示します（淡い=低、鮮やか=高）</li>
+              <li>
+                <strong>ウルトラバーエンコーディング：</strong>各セグメントの<strong>色</strong>はステップの太陽色、<strong>透明度</strong>は強度（淡い=低、鮮やか=高）、<strong>高さ</strong>は速度（高い=速い）を反映し、色と明るさと速度を同時に確認できます。
+              </li>
+              <li><strong>Sim / Clock /
+                  Both切替：</strong>タイムライン軸を<strong>Sim</strong>（シミュレーション時間）、<strong>Clock</strong>（実験の実時間の長さ）、または<strong>Both</strong>（両方のバーを表示）で切り替えます。Clock表示は実験にかかる実際の時間を把握するのに便利です。
+              </li>
               <li><strong>マーカー：</strong>⚡（JUMPトランジション）、ハッチングバー（HOLDセグメント）、↺（日付変更/新しいDay）</li>
+              <li><strong>☀️ と ☽ アイコン：</strong><strong>ステップごとのDay
+                  Length</strong>が有効な場合、太陽（☀️）と月（☽）のマーカーがタイムラインに表示され、日の出と日の入りの位置を示します。各Dayの昼間がどこから始まりどこで終わるかを視覚的に確認できます。
+              </li>
+              <li><strong>夜間オーバーレイ：</strong>タイムライン上の暗い領域は夜間を表します —
+                日の出前または日の入り後のシミュレーション太陽が地平線の下にあり、光が生成されない期間です。Sim-timeとClock-timeの両方のバーに表示されます。</li>
+              <li><strong>マルチDayレイアウト：</strong>複数Dayにまたがるプログラムは、比較しやすいように共有時間軸で個別のバー（Day 1、Day
+                2など）として表示されます。各Dayはステップの日の出/日の入り値に基づいて独自の日の出、日の入り、夜間オーバーレイを表示します。</li>
               <li><strong>ステップナビゲーション：</strong>ナビゲーションボタンでステップ間およびDay間のプレイヘッド移動</li>
+              <li><strong>ドラッグ編集：</strong>セグメントの境界またはセグメント全体をドラッグしてタイミングと順序を調整</li>
               <li><strong>サマリー：</strong>タイムラインはプログラムの合計シミュレーション時間と推定実行時間を表示</li>
             </ul>
           </div>
@@ -5769,9 +5828,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProgramEnable: 'Program Enable/Disable',
           guideProgramEnableDesc: 'Enable program mode to create a sequence of timed steps. When disabled, the device runs in manual control mode.',
           guideProgramTimeline: 'Program Step Timeline Visualization',
-          guideProgramTimelineDesc: 'The timeline visualizes your program as a color-coded strip. Each segment\u2019s <strong>color reflects the sun color</strong>, <strong>opacity shows intensity</strong>, and <strong>height indicates speed</strong> \u2014 giving an at-a-glance view of the entire experiment. Drag segment edges to adjust timing. Use the <strong>Sim / Clock / Both</strong> toggle to switch between simulation time (the simulated hours) and clock time (real-world wall-clock duration of the experiment). Navigation buttons let you jump between steps and days during playback.',
+          guideProgramTimelineDesc: 'The timeline visualizes your program as a color-coded strip. Each segment\u2019s <strong>color reflects the sun color</strong>, <strong>opacity shows intensity</strong>, and <strong>height indicates speed</strong> \u2014 giving an at-a-glance view of the entire experiment. Drag segment edges to adjust timing. Use the <strong>Sim / Clock / Both</strong> toggle to switch between simulation time and clock time. When <strong>Per-Step Day Length</strong> is enabled, \u2600\ufe0f and \u263d markers show sunrise/sunset positions, and dark overlays indicate nighttime periods. Multi-day programs display separate bars for each day.',
           guideProgramSteps: 'Program Step Editing',
-          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, sun colors, and transition behaviors (RUN, JUMP, or HOLD). The <strong>intensity cell</strong> previews the sun color at the step\u2019s opacity, and the <strong>speed cell</strong> uses blue (forward) or red (reverse) shading to reflect speed magnitude.',
+          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, sun colors, and transition behaviors (RUN, JUMP, or HOLD). Enable <strong>Per-Step Day Length</strong> to set custom sunrise/sunset times per step for CUSTOM solar mode. The <strong>intensity cell</strong> previews the sun color at the step\u2019s opacity, and the <strong>speed cell</strong> uses blue (forward) or red (reverse) shading. Nighttime steps have greyed-out intensity and sun color cells.',
           guideProfileTextWindow: 'Profile Text Window',
           guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here before uploading to the device.',
           guideRecentProfiles: 'Recent Profiles',
@@ -5895,9 +5954,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProgramEnable: 'プログラム有効/無効',
           guideProgramEnableDesc: 'プログラムモードを有効にすると、タイミング付きステップのシーケンスを作成できます。無効の場合、無効の場合、デバイスはデフォルト設定で動作しますが、手動制御も可能です。',
           guideProgramTimeline: 'プログラムステップタイムライン視覚化',
-          guideProgramTimelineDesc: 'タイムラインはプログラムをカラーバーとして視覚化します。各セグメントの<strong>色は太陽色</strong>、<strong>透明度は強度</strong>、<strong>高さは速度</strong>を反映し、実験全体をひと目で把握できます。セグメントの端をドラッグしてタイミングを調整できます。<strong>Sim / Clock / Both</strong>トグルで、シミュレーション時間（模擬時刻）とクロック時間（実験の実時間の長さ）を切り替えられます。再生中はナビゲーションボタンでステップや日を移動できます。',
+          guideProgramTimelineDesc: 'タイムラインはプログラムをカラーバーとして視覚化します。各セグメントの<strong>色は太陽色</strong>、<strong>透明度は強度</strong>、<strong>高さは速度</strong>を反映し、実験全体をひと目で把握できます。セグメントの端をドラッグしてタイミングを調整できます。<strong>Sim / Clock / Both</strong>トグルで、シミュレーション時間とクロック時間を切り替えられます。<strong>ステップごとのDay Length</strong>が有効な場合、☀️と☽マーカーが日の出/日の入り位置を示し、暗いオーバーレイが夜間を表します。マルチDayプログラムは各Dayごとに個別のバーで表示されます。',
           guideProgramSteps: 'プログラムステップ編集',
-          guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、太陽色、遷移動作（RUN、JUMP、HOLD）を持てます。<strong>強度セル</strong>はその透明度で太陽色をプレビューし、<strong>速度セル</strong>は青（順方向）または赤（逆方向）のシェーディングで速度の大きさを反映します。',
+          guideProgramStepsDesc: 'プログラムステップを追加、編集、整理します。各ステップは異なる速度、強度、太陽色、遷移動作（RUN、JUMP、HOLD）を持てます。<strong>ステップごとのDay Length</strong>を有効にすると、CUSTOMソーラーモード用にステップごとのSunrise/Sunset時刻を設定できます。<strong>強度セル</strong>はその透明度で太陽色をプレビューし、<strong>速度セル</strong>は青（順方向）または赤（逆方向）で表示されます。夜間のステップは強度と太陽色のセルがグレーアウトされます。',
           guideProfileTextWindow: 'プロファイルテキストウィンドウ',
           guideProfileTextWindowDesc: '生のプロファイルテキストを表示・編集します。上級ユーザーはここでパラメータを直接編集し、フォームに反映してからデバイスにアップロードできます。',
           guideRecentProfiles: '最近のプロファイル',
@@ -6259,7 +6318,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       const HIGHLIGHT_KEYS = new Set([
         'START_TIME_HHMM', 'INTENSITY_SCALE', 'SOLAR_MODE', 'SUN_COLOR_MODE',
         'ROTATION_CYCLE_INTERVAL_MINUTES', 'IMAGES_PER_ROTATION', 'SERVO2_INTERVAL_SEC', 'SERVO3_INTERVAL_SEC',
-        'CAMERA_LIGHTING_PANELS', 'CAMERA_TRIGGER_HOLD_MS', 'TIME_SCALE'
+        'CAMERA_LIGHTING_PANELS', 'CAMERA_TRIGGER_HOLD_MS', 'TIME_SCALE',
+        'SERVO2_INTERVAL_DAY_SEC', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B'
       ]);
 
       // ============================================================================
