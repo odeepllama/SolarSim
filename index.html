@@ -7714,7 +7714,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const dualBg = step.dual_sun ? '#90be6d' : '';
           const dualCell = mkCell(`<input data-f='dual_sun' type='checkbox' ${step.dual_sun ? 'checked' : ''} style='text-align:center; display:block; margin:0 auto;'/>`, dualBg, step.dual_sun ? '700' : '');
           dualCell.className = 'dual-sun-col';
-          if (dayLenVisible && window.innerWidth <= 1024) dualCell.style.display = 'none';
+          if (dayLenVisible && navigator.maxTouchPoints > 1) dualCell.style.display = 'none';
           tr.appendChild(dualCell);
           // Rise/Set cells (hidden by default, toggled by perStepDayLength checkbox)
           const riseDisplay = dayLenVisible ? '' : 'display:none';
@@ -7740,7 +7740,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Repeat cell - highlight if value is present
           const repBg = (step.repeat && step.repeat > 0) ? '#ffc107' : '';
           tr.appendChild(mkCell(`<input data-f='repeat' type='number' min='0' value='${step.repeat ?? ''}' style='width:55px'/>`, repBg, repBg ? '700' : ''));
-          const moveUpDownDisplay = (dayLenVisible && window.innerWidth <= 1024) ? 'display:none' : '';
+          const moveUpDownDisplay = (dayLenVisible && navigator.maxTouchPoints > 1) ? 'display:none' : '';
           tr.appendChild(mkCell(`<div style='text-align:center;'><button class='row-act move-arrow' data-act='up' ${idx === 0 ? 'disabled' : ''} title='Move up' style='${moveUpDownDisplay}'>▲</button><button class='row-act move-arrow' data-act='down' ${idx === programSteps.length - 1 ? 'disabled' : ''} title='Move down' style='${moveUpDownDisplay}'>▼</button><button class='row-act' data-act='dup' title='Duplicate step'><svg width='14' height='14' viewBox='0 0 14 14' style='vertical-align:middle'><rect x='0.5' y='0.5' width='8' height='8' rx='1' fill='#fff'/><rect x='5' y='5' width='8' height='8' rx='1' fill='#fff' stroke='#fff' stroke-width='0.5'/></svg></button><button class='row-act danger' data-act='del' title='Delete step'><svg width='12' height='12' viewBox='0 0 12 12' style='vertical-align:middle'><line x1='1' y1='1' x2='11' y2='11' stroke='#fff' stroke-width='2.5' stroke-linecap='round'/><line x1='11' y1='1' x2='1' y2='11' stroke='#fff' stroke-width='2.5' stroke-linecap='round'/></svg></button></div>`));
           tbody.appendChild(tr);
         });
@@ -8584,8 +8584,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           document.querySelectorAll('.day-length-col').forEach(el => {
             el.style.display = e.target.checked ? '' : 'none';
           });
-          // Hide Dual Sun column and move arrows when day-length is active (iPad only)
-          if (window.innerWidth <= 1024) {
+          // Hide Dual Sun column and move arrows when day-length is active (iPad/touch only)
+          if (navigator.maxTouchPoints > 1) {
             document.querySelectorAll('.dual-sun-col').forEach(el => {
               el.style.display = e.target.checked ? 'none' : '';
             });
@@ -8605,7 +8605,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             try { cb.checked = localStorage.getItem('perStepDayLength') === 'true'; } catch (_) { }
             if (cb.checked) {
               document.querySelectorAll('.day-length-col').forEach(el => { el.style.display = ''; });
-              if (window.innerWidth <= 1024) {
+              if (navigator.maxTouchPoints > 1) {
                 document.querySelectorAll('.dual-sun-col').forEach(el => { el.style.display = 'none'; });
                 document.querySelectorAll('.move-arrow').forEach(el => { el.style.display = 'none'; });
               }
