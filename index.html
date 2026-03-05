@@ -9565,6 +9565,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (s.sun_color_rgb != null && Array.isArray(s.sun_color_rgb) && s.sun_color_rgb.length === 3) {
               o.sun_color_rgb = s.sun_color_rgb.map(v => Math.min(255, Math.max(0, parseInt(v) || 0)));
             }
+            // sunrise/sunset: integer HHMM (per-step day length for CUSTOM solar mode)
+            if (s.sunrise != null) { const n = parseInt(s.sunrise, 10); if (!isNaN(n)) o.sunrise = n; }
+            if (s.sunset != null) { const n = parseInt(s.sunset, 10); if (!isNaN(n)) o.sunset = n; }
             return o;
           });
           // Firmware loads PROGRAM_STEPS via JSON, so keep JSON array syntax
