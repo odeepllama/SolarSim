@@ -2129,7 +2129,6 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .mon-kv.sun-custom span {
       color: #d7a6ff;
-      font-size: 1rem;
     }
 
     /* Solar Mode tile color overrides (BASIC stays green via kv-active; SCIENTIFIC red) */
@@ -4677,7 +4676,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
               <div class="help-detail" style="display:none;">
                 <p>
-                  <strong>開始時刻：</strong>シミュレーション開始時刻（HHMM、24時間形式）。<strong>タイムスケール：</strong>時間進行の速度倍率。<strong>強度スケール：</strong>グローバル光量倍率（0.0～1.0）。<strong>シミュレーション日付・緯度：</strong>太陽経路計算のための地理パラメータ。<strong>ソーラーモード：</strong>BASIC（一定）またはSCIENTIFIC（天文学的計算）。<strong>太陽色モード：</strong>色温度設定（BLUE、NATURAL、またはCUSTOM
+                  <strong>開始時刻：</strong>シミュレーション開始時刻（HHMM、24時間形式）。<strong>タイムスケール：</strong>時間進行の速度倍率。<strong>強度スケール：</strong>グローバル光量倍率（0.0～1.0）。<strong>シミュレーション日付・緯度：</strong>太陽経路計算のための地理パラメータ。<strong>ソーラーモード：</strong>BASIC（一定）、SCIENTIFIC（天文学的計算）、またはCUSTOM（ユーザー定義の日の出・日の入り時刻）。<strong>太陽色モード：</strong>色温度設定（BLUE、NATURAL、またはCUSTOM
                   RGB）。
                 </p>
               </div>
@@ -5271,6 +5270,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                   <li><strong>BASIC</strong>: Simple sunrise (6 AM) to sunset (6 PM) with constant sun size.</li>
                   <li><strong>SCIENTIFIC</strong>: Calculates accurate sun position based on the <strong>Date</strong>
                     and <strong>Latitude</strong> you provide.</li>
+                  <li><strong>CUSTOM</strong>: User-defined sunrise and sunset times with constant sun size (like
+                    BASIC).</li>
                 </ul>
               </li>
               <li><strong>Sun Color</strong>: Choose <strong>BLUE</strong> (standard for experiments),
@@ -5506,6 +5507,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                     <ul>
                       <li>BASIC：単純な日の出（6時）～日の入り（18時）、太陽サイズ一定</li>
                       <li>SCIENTIFIC：日付・緯度に基づき正確な太陽位置を計算</li>
+                      <li>CUSTOM：ユーザー定義の日の出・日の入り時刻、太陽サイズ一定（BASIC式）</li>
                     </ul>
                   </li>
                   <li><strong>太陽色:</strong> BLUE（実験標準）、NATURAL（黄/白）、CUSTOM（RGB指定）</li>
@@ -5745,7 +5747,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideKeySettings: 'Basic Settings',
           guideKeySettingsDesc: 'Set your simulation start time, time scale (speed), and light intensity. These are the most commonly adjusted parameters.',
           guideSolarMode: 'Solar Mode & Sun Color',
-          guideSolarModeDesc: 'Choose between BASIC (constant) or SCIENTIFIC (astronomical) solar simulation modes, and configure sun color settings.',
+          guideSolarModeDesc: 'Choose between BASIC (constant), SCIENTIFIC (astronomical), or CUSTOM (user-defined sunrise/sunset) solar simulation modes, and configure sun color settings.',
           guideImagingIllumination: 'Imaging Illumination',
           guideImagingIlluminationDesc: 'Configure LED panel settings for camera and rotation illumination. Customize RGB values for specialized imaging needs.',
           guideImagingServos: 'Imaging Servos and Timing',
@@ -5871,7 +5873,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideKeySettings: '基本設定',
           guideKeySettingsDesc: 'シミュレーション開始時刻、タイムスケール（速度）、光の強度を設定します。これらは最も頻繁に調整されるパラメータです。',
           guideSolarMode: 'ソーラーモードと太陽色',
-          guideSolarModeDesc: 'BASIC（サイズと強度が一定）またはSCIENTIFIC（天文学的に正確）なソーラーシミュレーションモードを選択し、太陽色の設定を行います。',
+          guideSolarModeDesc: 'BASIC（サイズと強度が一定）、SCIENTIFIC（天文学的に正確）、またはCUSTOM（ユーザー定義の日の出・日の入り）なソーラーシミュレーションモードを選択し、太陽色の設定を行います。',
           guideImagingIllumination: '撮像照明',
           guideImagingIlluminationDesc: '標準および回転撮像用のLEDパネル設定を構成します。専門的な撮像ニーズに合わせてRGB値をカスタマイズできます。',
           guideImagingServos: '撮像サーボとタイミング',
@@ -5959,7 +5961,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         currentLang = lang;
         localStorage.setItem(LANG_STORAGE_KEY, lang);
         // Main navigation and monitor controls (legacy direct mapping)
-        document.getElementById('appTitle').innerHTML = '<img class="logo-img" src="data:image/jpeg;base64,' + SOLASIM_LOGO_B64 + '" alt="SolaSim">Studio - Benchtop Solar Simulator';
+        document.getElementById('appTitle').innerHTML = '<img class="logo-img" src="data:image/jpeg;base64,' + SOLASIM_LOGO_B64 + '" alt="SolaSim"> Studio - Benchtop Solar Simulator';
         // Adjust monitor/toolbar button size for Japanese
         const monitorBtnIds = [
           'toggleMonitorBtn', 'monitorConnectBtn', 'quickEditBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
@@ -6188,12 +6190,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // FIELD METADATA
       // ============================================================================
       const ORDERED_KEYS = [
-        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE'
+        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE'
       ];
 
       const FIELD_GROUPS = [
         { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'] },
-        { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'] },
+        { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'] },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
         { name: 'Imaging Servo Operation & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'] },
         { name: 'Rotation Imaging', i18nKey: 'sectionRotation', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
@@ -6205,7 +6207,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         INTENSITY_SCALE: { label: 'Intensity Scale', tooltip: 'Global light intensity multiplier (0.0-1.0). Values above 1.0 are not permitted. CAUTION: High intensity values (>0.8) in DUAL SUN mode can cause over-current issues.', type: 'number', step: '0.1', min: 0, max: 1.0, default: 1.0 },
         SIMULATION_DATE: { label: 'Simulation Date (YYYYMMDD)', tooltip: 'Date used for sun path / future calc.', type: 'number', min: 20000101, max: 20991231, default: 20250320, validate: v => /^20\d{6}$/.test(v) },
         LATITUDE: { label: 'Latitude', tooltip: 'Observer latitude (-90 to 90).', type: 'number', step: '0.1', min: -90, max: 90, default: 0 },
-        SOLAR_MODE: { label: 'Solar Mode', tooltip: 'BASIC constant; SCIENTIFIC astronomical calc.', type: 'select', options: ['BASIC', 'SCIENTIFIC'], default: 'BASIC' },
+        SOLAR_MODE: { label: 'Solar Mode', tooltip: 'BASIC constant; SCIENTIFIC astronomical calc; CUSTOM user-defined sunrise/sunset.', type: 'select', options: ['BASIC', 'SCIENTIFIC', 'CUSTOM'], default: 'BASIC' },
+        CUSTOM_SUNRISE_HHMM: { label: 'Sunrise (HHMM)', tooltip: 'Sunrise time for CUSTOM solar mode (e.g. 630 = 6:30 AM).', type: 'number', min: 0, max: 2359, default: 600, validate: v => /^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
+        CUSTOM_SUNSET_HHMM: { label: 'Sunset (HHMM)', tooltip: 'Sunset time for CUSTOM solar mode (e.g. 1930 = 7:30 PM).', type: 'number', min: 0, max: 2359, default: 1800, validate: v => /^([0-1]?\d|2[0-3])[0-5]\d$/.test(v) },
         SUN_COLOR_MODE: { label: 'Sun Color Mode', tooltip: 'BLUE fixed; CUSTOM uses RGB; NATURAL future.', type: 'select', options: ['BLUE', 'NATURAL', 'CUSTOM'], default: 'BLUE' },
         DUAL_SUN_ENABLED: { label: 'Dual Sun Enabled', tooltip: 'Enable mirrored secondary sun.', type: 'checkbox', default: false },
         ROTATION_ENABLED: { label: 'Rotation Enabled', tooltip: 'Master switch for rotation system. (Default OFF)', type: 'checkbox', default: false },
@@ -6537,6 +6541,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         const progSection = document.getElementById('programSection');
         if (progSection) progSection.style.display = showProg ? '' : 'none';
+
+        // Show/hide CUSTOM sunrise/sunset fields based on SOLAR_MODE
+        const showCustomTimes = (state.SOLAR_MODE === 'CUSTOM');
+        const sunriseField = document.getElementById('CUSTOM_SUNRISE_HHMM')?.closest('.field');
+        const sunsetField = document.getElementById('CUSTOM_SUNSET_HHMM')?.closest('.field');
+        if (sunriseField) {
+          sunriseField.style.display = showCustomTimes ? '' : 'none';
+        }
+        if (sunsetField) {
+          sunsetField.style.display = showCustomTimes ? '' : 'none';
+        }
       }
 
       /**
@@ -6571,6 +6586,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Special logic
         if (key === 'IMAGES_PER_ROTATION') { recomputeDegreesPerImage(); document.getElementById('DEGREES_PER_IMAGE').value = state.DEGREES_PER_IMAGE; }
         if (key === 'PROGRAM_ENABLED') { refreshConditionalVisibility(); if (typeof window.__updateFieldsetVisibility === 'function') window.__updateFieldsetVisibility(); }
+        if (key === 'SOLAR_MODE') { refreshConditionalVisibility(); }
         if (key === 'TIME_SCALE') {
           handleTimeScaleModeChange(value);
         }
@@ -9325,7 +9341,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Skip derived fields - they're calculated from other values
           if (meta.type === 'derived') return;
           if (meta.type === 'checkbox') lines.push(`${k} = ${v ? 'True' : 'False'}`);
-          else if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS'].includes(k)) {
+          // Skip CUSTOM sunrise/sunset from output when not in CUSTOM mode
+          else if ((k === 'CUSTOM_SUNRISE_HHMM' || k === 'CUSTOM_SUNSET_HHMM') && state.SOLAR_MODE !== 'CUSTOM') {
+            return;
+          } else if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS'].includes(k)) {
             // Strip any pre-existing quotes to avoid doubling, then quote once
             let sv = String(v).trim();
             sv = sv.replace(/^['"]+|['"]+$/g, '');
@@ -13351,7 +13370,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Key settings to include (excluding LATITUDE and SIMULATION_DATE as requested)
         const keySettings = [
           'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE',
-          'SOLAR_MODE', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED',
+          'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED',
           'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B',
           'ROTATION_ENABLED', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES',
           'ROTATION_STEP_INTERVAL_MS',
@@ -13372,6 +13391,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (key.startsWith('SERVO2_') && key !== 'SERVO2_STANDALONE_ENABLED' && !state.SERVO2_STANDALONE_ENABLED) return;
           if (key.startsWith('SERVO3_') && key !== 'SERVO3_STANDALONE_ENABLED' && !state.SERVO3_STANDALONE_ENABLED) return;
           if ((key === 'CUSTOM_SUN_R' || key === 'CUSTOM_SUN_G' || key === 'CUSTOM_SUN_B') && state.SUN_COLOR_MODE !== 'CUSTOM') return;
+          if ((key === 'CUSTOM_SUNRISE_HHMM' || key === 'CUSTOM_SUNSET_HHMM') && state.SOLAR_MODE !== 'CUSTOM') return;
 
           let value = state[key];
 
@@ -16226,7 +16246,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           'set servo3nightinterval <sec>',
           'set latitude <deg>',
           'set date <yyyymmdd>',
-          'set solarmode <basic|simple|scientific>',
+          'set solarmode <basic|simple|scientific|custom>',
+          'set sunrise <HHMM>',
+          'set sunset <HHMM>',
           'set suncolor <mode|custom r g b>',
           'set autoload <on|off>',
           // Toggle commands
@@ -18701,14 +18723,15 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Seed each tile
           setKV('sim', 'SimTime', fmtHHMM(formState.START_TIME_HHMM || 600));
-          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1));
+          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1) + 'X');
           setKV('intensity', 'Intensity', String(formState.INTENSITY_SCALE ?? 1));
           setKV('sunColor', 'SunColor', String(formState.SUN_COLOR_MODE || 'BLUE'));
           setKV('program', 'Program', formState.PROGRAM_ENABLED ? 'ON' : 'OFF');
           setKV('solarMode', 'SolarMode', String(formState.SOLAR_MODE || 'BASIC'));
           setKV('dualSun', 'DualSun', formState.DUAL_SUN_ENABLED ? 'ON' : 'OFF');
-          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120));
+          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120) + 's');
           setKV('rotation', 'RotationImaging', formState.ROTATION_ENABLED ? 'ON' : 'OFF');
+          setKV('servo2NightInt', 'Servo2NightInt', String(formState.SERVO2_INTERVAL_NIGHT_SEC ?? 0) + 's');
           reorderTiles();
 
           // Mark all tiles as offline (grey)
@@ -18760,7 +18783,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           setKV('sim', 'SimTime', fmtHHMM(formState.START_TIME_HHMM || 600));
-          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1));
+          setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1) + 'X');
           setKV('intensity', 'Intensity', String(formState.INTENSITY_SCALE ?? 1));
           setKV('sunColor', 'SunColor', String(formState.SUN_COLOR_MODE || 'BLUE'));
           // Apply sun-color CSS classes for font sizing (matches live tile logic)
@@ -18779,12 +18802,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (smEl) {
             smEl.classList.add('solar-mode');
             const sm = (formState.SOLAR_MODE || 'BASIC').toUpperCase();
-            smEl.classList.remove('mode-advanced');
+            smEl.classList.remove('mode-advanced', 'mode-custom');
             if (sm === 'SCIENTIFIC') smEl.classList.add('mode-advanced');
+            if (sm === 'CUSTOM') smEl.classList.add('mode-custom');
           }
           setKV('dualSun', 'DualSun', formState.DUAL_SUN_ENABLED ? 'ON' : 'OFF');
-          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120));
+          setKV('servo2DayInt', 'Servo2DayInt', String(formState.SERVO2_INTERVAL_DAY_SEC ?? 120) + 's');
           setKV('rotation', 'RotationImaging', formState.ROTATION_ENABLED ? 'ON' : 'OFF');
+          setKV('servo2NightInt', 'Servo2NightInt', String(formState.SERVO2_INTERVAL_NIGHT_SEC ?? 0) + 's');
 
           // Refresh sun arc visualization to reflect updated tile state
           try {
@@ -19107,7 +19132,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                 'set rotationinterval <min>        - Set minutes between rotation cycles',
                 'set rotationlightrgb <r> <g> <b>  - Set rotation lighting RGB color (0-255)',
                 'set rotationmode <m>              - Set rotation capture mode (stills or video)',
-                'set solarmode <mode>              - Set solar mode (basic, simple, scientific)',
+                'set solarmode <mode>              - Set solar mode (basic, simple, scientific, custom)',
+                'set sunrise <HHMM>               - Set custom sunrise time (e.g. 0630)',
+                'set sunset <HHMM>                - Set custom sunset time (e.g. 1930)',
                 'set servo2dayinterval <s>         - Set seconds between servo 2 triggers during DAY (0=off)',
                 'set servo2nightinterval <s>       - Set seconds between servo 2 triggers during NIGHT (0=off)',
                 'set servo3dayinterval <s>         - Set seconds between servo 3 triggers during DAY (0=off)',
@@ -19514,8 +19541,18 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         function getRiseSet() {
           const st = ns; // stored earlier via regex parsing if available
-          const sunrise = (st.__sunArcSunrise != null) ? st.__sunArcSunrise : 360; // default 06:00
-          const sunset = (st.__sunArcSunset != null) ? st.__sunArcSunset : 1080; // default 18:00
+          let sunrise = (st.__sunArcSunrise != null) ? st.__sunArcSunrise : 360; // default 06:00
+          let sunset = (st.__sunArcSunset != null) ? st.__sunArcSunset : 1080; // default 18:00
+          // In offline mode, use CUSTOM sunrise/sunset from form state if SOLAR_MODE is CUSTOM
+          if (st.__sunArcSunrise == null && st.__sunArcSunset == null) {
+            const fs = window.__profileBuilderState;
+            if (fs && fs.SOLAR_MODE === 'CUSTOM') {
+              const riseHHMM = parseInt(fs.CUSTOM_SUNRISE_HHMM, 10) || 600;
+              const setHHMM = parseInt(fs.CUSTOM_SUNSET_HHMM, 10) || 1800;
+              sunrise = Math.floor(riseHHMM / 100) * 60 + (riseHHMM % 100);
+              sunset = Math.floor(setHHMM / 100) * 60 + (setHHMM % 100);
+            }
+          }
           return { sunrise, sunset };
         }
 
@@ -19973,6 +20010,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               else if (prop === 'speed') { const sv = parseFloat(val); fs.TIME_SCALE = isNaN(sv) ? 1 : sv; }
               else if (prop === 'intensity') { fs.INTENSITY_SCALE = parseFloat(val); }
               else if (prop === 'solarmode') { fs.SOLAR_MODE = val.toUpperCase(); }
+              else if (prop === 'sunrise') { const sv = parseInt(val, 10); if (!isNaN(sv)) fs.CUSTOM_SUNRISE_HHMM = sv; }
+              else if (prop === 'sunset') { const sv = parseInt(val, 10); if (!isNaN(sv)) fs.CUSTOM_SUNSET_HHMM = sv; }
               else if (prop === 'suncolor') {
                 const mode = parts[2].toUpperCase();
                 if (mode === 'CUSTOM' && parts.length >= 6) {
@@ -20059,7 +20098,82 @@ https://github.com/odeepllama/SolarSim/tree/main
             apply.addEventListener('click', () => { const v = validateFmt(); if (v != null) { sendSilent('set intensity ' + v); hide(); } });
           }
         }
-        function buildSolarMode(el) { const h = document.createElement('h4'); h.textContent = 'Solar Mode'; el.appendChild(h); const btns = document.createElement('div'); btns.className = 'btn-row';[{ t: 'BASIC', v: 'basic' }, { t: 'SCIENTIFIC', v: 'scientific' }].forEach(o => { const b = document.createElement('button'); b.className = (o.t === 'BASIC' ? 'btn hotvar' : 'btn'); b.textContent = o.t; b.disabled = !canSend(); b.addEventListener('click', () => { sendSilent('set solarmode ' + o.v); hide(); }); btns.appendChild(b); }); el.appendChild(btns); }
+        function buildSolarMode(el) {
+          const h = document.createElement('h4'); h.textContent = 'Solar Mode'; el.appendChild(h);
+          const btns = document.createElement('div'); btns.className = 'btn-row';
+          // BASIC and SCIENTIFIC buttons - immediate action
+          [{ t: 'BASIC', v: 'basic' }, { t: 'SCIENTIFIC', v: 'scientific' }].forEach(o => {
+            const b = document.createElement('button'); b.className = (o.t === 'BASIC' ? 'btn hotvar' : 'btn');
+            b.textContent = o.t; b.disabled = !canSend();
+            b.addEventListener('click', () => { sendSilent('set solarmode ' + o.v); hide(); });
+            btns.appendChild(b);
+          });
+          // CUSTOM button - reveals sunrise/sunset inputs
+          const bCustom = document.createElement('button'); bCustom.className = 'btn'; bCustom.textContent = 'CUSTOM'; bCustom.disabled = !canSend();
+          btns.appendChild(bCustom);
+          el.appendChild(btns);
+
+          // Custom times input panel (initially hidden)
+          const customPanel = document.createElement('div');
+          customPanel.style.display = 'none';
+          customPanel.style.marginTop = '8px';
+
+          // Sunrise row
+          const riseRow = document.createElement('div'); riseRow.className = 'row';
+          const riseLab = document.createElement('label'); riseLab.textContent = 'Sunrise (HHMM):';
+          const riseInput = document.createElement('input'); riseInput.type = 'number'; riseInput.min = '0'; riseInput.max = '2359';
+          riseInput.placeholder = 'e.g. 0630';
+          // Pre-fill from form state if available
+          const fs = window.__profileBuilderState;
+          riseInput.value = (fs && fs.CUSTOM_SUNRISE_HHMM != null) ? fs.CUSTOM_SUNRISE_HHMM : '600';
+          riseRow.appendChild(riseLab); riseRow.appendChild(riseInput);
+          customPanel.appendChild(riseRow);
+
+          // Sunset row
+          const setRow = document.createElement('div'); setRow.className = 'row';
+          const setLab = document.createElement('label'); setLab.textContent = 'Sunset (HHMM):';
+          const setInput = document.createElement('input'); setInput.type = 'number'; setInput.min = '0'; setInput.max = '2359';
+          setInput.placeholder = 'e.g. 1930';
+          setInput.value = (fs && fs.CUSTOM_SUNSET_HHMM != null) ? fs.CUSTOM_SUNSET_HHMM : '1800';
+          setRow.appendChild(setLab); setRow.appendChild(setInput);
+          customPanel.appendChild(setRow);
+
+          // Apply button
+          const apply = document.createElement('button'); apply.className = 'btn primary'; apply.textContent = 'Apply'; apply.disabled = !canSend();
+          const applyCustom = () => {
+            const rv = parseInt(riseInput.value, 10);
+            const sv = parseInt(setInput.value, 10);
+            if (isNaN(rv) || isNaN(sv)) return;
+            sendSilent('set solarmode custom');
+            sendSilent('set sunrise ' + rv);
+            sendSilent('set sunset ' + sv);
+            // Sync to form state
+            if (fs) {
+              fs.SOLAR_MODE = 'CUSTOM';
+              fs.CUSTOM_SUNRISE_HHMM = rv;
+              fs.CUSTOM_SUNSET_HHMM = sv;
+              const riseEl = document.getElementById('CUSTOM_SUNRISE_HHMM');
+              const setEl = document.getElementById('CUSTOM_SUNSET_HHMM');
+              const modeEl = document.getElementById('SOLAR_MODE');
+              if (riseEl) riseEl.value = rv;
+              if (setEl) setEl.value = sv;
+              if (modeEl) modeEl.value = 'CUSTOM';
+              if (typeof refreshConditionalVisibility === 'function') refreshConditionalVisibility();
+            }
+            hide();
+          };
+          riseInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { setInput.focus(); } });
+          setInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyCustom(); });
+          apply.addEventListener('click', applyCustom);
+          customPanel.appendChild(apply);
+          el.appendChild(customPanel);
+
+          // Toggle custom panel visibility
+          bCustom.addEventListener('click', () => {
+            customPanel.style.display = customPanel.style.display === 'none' ? '' : 'none';
+            if (customPanel.style.display !== 'none') riseInput.focus();
+          });
+        }
         function buildSunColor(el) {
           const h = document.createElement('h4'); h.textContent = 'Sun Color'; el.appendChild(h);
           const btns = document.createElement('div'); btns.className = 'btn-row';
@@ -20133,12 +20247,12 @@ https://github.com/odeepllama/SolarSim/tree/main
             const k = keyFromBox(box); if (!k) return; clearTimeout(clickTimer); e.stopPropagation();
             hide();
             const toggleMap = { program: 'toggle program', dualSun: 'toggle dualsun', rotation: 'toggle rotation' };
-            // Handle solarMode toggle specially - switch between BASIC and SCIENTIFIC
+            // Handle solarMode toggle specially - cycle through BASIC → SCIENTIFIC → CUSTOM
             if (k === 'solarMode') {
               showConfirm(box, `Are you sure you want to toggle ${box.querySelector('b')?.textContent || ''}?`, () => {
                 // Get current mode from the tile's displayed value
                 const currentMode = box.querySelector('span')?.textContent?.trim();
-                const newMode = currentMode === 'BASIC' ? 'scientific' : 'basic';
+                const newMode = currentMode === 'BASIC' ? 'scientific' : currentMode === 'SCIENTIFIC' ? 'custom' : 'basic';
                 sendSilent('set solarmode ' + newMode);
               });
               return;
