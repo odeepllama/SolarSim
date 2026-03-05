@@ -1494,6 +1494,13 @@ class SolarSimulator:
                     CUSTOM_SUN_G = rgb[1]
                     CUSTOM_SUN_B = rgb[2]
                     SUN_COLOR_MODE = "CUSTOM"
+                if 'sunrise' in result or 'sunset' in result:
+                    if 'sunrise' in result:
+                        CUSTOM_SUNRISE_HHMM = result['sunrise']
+                    if 'sunset' in result:
+                        CUSTOM_SUNSET_HHMM = result['sunset']
+                    SOLAR_MODE = "CUSTOM"
+                    init_solar_day()
 
             # Periodic display update (every 1 second)
             if ticks_diff(now_ms, last_update_ms) >= update_interval_ms:

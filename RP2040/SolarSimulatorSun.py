@@ -532,6 +532,7 @@ def apply_step_settings(step_arg):
     """Apply settings for current program step (supports negative speed)."""
     global TIME_SCALE, hold_step_start_ms, start_real_time_ms, INTENSITY_SCALE, DUAL_SUN_ENABLED
     global SUN_COLOR_MODE, CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+    global CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM, SOLAR_MODE
     previous_speed = TIME_SCALE
     now_ms_for_calc = ticks_ms()
     current_sim_time_minutes_before_change = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms_for_calc, start_real_time_ms), previous_speed)[1]
@@ -546,6 +547,16 @@ def apply_step_settings(step_arg):
     if isinstance(sun_rgb, list) and len(sun_rgb) == 3:
         CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B = int(sun_rgb[0]), int(sun_rgb[1]), int(sun_rgb[2])
         SUN_COLOR_MODE = "CUSTOM"
+    # Apply per-step sunrise/sunset (programmable day length)
+    step_rise = step_arg.get("sunrise")
+    step_set = step_arg.get("sunset")
+    if step_rise is not None or step_set is not None:
+        if step_rise is not None:
+            CUSTOM_SUNRISE_HHMM = int(step_rise)
+        if step_set is not None:
+            CUSTOM_SUNSET_HHMM = int(step_set)
+        SOLAR_MODE = "CUSTOM"
+        init_solar_day()
     if TIME_SCALE != previous_speed:
         if TIME_SCALE == 0:
             # HOLD transition handled by caller freeze logic (no anchor change here)

@@ -227,6 +227,8 @@ class ProgramEngine:
             "intensity_scale": step.get("intensity_scale", None),
             "dual_sun": step.get("dual_sun", None),
             "sun_color_rgb": step.get("sun_color_rgb", None),
+            "sunrise": step.get("sunrise", None),
+            "sunset": step.get("sunset", None),
         }
 
     # ==========================================================
@@ -361,6 +363,10 @@ class ProgramEngine:
                 result['dual_sun'] = settings['dual_sun']
             if settings.get("sun_color_rgb") is not None:
                 result['sun_color_rgb'] = settings['sun_color_rgb']
+            if settings.get("sunrise") is not None:
+                result['sunrise'] = settings['sunrise']
+            if settings.get("sunset") is not None:
+                result['sunset'] = settings['sunset']
 
             if new_speed != time_scale:
                 result['time_scale'] = new_speed
