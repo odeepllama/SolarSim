@@ -11169,8 +11169,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (seg.isJump || seg.realSeconds <= 0) return;
             const wPct = (seg.realSeconds / totalRealSeconds) * 100;
             if (seg.isNight) {
-              // ☽ at start of night, ☀️ at end of night
-              mkMoon(cumPct);
+              // ☽ at start of night (but not at the very beginning of the bar)
+              if (cumPct > 0.5) mkMoon(cumPct);
               mkSun(cumPct + wPct);
             } else {
               // Track first sunrise and last sunset positions
@@ -11846,12 +11846,15 @@ https://github.com/odeepllama/SolarSim/tree/main
       function addDayLengthMarkers(bar, dayInfo, globalWindow) {
         if (!document.getElementById('perStepDayLength')?.checked) return;
         const steps = dayInfo.steps;
-        // Find first step with per-step sunrise/sunset
+        // Find earliest sunrise and latest sunset across all steps on this day
         let rise = null, set = null;
         for (const s of steps) {
-          if (rise === null && s.step.sunrise != null) rise = s.step.sunrise;
-          if (set === null && s.step.sunset != null) set = s.step.sunset;
-          if (rise !== null && set !== null) break;
+          if (s.step.sunrise != null) {
+            rise = (rise === null) ? s.step.sunrise : Math.min(rise, s.step.sunrise);
+          }
+          if (s.step.sunset != null) {
+            set = (set === null) ? s.step.sunset : Math.max(set, s.step.sunset);
+          }
         }
         if (rise === null && set === null) return; // no per-step values
         // Default sunrise/sunset when only one is specified
