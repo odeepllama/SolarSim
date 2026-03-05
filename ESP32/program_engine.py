@@ -125,6 +125,8 @@ PROFILE_VALIDATORS = {
     "CUSTOM_SUN_R": _validate_color,
     "CUSTOM_SUN_G": _validate_color,
     "CUSTOM_SUN_B": _validate_color,
+    "CUSTOM_SUNRISE_HHMM": _validate_nonneg_int,
+    "CUSTOM_SUNSET_HHMM": _validate_nonneg_int,
     "CAMERA_LIGHTING_PANELS": _validate_string,
     "CAMERA_LIGHT_R": _validate_color,
     "CAMERA_LIGHT_G": _validate_color,

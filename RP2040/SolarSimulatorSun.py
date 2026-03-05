@@ -55,7 +55,9 @@ PROGRAM_REPEATS = -1                   # -1 for indefinite repeats, 0 or 1 for s
 STOP_SIMULATION_AFTER_PROGRAM = False  # When True, terminates simulation after program completes
 
 # --- Solar Simulation Mode ---
-SOLAR_MODE = "BASIC"               # Choose from "BASIC" or "SCIENTIFIC"
+SOLAR_MODE = "BASIC"               # Choose from "BASIC", "SCIENTIFIC", or "CUSTOM"
+CUSTOM_SUNRISE_HHMM = 600          # Custom sunrise time in HHMM format (e.g. 630 = 6:30 AM)
+CUSTOM_SUNSET_HHMM = 1800          # Custom sunset time in HHMM format (e.g. 1930 = 7:30 PM)
 SUN_COLOR_MODE = "BLUE"            # Choose from "NATURAL", "BLUE", or "CUSTOM"
 DUAL_SUN_ENABLED = False           # Set to True to enable a mirrored second sun
 RED_SHIFT_FACTOR = 0.4             # Red-shift factor for sunrise/sunset (not applied to BASIC mode)
@@ -881,7 +883,7 @@ def update_speed_indicator(speed_scale):
         matrix_buffer_back[1][0] = 1
 
 def update_mode_indicator(mode):
-    """Update column 4 of matrix back buffer to indicate simulation mode (BASIC, SCIENTIFIC)."""
+    """Update column 4 of matrix back buffer to indicate simulation mode (BASIC, SCIENTIFIC, CUSTOM)."""
     # Clear the penultimate column (column 4) EXCEPT the top pixel used for the autoload indicator
     for r in range(1, 5):  # Start from row 1 instead of 0 to preserve autoload indicator
         matrix_buffer_back[r][4] = 0
@@ -891,6 +893,8 @@ def update_mode_indicator(mode):
         num_leds = 1
     elif mode == "SCIENTIFIC":
         num_leds = 2
+    elif mode == "CUSTOM":
+        num_leds = 3
     else:
         num_leds = 0  # Default/error case
         
@@ -899,6 +903,8 @@ def update_mode_indicator(mode):
         matrix_buffer_back[4][4] = 1  # Bottom-most LED
     if num_leds >= 2:
         matrix_buffer_back[3][4] = 1  # Second LED from bottom
+    if num_leds >= 3:
+        matrix_buffer_back[2][4] = 1  # Third LED from bottom
 
 def update_hold_indicator(now_ms, is_hold_mode):
     """Update the top-left pixel to blink when in HOLD mode."""
@@ -1352,6 +1358,16 @@ def init_solar_day():
         
         print(f"SCIENTIFIC model: Date: {SIMULATION_DATE}, Day: {day_of_year}")
         print(f"Sun size varies based on elevation angle")
+    elif SOLAR_MODE == "CUSTOM":
+        # Custom mode - user-defined sunrise/sunset with BASIC-style constant sun
+        rise_h = CUSTOM_SUNRISE_HHMM // 100
+        rise_m = CUSTOM_SUNRISE_HHMM % 100
+        set_h = CUSTOM_SUNSET_HHMM // 100
+        set_m = CUSTOM_SUNSET_HHMM % 100
+        SUNRISE_TIME = rise_h * 60 + rise_m
+        SUNSET_TIME = set_h * 60 + set_m
+        print(f"CUSTOM model: User-defined sunrise {rise_h:02d}:{rise_m:02d}, sunset {set_h:02d}:{set_m:02d}")
+        print(f"Constant 8x8 sun size (BASIC style)")
     else:  # BASIC
         # Basic model with fixed sunrise/sunset times and fixed sun size
         SUNRISE_TIME = 6 * 60  # 6:00 AM in minutes
@@ -1551,7 +1567,8 @@ def get_sun_position(minute_of_day):
     if SOLAR_MODE == "SCIENTIFIC":
         return get_scientific_sun_position(minute_of_day)
     else:
-        # Default to BASIC
+        # BASIC and CUSTOM both use the basic sun model
+        # (CUSTOM uses user-defined sunrise/sunset set via init_solar_day)
         return get_basic_sun_position(minute_of_day)
 
 def get_scientific_sun_position(minute_of_day):
@@ -1651,27 +1668,23 @@ def get_basic_sun_position(minute_of_day):
     g = clamp(int(g * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
     b = clamp(int(b * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
     
-    # Fixed sunrise at 6:00 AM
-    sunrise_time = 6 * 60   # 6:00 AM in minutes
-    
-    # The sun should completely disappear at 6:00 PM (18:00)
-    sunset_complete_time = 18 * 60  # 6:00 PM in minutes
-    
-    # Total visible time should be exactly 12 hours (720 minutes)
-    total_day_minutes = 720  # 12 hours
+    # Use global sunrise/sunset times (set by init_solar_day for BASIC, CUSTOM, or SCIENTIFIC)
+    sunrise_time = SUNRISE_TIME
+    sunset_complete_time = SUNSET_TIME
+    total_day_minutes = DAY_LENGTH
     
     # Calculate minutes since sunrise
     minutes_since_sunrise = minute_of_day - sunrise_time
     
     # Check if it's during the visible period (sunrise to complete sunset)
     # Include exactly sunset time (<=)
-    if sunrise_time <= minute_of_day <= sunset_complete_time:
-        # Position sun at x=-4 at exactly 6:00 AM, then move across screen to x=59 by 6:00 PM
-        # Total travel distance: 63 positions over 720 minutes
+    if total_day_minutes > 0 and sunrise_time <= minute_of_day <= sunset_complete_time:
+        # Position sun at x=-4 at sunrise, then move across screen to x=59 by sunset
+        # Total travel distance: 63 positions over the day length
         travel_range = 63  # From -4 to 59 inclusive
         
         # Use (total_day_minutes - 1) to ensure we hit exactly x=59 at sunset
-        raw_position = -4 + (minutes_since_sunrise / (total_day_minutes - 1)) * travel_range
+        raw_position = -4 + (minutes_since_sunrise / max(1, total_day_minutes - 1)) * travel_range
         
         # Return the raw float position for accurate rounding later
         x = raw_position
@@ -1798,6 +1811,7 @@ def handle_command(command_str):
     global PROGRAM_ENABLED, ROTATION_ENABLED, RESTART_AFTER_LOAD, AUTO_LOAD_LATEST_PROFILE
     global SERVO2_INTERVAL_DAY_SEC, SERVO2_INTERVAL_NIGHT_SEC, SERVO3_INTERVAL_DAY_SEC, SERVO3_INTERVAL_NIGHT_SEC, ROTATION_CYCLE_INTERVAL_MINUTES
     global SUN_COLOR_MODE, ROTATION_CAPTURE_MODE, SIMULATION_DATE, LATITUDE, SOLAR_MODE
+    global CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM
     global current_step_repeat, program_step_start_sim_time, program_has_completed_all_repeats
     global STILLS_IMAGING_INTERVAL_SEC, CAMERA_TRIGGER_HOLD_MS, ROTATION_INCREMENT_DEGREES
     global ROTATION_STEP_INTERVAL_MS, IMAGES_PER_ROTATION, DEGREES_PER_IMAGE
@@ -2113,13 +2127,39 @@ def handle_command(command_str):
                     print(f"[SERIAL CMD] Error: Invalid latitude value '{value}'. Must be a number.")
 
             elif param == "solarmode":
-                if value in ("basic", "scientific"):
+                if value in ("basic", "scientific", "custom"):
                     SOLAR_MODE = value.upper()
                     print(f"[SERIAL CMD] Solar mode set to {SOLAR_MODE}")
                     init_solar_day() # Recalculate and print new settings
                     update_mode_indicator(SOLAR_MODE) # Update matrix display
                 else:
-                    print("[SERIAL CMD] Error: Invalid solar mode. Use 'basic' or 'scientific'.")
+                    print("[SERIAL CMD] Error: Invalid solar mode. Use 'basic', 'scientific', or 'custom'.")
+
+            elif param == "sunrise":
+                try:
+                    v = int(value)
+                    if 0 <= v <= 2359 and v % 100 < 60:
+                        CUSTOM_SUNRISE_HHMM = v
+                        print(f"[SERIAL CMD] Custom sunrise set to {v:04d}")
+                        if SOLAR_MODE == "CUSTOM":
+                            init_solar_day()
+                    else:
+                        print("[SERIAL CMD] Error: Invalid HHMM format. Minutes must be 00-59.")
+                except ValueError:
+                    print(f"[SERIAL CMD] Error: Invalid sunrise value '{value}'. Must be HHMM integer.")
+
+            elif param == "sunset":
+                try:
+                    v = int(value)
+                    if 0 <= v <= 2359 and v % 100 < 60:
+                        CUSTOM_SUNSET_HHMM = v
+                        print(f"[SERIAL CMD] Custom sunset set to {v:04d}")
+                        if SOLAR_MODE == "CUSTOM":
+                            init_solar_day()
+                    else:
+                        print("[SERIAL CMD] Error: Invalid HHMM format. Minutes must be 00-59.")
+                except ValueError:
+                    print(f"[SERIAL CMD] Error: Invalid sunset value '{value}'. Must be HHMM integer.")
 
             # --- Rotation Imaging Parameter Short Names ---
             elif param == "rot_stills_intv":
@@ -2331,6 +2371,8 @@ def handle_command(command_str):
                             f.write(f"SIMULATION_DATE = {SIMULATION_DATE}\n")
                             f.write(f"LATITUDE = {LATITUDE}\n")
                             f.write(f"SOLAR_MODE = \"{SOLAR_MODE}\"\n")
+                            f.write(f"CUSTOM_SUNRISE_HHMM = {CUSTOM_SUNRISE_HHMM}\n")
+                            f.write(f"CUSTOM_SUNSET_HHMM = {CUSTOM_SUNSET_HHMM}\n")
                             f.write(f"SUN_COLOR_MODE = \"{SUN_COLOR_MODE}\"\n")
                             f.write(f"DUAL_SUN_ENABLED = {DUAL_SUN_ENABLED}\n")
                             f.write(f"PROGRAM_ENABLED = {PROGRAM_ENABLED}\n")
@@ -2379,6 +2421,8 @@ def handle_command(command_str):
                         f.write(f"SIMULATION_DATE = {SIMULATION_DATE}\n")
                         f.write(f"LATITUDE = {LATITUDE}\n")
                         f.write(f"SOLAR_MODE = \"{SOLAR_MODE}\"\n")
+                        f.write(f"CUSTOM_SUNRISE_HHMM = {CUSTOM_SUNRISE_HHMM}\n")
+                        f.write(f"CUSTOM_SUNSET_HHMM = {CUSTOM_SUNSET_HHMM}\n")
                         f.write(f"SUN_COLOR_MODE = \"{SUN_COLOR_MODE}\"\n")
                         f.write(f"DUAL_SUN_ENABLED = {DUAL_SUN_ENABLED}\n")
                         f.write(f"ROTATION_ENABLED = {ROTATION_ENABLED}\n")
@@ -2460,6 +2504,11 @@ def handle_command(command_str):
                                 validated_settings[key] = v
                             elif key in ("SOLAR_MODE", "SUN_COLOR_MODE", "ROTATION_CAPTURE_MODE"):
                                 validated_settings[key] = value_str.strip('"')
+                            elif key in ("CUSTOM_SUNRISE_HHMM", "CUSTOM_SUNSET_HHMM"):
+                                v = int(value_str)
+                                if not (0 <= v <= 2359 and v % 100 < 60):
+                                    raise ValueError("invalid HHMM format")
+                                validated_settings[key] = v
                             elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD"):
                                 if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
                                 validated_settings[key] = value_str.lower() == 'true'
@@ -2564,6 +2613,10 @@ def handle_command(command_str):
                     CUSTOM_SUN_G = validated_settings["CUSTOM_SUN_G"]
                 if "CUSTOM_SUN_B" in validated_settings:
                     CUSTOM_SUN_B = validated_settings["CUSTOM_SUN_B"]
+                if "CUSTOM_SUNRISE_HHMM" in validated_settings:
+                    CUSTOM_SUNRISE_HHMM = validated_settings["CUSTOM_SUNRISE_HHMM"]
+                if "CUSTOM_SUNSET_HHMM" in validated_settings:
+                    CUSTOM_SUNSET_HHMM = validated_settings["CUSTOM_SUNSET_HHMM"]
                 if "PROGRAM_STEPS" in validated_settings:
                     PROGRAM_STEPS = validated_settings["PROGRAM_STEPS"]
                 if "PROGRAM_REPEATS" in validated_settings:
@@ -2617,6 +2670,9 @@ def handle_command(command_str):
             print(f"  Loaded Profile: {LOADED_PROFILE_NAME if LOADED_PROFILE_NAME else '(none - using defaults)'}")
             print("-- Environment & Sun --")
             print(f"  Solar Mode: {SOLAR_MODE}")
+            if SOLAR_MODE == "CUSTOM":
+                print(f"  Custom Sunrise: {CUSTOM_SUNRISE_HHMM:04d}")
+                print(f"  Custom Sunset: {CUSTOM_SUNSET_HHMM:04d}")
             print(f"  Intensity Scale: {INTENSITY_SCALE}")
             print(f"  Sun Color Mode: {SUN_COLOR_MODE}")
             print(f"  Dual Sun Enabled: {DUAL_SUN_ENABLED}")
@@ -2875,7 +2931,7 @@ def _reanchor_start_time(preserved_minutes, new_scale, now_ms, start_time_hhmm, 
 
 def run_simulation():
     """Main loop for the solar simulation."""
-    global TIME_SCALE, start_real_time_ms, SOLAR_MODE
+    global TIME_SCALE, start_real_time_ms, SOLAR_MODE, CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM
     global frozen_sim_time_minutes, frozen_abs_sim_time
     global last_rotation_absolute_time, rotation_in_progress, current_rotation_angle
     global servo2_controlled_by_rotation
@@ -3123,7 +3179,9 @@ def run_simulation():
                 # Short press detected - Toggle solar mode
                 if SOLAR_MODE == "BASIC":
                     SOLAR_MODE = "SCIENTIFIC"
-                else:  # SCIENTIFIC
+                elif SOLAR_MODE == "SCIENTIFIC":
+                    SOLAR_MODE = "CUSTOM"
+                else:  # CUSTOM or unknown
                     SOLAR_MODE = "BASIC"
                 
                 print(f"Button A short press: Solar mode changed to {SOLAR_MODE}")

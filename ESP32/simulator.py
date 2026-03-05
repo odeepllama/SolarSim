@@ -29,6 +29,8 @@ INTENSITY_SCALE = 1.0
 SIMULATION_DATE = 20250621
 LATITUDE = 0
 SOLAR_MODE = "BASIC"
+CUSTOM_SUNRISE_HHMM = 600
+CUSTOM_SUNSET_HHMM = 1800
 SUN_COLOR_MODE = "BLUE"
 DUAL_SUN_ENABLED = False
 
@@ -140,11 +142,19 @@ def init_solar_day():
         ha = math.degrees(math.acos(cos_ha))
         SUNRISE_MINUTES = SOLAR_NOON_MINUTES - (ha * 4)
         SUNSET_MINUTES = SOLAR_NOON_MINUTES + (ha * 4)
-    # In BASIC mode, override with fixed 06:00–18:00 to match get_basic_sun_position()
+    # In BASIC mode, override with fixed 06:00–18:00
     if SOLAR_MODE == "BASIC":
         SUNRISE_MINUTES = 360
         SUNSET_MINUTES = 1080
         SOLAR_NOON_MINUTES = 720
+    elif SOLAR_MODE == "CUSTOM":
+        rise_h = CUSTOM_SUNRISE_HHMM // 100
+        rise_m = CUSTOM_SUNRISE_HHMM % 100
+        set_h = CUSTOM_SUNSET_HHMM // 100
+        set_m = CUSTOM_SUNSET_HHMM % 100
+        SUNRISE_MINUTES = rise_h * 60 + rise_m
+        SUNSET_MINUTES = set_h * 60 + set_m
+        SOLAR_NOON_MINUTES = (SUNRISE_MINUTES + SUNSET_MINUTES) / 2
     print(f"[SOLAR] Date={SIMULATION_DATE} Lat={LATITUDE} Dec={DAY_DECLINATION:.1f}"
           f" Noon={int(SOLAR_NOON_MINUTES//60):02d}:{int(SOLAR_NOON_MINUTES%60):02d}"
           f" Rise={int(max(0,SUNRISE_MINUTES)//60):02d}:{int(max(0,SUNRISE_MINUTES)%60):02d}"
@@ -225,10 +235,10 @@ def get_basic_sun_position(minute):
     g = clamp(int(g * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
     b = clamp(int(b * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
 
-    # Fixed sunrise at 6:00 AM (360 min), sunset at 6:00 PM (1080 min)
-    sunrise_time = 360
-    sunset_complete_time = 1080
-    total_day_minutes = 720  # 12 hours
+    # Use global sunrise/sunset (set by init_solar_day for BASIC, CUSTOM, or SCIENTIFIC)
+    sunrise_time = SUNRISE_MINUTES
+    sunset_complete_time = SUNSET_MINUTES
+    total_day_minutes = max(1, sunset_complete_time - sunrise_time)
 
     minutes_since_sunrise = minute - sunrise_time
 
@@ -348,6 +358,8 @@ class SolarSimulator:
             "SIMULATION_DATE": SIMULATION_DATE,
             "LATITUDE": LATITUDE,
             "SOLAR_MODE": SOLAR_MODE,
+            "CUSTOM_SUNRISE_HHMM": CUSTOM_SUNRISE_HHMM,
+            "CUSTOM_SUNSET_HHMM": CUSTOM_SUNSET_HHMM,
             "SUN_COLOR_MODE": SUN_COLOR_MODE,
             "DUAL_SUN_ENABLED": DUAL_SUN_ENABLED,
             "ROTATION_ENABLED": ROTATION_ENABLED,
@@ -418,6 +430,9 @@ class SolarSimulator:
 
         o("-- Environment & Sun --")
         o(f"  Solar Mode: {SOLAR_MODE}")
+        if SOLAR_MODE == "CUSTOM":
+            o(f"  Custom Sunrise: {CUSTOM_SUNRISE_HHMM:04d}")
+            o(f"  Custom Sunset: {CUSTOM_SUNSET_HHMM:04d}")
         o(f"  Intensity Scale: {INTENSITY_SCALE}")
         o(f"  Sun Color Mode: {SUN_COLOR_MODE}")
         o(f"  Dual Sun Enabled: {DUAL_SUN_ENABLED}")
@@ -502,6 +517,7 @@ class SolarSimulator:
     def handle_command(self, command_str):
         global TIME_SCALE, INTENSITY_SCALE, DUAL_SUN_ENABLED, SOLAR_MODE
         global SUN_COLOR_MODE, SIMULATION_DATE, LATITUDE, START_TIME_HHMM
+        global CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM
         global ROTATION_ENABLED, ROTATION_CYCLE_INTERVAL_MINUTES, ROTATION_CAPTURE_MODE
         global SERVO2_INTERVAL_DAY_SEC, SERVO2_INTERVAL_NIGHT_SEC
         global SERVO3_INTERVAL_DAY_SEC, SERVO3_INTERVAL_NIGHT_SEC
@@ -656,6 +672,7 @@ class SolarSimulator:
         global CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B
         global ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B
         global CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+        global CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM
 
         if param == "speed":
             new_speed = float(value)
@@ -719,10 +736,24 @@ class SolarSimulator:
                 self.output(f"[SERIAL CMD] Latitude set to {LATITUDE}")
 
         elif param == "solarmode":
-            if value in ("basic", "scientific"):
+            if value in ("basic", "scientific", "custom"):
                 SOLAR_MODE = value.upper()
                 init_solar_day()
                 self.output(f"[SERIAL CMD] Solar mode set to {SOLAR_MODE}")
+
+        elif param == "sunrise":
+            v = int(value)
+            CUSTOM_SUNRISE_HHMM = v
+            if SOLAR_MODE == "CUSTOM":
+                init_solar_day()
+            self.output(f"[SERIAL CMD] Custom sunrise set to {CUSTOM_SUNRISE_HHMM:04d}")
+
+        elif param == "sunset":
+            v = int(value)
+            CUSTOM_SUNSET_HHMM = v
+            if SOLAR_MODE == "CUSTOM":
+                init_solar_day()
+            self.output(f"[SERIAL CMD] Custom sunset set to {CUSTOM_SUNSET_HHMM:04d}")
 
         elif param == "suncolor":
             if value in ("natural", "blue"):
@@ -1020,6 +1051,7 @@ class SolarSimulator:
         global SERVO3_INTERVAL_DAY_SEC, SERVO3_INTERVAL_NIGHT_SEC
         global RESTART_AFTER_LOAD, ROTATION_CAMERA_SERVO, ROTATION_AT_NIGHT
         global CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+        global CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM
         global CAMERA_LIGHTING_PANELS, CAMERA_LIGHT_R, CAMERA_LIGHT_G, CAMERA_LIGHT_B
         global ROTATION_LIGHT_R, ROTATION_LIGHT_G, ROTATION_LIGHT_B
 
