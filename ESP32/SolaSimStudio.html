@@ -176,9 +176,11 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     #appTitle .logo-img {
-      height: 1.45em;
+      height: 1.67em;
       width: auto;
       vertical-align: middle;
+      margin-top: -0.11em;
+      margin-bottom: -0.11em;
     }
 
     #appTitle.jp-heading {
@@ -8550,6 +8552,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', intensity_scale: 1, sun_color_rgb: [0, 0, 255] });
+
+          // Auto-switch to multi-day view if program now has 2+ days
+          const dayCheck = analyzeMultiDayProgram(true);
+          if (dayCheck.days.length > 1) {
+            const sdCheckbox = document.getElementById('singleDayVisualization');
+            if (sdCheckbox && sdCheckbox.checked) {
+              sdCheckbox.checked = false;
+              try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
+            }
+          }
         });
 
         // Add Step button - creates step with last step's simtime + 60 minutes
@@ -12338,6 +12350,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Expand window only if outside defaults
           let windowStart = Math.min(defaultStart, minStep);
           let windowEnd = Math.max(defaultEnd, maxStep);
+          // Also expand for per-step sunrise/sunset values
+          if (document.getElementById('perStepDayLength')?.checked) {
+            const toMin = hhmm => Math.floor(hhmm / 100) * 60 + (hhmm % 100);
+            dayInfo.steps.forEach(s => {
+              if (s.step.sunrise != null) windowStart = Math.min(windowStart, toMin(s.step.sunrise));
+              if (s.step.sunset != null) windowEnd = Math.max(windowEnd, toMin(s.step.sunset));
+            });
+          }
           // Round outward to whole hours
           windowStart = Math.floor(windowStart / 60) * 60;
           windowEnd = Math.ceil(windowEnd / 60) * 60;
