@@ -7665,6 +7665,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           const inputBg = spd < 0 ? 'background-color:#ff6b6b;' : '';
           tr.appendChild(mkCell(`<input data-f='speed' type='number' step='0.1' value='${step.speed ?? ''}' style='width:60px;${inputBg}'/>`, speedBg, '700'));
           // Intensity cell with ultra bar color preview
+          // Auto-fill default intensity if missing (covers all load paths)
+          if (step.intensity_scale == null) step.intensity_scale = 1;
           const intensityVal = step.intensity_scale != null ? parseFloat(step.intensity_scale) : null;
           const sunRgb = step.sun_color_rgb;
           let intensityBg = '';
