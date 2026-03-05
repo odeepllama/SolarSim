@@ -4956,6 +4956,10 @@ https://github.com/odeepllama/SolarSim/tree/main
         <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
         <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
       </label>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+        <input type="checkbox" id="perStepDayLength" style="cursor: pointer;">
+        <span data-i18n="perStepDayLength">Per-step day length (sunrise/sunset)</span>
+      </label>
       <div id="errorBannerInline"></div>
       <table class="program-steps-table" id="programStepsTable">
         <thead>
@@ -4968,6 +4972,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             <th title="Light intensity (0.0–1.0). Leave empty for global setting.">Intensity</th>
             <th title="Per-step sun color (R, G, B: 0–255 each)">Sun Color</th>
             <th title="Enable mirrored sun for this step">Dual Sun</th>
+            <th class="day-length-col" style="display:none" title="Step sunrise time (HHMM, for CUSTOM solar mode)">Rise
+            </th>
+            <th class="day-length-col" style="display:none" title="Step sunset time (HHMM, for CUSTOM solar mode)">Set
+            </th>
             <th title="RUN = advance time at speed, JUMP = instant reposition">Transition</th>
             <th title="Real-time pause in minutes (only applies when Speed = 0)">Hold (mins)</th>
             <th title="Repeat this step N additional times">Repeat</th>
@@ -7703,6 +7711,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Dual sun cell - highlight if checked
           const dualBg = step.dual_sun ? '#90be6d' : '';
           tr.appendChild(mkCell(`<input data-f='dual_sun' type='checkbox' ${step.dual_sun ? 'checked' : ''} style='text-align:center; display:block; margin:0 auto;'/>`, dualBg, step.dual_sun ? '700' : ''));
+          // Rise/Set cells (hidden by default, toggled by perStepDayLength checkbox)
+          const dayLenVisible = document.getElementById('perStepDayLength')?.checked;
+          const riseDisplay = dayLenVisible ? '' : 'display:none';
+          const riseVal = step.sunrise != null ? step.sunrise : (dayLenVisible ? 600 : '');
+          const setVal = step.sunset != null ? step.sunset : (dayLenVisible ? 1800 : '');
+          // Populate step data with defaults if checkbox active and values missing
+          if (dayLenVisible && step.sunrise == null) step.sunrise = 600;
+          if (dayLenVisible && step.sunset == null) step.sunset = 1800;
+          const riseTd = mkCell(`<input data-f='sunrise' type='number' min='0' max='2359' value='${riseVal}' style='width:60px' placeholder='—'/>`);
+          riseTd.className = 'day-length-col'; riseTd.style.cssText = riseDisplay;
+          tr.appendChild(riseTd);
+          const setTd = mkCell(`<input data-f='sunset' type='number' min='0' max='2359' value='${setVal}' style='width:60px' placeholder='—'/>`);
+          setTd.className = 'day-length-col'; setTd.style.cssText = riseDisplay;
+          tr.appendChild(setTd);
           const transitionVal = (step.transition || 'RUN').toUpperCase();
           tr.appendChild(mkCell(`<select data-f='transition'>
       <option value='RUN' ${transitionVal === 'RUN' ? 'selected' : ''}>RUN</option>
@@ -8186,9 +8208,18 @@ https://github.com/odeepllama/SolarSim/tree/main
             updatePreview(false);
             return;
           }
-          else if (['speed', 'hold_minutes', 'intensity_scale', 'repeat'].includes(field)) {
+          else if (['speed', 'hold_minutes', 'intensity_scale', 'repeat', 'sunrise', 'sunset'].includes(field)) {
             const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
             programSteps[row][field] = val;
+
+            // For sunrise/sunset, update timeline immediately
+            if (field === 'sunrise' || field === 'sunset') {
+              updatePreview(false);
+              if (typeof renderTimelineStrip === 'function') {
+                try { renderTimelineStrip(); } catch (_e) { }
+              }
+              return;
+            }
 
             // For intensity_scale, update cell background with ultra bar color preview
             if (field === 'intensity_scale') {
@@ -8519,7 +8550,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
 
-          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', sun_color_rgb: inheritedColor || [0, 0, 255], intensity_scale: 1 });
+          // Inherit sunrise/sunset from last step if per-step day length is active
+          let inheritedRise, inheritedSet;
+          if (document.getElementById('perStepDayLength')?.checked && programSteps.length > 0) {
+            const ls = programSteps[programSteps.length - 1];
+            inheritedRise = ls.sunrise; inheritedSet = ls.sunset;
+          }
+          addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', sun_color_rgb: inheritedColor || [0, 0, 255], intensity_scale: 1, sunrise: inheritedRise, sunset: inheritedSet });
         });
 
         // Single-day visualization checkbox
@@ -8535,6 +8572,28 @@ https://github.com/odeepllama/SolarSim/tree/main
             try { renderTimelineStrip(); } catch (e) { console.warn('Timeline refresh failed', e); }
           }
         });
+
+        // Per-step day length checkbox
+        document.getElementById('perStepDayLength')?.addEventListener('change', (e) => {
+          try { localStorage.setItem('perStepDayLength', e.target.checked ? 'true' : 'false'); } catch (_) { }
+          document.querySelectorAll('.day-length-col').forEach(el => {
+            el.style.display = e.target.checked ? '' : 'none';
+          });
+          if (typeof renderTimelineStrip === 'function') {
+            try { renderTimelineStrip(); } catch (_e) { }
+          }
+        });
+
+        // Restore per-step day length preference
+        {
+          const cb = document.getElementById('perStepDayLength');
+          if (cb) {
+            try { cb.checked = localStorage.getItem('perStepDayLength') === 'true'; } catch (_) { }
+            if (cb.checked) {
+              document.querySelectorAll('.day-length-col').forEach(el => { el.style.display = ''; });
+            }
+          }
+        }
 
         // Restore single-day visualization preference on load
         document.addEventListener('DOMContentLoaded', () => {
@@ -10719,12 +10778,33 @@ https://github.com/odeepllama/SolarSim/tree/main
           // RUN step: calculate sim duration to next step
           if (nextSimTime !== null) {
             let simDuration;
+            let isDayCrossing = false;
             if (speed > 0) {
               simDuration = nextSimTime - simTime;
-              if (simDuration < 0) simDuration += 1440; // wrap forward
+              if (simDuration <= 0) {
+                isDayCrossing = true;
+                // Day crossing: use per-step sunset if available, otherwise wrap
+                if (step.sunset != null) {
+                  const stepSunset = Math.floor(step.sunset / 100) * 60 + (step.sunset % 100);
+                  simDuration = stepSunset - simTime;
+                  if (simDuration < 0) simDuration = 0;
+                } else {
+                  simDuration += 1440; // wrap forward
+                }
+              }
             } else {
               simDuration = simTime - nextSimTime;
-              if (simDuration < 0) simDuration += 1440; // wrap backward
+              if (simDuration <= 0) {
+                isDayCrossing = true;
+                // Day crossing reverse: use per-step sunrise if available
+                if (step.sunrise != null) {
+                  const stepSunrise = Math.floor(step.sunrise / 100) * 60 + (step.sunrise % 100);
+                  simDuration = simTime - stepSunrise;
+                  if (simDuration < 0) simDuration = 0;
+                } else {
+                  simDuration += 1440; // wrap backward
+                }
+              }
             }
             const realSec = (simDuration * 60) / Math.abs(speed);
 
@@ -10742,15 +10822,43 @@ https://github.com/odeepllama/SolarSim/tree/main
               stepIndex: i,
               simColor: step.sun_color_rgb
             });
+
+            // Insert night segment between days
+            if (isDayCrossing && step.sunset != null) {
+              const curSunset = Math.floor(step.sunset / 100) * 60 + (step.sunset % 100);
+              const nextSunrise = nextStep.sunrise != null
+                ? (Math.floor(nextStep.sunrise / 100) * 60 + (nextStep.sunrise % 100))
+                : 6 * 60; // default 06:00
+              // Night duration: from sunset to next sunrise (wraps through midnight)
+              let nightMin = nextSunrise - curSunset;
+              if (nightMin < 0) nightMin += 1440; // e.g. 2200 → 0600 = -16h → +8h
+              if (nightMin === 0) nightMin = 0; // no night gap
+              if (nightMin > 0) {
+                const nightRealSec = (nightMin * 60) / Math.abs(speed);
+                segments.push({
+                  simLabel: fmtHHMM(curSunset) + '→' + fmtHHMM(nextSunrise),
+                  speedLabel: '☽ Night',
+                  speed: speed,
+                  realSeconds: nightRealSec,
+                  isHold: false,
+                  isJump: false,
+                  isNight: true,
+                  stepIndex: i,
+                  simColor: null
+                });
+              }
+            }
           } else {
             // Last step (no next step) — estimate duration to end of day
-            const endOfDay = 18 * 60; // 18:00 in minutes (sunset)
+            // Use per-step sunset if available, otherwise default 18:00
+            const stepSunset = step.sunset != null ? (Math.floor(step.sunset / 100) * 60 + (step.sunset % 100)) : 18 * 60;
+            const stepSunrise = step.sunrise != null ? (Math.floor(step.sunrise / 100) * 60 + (step.sunrise % 100)) : 6 * 60;
             let estimatedSimDur;
             if (speed > 0) {
-              estimatedSimDur = endOfDay - simTime;
+              estimatedSimDur = stepSunset - simTime;
               if (estimatedSimDur < 0) estimatedSimDur += 1440; // wrap to next day
             } else {
-              estimatedSimDur = simTime - (6 * 60); // run back to 06:00
+              estimatedSimDur = simTime - stepSunrise; // run back to sunrise
               if (estimatedSimDur < 0) estimatedSimDur += 1440;
             }
             // If last step is already at the end boundary, no tail needed
@@ -10869,12 +10977,17 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (widthPct < 0.1) return; // Skip negligible segments
 
           const div = document.createElement('div');
-          div.className = 'clock-tl-seg' + (seg.isHold ? ' hold-seg' : '') + (seg.speed < 0 ? ' reverse-seg' : '');
+          div.className = 'clock-tl-seg' + (seg.isHold ? ' hold-seg' : '') + (seg.isNight ? ' night-seg' : '') + (seg.speed < 0 ? ' reverse-seg' : '');
           div.style.left = cumulativePct + '%';
           div.style.width = widthPct + '%';
 
           // Ultra bar: sun color + intensity opacity + speed height
-          if (!seg.isHold) {
+          if (seg.isNight) {
+            // Night segments: dark background, full height
+            div.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #2d2d5e 100%)';
+            div.style.height = '100%';
+            div.style.opacity = '0.85';
+          } else if (!seg.isHold) {
             const dc = sunColorToDisplayColor(seg.simColor);
             const stepData = programSteps[seg.stepIndex] || {};
             const rawInt = stepData.intensity_scale;
@@ -10919,7 +11032,16 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Build label text based on available space
           // HOLD labels only shown if segment is wide enough (≥8%), matching ultra bar behaviour
-          if (seg.isHold) {
+          if (seg.isNight) {
+            if (widthPct >= 8) {
+              label.textContent = '☽ Night (' + durStr + ')';
+            } else if (widthPct > 2) {
+              label.textContent = '☽';
+            } else {
+              label.textContent = '';
+            }
+            label.style.color = '#fff';
+          } else if (seg.isHold) {
             if (widthPct >= 8) {
               label.textContent = 'HOLD ' + durStr;
             } else {
@@ -10974,6 +11096,50 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         clockRow.appendChild(bar);
+
+        // Add ☀️/☽ markers to clock bar at day/night boundaries
+        if (document.getElementById('perStepDayLength')?.checked) {
+          const mkSun = (pct) => {
+            const mk = document.createElement('span');
+            mk.style.cssText = 'position:absolute;top:-18px;display:flex;align-items:center;font-size:25px;pointer-events:none;z-index:55;transform:translateX(-50%);line-height:1;color:#f5a623;';
+            mk.style.left = pct + '%';
+            mk.textContent = '☀️';
+            bar.appendChild(mk);
+          };
+          const mkMoon = (pct) => {
+            const mk = document.createElement('span');
+            mk.style.cssText = 'position:absolute;top:-18px;display:flex;align-items:center;font-size:29px;pointer-events:none;z-index:55;transform:translateX(-50%);line-height:1;color:#f5c842;font-weight:900;text-shadow:0 0 3px #f5c842,1px 0 1px #f5c842,-1px 0 1px #f5c842,0 1px 1px #f5c842,0 -1px 1px #f5c842;';
+            mk.style.left = pct + '%';
+            mk.textContent = '☽';
+            bar.appendChild(mk);
+          };
+
+          let cumPct = 0;
+          let firstDaySeen = false;
+          let lastDayEndPct = 0;
+          segments.forEach(seg => {
+            if (seg.isJump || seg.realSeconds <= 0) return;
+            const wPct = (seg.realSeconds / totalRealSeconds) * 100;
+            if (seg.isNight) {
+              // ☽ at start of night, ☀️ at end of night
+              mkMoon(cumPct);
+              mkSun(cumPct + wPct);
+            } else {
+              // Track first sunrise and last sunset positions
+              if (!firstDaySeen) {
+                mkSun(cumPct); // ☀️ at start of first daytime segment
+                firstDaySeen = true;
+              }
+              lastDayEndPct = cumPct + wPct;
+            }
+            cumPct += wPct;
+          });
+          // ☽ at end of last daytime segment (final sunset)
+          if (firstDaySeen && lastDayEndPct > 0 && lastDayEndPct < 100.1) {
+            mkMoon(lastDayEndPct);
+          }
+        }
+
         clockSection.appendChild(clockRow);
 
         // Total duration label
@@ -11593,6 +11759,41 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
       }
 
+      /**
+       * Add ☀️ / ☽ markers to a timeline bar at sunrise/sunset positions.
+       * @param {HTMLElement} bar - The .timeline-strip element (position:relative)
+       * @param {Object} dayInfo - Day data with steps array
+       * @param {Object} globalWindow - {start, end} in minutes
+       */
+      function addDayLengthMarkers(bar, dayInfo, globalWindow) {
+        if (!document.getElementById('perStepDayLength')?.checked) return;
+        const steps = dayInfo.steps;
+        // Find first step with per-step sunrise/sunset
+        let rise = null, set = null;
+        for (const s of steps) {
+          if (rise === null && s.step.sunrise != null) rise = s.step.sunrise;
+          if (set === null && s.step.sunset != null) set = s.step.sunset;
+          if (rise !== null && set !== null) break;
+        }
+        if (rise === null && set === null) return; // no per-step values
+        // Convert HHMM to minutes
+        const toMin = hhmm => Math.floor(hhmm / 100) * 60 + (hhmm % 100);
+        const wStart = globalWindow.start;
+        const wSpan = globalWindow.end - wStart;
+        if (wSpan <= 0) return;
+        const mkMarker = (text, color, minVal, fontSize) => {
+          const m = document.createElement('span');
+          m.style.cssText = `position:absolute;top:-18px;display:flex;align-items:center;font-size:${fontSize || '15px'};pointer-events:none;z-index:55;transform:translateX(-50%);line-height:1;`;
+          m.style.left = ((toMin(minVal) - wStart) / wSpan * 100) + '%';
+          m.style.color = color;
+          m.textContent = text;
+          return m;
+        };
+        if (rise !== null) bar.appendChild(mkMarker('☀️', '#f5a623', rise, '25px'));
+        const moonEl = set !== null ? mkMarker('☽', '#f5c842', set, '29px') : null;
+        if (moonEl) { moonEl.style.textShadow = '0 0 3px #f5c842, 1px 0 1px #f5c842, -1px 0 1px #f5c842, 0 1px 1px #f5c842, 0 -1px 1px #f5c842'; moonEl.style.fontWeight = '900'; bar.appendChild(moonEl); }
+      }
+
       function renderMultiDayTimeline(container, dayData, readOnly = false, suppressIntensityKey = false) {
         __globalJumpNum = 0; // Reset global jump numbering for this render pass
         container.innerHTML = '';
@@ -11622,6 +11823,14 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             globalMinTime = Math.min(globalMinTime, dayMin);
             globalMaxTime = Math.max(globalMaxTime, dayMax);
+          }
+          // Expand window to include per-step sunrise/sunset values
+          if (document.getElementById('perStepDayLength')?.checked) {
+            const toMin = hhmm => Math.floor(hhmm / 100) * 60 + (hhmm % 100);
+            dayInfo.steps.forEach(s => {
+              if (s.step.sunrise != null) globalMinTime = Math.min(globalMinTime, toMin(s.step.sunrise));
+              if (s.step.sunset != null) globalMaxTime = Math.max(globalMaxTime, toMin(s.step.sunset));
+            });
           }
         });
 
@@ -11699,6 +11908,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             container.appendChild(daySection);
 
             renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, undefined);
+            addDayLengthMarkers(bar, dayInfo, globalWindow);
           } else {
             // === WITH REVERSE: Day N + SPEED stacked in label, then REVERSE row below ===
             const fwdRow = document.createElement('div');
@@ -11740,6 +11950,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             container.appendChild(daySection);
 
             renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'forward');
+            addDayLengthMarkers(bar, dayInfo, globalWindow);
             renderDayTimeline(reverseBar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'reverse');
           }
 
@@ -11945,6 +12156,23 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Forward speed bar
         renderDayTimeline(bar, dayInfo, null, readOnly, null, false, undefined, hasReverse ? 'forward' : undefined);
+        // Sun/moon markers for per-step day length (compute window locally for single-day)
+        {
+          const stepMinutes = dayInfo.steps.map(s => s.m).filter(m => m != null);
+          let ws = 6 * 60, we = 18 * 60;
+          if (stepMinutes.length > 0) { ws = Math.min(ws, Math.min(...stepMinutes)); we = Math.max(we, Math.max(...stepMinutes)); }
+          // Expand for per-step sunrise/sunset
+          if (document.getElementById('perStepDayLength')?.checked) {
+            const toMin = hhmm => Math.floor(hhmm / 100) * 60 + (hhmm % 100);
+            dayInfo.steps.forEach(s => {
+              if (s.step.sunrise != null) ws = Math.min(ws, toMin(s.step.sunrise));
+              if (s.step.sunset != null) we = Math.max(we, toMin(s.step.sunset));
+            });
+          }
+          ws = Math.floor(ws / 60) * 60; we = Math.ceil(we / 60) * 60;
+          if (we === ws) we = ws + 60;
+          addDayLengthMarkers(bar, dayInfo, { start: ws, end: we });
+        }
 
         // Reverse speed bar — only if reverse steps exist (ultra bar handles color/intensity in segments)
         if (hasReverse) {
