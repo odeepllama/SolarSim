@@ -239,7 +239,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       min-width: 160px;
     }
 
-    /* Imaging Servo Operation & Timing section: 2 rows layout */
+    /* Imaging Servos & Timing section: 2 rows layout */
     .group-grid.imaging-servo-timing {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -1019,6 +1019,241 @@ https://github.com/odeepllama/SolarSim/tree/main
       .program-steps-table td:last-child {
         min-width: 140px;
         white-space: nowrap;
+      }
+    }
+
+    /* ============================================================================
+   MOBILE PHONE LAYOUT (iPhone SE2: 375×667)
+   ============================================================================ */
+    @media (max-width: 480px) {
+
+      /* --- Body & page --- */
+      body {
+        padding: 0 6px 2rem;
+      }
+
+      /* --- Single-column form fields, tighter spacing --- */
+      .group-grid {
+        flex-direction: column;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+      }
+
+      .field {
+        gap: 2px;
+        min-width: 0;
+        flex: none;
+      }
+
+      label {
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+        letter-spacing: 0.3px;
+      }
+
+      input[type=text],
+      input[type=number],
+      select,
+      textarea {
+        padding: 6px 8px;
+        font-size: 16px;
+        /* >=16px prevents iOS Safari auto-zoom on focus */
+      }
+
+      /* --- Compact fieldsets --- */
+      fieldset {
+        padding: 6px 8px;
+        margin: 4px 0;
+      }
+
+      legend {
+        font-size: 0.95rem;
+        padding: 0 4px;
+      }
+
+      /* --- Status tiles: 2-column 3×3 grid --- */
+      #monitorStatusGrid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px;
+      }
+
+      /* --- Title bar compact --- */
+      #appTitle {
+        font-size: 1.1rem;
+        margin: 6px 0 0.15em 0;
+      }
+
+      #appTitle .logo-img {
+        height: 1.3em;
+      }
+
+      #langToggleBtn,
+      #guideToggleBtn,
+      #helpToggleBtn {
+        font-size: 0.8rem;
+        padding: 5px 8px;
+      }
+
+      /* --- Solar arc: responsive shrink --- */
+      .vislog-row .vis-col {
+        min-width: 0 !important;
+        width: 100%;
+      }
+
+      /* --- Buttons compact --- */
+      button {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+      }
+
+      /* --- Guide tooltip viewport clamping --- */
+      .ftue-tooltip {
+        max-width: calc(100vw - 20px) !important;
+        width: calc(100vw - 20px) !important;
+        left: 10px !important;
+        right: 10px !important;
+      }
+
+      /* --- FTUE welcome modal compact --- */
+      #ftueWelcomeModal .modal-content {
+        padding: 20px 16px;
+        max-width: 95%;
+      }
+
+      #ftueWelcomeModal h2 {
+        font-size: 1.4rem;
+      }
+
+      /* --- Two-col layout: stack vertically --- */
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      /* --- Hide spacer fields on mobile --- */
+      .field[style*="visibility: hidden"] {
+        display: none;
+      }
+
+      /* --- TITLE: logo only, hide text --- */
+      #appTitle {
+        font-size: 0;
+        /* hide text, keep logo img visible */
+      }
+
+      #appTitle .logo-img {
+        font-size: 1rem;
+        /* reset for img */
+        height: 2em;
+      }
+
+      /* --- Hide color theme swatches --- */
+      .bg-swatch {
+        display: none !important;
+      }
+
+      /* --- Hide simple/advanced mode toggle & gear button --- */
+      #modeToggleContainer,
+      #modeConfigBtn {
+        display: none !important;
+      }
+
+      /* --- Hide connect, reload, disconnect (no device on phone) --- */
+      #monitorConnectBtn,
+      #monitorRefreshBtn,
+      #monitorDisconnectBtn,
+      #toggleMonitorBtn {
+        display: none !important;
+      }
+
+      /* --- Hide Device 1 badge/tab --- */
+      #monitorConnBadge {
+        display: none !important;
+      }
+
+      /* --- Hide command entry, send, export log --- */
+      #monitorCmdInput,
+      #monitorSendBtn,
+      #monitorExportLogBtn {
+        display: none !important;
+      }
+
+      /* --- Hide commands and status buttons --- */
+      #monitorCmdHelpBtn,
+      #monitorShowStatusBtn {
+        display: none !important;
+      }
+
+      /* --- Hide upload to device buttons --- */
+      [data-export-ref="uploadBtn"],
+      #resetUploadConfirmBtn {
+        display: none !important;
+      }
+
+      /* --- Hide autoload badge & lock --- */
+      #autoloadStatusBadge,
+      #autoloadLockBtn {
+        display: none !important;
+      }
+
+      /* --- Hide print summary --- */
+      #printSummaryBtn,
+      #printSummaryBtn2 {
+        display: none !important;
+      }
+
+      /* --- Hide sim/clock/both toggle (default to both) --- */
+      #timelineViewToggle {
+        display: none !important;
+      }
+
+      /* --- Hide solar arc + log entirely on mobile (no device) --- */
+      #monitorVisLogRow {
+        display: none !important;
+      }
+
+      /* --- Collapse monitor panel whitespace --- */
+      #monitorPanel {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* --- Hide Device Program Status (duplicates step timeline) --- */
+      #deviceProgramStatusFieldset {
+        display: none !important;
+      }
+
+      /* --- Examples popup: left-aligned, full width --- */
+      #exampleProgramChooser {
+        left: 8px !important;
+        right: 8px !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 32px) !important;
+        width: calc(100vw - 32px) !important;
+      }
+
+      /* --- Program section: horizontal scroll with wide timeline & toolbar --- */
+      #programSection {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* --- Device Program Status: same wide scroll treatment --- */
+      #deviceProgramStatusFieldset {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #deviceProgramStatusTimeline {
+        min-width: 700px;
+      }
+
+      #timelineContainer {
+        min-width: 700px;
+      }
+
+      #programSection>.toolbar {
+        min-width: 700px;
+        flex-wrap: nowrap;
       }
     }
 
@@ -5856,7 +6091,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           sectionTimeDate: 'Time & Date',
           sectionSolarMode: 'Solar Mode & Sun Color',
           sectionImagingIllum: 'Imaging Illumination',
-          sectionImagingServo: 'Imaging Servo Operation & Timing',
+          sectionImagingServo: 'Imaging Servos & Timing',
           sectionRotation: 'Rotation Imaging',
           sectionProgramControl: 'Program Control',
           toggleView: '(Toggle view)',
@@ -6018,7 +6253,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           sectionTimeDate: '時刻と日付',
           sectionSolarMode: 'ソーラーモードと太陽色',
           sectionImagingIllum: '撮像照明',
-          sectionImagingServo: '撮像サーボ動作とタイミング',
+          sectionImagingServo: '撮像サーボ＆タイミング',
           sectionRotation: '回転と撮像',
           sectionProgramControl: 'プログラム制御',
           toggleView: '(表示切替)',
@@ -6267,10 +6502,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       ];
 
       const FIELD_GROUPS = [
-        { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'] },
-        { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'] },
+        { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
+        { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
-        { name: 'Imaging Servo Operation & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'] },
+        { name: 'Imaging Servos & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
         { name: 'Rotation Imaging', i18nKey: 'sectionRotation', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
       ];
 
@@ -6514,16 +6749,26 @@ https://github.com/odeepllama/SolarSim/tree/main
               grid.className = 'group-grid rotation-imaging';
             } else if (group.name === 'Imaging Illumination') {
               grid.className = 'group-grid imaging-illumination';
-            } else if (group.name === 'Imaging Servo Operation & Timing') {
+            } else if (group.name === 'Imaging Servos & Timing') {
               grid.className = 'group-grid imaging-servo-timing';
             }
             grid.id = sectionId;
 
-            // Load collapsed state from localStorage (default: collapsed)
-            const isExpanded = localStorage.getItem(storageKey) === 'true';
+            // Determine correct display value based on whether section uses CSS grid or flex
+            const isGridBased = grid.classList.contains('rotation-imaging')
+              || grid.classList.contains('imaging-illumination')
+              || grid.classList.contains('imaging-servo-timing')
+              || grid.classList.contains('program-control');
+            const displayValue = isGridBased ? 'grid' : 'flex';
+
+            // Load collapsed state from localStorage
+            // Default: expanded on desktop, collapsed on mobile (<=480px)
+            const isMobile = window.matchMedia('(max-width: 480px)').matches;
+            const stored = localStorage.getItem(storageKey);
+            const isExpanded = stored !== null ? stored === 'true' : !isMobile;
             if (isExpanded) {
               legend.innerHTML = getCollapsibleLegendHTML(group.i18nKey, group.name, true);
-              grid.style.display = 'grid';
+              grid.style.display = displayValue;
             } else {
               grid.style.display = 'none';
             }
@@ -6538,7 +6783,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 legend.innerHTML = getCollapsibleLegendHTML(i18nKey, groupName, false);
                 localStorage.setItem(storageKey, 'false');
               } else {
-                grid.style.display = 'grid';
+                grid.style.display = displayValue;
                 legend.innerHTML = getCollapsibleLegendHTML(i18nKey, groupName, true);
                 localStorage.setItem(storageKey, 'true');
               }
@@ -10829,7 +11074,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       // ============================================================================
 
       // View mode state: 'sim' (default), 'clock', or 'both'
-      window.__timelineViewMode = localStorage.getItem('timelineViewMode') || 'sim';
+      // Default to 'both' on mobile (toggle is hidden), otherwise use saved preference
+      window.__timelineViewMode = window.matchMedia('(max-width: 480px)').matches
+        ? 'both'
+        : (localStorage.getItem('timelineViewMode') || 'sim');
 
       // Toggle wiring
       (function initTimelineToggle() {
@@ -22003,7 +22251,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           { id: 'time-and-date', name: 'Time & Date Settings', defaultSimple: true },
           { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false },
           { id: 'imaging-illumination', name: 'Imaging Illumination', defaultSimple: false },
-          { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true },
+          { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servos & Timing', defaultSimple: true },
           { id: 'rotation-and-imaging', name: 'Rotation Imaging', defaultSimple: false },
           { id: 'program-control', name: 'Program Control', defaultSimple: true },
           { id: 'program-steps-section', name: 'Program Steps (Timeline & Table)', defaultSimple: false },
