@@ -800,13 +800,13 @@ def update_program_state(now_ms, sim_time_minutes):
             next_day = next_step.get("day", current_day)
             is_cross_day = (next_day != current_day)
             if is_cross_day:
-                # CROSS-DAY: use "left-and-returned" approach
-                # Phase 1: sim_time must move away from step's start time
-                # Phase 2: sim_time must return close to step's start time
+                # CROSS-DAY: run a full ~24h sim cycle before advancing.
+                # "left-and-returned": sim must move away, then return to start.
                 step_speed = step.get("speed", TIME_SCALE)
                 speed_mag = abs(step_speed) if step_speed != 0 else 1
-                leave_threshold = max(60, speed_mag * 2)  # Must move away by this many min
-                return_tolerance = max(1.0, speed_mag * 0.5)  # Must return within this
+                # Cap thresholds to work on 1440-min clock (max circular dist = 720)
+                leave_threshold = min(360, max(60, speed_mag * 2))
+                return_tolerance = min(10, max(1.0, speed_mag * 0.05))
                 # Calculate circular distance (shortest path around 1440-min clock)
                 diff = abs(sim_time_minutes - step_time_minutes)
                 if diff > 720:
@@ -857,8 +857,8 @@ def update_program_state(now_ms, sim_time_minutes):
                     # Cross-day back to day 1: same left-and-returned logic
                     step_speed = step.get("speed", TIME_SCALE)
                     speed_mag = abs(step_speed) if step_speed != 0 else 1
-                    leave_threshold = max(60, speed_mag * 2)
-                    return_tolerance = max(1.0, speed_mag * 0.5)
+                    leave_threshold = min(360, max(60, speed_mag * 2))
+                    return_tolerance = min(10, max(1.0, speed_mag * 0.05))
                     diff = abs(sim_time_minutes - step_time_minutes)
                     if diff > 720:
                         diff = 1440 - diff
