@@ -2308,11 +2308,17 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     /* SunColor tile: uses default 2rem font like other tiles */
 
-    /* SolarMode tile: text like SCIENTIFIC needs to fit */
-    /* SolarMode tile: only shrink SCIENTIFIC text to fit */
-    .mon-kv.solar-mode.mode-advanced span {
+    /* SolarMode tile: text like SCIENTIFIC/CUSTOM needs to fit */
+    .mon-kv.solar-mode.mode-advanced span,
+    .mon-kv.solar-mode.mode-custom span {
       font-size: 1.2rem;
       padding-top: 0.45rem;
+    }
+
+    /* SunColor tile: CUSTOM (r,g,b) text needs smaller font to fit */
+    .mon-kv.sun-color-tile span {
+      font-size: clamp(0.85rem, 3.5vw, 1.3rem);
+      word-break: break-word;
     }
 
     /* Active (ON) tile highlight */
@@ -7949,6 +7955,19 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (earliestRiseIdx >= 0) dayEffectiveRise.set(day.dayNumber, { value: earliestRise, stepIdx: earliestRiseIdx });
             if (latestSetIdx >= 0) dayEffectiveSet.set(day.dayNumber, { value: latestSet, stepIdx: latestSetIdx });
           });
+          // Compute global minimum sunrise and auto-sync all day-start sim_times
+          let globalMinRise = Infinity;
+          dayEffectiveRise.forEach(eff => { if (eff.value < globalMinRise) globalMinRise = eff.value; });
+          if (globalMinRise < Infinity) {
+            dayData.days.forEach(day => {
+              if (!day.steps || day.steps.length === 0) return;
+              const firstIdx = day.steps[0].index;
+              const firstStep = programSteps[firstIdx];
+              if (firstStep && firstStep.sim_time_hhmm != null && globalMinRise < firstStep.sim_time_hhmm) {
+                firstStep.sim_time_hhmm = globalMinRise;
+              }
+            });
+          }
         }
 
         programSteps.forEach((step, idx) => {
@@ -7988,7 +8007,24 @@ https://github.com/odeepllama/SolarSim/tree/main
           tr.appendChild(dayCell);
           // Format time with 4-digit padding for display (1 -> 0001, 600 -> 0600)
           const simTimeDisplay = step.sim_time_hhmm != null ? String(step.sim_time_hhmm).padStart(4, '0') : '';
-          const simCell = mkCell(`<input data-f='sim_time_hhmm' type='number' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell'); tr.appendChild(simCell);
+          const simCell = mkCell(`<input data-f='sim_time_hhmm' type='number' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell');
+          // Highlight orange if this day-start sim_time was auto-synced to earliest sunrise
+          if (dayNum !== undefined && dayEffectiveRise.has(dayNum)) {
+            const daySteps = dayData.days.find(d => d.dayNumber === dayNum);
+            if (daySteps && daySteps.steps.length > 0 && daySteps.steps[0].index === idx) {
+              let globalMinRise2 = Infinity;
+              dayEffectiveRise.forEach(eff => { if (eff.value < globalMinRise2) globalMinRise2 = eff.value; });
+              if (globalMinRise2 < Infinity && step.sim_time_hhmm === globalMinRise2) {
+                const inp = simCell.querySelector('input');
+                if (inp) {
+                  inp.style.border = '2px solid #e65100';
+                  inp.style.background = '#fff3e0';
+                  inp.title = `Auto-synced to earliest sunrise (${String(globalMinRise2).padStart(4, '0')})`;
+                }
+              }
+            }
+          }
+          tr.appendChild(simCell);
           // Speed cell with color coding
           const spd = step.speed != null ? step.speed : 1;
           const speedBg = getStepTableSpeedColor(spd);
@@ -8598,6 +8634,45 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (typeof renderTimelineStrip === 'function') {
                 try { renderTimelineStrip(); } catch (_e) { }
               }
+              // Global auto-sync: set ALL day-start sim_times to the global minimum sunrise
+              try {
+                const dd = analyzeMultiDayProgram(true);
+                // Find global minimum sunrise across all days
+                let globalMinRise = Infinity;
+                dd.days.forEach(day => {
+                  day.steps.forEach(si => {
+                    const s = programSteps[si.index];
+                    const r = s && s.sunrise != null ? s.sunrise : 600;
+                    if (r < globalMinRise) globalMinRise = r;
+                  });
+                });
+                if (globalMinRise < Infinity) {
+                  // Set all day-start step sim_times to the global minimum sunrise
+                  dd.days.forEach(day => {
+                    if (!day.steps || day.steps.length === 0) return;
+                    const firstIdx = day.steps[0].index;
+                    const firstStep = programSteps[firstIdx];
+                    if (!firstStep) return;
+                    const oldVal = firstStep.sim_time_hhmm != null ? firstStep.sim_time_hhmm : 0;
+                    // Update data
+                    firstStep.sim_time_hhmm = globalMinRise;
+                    // Update DOM input
+                    const inp = document.querySelector(`#programStepsTable tbody tr[data-step-index='${firstIdx}'] input[data-f='sim_time_hhmm']`);
+                    if (inp) {
+                      inp.value = String(globalMinRise).padStart(4, '0');
+                      if (globalMinRise !== oldVal) {
+                        inp.style.border = '2px solid #e65100';
+                        inp.style.background = '#fff3e0';
+                        inp.title = `Auto-synced to earliest sunrise (${String(globalMinRise).padStart(4, '0')})`;
+                      } else {
+                        inp.style.border = '';
+                        inp.style.background = '';
+                        inp.title = '';
+                      }
+                    }
+                  });
+                }
+              } catch (_) { }
               return;
             }
 
@@ -18824,6 +18899,17 @@ https://github.com/odeepllama/SolarSim/tree/main
             const deviceStep = parseInt(mCurrentStep[1], 10); // 1-based
             if (deviceStep > 0) {
               window.__currentStepIndex = deviceStep;
+              // Immediately sync playhead day from step index (authoritative source)
+              if (!window.__playheadManuallySet && typeof __getDayForStep === 'function') {
+                const dayForStep = __getDayForStep(deviceStep - 1);
+                if (dayForStep && dayForStep !== window.__playheadCurrentDay) {
+                  window.__playheadCurrentDay = dayForStep;
+                  window.__dayWrapCount = dayForStep - 1;
+                  if (typeof renderTimelineStrip === 'function') {
+                    try { renderTimelineStrip(); } catch (_e) { }
+                  }
+                }
+              }
             }
           }
 
@@ -19383,12 +19469,14 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Solar Mode specific palette: BASIC=green (kv-active), SIMPLE=amber, ADVANCED/SCIENTIFIC=red
             if (k === 'solarMode') {
               box.classList.add('solar-mode');
-              box.classList.remove('mode-simple', 'mode-advanced');
+              box.classList.remove('mode-simple', 'mode-advanced', 'mode-custom');
               const modeTxt = String(newText || '').toUpperCase();
               if (/SIMPLE/.test(modeTxt)) {
                 box.classList.add('mode-simple');
               } else if (/ADVANCED|SCIENTIFIC/.test(modeTxt)) {
                 box.classList.add('mode-advanced');
+              } else if (/CUSTOM/.test(modeTxt)) {
+                box.classList.add('mode-custom');
               }
             }
           } catch (_) { }
@@ -21565,10 +21653,31 @@ https://github.com/odeepllama/SolarSim/tree/main
                 const simMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
                 if (!isNaN(simMin)) {
                   let bestStep = 1;
-                  for (let i = 0; i < programSteps.length; i++) {
-                    const stepHHMM = programSteps[i].sim_time_hhmm;
-                    const stepMin = Math.floor(stepHHMM / 100) * 60 + (stepHHMM % 100);
-                    if (stepMin <= simMin) bestStep = i + 1;
+                  // Scope search to current day's steps first to avoid ambiguity
+                  // when multiple days share the same sim_time
+                  let scopedToDay = false;
+                  if (typeof analyzeMultiDayProgram === 'function') {
+                    try {
+                      const dd = analyzeMultiDayProgram();
+                      const currentDay = window.__playheadCurrentDay || 1;
+                      const dayInfo = dd && dd.days ? dd.days.find(d => d.dayNumber === currentDay) : null;
+                      if (dayInfo && dayInfo.steps && dayInfo.steps.length > 0) {
+                        for (const si of dayInfo.steps) {
+                          const stepHHMM = programSteps[si.index].sim_time_hhmm;
+                          const stepMin = Math.floor(stepHHMM / 100) * 60 + (stepHHMM % 100);
+                          if (stepMin <= simMin) bestStep = si.index + 1;
+                        }
+                        scopedToDay = true;
+                      }
+                    } catch (_) { }
+                  }
+                  // Global fallback only if day-scoped search didn't run
+                  if (!scopedToDay) {
+                    for (let i = 0; i < programSteps.length; i++) {
+                      const stepHHMM = programSteps[i].sim_time_hhmm;
+                      const stepMin = Math.floor(stepHHMM / 100) * 60 + (stepHHMM % 100);
+                      if (stepMin <= simMin) bestStep = i + 1;
+                    }
                   }
                   window.__currentStepIndex = bestStep;
                   return bestStep;
@@ -21898,8 +22007,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           // Fallback: Detect midnight crossing for times that don't match exact steps
-          // Skip if user manually navigated to a specific day
-          if (!window.__playheadManuallySet && lastSimMinutes !== null && currentSimMinutes !== null && currentSimTime !== lastSimTime) {
+          // Skip if step-index tracking already determined the day, or if user manually navigated
+          if (!foundDayFromStepIndex && !window.__playheadManuallySet && lastSimMinutes !== null && currentSimMinutes !== null && currentSimTime !== lastSimTime) {
             if (currentSimMinutes < lastSimMinutes) {
               const delta = lastSimMinutes - currentSimMinutes;
               if (delta > 360) {
@@ -21909,8 +22018,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
 
-          // Skip time-based day detection if user manually navigated to a specific day
-          if (window.__playheadManuallySet) {
+          // Skip time-based day detection if step-index tracking already succeeded or if user manually navigated
+          if (foundDayFromStepIndex || window.__playheadManuallySet) {
             // Still update lastSimTime/lastSimMinutes for next iteration
             lastSimTime = currentSimTime;
             lastSimMinutes = currentSimMinutes;
