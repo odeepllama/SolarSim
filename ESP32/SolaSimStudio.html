@@ -15066,7 +15066,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const present = hasDefault();
           $apply.disabled = !present;
           $clear.disabled = !present;
-          $save.disabled = present;
+          $save.disabled = false;
           $autoloadCheckbox.disabled = !present;
           $autoloadCheckbox.checked = present && isAutoloadEnabled();
         }
@@ -15115,7 +15115,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             Object.keys(FIELDS).forEach(k => { state[k] = FIELDS[k].default; });
             programSteps.length = 0;
             state.PROGRAM_ENABLED = false;
-            renderForm(); renderProgramSteps(); updatePreview(true);
+            buildForm(); renderProgramSteps(); updatePreview(true);
+            if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (_) { }
             updateButtons();
             $clear.title = 'Reset to original values';
           }

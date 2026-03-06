@@ -776,6 +776,9 @@ def update_program_state(now_ms, sim_time_minutes):
         if current_program_step < len(PROGRAM_STEPS) - 1:
             next_step_hhmm = PROGRAM_STEPS[current_program_step + 1]["sim_time_hhmm"]
             target_time_minutes = (next_step_hhmm // 100) * 60 + (next_step_hhmm % 100)
+            # Same-time steps: run for a full 24h day cycle before advancing
+            if target_time_minutes == step_time_minutes:
+                target_time_minutes = (step_time_minutes - 1) % 1440
             step_speed = step.get("speed", TIME_SCALE)
             direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
             speed_mag = abs(step_speed) if step_speed != 0 else 1
@@ -807,6 +810,9 @@ def update_program_state(now_ms, sim_time_minutes):
             if will_repeat and len(PROGRAM_STEPS) > 0:
                 first_hhmm = PROGRAM_STEPS[0]["sim_time_hhmm"]
                 target_time_minutes = (first_hhmm // 100) * 60 + (first_hhmm % 100)
+                # Same-time steps: run for a full 24h day cycle before repeating
+                if target_time_minutes == step_time_minutes:
+                    target_time_minutes = (step_time_minutes - 1) % 1440
                 step_speed = step.get("speed", TIME_SCALE)
                 direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
                 speed_mag = abs(step_speed) if step_speed != 0 else 1

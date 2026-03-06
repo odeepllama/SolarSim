@@ -431,6 +431,9 @@ class ProgramEngine:
             if self.current_step < len(self.program_steps) - 1:
                 next_hhmm = self.program_steps[self.current_step + 1]["sim_time_hhmm"]
                 target_minutes = (next_hhmm // 100) * 60 + (next_hhmm % 100)
+                # Same-time steps: run for a full 24h day cycle before advancing
+                if target_minutes == step_time_minutes:
+                    target_minutes = (step_time_minutes - 1) % 1440
             else:
                 # Last step: if program repeats, target the first step's
                 # time on the next cycle so this step actually runs.
@@ -439,6 +442,9 @@ class ProgramEngine:
                 if will_repeat and len(self.program_steps) > 0:
                     first_hhmm = self.program_steps[0]["sim_time_hhmm"]
                     target_minutes = (first_hhmm // 100) * 60 + (first_hhmm % 100)
+                    # Same-time steps: run for a full 24h day cycle before repeating
+                    if target_minutes == step_time_minutes:
+                        target_minutes = (step_time_minutes - 1) % 1440
                 else:
                     target_minutes = step_time_minutes
 
