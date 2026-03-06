@@ -1166,7 +1166,21 @@ https://github.com/odeepllama/SolarSim/tree/main
       }
 
       /* --- Hide Device 1 badge/tab --- */
-      #monitorConnBadge {
+      #monitorConnBadge,
+      #deviceIdentityBadge {
+        display: none !important;
+      }
+
+      /* --- Move JPN button next to Quick Edit on iPhone vertical --- */
+      #langToggleBtn {
+        order: -1;
+        font-size: 0.75rem !important;
+        padding: 5px 8px !important;
+      }
+
+      /* Hide Guide and Help buttons on iPhone vertical — not enough space */
+      #guideToggleBtn,
+      #helpToggleBtn {
         display: none !important;
       }
 
@@ -6457,6 +6471,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           setLanguage(currentLang === 'en' ? 'ja' : 'en');
         });
         setLanguage(currentLang);
+
+        // iPhone portrait: move JPN button into the toolbar next to Quick Edit
+        if (window.matchMedia('(max-width: 480px)').matches) {
+          const langBtn = document.getElementById('langToggleBtn');
+          const quickEditBtn = document.getElementById('quickEditBtn');
+          if (langBtn && quickEditBtn && quickEditBtn.parentNode) {
+            quickEditBtn.parentNode.insertBefore(langBtn, quickEditBtn.nextSibling);
+          }
+        }
       });
       // CONFIGURATION CONSTANTS
       // ============================================================================
@@ -7659,7 +7682,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                 dual_sun: step.dual_sun,
                 transition: step.transition,
                 hold_minutes: step.hold_minutes,
-                repeat: step.repeat
+                repeat: step.repeat,
+                sunrise: step.sunrise,
+                sunset: step.sunset
               });
             });
             renderProgramSteps();
@@ -7818,7 +7843,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               dual_sun: step.dual_sun,
               transition: step.transition,
               hold_minutes: step.hold_minutes,
-              repeat: step.repeat
+              repeat: step.repeat,
+              sunrise: step.sunrise,
+              sunset: step.sunset
             });
           });
           // If program steps exist, enable the program
