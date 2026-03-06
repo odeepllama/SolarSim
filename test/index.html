@@ -1158,6 +1158,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         display: none !important;
       }
 
+      /* --- Hide connect, reload, disconnect (no device on phone) --- */
+      #monitorConnectBtn,
+      #monitorRefreshBtn,
+      #monitorDisconnectBtn,
+      #toggleMonitorBtn {
+        display: none !important;
+      }
+
       /* --- Hide Device 1 badge/tab --- */
       #monitorConnBadge {
         display: none !important;
@@ -1199,15 +1207,29 @@ https://github.com/odeepllama/SolarSim/tree/main
         display: none !important;
       }
 
-      /* --- Half-width solar arc on mobile --- */
+      /* --- Solar arc: full width on mobile --- */
       #sunArcCanvas {
-        width: 50% !important;
+        width: 100% !important;
         height: auto !important;
       }
 
-      /* --- Log column: hide on mobile (no device interaction) --- */
+      /* --- Log column: show below arc (stacked, not hidden) --- */
+      .vislog-row {
+        flex-direction: column !important;
+      }
+
       .log-col[data-section="monitor-log"] {
-        display: none !important;
+        width: 100%;
+        min-width: 0 !important;
+      }
+
+      /* --- Examples popup: left-aligned, full width --- */
+      #exampleProgramChooser {
+        left: 6px !important;
+        right: 6px !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 12px) !important;
+        width: calc(100vw - 12px) !important;
       }
     }
 
