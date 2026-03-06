@@ -1034,6 +1034,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       /* --- Single-column form fields, tighter spacing --- */
       .group-grid {
+        flex-direction: column;
         grid-template-columns: 1fr !important;
         gap: 8px !important;
       }
@@ -6753,6 +6754,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
             grid.id = sectionId;
 
+            // Determine correct display value based on whether section uses CSS grid or flex
+            const isGridBased = grid.classList.contains('rotation-imaging')
+              || grid.classList.contains('imaging-illumination')
+              || grid.classList.contains('imaging-servo-timing')
+              || grid.classList.contains('program-control');
+            const displayValue = isGridBased ? 'grid' : 'flex';
+
             // Load collapsed state from localStorage
             // Default: expanded on desktop, collapsed on mobile (<=480px)
             const isMobile = window.matchMedia('(max-width: 480px)').matches;
@@ -6760,7 +6768,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const isExpanded = stored !== null ? stored === 'true' : !isMobile;
             if (isExpanded) {
               legend.innerHTML = getCollapsibleLegendHTML(group.i18nKey, group.name, true);
-              grid.style.display = 'grid';
+              grid.style.display = displayValue;
             } else {
               grid.style.display = 'none';
             }
@@ -6775,7 +6783,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                 legend.innerHTML = getCollapsibleLegendHTML(i18nKey, groupName, false);
                 localStorage.setItem(storageKey, 'false');
               } else {
-                grid.style.display = 'grid';
+                grid.style.display = displayValue;
                 legend.innerHTML = getCollapsibleLegendHTML(i18nKey, groupName, true);
                 localStorage.setItem(storageKey, 'true');
               }
