@@ -1231,6 +1231,31 @@ https://github.com/odeepllama/SolarSim/tree/main
         max-width: calc(100vw - 12px) !important;
         width: calc(100vw - 12px) !important;
       }
+
+      /* --- Program section: horizontal scroll with wide timeline & toolbar --- */
+      #programSection {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* --- Device Program Status: same wide scroll treatment --- */
+      #deviceProgramStatusFieldset {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #deviceProgramStatusTimeline {
+        min-width: 700px;
+      }
+
+      #timelineContainer {
+        min-width: 700px;
+      }
+
+      #programSection>.toolbar {
+        min-width: 700px;
+        flex-wrap: nowrap;
+      }
     }
 
     /* ============================================================================
