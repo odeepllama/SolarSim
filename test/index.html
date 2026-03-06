@@ -1205,25 +1205,20 @@ https://github.com/odeepllama/SolarSim/tree/main
         display: none !important;
       }
 
-      /* --- Solar arc: full width on mobile --- */
-      #sunArcCanvas {
-        width: 100% !important;
-        height: auto !important;
+      /* --- Hide solar arc + log entirely on mobile (no device) --- */
+      #monitorVisLogRow {
+        display: none !important;
       }
 
-      /* --- Remove the desktop negative margin that creates a huge gap --- */
-      #sunArcWrapper {
-        margin-bottom: 0 !important;
+      /* --- Collapse monitor panel whitespace --- */
+      #monitorPanel {
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
-      /* --- Log column: show below arc (stacked, not hidden) --- */
-      .vislog-row {
-        flex-direction: column !important;
-      }
-
-      .log-col[data-section="monitor-log"] {
-        width: 100%;
-        min-width: 0 !important;
+      /* --- Hide Device Program Status (duplicates step timeline) --- */
+      #deviceProgramStatusFieldset {
+        display: none !important;
       }
 
       /* --- Examples popup: left-aligned, full width --- */
