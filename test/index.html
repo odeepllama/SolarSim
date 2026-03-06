@@ -1034,10 +1034,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       /* --- Single-column form fields, tighter spacing --- */
       .group-grid {
-        display: grid !important;
         grid-template-columns: 1fr !important;
         gap: 8px !important;
-        flex-wrap: nowrap;
       }
 
       .field {
@@ -1211,6 +1209,11 @@ https://github.com/odeepllama/SolarSim/tree/main
       #sunArcCanvas {
         width: 100% !important;
         height: auto !important;
+      }
+
+      /* --- Remove the desktop negative margin that creates a huge gap --- */
+      #sunArcWrapper {
+        margin-bottom: 0 !important;
       }
 
       /* --- Log column: show below arc (stacked, not hidden) --- */
