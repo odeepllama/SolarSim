@@ -172,6 +172,7 @@ last_program_status_sim_time = 0      # Last time we printed status
 hold_step_start_ms = 0                # Time when current hold step started
 last_printed_minute = 0               # Last printed simulation minute
 program_has_completed_all_repeats = False  # Flag to track program completion
+cross_day_has_left = False                # Cross-day step: has sim_time moved away from start?
 
 # --- Lighting State Variables ---
 rotation_lighting_active = False      # Flag to track if rotation lighting is active
@@ -507,7 +508,7 @@ def start_program():
     """Start or restart the program execution."""
     global program_running, current_program_step, current_step_repeat
     global current_program_repeat, program_step_start_sim_time, hold_step_start_ms
-    global last_printed_minute
+    global last_printed_minute, cross_day_has_left
     
     if not PROGRAM_STEPS:
         print("[PROGRAM] No program steps defined — cannot start")
@@ -518,6 +519,7 @@ def start_program():
     current_program_repeat = 0
     program_step_start_sim_time = 0
     last_printed_minute = 0
+    cross_day_has_left = False
 
     print("[PROGRAM] Started")
 
@@ -542,6 +544,10 @@ def apply_step_settings(step_arg):
         INTENSITY_SCALE = step_arg["intensity_scale"]
     if "dual_sun" in step_arg:
         DUAL_SUN_ENABLED = bool(step_arg["dual_sun"])
+    # Log step activation with day info
+    _day_val = step_arg.get("day", "?")
+    _sun_rgb_log = step_arg.get("sun_color_rgb", "default")
+    print(f"[PROGRAM] Step applied: day={_day_val} color={_sun_rgb_log}")
     # Apply per-step sun color
     sun_rgb = step_arg.get("sun_color_rgb")
     if isinstance(sun_rgb, list) and len(sun_rgb) == 3:
@@ -569,7 +575,7 @@ def advance_program():
     """Advance program step/repeat (reverse-aware)."""
     global current_program_step, current_step_repeat, current_program_repeat
     global program_step_start_sim_time, start_real_time_ms, frozen_sim_time_minutes
-    global program_has_completed_all_repeats
+    global program_has_completed_all_repeats, cross_day_has_left
     previous_step = PROGRAM_STEPS[current_program_step]
     previous_was_hold = previous_step.get("speed", 1) == 0
     step = PROGRAM_STEPS[current_program_step]
@@ -607,28 +613,37 @@ def advance_program():
             preserved = frozen_sim_time_minutes
             start_real_time_ms = _reanchor_start_time(preserved, current_step.get("speed",1), now_ms, START_TIME_HHMM, start_real_time_ms)
     program_step_start_sim_time = 0
+    cross_day_has_left = False
 
 def _sync_step_to_time(time_minutes):
     """Find and apply the program step that owns the given time.
 
     Each step owns the range [step.sim_time, next_step.sim_time).
+    Day-aware: only searches within steps on the current day.
     Sets current_program_step, applies speed/settings, and resets
     program_step_start_sim_time so the engine picks up cleanly.
     """
     global current_program_step, current_step_repeat, program_step_start_sim_time
-    global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes
+    global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes, cross_day_has_left
     if not PROGRAM_STEPS:
         return
-    # Convert step times to minutes and find which step owns this time
-    step_times = []
-    for s in PROGRAM_STEPS:
-        hhmm = s["sim_time_hhmm"]
-        step_times.append((hhmm // 100) * 60 + (hhmm % 100))
-    # Walk backwards: the last step whose start time <= time_minutes owns this time
-    target_idx = 0
-    for i in range(len(step_times) - 1, -1, -1):
-        if time_minutes >= step_times[i]:
-            target_idx = i
+    # Determine current day
+    current_day = PROGRAM_STEPS[current_program_step].get("day", 1) if current_program_step < len(PROGRAM_STEPS) else 1
+    # Build list of step indices on the current day
+    day_step_indices = []
+    for i, s in enumerate(PROGRAM_STEPS):
+        if s.get("day", 1) == current_day:
+            day_step_indices.append(i)
+    if not day_step_indices:
+        return
+    # Walk backwards through current day's steps only
+    target_idx = day_step_indices[0]  # default to first step of the day
+    for i in range(len(day_step_indices) - 1, -1, -1):
+        si = day_step_indices[i]
+        hhmm = PROGRAM_STEPS[si]["sim_time_hhmm"]
+        step_min = (hhmm // 100) * 60 + (hhmm % 100)
+        if time_minutes >= step_min:
+            target_idx = si
             break
     # Only update if we've moved to a different step
     if target_idx == current_program_step:
@@ -638,6 +653,7 @@ def _sync_step_to_time(time_minutes):
     current_program_step = target_idx
     current_step_repeat = 0
     program_step_start_sim_time = 0  # let update reinitialise
+    cross_day_has_left = False
     now = ticks_ms()
     if new_speed == 0:
         frozen_sim_time_minutes = time_minutes
@@ -645,7 +661,8 @@ def _sync_step_to_time(time_minutes):
         TIME_SCALE = new_speed
         start_real_time_ms = _reanchor_start_time(
             time_minutes, new_speed, now, START_TIME_HHMM, start_real_time_ms)
-    print(f"[SERIAL CMD] Program synced to step {target_idx + 1} (speed {new_speed}x)")
+    apply_step_settings(step)  # Immediately apply color/sunrise/sunset
+    print(f"[SERIAL CMD] Program synced to step {target_idx + 1} (day {current_day}, speed {new_speed}x)")
 
 def print_program_status(now_ms, sim_time_minutes):
     """Print program status (supports reverse progress)."""
@@ -695,13 +712,14 @@ def print_program_status(now_ms, sim_time_minutes):
     sim_hour = int(sim_time_minutes // 60) % 24
     sim_minute = int(sim_time_minutes % 60)
     time_str = f"{sim_hour:02d}:{sim_minute:02d}"
-    print(f"[PROGRAM] Step {current_program_step + 1}/{len(PROGRAM_STEPS)} (Rep {current_step_repeat + 1}/{step.get('repeat', 1)}) | Target: {target_time} | Speed: {TIME_SCALE}X | Intensity: {step.get('intensity_scale', INTENSITY_SCALE):.2f} | Progress: {progress} | Sim Time: {time_str}")
+    day_str = f" | Day: {step.get('day', '?')}" if step.get('day') else ""
+    print(f"[PROGRAM] Step {current_program_step + 1}/{len(PROGRAM_STEPS)} (Rep {current_step_repeat + 1}/{step.get('repeat', 1)}){day_str} | Target: {target_time} | Speed: {TIME_SCALE}X | Intensity: {step.get('intensity_scale', INTENSITY_SCALE):.2f} | Progress: {progress} | Sim Time: {time_str}")
 
 def update_program_state(now_ms, sim_time_minutes):
     """Update program logic with reverse-aware RUN/JUMP/HOLD evaluation."""
     global program_running, current_program_step, current_step_repeat, current_program_repeat
     global program_step_start_sim_time, last_program_status_sim_time, TIME_SCALE
-    global hold_step_start_ms, last_printed_minute
+    global hold_step_start_ms, last_printed_minute, cross_day_has_left
     global frozen_sim_time_minutes
     if not program_running:
         return
@@ -774,45 +792,33 @@ def update_program_state(now_ms, sim_time_minutes):
     elif transition_type == "RUN":
         # Check against NEXT step's time (or hold on last step)
         if current_program_step < len(PROGRAM_STEPS) - 1:
-            next_step_hhmm = PROGRAM_STEPS[current_program_step + 1]["sim_time_hhmm"]
+            next_step = PROGRAM_STEPS[current_program_step + 1]
+            next_step_hhmm = next_step["sim_time_hhmm"]
             target_time_minutes = (next_step_hhmm // 100) * 60 + (next_step_hhmm % 100)
-            # Same-time steps: run for a full 24h day cycle before advancing
-            if target_time_minutes == step_time_minutes:
-                target_time_minutes = (step_time_minutes - 1) % 1440
-            step_speed = step.get("speed", TIME_SCALE)
-            direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
-            speed_mag = abs(step_speed) if step_speed != 0 else 1
-            tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
-            if direction >= 0:
-                current_eval_time = sim_time_minutes
-                target_eval_time = target_time_minutes
-                if target_time_minutes < program_step_start_sim_time:
-                    if sim_time_minutes < program_step_start_sim_time:
-                        current_eval_time += 1440
-                    target_eval_time += 1440
-                if current_eval_time >= (target_eval_time - tolerance):
-                    target_reached = True
+            # Determine if this is a cross-day transition using the day field
+            current_day = step.get("day", 1)
+            next_day = next_step.get("day", current_day)
+            is_cross_day = (next_day != current_day)
+            if is_cross_day:
+                # CROSS-DAY: use "left-and-returned" approach
+                # Phase 1: sim_time must move away from step's start time
+                # Phase 2: sim_time must return close to step's start time
+                step_speed = step.get("speed", TIME_SCALE)
+                speed_mag = abs(step_speed) if step_speed != 0 else 1
+                leave_threshold = max(60, speed_mag * 2)  # Must move away by this many min
+                return_tolerance = max(1.0, speed_mag * 0.5)  # Must return within this
+                # Calculate circular distance (shortest path around 1440-min clock)
+                diff = abs(sim_time_minutes - step_time_minutes)
+                if diff > 720:
+                    diff = 1440 - diff
+                if not cross_day_has_left:
+                    if diff > leave_threshold:
+                        cross_day_has_left = True
+                else:
+                    if diff <= return_tolerance:
+                        target_reached = True
             else:
-                start_tod = program_step_start_sim_time
-                target_eval_time = target_time_minutes
-                if target_time_minutes > start_tod:
-                    target_eval_time -= 1440
-                current_eval_time = sim_time_minutes
-                if sim_time_minutes > start_tod:
-                    current_eval_time -= 1440
-                if current_eval_time <= (target_eval_time + tolerance):
-                    target_reached = True
-        else:
-            # Last step: if program repeats, target the first step's time
-            # so time naturally wraps around and the program restarts
-            will_repeat = (PROGRAM_REPEATS == -1 or
-                           current_program_repeat < PROGRAM_REPEATS - 1)
-            if will_repeat and len(PROGRAM_STEPS) > 0:
-                first_hhmm = PROGRAM_STEPS[0]["sim_time_hhmm"]
-                target_time_minutes = (first_hhmm // 100) * 60 + (first_hhmm % 100)
-                # Same-time steps: run for a full 24h day cycle before repeating
-                if target_time_minutes == step_time_minutes:
-                    target_time_minutes = (step_time_minutes - 1) % 1440
+                # SAME-DAY: use standard time-matching against next step's time
                 step_speed = step.get("speed", TIME_SCALE)
                 direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
                 speed_mag = abs(step_speed) if step_speed != 0 else 1
@@ -836,6 +842,57 @@ def update_program_state(now_ms, sim_time_minutes):
                         current_eval_time -= 1440
                     if current_eval_time <= (target_eval_time + tolerance):
                         target_reached = True
+        else:
+            # Last step: if program repeats, check for cross-day or time-match
+            will_repeat = (PROGRAM_REPEATS == -1 or
+                           current_program_repeat < PROGRAM_REPEATS - 1)
+            if will_repeat and len(PROGRAM_STEPS) > 0:
+                first_step = PROGRAM_STEPS[0]
+                first_hhmm = first_step["sim_time_hhmm"]
+                target_time_minutes = (first_hhmm // 100) * 60 + (first_hhmm % 100)
+                current_day = step.get("day", 1)
+                first_day = first_step.get("day", current_day)
+                is_cross_day = (first_day != current_day)
+                if is_cross_day:
+                    # Cross-day back to day 1: same left-and-returned logic
+                    step_speed = step.get("speed", TIME_SCALE)
+                    speed_mag = abs(step_speed) if step_speed != 0 else 1
+                    leave_threshold = max(60, speed_mag * 2)
+                    return_tolerance = max(1.0, speed_mag * 0.5)
+                    diff = abs(sim_time_minutes - step_time_minutes)
+                    if diff > 720:
+                        diff = 1440 - diff
+                    if not cross_day_has_left:
+                        if diff > leave_threshold:
+                            cross_day_has_left = True
+                    else:
+                        if diff <= return_tolerance:
+                            target_reached = True
+                else:
+                    # Same-day repeat: standard time-matching
+                    step_speed = step.get("speed", TIME_SCALE)
+                    direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
+                    speed_mag = abs(step_speed) if step_speed != 0 else 1
+                    tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
+                    if direction >= 0:
+                        current_eval_time = sim_time_minutes
+                        target_eval_time = target_time_minutes
+                        if target_time_minutes < program_step_start_sim_time:
+                            if sim_time_minutes < program_step_start_sim_time:
+                                current_eval_time += 1440
+                            target_eval_time += 1440
+                        if current_eval_time >= (target_eval_time - tolerance):
+                            target_reached = True
+                    else:
+                        start_tod = program_step_start_sim_time
+                        target_eval_time = target_time_minutes
+                        if target_time_minutes > start_tod:
+                            target_eval_time -= 1440
+                        current_eval_time = sim_time_minutes
+                        if sim_time_minutes > start_tod:
+                            current_eval_time -= 1440
+                        if current_eval_time <= (target_eval_time + tolerance):
+                            target_reached = True
             # else: last step, no repeats — hold configuration
     elif transition_type == "JUMP":
         target_reached = True
@@ -1655,7 +1712,9 @@ def get_scientific_sun_position(minute_of_day):
         b = clamp(int(b * brightness_factor), 0, MAX_BRIGHTNESS)
     if SUN_COLOR_MODE == "CUSTOM":
         if SOLAR_MODE == "BASIC":
-            r, g, b = CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+            r = clamp(int(CUSTOM_SUN_R * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+            g = clamp(int(CUSTOM_SUN_G * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+            b = clamp(int(CUSTOM_SUN_B * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
         else:
             r = clamp(int(CUSTOM_SUN_R * brightness_factor), 0, MAX_BRIGHTNESS)
             g = clamp(int(CUSTOM_SUN_G * brightness_factor), 0, MAX_BRIGHTNESS)
@@ -1706,7 +1765,9 @@ def get_basic_sun_position(minute_of_day):
         # Return the raw float position for accurate rounding later
         x = raw_position
     if SUN_COLOR_MODE == "CUSTOM":
-        r, g, b = CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+        r = clamp(int(CUSTOM_SUN_R * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+        g = clamp(int(CUSTOM_SUN_G * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+        b = clamp(int(CUSTOM_SUN_B * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
     # Override with blue-only if that mode is selected
     if SUN_COLOR_MODE == "BLUE":
         r = 0
@@ -2250,6 +2311,8 @@ def handle_command(command_str):
                     start_real_time_ms = _reanchor_start_time(target_minutes, new_speed, now_ms, START_TIME_HHMM, start_real_time_ms)
 
                 program_step_start_sim_time = 0  # This triggers the step logic in the main loop
+                cross_day_has_left = False
+                apply_step_settings(new_step)  # Immediately apply color/sunrise/sunset
                 print(f"[SERIAL CMD] Jumping program to step {current_program_step + 1} at {target_hhmm:04d}.")
 
             elif target == "step" and len(parts) == 3:
@@ -2278,6 +2341,8 @@ def handle_command(command_str):
                             start_real_time_ms = _reanchor_start_time(target_minutes, new_speed, now_ms, START_TIME_HHMM, start_real_time_ms)
 
                         program_step_start_sim_time = 0  # This triggers the step logic in the main loop
+                        cross_day_has_left = False
+                        apply_step_settings(new_step)  # Immediately apply color/sunrise/sunset
                         print(f"[SERIAL CMD] Jumping program to step {step_num} at {target_hhmm:04d}.")
                     else:
                         print(f"[SERIAL CMD] Error: Invalid step number. Must be between 1 and {len(PROGRAM_STEPS)}.")

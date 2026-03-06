@@ -7684,7 +7684,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                 hold_minutes: step.hold_minutes,
                 repeat: step.repeat,
                 sunrise: step.sunrise,
-                sunset: step.sunset
+                sunset: step.sunset,
+                day: step.day
               });
             });
             renderProgramSteps();
@@ -7845,7 +7846,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               hold_minutes: step.hold_minutes,
               repeat: step.repeat,
               sunrise: step.sunrise,
-              sunset: step.sunset
+              sunset: step.sunset,
+              day: step.day
             });
           });
           // If program steps exist, enable the program
@@ -7961,41 +7963,18 @@ https://github.com/odeepllama/SolarSim/tree/main
         dayData.days.forEach(day => {
           day.steps.forEach(stepInfo => {
             stepToDayMap.set(stepInfo.index, day.dayNumber);
+            // Store day directly into the step object for firmware export
+            if (programSteps[stepInfo.index]) programSteps[stepInfo.index].day = day.dayNumber;
           });
         });
 
         // Pre-compute effective sunrise (earliest) and sunset (latest) per day
         // so we can highlight which step defines the day boundaries
-        const dayEffectiveRise = new Map(); // dayNumber -> { value, stepIdx }
-        const dayEffectiveSet = new Map();  // dayNumber -> { value, stepIdx }
-        if (document.getElementById('perStepDayLength')?.checked) {
-          dayData.days.forEach(day => {
-            let earliestRise = Infinity, earliestRiseIdx = -1;
-            let latestSet = -Infinity, latestSetIdx = -1;
-            day.steps.forEach(stepInfo => {
-              const s = programSteps[stepInfo.index];
-              const rise = s.sunrise != null ? s.sunrise : 600;
-              const set = s.sunset != null ? s.sunset : 1800;
-              if (rise < earliestRise) { earliestRise = rise; earliestRiseIdx = stepInfo.index; }
-              if (set > latestSet) { latestSet = set; latestSetIdx = stepInfo.index; }
-            });
-            if (earliestRiseIdx >= 0) dayEffectiveRise.set(day.dayNumber, { value: earliestRise, stepIdx: earliestRiseIdx });
-            if (latestSetIdx >= 0) dayEffectiveSet.set(day.dayNumber, { value: latestSet, stepIdx: latestSetIdx });
-          });
-          // Compute global minimum sunrise and auto-sync all day-start sim_times
-          let globalMinRise = Infinity;
-          dayEffectiveRise.forEach(eff => { if (eff.value < globalMinRise) globalMinRise = eff.value; });
-          if (globalMinRise < Infinity) {
-            dayData.days.forEach(day => {
-              if (!day.steps || day.steps.length === 0) return;
-              const firstIdx = day.steps[0].index;
-              const firstStep = programSteps[firstIdx];
-              if (firstStep && firstStep.sim_time_hhmm != null && globalMinRise < firstStep.sim_time_hhmm) {
-                firstStep.sim_time_hhmm = globalMinRise;
-              }
-            });
-          }
-        }
+        // Build set of first-of-day step indices for sunrise/sunset editing
+        const firstOfDayIndices = new Set();
+        dayData.days.forEach(day => {
+          if (day.steps && day.steps.length > 0) firstOfDayIndices.add(day.steps[0].index);
+        });
 
         programSteps.forEach((step, idx) => {
           const tr = document.createElement('tr');
@@ -8028,29 +8007,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           idxCell.classList.add('step-index');
           if (dayTooltip) idxCell.title = dayTooltip;
           tr.appendChild(idxCell);
-          // Day column - shows the day number for this step
-          const dayCell = mkCell(dayNum !== undefined ? dayNum : '');
+          // Day column - editable day number for this step (auto-populated, user-overridable)
+          const autoDay = stepToDayMap.get(idx);
+          const storedDay = step.day;
+          // Use stored day if present (manual override), otherwise auto-assign
+          const displayDay = storedDay != null ? storedDay : (autoDay != null ? autoDay : 1);
+          // Only auto-assign if no stored value exists (protect manual overrides)
+          if (storedDay == null && autoDay != null) step.day = autoDay;
+          const isOverridden = storedDay != null && autoDay != null && storedDay !== autoDay;
+          const dayCell = mkCell(`<input data-f='day' type='number' min='1' value='${displayDay}' style='width:36px; text-align:center; font-weight:700; ${isOverridden ? "border:2px solid #e65100; background:#fff3e0;" : ""}' title='${isOverridden ? "Manual override (auto=" + autoDay + ")" : "Day " + displayDay + " (auto-assigned)"}'/>`);
           dayCell.classList.add('day-number-cell');
           tr.appendChild(dayCell);
           // Format time with 4-digit padding for display (1 -> 0001, 600 -> 0600)
           const simTimeDisplay = step.sim_time_hhmm != null ? String(step.sim_time_hhmm).padStart(4, '0') : '';
           const simCell = mkCell(`<input data-f='sim_time_hhmm' type='number' value='${simTimeDisplay}' size='5'/>`); simCell.classList.add('sim-time-cell');
-          // Highlight orange if this day-start sim_time was auto-synced to earliest sunrise
-          if (dayNum !== undefined && dayEffectiveRise.has(dayNum)) {
-            const daySteps = dayData.days.find(d => d.dayNumber === dayNum);
-            if (daySteps && daySteps.steps.length > 0 && daySteps.steps[0].index === idx) {
-              let globalMinRise2 = Infinity;
-              dayEffectiveRise.forEach(eff => { if (eff.value < globalMinRise2) globalMinRise2 = eff.value; });
-              if (globalMinRise2 < Infinity && step.sim_time_hhmm === globalMinRise2) {
-                const inp = simCell.querySelector('input');
-                if (inp) {
-                  inp.style.border = '2px solid #e65100';
-                  inp.style.background = '#fff3e0';
-                  inp.title = `Auto-synced to earliest sunrise (${String(globalMinRise2).padStart(4, '0')})`;
-                }
-              }
-            }
-          }
           tr.appendChild(simCell);
           // Speed cell with color coding
           const spd = step.speed != null ? step.speed : 1;
@@ -8141,32 +8111,21 @@ https://github.com/odeepllama/SolarSim/tree/main
           dualCell.className = 'dual-sun-col';
           if (dayLenVisible && navigator.maxTouchPoints > 1) dualCell.style.display = 'none';
           tr.appendChild(dualCell);
-          // Rise/Set cells (hidden by default, toggled by perStepDayLength checkbox)
+          // Rise/Set cells — only editable on first step of each day
           const riseDisplay = dayLenVisible ? '' : 'display:none';
-          const riseVal = step.sunrise != null ? step.sunrise : (dayLenVisible ? 600 : '');
-          const setVal = step.sunset != null ? step.sunset : (dayLenVisible ? 1800 : '');
-          // Populate step data with defaults if checkbox active and values missing
-          if (dayLenVisible && step.sunrise == null) step.sunrise = 600;
-          if (dayLenVisible && step.sunset == null) step.sunset = 1800;
-          const riseTd = mkCell(`<input data-f='sunrise' type='number' min='0' max='2359' value='${riseVal}' style='width:60px' placeholder='—'/>`);
+          const isFirstOfDay = firstOfDayIndices.has(idx);
+          const riseVal = isFirstOfDay ? (step.sunrise != null ? step.sunrise : (dayLenVisible ? 600 : '')) : '';
+          const setVal = isFirstOfDay ? (step.sunset != null ? step.sunset : (dayLenVisible ? 1800 : '')) : '';
+          // Populate step data with defaults only for first-of-day steps
+          if (dayLenVisible && isFirstOfDay && step.sunrise == null) step.sunrise = 600;
+          if (dayLenVisible && isFirstOfDay && step.sunset == null) step.sunset = 1800;
+          // Mid-day steps: clear any stale sunrise/sunset so firmware inherits from day's first step
+          if (dayLenVisible && !isFirstOfDay) { step.sunrise = undefined; step.sunset = undefined; }
+          const riseTd = mkCell(`<input data-f='sunrise' type='number' min='0' max='2359' value='${riseVal}' style='width:60px' placeholder='—' ${!isFirstOfDay ? 'disabled' : ''}/>`);
           riseTd.className = 'day-length-col'; riseTd.style.cssText = riseDisplay;
-          // Highlight effective sunrise cell (earliest in the day) with yellow fill
-          if (dayLenVisible && dayNum !== undefined) {
-            const eff = dayEffectiveRise.get(dayNum);
-            if (eff && eff.stepIdx === idx) {
-              const inp = riseTd.querySelector('input'); if (inp) inp.style.background = '#fff9c4';
-            }
-          }
           tr.appendChild(riseTd);
-          const setTd = mkCell(`<input data-f='sunset' type='number' min='0' max='2359' value='${setVal}' style='width:60px' placeholder='—'/>`);
+          const setTd = mkCell(`<input data-f='sunset' type='number' min='0' max='2359' value='${setVal}' style='width:60px' placeholder='—' ${!isFirstOfDay ? 'disabled' : ''}/>`);
           setTd.className = 'day-length-col'; setTd.style.cssText = riseDisplay;
-          // Highlight effective sunset cell (latest in the day) with dark blue fill + white text
-          if (dayLenVisible && dayNum !== undefined) {
-            const eff = dayEffectiveSet.get(dayNum);
-            if (eff && eff.stepIdx === idx) {
-              const inp = setTd.querySelector('input'); if (inp) { inp.style.background = '#1a237e'; inp.style.color = '#fff'; }
-            }
-          }
           tr.appendChild(setTd);
           const transitionVal = (step.transition || 'RUN').toUpperCase();
           tr.appendChild(mkCell(`<select data-f='transition'>
@@ -8651,9 +8610,39 @@ https://github.com/odeepllama/SolarSim/tree/main
             updatePreview(false);
             return;
           }
-          else if (['speed', 'hold_minutes', 'intensity_scale', 'repeat', 'sunrise', 'sunset'].includes(field)) {
+          else if (['speed', 'hold_minutes', 'intensity_scale', 'repeat', 'sunrise', 'sunset', 'day'].includes(field)) {
             const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
             programSteps[row][field] = val;
+
+            // For day field changes, trigger full re-render to update row backgrounds and timeline
+            if (field === 'day') {
+              updatePreview(false);
+              if (typeof renderTimelineStrip === 'function') {
+                try { renderTimelineStrip(); } catch (_e) { }
+              }
+              // Highlight as override if different from auto-computed day
+              const autoDay = (() => {
+                try {
+                  const dd = analyzeMultiDayProgram(true);
+                  for (const d of dd.days) {
+                    for (const si of d.steps) {
+                      if (si.index === row) return d.dayNumber;
+                    }
+                  }
+                } catch (_) { }
+                return null;
+              })();
+              if (autoDay != null && val != null && val !== autoDay) {
+                e.target.style.border = '2px solid #e65100';
+                e.target.style.background = '#fff3e0';
+                e.target.title = `Manual override (auto=${autoDay})`;
+              } else {
+                e.target.style.border = '';
+                e.target.style.background = '';
+                e.target.title = val != null ? `Day ${val} (auto-assigned)` : '';
+              }
+              return;
+            }
 
             // For sunrise/sunset, update timeline immediately
             if (field === 'sunrise' || field === 'sunset') {
@@ -8661,45 +8650,6 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (typeof renderTimelineStrip === 'function') {
                 try { renderTimelineStrip(); } catch (_e) { }
               }
-              // Global auto-sync: set ALL day-start sim_times to the global minimum sunrise
-              try {
-                const dd = analyzeMultiDayProgram(true);
-                // Find global minimum sunrise across all days
-                let globalMinRise = Infinity;
-                dd.days.forEach(day => {
-                  day.steps.forEach(si => {
-                    const s = programSteps[si.index];
-                    const r = s && s.sunrise != null ? s.sunrise : 600;
-                    if (r < globalMinRise) globalMinRise = r;
-                  });
-                });
-                if (globalMinRise < Infinity) {
-                  // Set all day-start step sim_times to the global minimum sunrise
-                  dd.days.forEach(day => {
-                    if (!day.steps || day.steps.length === 0) return;
-                    const firstIdx = day.steps[0].index;
-                    const firstStep = programSteps[firstIdx];
-                    if (!firstStep) return;
-                    const oldVal = firstStep.sim_time_hhmm != null ? firstStep.sim_time_hhmm : 0;
-                    // Update data
-                    firstStep.sim_time_hhmm = globalMinRise;
-                    // Update DOM input
-                    const inp = document.querySelector(`#programStepsTable tbody tr[data-step-index='${firstIdx}'] input[data-f='sim_time_hhmm']`);
-                    if (inp) {
-                      inp.value = String(globalMinRise).padStart(4, '0');
-                      if (globalMinRise !== oldVal) {
-                        inp.style.border = '2px solid #e65100';
-                        inp.style.background = '#fff3e0';
-                        inp.title = `Auto-synced to earliest sunrise (${String(globalMinRise).padStart(4, '0')})`;
-                      } else {
-                        inp.style.border = '';
-                        inp.style.background = '';
-                        inp.title = '';
-                      }
-                    }
-                  });
-                }
-              } catch (_) { }
               return;
             }
 
@@ -9920,7 +9870,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           lines.push('PROGRAM_ENABLED = True');
           lines.push(`PROGRAM_REPEATS = ${state.PROGRAM_REPEATS}`);
           // Normalize PROGRAM_STEPS to JSON with correct types expected by firmware
-          const cleaned = programSteps.map(s => {
+          const cleaned = programSteps.map((s, idx) => {
             const o = {};
             // sim_time_hhmm: accept numbers or strings like '0600'/'600'/'6:00'
             if (s.sim_time_hhmm != null) {
@@ -9950,6 +9900,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             // sunrise/sunset: integer HHMM (per-step day length for CUSTOM solar mode)
             if (s.sunrise != null) { const n = parseInt(s.sunrise, 10); if (!isNaN(n)) o.sunrise = n; }
             if (s.sunset != null) { const n = parseInt(s.sunset, 10); if (!isNaN(n)) o.sunset = n; }
+            // day: integer day number for multi-day programs (set by renderProgramSteps)
+            if (s.day != null) o.day = s.day;
             return o;
           });
           // Firmware loads PROGRAM_STEPS via JSON, so keep JSON array syntax
