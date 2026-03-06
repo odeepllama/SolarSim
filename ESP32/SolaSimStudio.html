@@ -239,7 +239,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       min-width: 160px;
     }
 
-    /* Imaging Servo Operation & Timing section: 2 rows layout */
+    /* Imaging Servos & Timing section: 2 rows layout */
     .group-grid.imaging-servo-timing {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -6091,7 +6091,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           sectionTimeDate: 'Time & Date',
           sectionSolarMode: 'Solar Mode & Sun Color',
           sectionImagingIllum: 'Imaging Illumination',
-          sectionImagingServo: 'Imaging Servo Operation & Timing',
+          sectionImagingServo: 'Imaging Servos & Timing',
           sectionRotation: 'Rotation Imaging',
           sectionProgramControl: 'Program Control',
           toggleView: '(Toggle view)',
@@ -6253,7 +6253,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           sectionTimeDate: '時刻と日付',
           sectionSolarMode: 'ソーラーモードと太陽色',
           sectionImagingIllum: '撮像照明',
-          sectionImagingServo: '撮像サーボ動作とタイミング',
+          sectionImagingServo: '撮像サーボ＆タイミング',
           sectionRotation: '回転と撮像',
           sectionProgramControl: 'プログラム制御',
           toggleView: '(表示切替)',
@@ -6505,7 +6505,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
         { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
-        { name: 'Imaging Servo Operation & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
+        { name: 'Imaging Servos & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
         { name: 'Rotation Imaging', i18nKey: 'sectionRotation', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
       ];
 
@@ -6749,7 +6749,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               grid.className = 'group-grid rotation-imaging';
             } else if (group.name === 'Imaging Illumination') {
               grid.className = 'group-grid imaging-illumination';
-            } else if (group.name === 'Imaging Servo Operation & Timing') {
+            } else if (group.name === 'Imaging Servos & Timing') {
               grid.className = 'group-grid imaging-servo-timing';
             }
             grid.id = sectionId;
@@ -22251,7 +22251,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           { id: 'time-and-date', name: 'Time & Date Settings', defaultSimple: true },
           { id: 'solar-mode-and-sun-color', name: 'Solar Mode & Sun Color', defaultSimple: false },
           { id: 'imaging-illumination', name: 'Imaging Illumination', defaultSimple: false },
-          { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servo Operation & Timing', defaultSimple: true },
+          { id: 'imaging-servo-operation-and-timing', name: 'Imaging Servos & Timing', defaultSimple: true },
           { id: 'rotation-and-imaging', name: 'Rotation Imaging', defaultSimple: false },
           { id: 'program-control', name: 'Program Control', defaultSimple: true },
           { id: 'program-steps-section', name: 'Program Steps (Timeline & Table)', defaultSimple: false },
