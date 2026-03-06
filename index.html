@@ -8634,10 +8634,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               return;
             }
 
-            // For sunrise/sunset, update timeline immediately
+            // For sunrise/sunset, update timeline immediately but debounce table re-render
+            // to avoid destroying the active input while user is typing
             if (field === 'sunrise' || field === 'sunset') {
-              renderProgramSteps();
               updatePreview(false);
+              if (window._sunriseRenderTimer) clearTimeout(window._sunriseRenderTimer);
+              window._sunriseRenderTimer = setTimeout(() => renderProgramSteps(), 400);
               return;
             }
 
