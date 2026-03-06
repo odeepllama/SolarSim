@@ -18910,14 +18910,43 @@ https://github.com/odeepllama/SolarSim/tree/main
             updateAutoloadBadge();
           }
 
+          // Day change from firmware midnight crossing announcement
+          const mDayChange = line.match(/\[PROGRAM\]\s*Day\s+(\d+)\s*$/i);
+          if (mDayChange) {
+            const newDay = parseInt(mDayChange[1], 10);
+            if (newDay > 0 && newDay !== window.__playheadCurrentDay) {
+              window.__playheadCurrentDay = newDay;
+              window.__dayWrapCount = newDay - 1;
+              window.__playheadManuallySet = true; // Lock to device-reported day
+              if (typeof renderTimelineStrip === 'function') {
+                try { renderTimelineStrip(); } catch (_e) { }
+              }
+            }
+          }
+
+          // Direct day sync from firmware "Step applied" message (most reliable source)
+          // This message is proven to reach the browser and contains the day number directly
+          const mStepApplied = line.match(/\[PROGRAM\]\s*Step\s+applied:\s*day=(\d+)/i);
+          if (mStepApplied) {
+            const appliedDay = parseInt(mStepApplied[1], 10);
+            if (appliedDay > 0 && appliedDay !== window.__playheadCurrentDay) {
+              window.__playheadCurrentDay = appliedDay;
+              window.__dayWrapCount = appliedDay - 1;
+              window.__playheadManuallySet = true; // Lock to device-reported day, prevent periodic override
+              if (typeof renderTimelineStrip === 'function') {
+                try { renderTimelineStrip(); } catch (_e) { }
+              }
+            }
+          }
+
           // Sync current step index from device status (runs every status poll)
           const mCurrentStep = line.match(reProgramCurrentStep);
           if (mCurrentStep) {
             const deviceStep = parseInt(mCurrentStep[1], 10); // 1-based
             if (deviceStep > 0) {
               window.__currentStepIndex = deviceStep;
-              // Immediately sync playhead day from step index (authoritative source)
-              if (!window.__playheadManuallySet && typeof __getDayForStep === 'function') {
+              // Always sync playhead day from device step index (authoritative source)
+              if (typeof __getDayForStep === 'function') {
                 const dayForStep = __getDayForStep(deviceStep - 1);
                 if (dayForStep && dayForStep !== window.__playheadCurrentDay) {
                   window.__playheadCurrentDay = dayForStep;

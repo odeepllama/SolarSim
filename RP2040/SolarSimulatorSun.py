@@ -172,7 +172,8 @@ last_program_status_sim_time = 0      # Last time we printed status
 hold_step_start_ms = 0                # Time when current hold step started
 last_printed_minute = 0               # Last printed simulation minute
 program_has_completed_all_repeats = False  # Flag to track program completion
-cross_day_has_left = False                # Cross-day step: has sim_time moved away from start?
+cross_day_has_left = False                # Cross-day: has midnight been crossed?
+cross_day_prev_sim = -1                   # Previous sim_time for midnight detection
 
 # --- Lighting State Variables ---
 rotation_lighting_active = False      # Flag to track if rotation lighting is active
@@ -520,6 +521,7 @@ def start_program():
     program_step_start_sim_time = 0
     last_printed_minute = 0
     cross_day_has_left = False
+    cross_day_prev_sim = -1
 
     print("[PROGRAM] Started")
 
@@ -575,7 +577,7 @@ def advance_program():
     """Advance program step/repeat (reverse-aware)."""
     global current_program_step, current_step_repeat, current_program_repeat
     global program_step_start_sim_time, start_real_time_ms, frozen_sim_time_minutes
-    global program_has_completed_all_repeats, cross_day_has_left
+    global program_has_completed_all_repeats, cross_day_has_left, cross_day_prev_sim
     previous_step = PROGRAM_STEPS[current_program_step]
     previous_was_hold = previous_step.get("speed", 1) == 0
     step = PROGRAM_STEPS[current_program_step]
@@ -614,6 +616,7 @@ def advance_program():
             start_real_time_ms = _reanchor_start_time(preserved, current_step.get("speed",1), now_ms, START_TIME_HHMM, start_real_time_ms)
     program_step_start_sim_time = 0
     cross_day_has_left = False
+    cross_day_prev_sim = -1
 
 def _sync_step_to_time(time_minutes):
     """Find and apply the program step that owns the given time.
@@ -624,7 +627,7 @@ def _sync_step_to_time(time_minutes):
     program_step_start_sim_time so the engine picks up cleanly.
     """
     global current_program_step, current_step_repeat, program_step_start_sim_time
-    global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes, cross_day_has_left
+    global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes, cross_day_has_left, cross_day_prev_sim
     if not PROGRAM_STEPS:
         return
     # Determine current day
@@ -654,6 +657,7 @@ def _sync_step_to_time(time_minutes):
     current_step_repeat = 0
     program_step_start_sim_time = 0  # let update reinitialise
     cross_day_has_left = False
+    cross_day_prev_sim = -1
     now = ticks_ms()
     if new_speed == 0:
         frozen_sim_time_minutes = time_minutes
@@ -719,8 +723,9 @@ def update_program_state(now_ms, sim_time_minutes):
     """Update program logic with reverse-aware RUN/JUMP/HOLD evaluation."""
     global program_running, current_program_step, current_step_repeat, current_program_repeat
     global program_step_start_sim_time, last_program_status_sim_time, TIME_SCALE
-    global hold_step_start_ms, last_printed_minute, cross_day_has_left
+    global hold_step_start_ms, last_printed_minute, cross_day_has_left, cross_day_prev_sim
     global frozen_sim_time_minutes
+    global CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM, SOLAR_MODE
     if not program_running:
         return
     if not PROGRAM_STEPS:
@@ -800,23 +805,38 @@ def update_program_state(now_ms, sim_time_minutes):
             next_day = next_step.get("day", current_day)
             is_cross_day = (next_day != current_day)
             if is_cross_day:
-                # CROSS-DAY: run a full ~24h sim cycle before advancing.
-                # "left-and-returned": sim must move away, then return to start.
+                # CROSS-DAY: Phase 1 = detect midnight crossing, Phase 2 = time target
                 step_speed = step.get("speed", TIME_SCALE)
-                speed_mag = abs(step_speed) if step_speed != 0 else 1
-                # Cap thresholds to work on 1440-min clock (max circular dist = 720)
-                leave_threshold = min(360, max(60, speed_mag * 2))
-                return_tolerance = min(10, max(1.0, speed_mag * 0.05))
-                # Calculate circular distance (shortest path around 1440-min clock)
-                diff = abs(sim_time_minutes - step_time_minutes)
-                if diff > 720:
-                    diff = 1440 - diff
                 if not cross_day_has_left:
-                    if diff > leave_threshold:
-                        cross_day_has_left = True
+                    # Phase 1: detect midnight crossing
+                    if cross_day_prev_sim >= 0:
+                        if step_speed > 0 and cross_day_prev_sim >= 1380 and sim_time_minutes < 60:
+                            cross_day_has_left = True
+                            print(f"[PROGRAM] Day {next_day}")
+                            # Apply next day's sunrise/sunset at midnight so correct times are used
+                            _rise = next_step.get("sunrise")
+                            _set = next_step.get("sunset")
+                            if _rise is not None or _set is not None:
+                                if _rise is not None:
+                                    CUSTOM_SUNRISE_HHMM = int(_rise)
+                                if _set is not None:
+                                    CUSTOM_SUNSET_HHMM = int(_set)
+                                SOLAR_MODE = "CUSTOM"
+                                init_solar_day()
+                        elif step_speed < 0 and cross_day_prev_sim < 60 and sim_time_minutes >= 1380:
+                            cross_day_has_left = True
+                            print(f"[PROGRAM] Day {current_day - 1 if current_day > 1 else current_day}")
+                    cross_day_prev_sim = sim_time_minutes
                 else:
-                    if diff <= return_tolerance:
-                        target_reached = True
+                    # Phase 2: midnight crossed, now use normal time comparison
+                    speed_mag = abs(step_speed) if step_speed != 0 else 1
+                    tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
+                    if step_speed >= 0:
+                        if sim_time_minutes >= (target_time_minutes - tolerance):
+                            target_reached = True
+                    else:
+                        if sim_time_minutes <= (target_time_minutes + tolerance):
+                            target_reached = True
             else:
                 # SAME-DAY: use standard time-matching against next step's time
                 step_speed = step.get("speed", TIME_SCALE)
@@ -854,20 +874,26 @@ def update_program_state(now_ms, sim_time_minutes):
                 first_day = first_step.get("day", current_day)
                 is_cross_day = (first_day != current_day)
                 if is_cross_day:
-                    # Cross-day back to day 1: same left-and-returned logic
+                    # Cross-day back to day 1: midnight detection + time target
                     step_speed = step.get("speed", TIME_SCALE)
-                    speed_mag = abs(step_speed) if step_speed != 0 else 1
-                    leave_threshold = min(360, max(60, speed_mag * 2))
-                    return_tolerance = min(10, max(1.0, speed_mag * 0.05))
-                    diff = abs(sim_time_minutes - step_time_minutes)
-                    if diff > 720:
-                        diff = 1440 - diff
                     if not cross_day_has_left:
-                        if diff > leave_threshold:
-                            cross_day_has_left = True
+                        if cross_day_prev_sim >= 0:
+                            if step_speed > 0 and cross_day_prev_sim >= 1380 and sim_time_minutes < 60:
+                                cross_day_has_left = True
+                                print(f"[PROGRAM] Day {first_day}")
+                            elif step_speed < 0 and cross_day_prev_sim < 60 and sim_time_minutes >= 1380:
+                                cross_day_has_left = True
+                                print(f"[PROGRAM] Day {current_day - 1 if current_day > 1 else current_day}")
+                        cross_day_prev_sim = sim_time_minutes
                     else:
-                        if diff <= return_tolerance:
-                            target_reached = True
+                        speed_mag = abs(step_speed) if step_speed != 0 else 1
+                        tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
+                        if step_speed >= 0:
+                            if sim_time_minutes >= (target_time_minutes - tolerance):
+                                target_reached = True
+                        else:
+                            if sim_time_minutes <= (target_time_minutes + tolerance):
+                                target_reached = True
                 else:
                     # Same-day repeat: standard time-matching
                     step_speed = step.get("speed", TIME_SCALE)
@@ -2312,6 +2338,7 @@ def handle_command(command_str):
 
                 program_step_start_sim_time = 0  # This triggers the step logic in the main loop
                 cross_day_has_left = False
+                cross_day_prev_sim = -1
                 apply_step_settings(new_step)  # Immediately apply color/sunrise/sunset
                 print(f"[SERIAL CMD] Jumping program to step {current_program_step + 1} at {target_hhmm:04d}.")
 
@@ -2342,6 +2369,7 @@ def handle_command(command_str):
 
                         program_step_start_sim_time = 0  # This triggers the step logic in the main loop
                         cross_day_has_left = False
+                        cross_day_prev_sim = -1
                         apply_step_settings(new_step)  # Immediately apply color/sunrise/sunset
                         print(f"[SERIAL CMD] Jumping program to step {step_num} at {target_hhmm:04d}.")
                     else:
