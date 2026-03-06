@@ -249,7 +249,9 @@ def get_basic_sun_position(minute):
         x = -4 + (minutes_since_sunrise / (total_day_minutes - 1)) * travel_range
 
     if SUN_COLOR_MODE == "CUSTOM":
-        r, g, b = CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B
+        r = clamp(int(CUSTOM_SUN_R * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+        g = clamp(int(CUSTOM_SUN_G * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
+        b = clamp(int(CUSTOM_SUN_B * INTENSITY_SCALE), 0, MAX_BRIGHTNESS)
     if SUN_COLOR_MODE == "BLUE":
         r = 0
         g = 0
@@ -920,6 +922,37 @@ class SolarSimulator:
         else:
             self.output("[SERIAL CMD] Error: Use 'jump nextstep' or 'jump step <n>'")
 
+    def _apply_step_settings(self, step):
+        """Immediately apply step settings (color, intensity, sunrise/sunset)."""
+        global INTENSITY_SCALE, DUAL_SUN_ENABLED, SOLAR_MODE
+        global CUSTOM_SUN_R, CUSTOM_SUN_G, CUSTOM_SUN_B, SUN_COLOR_MODE
+        global CUSTOM_SUNRISE_HHMM, CUSTOM_SUNSET_HHMM
+        if "intensity_scale" in step:
+            INTENSITY_SCALE = step["intensity_scale"]
+        if "dual_sun" in step:
+            DUAL_SUN_ENABLED = bool(step["dual_sun"])
+        # Log step activation
+        _day_val = step.get("day", "?")
+        _rgb_log = step.get("sun_color_rgb", "default")
+        self.output(f"[PROGRAM] Step applied: day={_day_val} color={_rgb_log}")
+        # Apply sun color
+        sun_rgb = step.get("sun_color_rgb")
+        if isinstance(sun_rgb, list) and len(sun_rgb) == 3:
+            CUSTOM_SUN_R = int(sun_rgb[0])
+            CUSTOM_SUN_G = int(sun_rgb[1])
+            CUSTOM_SUN_B = int(sun_rgb[2])
+            SUN_COLOR_MODE = "CUSTOM"
+        # Apply sunrise/sunset
+        step_rise = step.get("sunrise")
+        step_set = step.get("sunset")
+        if step_rise is not None or step_set is not None:
+            if step_rise is not None:
+                CUSTOM_SUNRISE_HHMM = int(step_rise)
+            if step_set is not None:
+                CUSTOM_SUNSET_HHMM = int(step_set)
+            SOLAR_MODE = "CUSTOM"
+            init_solar_day()
+
     def _jump_to_step(self, idx):
         global TIME_SCALE
         self.program.current_step = idx
@@ -935,12 +968,13 @@ class SolarSimulator:
             TIME_SCALE = new_speed
             self.start_real_time_ms = reanchor_start_time(t_min, new_speed, now, START_TIME_HHMM, self.start_real_time_ms)
         self.program.step_start_sim_time = 0
+        self._apply_step_settings(step)  # Immediately apply color/sunrise/sunset
         self.output(f"[SERIAL CMD] Jumped to step {idx+1} at {t_hhmm:04d}")
 
     def _sync_step_to_time(self, time_minutes):
         """Find and apply the program step that owns the given time.
 
-        Each step owns the range [step.sim_time, next_step.sim_time).
+        Day-aware: only searches within steps on the current day.
         Sets current_step, applies speed/settings, and resets step_start_sim_time
         so the program engine picks up cleanly.
         """
@@ -948,16 +982,24 @@ class SolarSimulator:
         steps = self.program.program_steps
         if not steps:
             return
-        # Convert step times to minutes and find which step owns this time
-        step_times = []
-        for s in steps:
-            hhmm = s["sim_time_hhmm"]
-            step_times.append((hhmm // 100) * 60 + (hhmm % 100))
-        # Walk backwards: the last step whose start time <= time_minutes owns this time
-        target_idx = 0
-        for i in range(len(step_times) - 1, -1, -1):
-            if time_minutes >= step_times[i]:
-                target_idx = i
+        # Determine current day
+        cur_idx = self.program.current_step
+        current_day = steps[cur_idx].get("day", 1) if cur_idx < len(steps) else 1
+        # Build list of step indices on the current day
+        day_step_indices = []
+        for i, s in enumerate(steps):
+            if s.get("day", 1) == current_day:
+                day_step_indices.append(i)
+        if not day_step_indices:
+            return
+        # Walk backwards through current day's steps only
+        target_idx = day_step_indices[0]  # default to first step of the day
+        for i in range(len(day_step_indices) - 1, -1, -1):
+            si = day_step_indices[i]
+            hhmm = steps[si]["sim_time_hhmm"]
+            step_min = (hhmm // 100) * 60 + (hhmm % 100)
+            if time_minutes >= step_min:
+                target_idx = si
                 break
         # Only update if we've moved to a different step
         if target_idx == self.program.current_step:
@@ -974,7 +1016,8 @@ class SolarSimulator:
             TIME_SCALE = new_speed
             self.start_real_time_ms = reanchor_start_time(
                 time_minutes, new_speed, now, START_TIME_HHMM, self.start_real_time_ms)
-        self.output(f"[SERIAL CMD] Program synced to step {target_idx + 1} (speed {new_speed}x)")
+        self._apply_step_settings(step)  # Immediately apply color/sunrise/sunset
+        self.output(f"[SERIAL CMD] Program synced to step {target_idx + 1} (day {current_day}, speed {new_speed}x)")
 
     # --- TRIGGER handler ---
     def _handle_trigger(self, target):

@@ -178,6 +178,7 @@ class ProgramEngine:
         self.last_printed_minute = 0
         self.hold_step_start_ms = 0
         self.has_completed_all_repeats = False
+        self._cross_day_has_left = False
 
     # ==========================================================
     # Program Control
@@ -192,6 +193,7 @@ class ProgramEngine:
         self.step_start_sim_time = 0
         self.last_printed_minute = 0
         self.has_completed_all_repeats = False
+        self._cross_day_has_left = False
         if not self.program_steps:
             self.output("[PROGRAM] No steps defined — program not started")
             self.program_running = False
@@ -429,10 +431,35 @@ class ProgramEngine:
         elif transition_type == "RUN":
             # Check against next step's time
             if self.current_step < len(self.program_steps) - 1:
-                next_hhmm = self.program_steps[self.current_step + 1]["sim_time_hhmm"]
+                next_step = self.program_steps[self.current_step + 1]
+                next_hhmm = next_step["sim_time_hhmm"]
                 target_minutes = (next_hhmm // 100) * 60 + (next_hhmm % 100)
-                # Same-time steps: run for a full 24h day cycle before advancing
-                if target_minutes == step_time_minutes:
+                # Determine if this is a cross-day transition using the day field
+                current_day = step.get("day", 1)
+                next_day = next_step.get("day", current_day)
+                is_cross_day = (next_day != current_day)
+                if is_cross_day:
+                    # Cross-day: use "left-and-returned" approach
+                    # The step must run for a full 24h cycle before advancing
+                    step_speed = step.get("speed", time_scale)
+                    speed_mag = abs(step_speed) if step_speed != 0 else 1
+                    leave_threshold = max(60, speed_mag * 2)
+                    return_tolerance = max(1.0, speed_mag * 0.5)
+                    # Circular distance from step's start time
+                    dist = abs(sim_time_minutes - step_time_minutes)
+                    if dist > 720:
+                        dist = 1440 - dist
+                    if not hasattr(self, '_cross_day_has_left'):
+                        self._cross_day_has_left = False
+                    if not self._cross_day_has_left:
+                        if dist >= leave_threshold:
+                            self._cross_day_has_left = True
+                    else:
+                        if dist <= return_tolerance:
+                            target_reached = True
+                            self._cross_day_has_left = False
+                elif target_minutes == step_time_minutes:
+                    # Same-time, same-day: run for a full 24h day cycle
                     target_minutes = (step_time_minutes - 1) % 1440
             else:
                 # Last step: if program repeats, target the first step's
@@ -440,38 +467,61 @@ class ProgramEngine:
                 will_repeat = (self.program_repeats == -1 or
                                self.current_program_repeat < self.program_repeats - 1)
                 if will_repeat and len(self.program_steps) > 0:
-                    first_hhmm = self.program_steps[0]["sim_time_hhmm"]
+                    first_step = self.program_steps[0]
+                    first_hhmm = first_step["sim_time_hhmm"]
                     target_minutes = (first_hhmm // 100) * 60 + (first_hhmm % 100)
-                    # Same-time steps: run for a full 24h day cycle before repeating
-                    if target_minutes == step_time_minutes:
+                    # Check for cross-day wrap-around
+                    current_day = step.get("day", 1)
+                    first_day = first_step.get("day", current_day)
+                    is_cross_day = (first_day != current_day)
+                    if is_cross_day:
+                        step_speed = step.get("speed", time_scale)
+                        speed_mag = abs(step_speed) if step_speed != 0 else 1
+                        leave_threshold = max(60, speed_mag * 2)
+                        return_tolerance = max(1.0, speed_mag * 0.5)
+                        dist = abs(sim_time_minutes - step_time_minutes)
+                        if dist > 720:
+                            dist = 1440 - dist
+                        if not hasattr(self, '_cross_day_has_left'):
+                            self._cross_day_has_left = False
+                        if not self._cross_day_has_left:
+                            if dist >= leave_threshold:
+                                self._cross_day_has_left = True
+                        else:
+                            if dist <= return_tolerance:
+                                target_reached = True
+                                self._cross_day_has_left = False
+                    elif target_minutes == step_time_minutes:
                         target_minutes = (step_time_minutes - 1) % 1440
                 else:
                     target_minutes = step_time_minutes
 
-            step_speed = step.get("speed", time_scale)
-            direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
-            speed_mag = abs(step_speed) if step_speed != 0 else 1
-            tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
+            # Standard (non-cross-day) time comparison
+            if not target_reached:
+                step_speed = step.get("speed", time_scale)
+                direction = 1 if step_speed > 0 else (-1 if step_speed < 0 else 0)
+                speed_mag = abs(step_speed) if step_speed != 0 else 1
+                tolerance = 0.2 if speed_mag <= 1 else min(3.0, speed_mag / 200)
 
-            if direction >= 0:
-                cur = sim_time_minutes
-                tgt = target_minutes
-                if target_minutes < self.step_start_sim_time:
-                    if sim_time_minutes < self.step_start_sim_time:
-                        cur += 1440
-                    tgt += 1440
-                if cur >= (tgt - tolerance):
-                    target_reached = True
-            else:
-                start_tod = self.step_start_sim_time
-                tgt = target_minutes
-                if target_minutes > start_tod:
-                    tgt -= 1440
-                cur = sim_time_minutes
-                if sim_time_minutes > start_tod:
-                    cur -= 1440
-                if cur <= (tgt + tolerance):
-                    target_reached = True
+                if direction >= 0:
+                    cur = sim_time_minutes
+                    tgt = target_minutes
+                    if target_minutes < self.step_start_sim_time:
+                        if sim_time_minutes < self.step_start_sim_time:
+                            cur += 1440
+                        tgt += 1440
+                    if cur >= (tgt - tolerance):
+                        target_reached = True
+                else:
+                    start_tod = self.step_start_sim_time
+                    tgt = target_minutes
+                    if target_minutes > start_tod:
+                        tgt -= 1440
+                    cur = sim_time_minutes
+                    if sim_time_minutes > start_tod:
+                        cur -= 1440
+                    if cur <= (tgt + tolerance):
+                        target_reached = True
 
         elif transition_type == "JUMP":
             target_reached = True
@@ -542,9 +592,10 @@ class ProgramEngine:
 
         sim_h = int(sim_time_minutes // 60) % 24
         sim_m = int(sim_time_minutes % 60)
+        day_str = f" | Day: {step.get('day', '?')}" if step.get('day') else ""
         self.output(
             f"[PROGRAM] Step {self.current_step + 1}/{len(self.program_steps)} "
-            f"(Rep {self.current_step_repeat + 1}/{step.get('repeat', 1)}) | "
+            f"(Rep {self.current_step_repeat + 1}/{step.get('repeat', 1)}){day_str} | "
             f"Target: {target_time} | Speed: {time_scale}X | "
             f"Intensity: {step.get('intensity_scale', intensity_scale):.2f} | "
             f"Progress: {progress} | Sim Time: {sim_h:02d}:{sim_m:02d}")

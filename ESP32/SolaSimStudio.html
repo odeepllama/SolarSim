@@ -2214,6 +2214,11 @@ https://github.com/odeepllama/SolarSim/tree/main
       cursor: grabbing;
     }
 
+    .insert-below-btn:hover {
+      color: #1b5e20 !important;
+      font-size: 13px !important;
+    }
+
     /* ============================================================================
    SUN COLOR MODE & VISUAL FEEDBACK
    ============================================================================ */
@@ -7996,10 +8001,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const mkCell = (html, bgColor, fontWeight) => { const td = document.createElement('td'); td.innerHTML = html; if (bgColor) td.style.backgroundColor = bgColor; if (fontWeight) td.style.fontWeight = fontWeight; return td; };
           // Drag handle cell - only the handle is draggable, not the entire row
-          const dragCell = mkCell(`<span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span>`);
-          dragCell.style.cursor = 'grab';
+          const dragCell = mkCell(`<div style="display:flex;flex-direction:column;align-items:center"><span class="drag-handle" draggable="true" title="Drag to reorder" style="cursor:grab;line-height:1">⠿</span><span class="insert-below-btn" data-act="ins" title="Insert step below (+1h)" style="cursor:pointer;font-size:20px;font-weight:900;color:#2e7d32;line-height:1;margin-top:-4px;user-select:none">+</span></div>`);
           dragCell.style.textAlign = 'center';
           dragCell.style.userSelect = 'none';
+          dragCell.style.padding = '2px 0';
           tr.appendChild(dragCell);
           const dayNum = stepToDayMap.get(idx);
           const dayTooltip = dayNum !== undefined ? `Day ${dayNum}` : '';
@@ -8875,6 +8880,28 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
             return;
           }
+          // Insert-below button in drag handle cell
+          const insBtn = e.target.closest('.insert-below-btn');
+          if (insBtn) {
+            if (window.__programEditingLocked && window.__programEditingLocked()) {
+              if (window.__flashProgramLock) window.__flashProgramLock();
+              return;
+            }
+            if (programSteps.length >= MAX_PROGRAM_STEPS) {
+              showMaxStepsPopover(insBtn);
+              return;
+            }
+            const tr = insBtn.closest('tr');
+            const idx = Array.from(tr.parentNode.children).indexOf(tr);
+            saveUndoState();
+            const src = programSteps[idx];
+            const clone = JSON.parse(JSON.stringify(src));
+            clone.sim_time_hhmm = addMinutesToHHMM(src.sim_time_hhmm || 600, 60);
+            delete clone.day;
+            programSteps.splice(idx + 1, 0, clone);
+            renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
+            return;
+          }
           const btn = e.target.closest('button'); if (!btn) return;
 
           // Check if editing is locked (device running)
@@ -8888,7 +8915,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const act = btn.getAttribute('data-act');
 
           // Save undo state before modifying program steps
-          if (act === 'del' || act === 'up' || act === 'down' || act === 'dup') {
+          if (act === 'del' || act === 'up' || act === 'down' || act === 'dup' || act === 'ins') {
             saveUndoState();
           }
 
@@ -8902,6 +8929,19 @@ https://github.com/odeepllama/SolarSim/tree/main
               return;
             }
             const clone = JSON.parse(JSON.stringify(programSteps[idx]));
+            programSteps.splice(idx + 1, 0, clone);
+          }
+          else if (act === 'ins') {
+            // Insert below: clone step with time +1 hour
+            if (programSteps.length >= MAX_PROGRAM_STEPS) {
+              showMaxStepsPopover(btn);
+              return;
+            }
+            const src = programSteps[idx];
+            const clone = JSON.parse(JSON.stringify(src));
+            clone.sim_time_hhmm = addMinutesToHHMM(src.sim_time_hhmm || 600, 60);
+            // Clear manual day override so auto-computation can assign correct day
+            delete clone.day;
             programSteps.splice(idx + 1, 0, clone);
           }
           renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
