@@ -1023,6 +1023,120 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     /* ============================================================================
+   MOBILE PHONE LAYOUT (iPhone SE2: 375×667)
+   ============================================================================ */
+    @media (max-width: 480px) {
+
+      /* --- Body & page --- */
+      body {
+        padding: 0 6px 2rem;
+      }
+
+      /* --- Single-column form fields, tighter spacing --- */
+      .group-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+        flex-wrap: nowrap;
+      }
+
+      .field {
+        gap: 2px;
+        min-width: 0;
+        flex: none;
+      }
+
+      label {
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+        letter-spacing: 0.3px;
+      }
+
+      input[type=text],
+      input[type=number],
+      select,
+      textarea {
+        padding: 6px 8px;
+        font-size: 16px;
+        /* >=16px prevents iOS Safari auto-zoom on focus */
+      }
+
+      /* --- Compact fieldsets --- */
+      fieldset {
+        padding: 6px 8px;
+        margin: 4px 0;
+      }
+
+      legend {
+        font-size: 0.95rem;
+        padding: 0 4px;
+      }
+
+      /* --- Status tiles: 2-column 3×3 grid --- */
+      #monitorStatusGrid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px;
+      }
+
+      /* --- Title bar compact --- */
+      #appTitle {
+        font-size: 1.1rem;
+        margin: 6px 0 0.15em 0;
+      }
+
+      #appTitle .logo-img {
+        height: 1.3em;
+      }
+
+      #langToggleBtn,
+      #guideToggleBtn,
+      #helpToggleBtn {
+        font-size: 0.8rem;
+        padding: 5px 8px;
+      }
+
+      /* --- Solar arc: responsive shrink --- */
+      .vislog-row .vis-col {
+        min-width: 0 !important;
+        width: 100%;
+      }
+
+      /* --- Buttons compact --- */
+      button {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+      }
+
+      /* --- Guide tooltip viewport clamping --- */
+      .ftue-tooltip {
+        max-width: calc(100vw - 20px) !important;
+        width: calc(100vw - 20px) !important;
+        left: 10px !important;
+        right: 10px !important;
+      }
+
+      /* --- FTUE welcome modal compact --- */
+      #ftueWelcomeModal .modal-content {
+        padding: 20px 16px;
+        max-width: 95%;
+      }
+
+      #ftueWelcomeModal h2 {
+        font-size: 1.4rem;
+      }
+
+      /* --- Two-col layout: stack vertically --- */
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      /* --- Hide spacer fields on mobile --- */
+      .field[style*="visibility: hidden"] {
+        display: none;
+      }
+    }
+
+    /* ============================================================================
    FTUE (First Time User Experience) STYLES
    ============================================================================ */
     /* Welcome Modal */
@@ -6267,10 +6381,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       ];
 
       const FIELD_GROUPS = [
-        { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'] },
-        { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'] },
+        { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
+        { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
-        { name: 'Imaging Servo Operation & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'] },
+        { name: 'Imaging Servo Operation & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
         { name: 'Rotation Imaging', i18nKey: 'sectionRotation', keys: ['ROTATION_ENABLED', 'ROTATION_AT_NIGHT', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_CAMERA_SERVO', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'STILLS_IMAGING_INTERVAL_SEC', 'CAMERA_TRIGGER_HOLD_MS'], collapsible: true },
       ];
 
@@ -6519,8 +6633,11 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
             grid.id = sectionId;
 
-            // Load collapsed state from localStorage (default: collapsed)
-            const isExpanded = localStorage.getItem(storageKey) === 'true';
+            // Load collapsed state from localStorage
+            // Default: expanded on desktop, collapsed on mobile (<=480px)
+            const isMobile = window.matchMedia('(max-width: 480px)').matches;
+            const stored = localStorage.getItem(storageKey);
+            const isExpanded = stored !== null ? stored === 'true' : !isMobile;
             if (isExpanded) {
               legend.innerHTML = getCollapsibleLegendHTML(group.i18nKey, group.name, true);
               grid.style.display = 'grid';
