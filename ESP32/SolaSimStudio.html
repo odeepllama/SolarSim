@@ -1134,6 +1134,81 @@ https://github.com/odeepllama/SolarSim/tree/main
       .field[style*="visibility: hidden"] {
         display: none;
       }
+
+      /* --- TITLE: logo only, hide text --- */
+      #appTitle {
+        font-size: 0;
+        /* hide text, keep logo img visible */
+      }
+
+      #appTitle .logo-img {
+        font-size: 1rem;
+        /* reset for img */
+        height: 2em;
+      }
+
+      /* --- Hide color theme swatches --- */
+      .bg-swatch {
+        display: none !important;
+      }
+
+      /* --- Hide simple/advanced mode toggle & gear button --- */
+      #modeToggleContainer,
+      #modeConfigBtn {
+        display: none !important;
+      }
+
+      /* --- Hide Device 1 badge/tab --- */
+      #monitorConnBadge {
+        display: none !important;
+      }
+
+      /* --- Hide command entry, send, export log --- */
+      #monitorCmdInput,
+      #monitorSendBtn,
+      #monitorExportLogBtn {
+        display: none !important;
+      }
+
+      /* --- Hide commands and status buttons --- */
+      #monitorCmdHelpBtn,
+      #monitorShowStatusBtn {
+        display: none !important;
+      }
+
+      /* --- Hide upload to device buttons --- */
+      [data-export-ref="uploadBtn"],
+      #resetUploadConfirmBtn {
+        display: none !important;
+      }
+
+      /* --- Hide autoload badge & lock --- */
+      #autoloadStatusBadge,
+      #autoloadLockBtn {
+        display: none !important;
+      }
+
+      /* --- Hide print summary --- */
+      #printSummaryBtn,
+      #printSummaryBtn2 {
+        display: none !important;
+      }
+
+      /* --- Hide sim/clock/both toggle (default to both) --- */
+      #timelineViewToggle {
+        display: none !important;
+      }
+
+      /* --- Half-width solar arc on mobile --- */
+      #sunArcCanvas {
+        width: 50% !important;
+        height: auto !important;
+      }
+
+      /* --- Log column: hide on mobile (no device interaction) --- */
+      .log-col[data-section="monitor-log"] {
+        display: none !important;
+      }
     }
 
     /* ============================================================================
@@ -10946,7 +11021,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       // ============================================================================
 
       // View mode state: 'sim' (default), 'clock', or 'both'
-      window.__timelineViewMode = localStorage.getItem('timelineViewMode') || 'sim';
+      // Default to 'both' on mobile (toggle is hidden), otherwise use saved preference
+      window.__timelineViewMode = window.matchMedia('(max-width: 480px)').matches
+        ? 'both'
+        : (localStorage.getItem('timelineViewMode') || 'sim');
 
       // Toggle wiring
       (function initTimelineToggle() {
