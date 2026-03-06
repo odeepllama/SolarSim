@@ -7980,6 +7980,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         dayData.days.forEach(day => {
           if (day.steps && day.steps.length > 0) firstOfDayIndices.add(day.steps[0].index);
         });
+        // Also respect explicit step.day overrides: if consecutive steps have
+        // different effective days, the second step starts a new day and should
+        // be editable for sunrise/sunset.
+        for (let i = 0; i < programSteps.length; i++) {
+          const effectiveDay = programSteps[i].day != null ? programSteps[i].day : (stepToDayMap.get(i) || 1);
+          if (i === 0) { firstOfDayIndices.add(i); continue; }
+          const prevDay = programSteps[i - 1].day != null ? programSteps[i - 1].day : (stepToDayMap.get(i - 1) || 1);
+          if (effectiveDay !== prevDay) firstOfDayIndices.add(i);
+        }
 
         programSteps.forEach((step, idx) => {
           const tr = document.createElement('tr');
@@ -8038,16 +8047,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             const stepTime = step.sim_time_hhmm != null ? step.sim_time_hhmm : 0;
             const stepRise = step.sunrise != null ? step.sunrise : 600;
             const stepSet = step.sunset != null ? step.sunset : 1800;
-            // Find the next step on the SAME day to determine this step's end time
-            const thisDayNum = stepToDayMap.get(idx);
+            // Find the next step's time to determine this step's end time
+            // Use next step regardless of day — physically, the step runs until the next one starts
             let nextStepTime = null;
-            for (let ni = idx + 1; ni < programSteps.length; ni++) {
-              if (stepToDayMap.get(ni) === thisDayNum) {
-                nextStepTime = programSteps[ni].sim_time_hhmm;
-                break;
-              }
+            if (idx + 1 < programSteps.length) {
+              nextStepTime = programSteps[idx + 1].sim_time_hhmm;
             }
-            // If no next step on this day, the step runs to sunset (or beyond)
+            // If no next step at all (last step), the step runs to sunset
             if (nextStepTime === null) nextStepTime = stepSet;
             // Step is nighttime if both start and end are before sunrise OR both are after sunset
             if (stepTime < stepRise && nextStepTime <= stepRise) {
@@ -8621,40 +8627,17 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // For day field changes, trigger full re-render to update row backgrounds and timeline
             if (field === 'day') {
+              // Day changed: full re-render to update sunrise/sunset editability,
+              // row backgrounds, and multi-day timeline
+              renderProgramSteps();
               updatePreview(false);
-              if (typeof renderTimelineStrip === 'function') {
-                try { renderTimelineStrip(); } catch (_e) { }
-              }
-              // Highlight as override if different from auto-computed day
-              const autoDay = (() => {
-                try {
-                  const dd = analyzeMultiDayProgram(true);
-                  for (const d of dd.days) {
-                    for (const si of d.steps) {
-                      if (si.index === row) return d.dayNumber;
-                    }
-                  }
-                } catch (_) { }
-                return null;
-              })();
-              if (autoDay != null && val != null && val !== autoDay) {
-                e.target.style.border = '2px solid #e65100';
-                e.target.style.background = '#fff3e0';
-                e.target.title = `Manual override (auto=${autoDay})`;
-              } else {
-                e.target.style.border = '';
-                e.target.style.background = '';
-                e.target.title = val != null ? `Day ${val} (auto-assigned)` : '';
-              }
               return;
             }
 
             // For sunrise/sunset, update timeline immediately
             if (field === 'sunrise' || field === 'sunset') {
+              renderProgramSteps();
               updatePreview(false);
-              if (typeof renderTimelineStrip === 'function') {
-                try { renderTimelineStrip(); } catch (_e) { }
-              }
               return;
             }
 
@@ -12068,6 +12051,19 @@ https://github.com/odeepllama/SolarSim/tree/main
           currentDayMinutes.push({ step, m, index: i });
 
           // Check for day boundary crossing to NEXT step
+          // First: respect explicit step.day overrides
+          if (nextStep && step.day != null && nextStep.day != null && nextStep.day !== step.day) {
+            // Explicit day boundary — finalize current day
+            result.days.push({
+              dayNumber: step.day,
+              steps: currentDayMinutes,
+              orphanedHoldEndTime: null
+            });
+            currentDayMinutes = [];
+            currentDay = nextStep.day;
+            continue; // skip midnight-crossing check
+          }
+          // Then: detect midnight crossing from time progression
           if (nextStep) {
             const mNext = parseHHMM(nextStep.sim_time_hhmm);
             if (mNext != null) {
