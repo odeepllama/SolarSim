@@ -3387,6 +3387,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
       pointer-events: auto;
       z-index: 100;
+      transition: left 100ms linear;
     }
 
     /* Timeline hold progress indicator */
@@ -11858,6 +11859,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         const elapsedM = Math.floor((playheadRealSec % 3600) / 60);
         const tooltipText = `Elapsed: ${elapsedH}h ${elapsedM}m\nSim Time: ${simTimeStr}\nStep: ${currentStep1}/${programSteps.length}`;
 
+        // Compute the rate of position change (% per real second)
+        // Within the current segment, sim time advances at |speed| sim-min/real-min
+        // That maps to segRealSec of real time for the whole segment, spanning segWidthPct% of the bar
+        const segWidthPct = (currentSegRealSec / totalRealSeconds) * 100;
+        // pct-per-second = segWidthPct / segRealSec (uniform advance through segment)
+        const pctPerSec = currentSegRealSec > 0 ? segWidthPct / currentSegRealSec : 0;
+        const interpTs = Date.now();
+
         // Draw playhead on every clock-timeline-strip in the page
         bars.forEach(bar => {
           // Remove existing playhead & hold progress
@@ -11869,11 +11878,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Draw HOLD progress bar if in hold
           if (isInHold && currentSegRealSec > 0) {
             const segStartPct = (completedRealSec / totalRealSeconds) * 100;
-            const segWidthPct = (currentSegRealSec / totalRealSeconds) * 100;
+            const segWidthPctH = (currentSegRealSec / totalRealSeconds) * 100;
             const holdProgress = document.createElement('div');
             holdProgress.className = 'timeline-hold-progress';
             holdProgress.style.left = segStartPct + '%';
-            holdProgress.style.width = (segWidthPct * currentSegProgress) + '%';
+            holdProgress.style.width = (segWidthPctH * currentSegProgress) + '%';
             holdProgress.style.pointerEvents = 'auto';
             holdProgress.style.cursor = 'help';
             const holdState2 = window.__holdState;
@@ -11891,6 +11900,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           playhead.style.left = posPct + '%';
           playhead.style.cursor = 'help';
           playhead.title = tooltipText;
+          // Store interpolation data for the fast loop
+          playhead.dataset.clockPct = posPct;
+          playhead.dataset.clockRate = pctPerSec;
+          playhead.dataset.clockTs = interpTs;
+          playhead.dataset.clockBar = '1'; // Flag to distinguish from sim-time playheads
           bar.appendChild(playhead);
         });
       }
@@ -13536,8 +13550,31 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         const simTimeMinutes = hours * 60 + minutes;
 
+        // --- Interpolation: add fractional minutes based on speed × elapsed time ---
+        // This smooths the playhead between integer-minute tile updates
+        let interpolatedSimMinutes = simTimeMinutes;
+        const speedTile = window.kvCache && window.kvCache.get && window.kvCache.get('speed');
+        const speedSpan = speedTile ? speedTile.querySelector('span') : null;
+        const speedText = speedSpan ? speedSpan.textContent.trim() : '';
+        const currentSpeed = parseFloat(speedText);
+        if (!isNaN(currentSpeed) && currentSpeed !== 0 && speedText !== 'HOLD') {
+          // Track when the tile's integer minute last changed
+          if (!window.__simPlayheadInterp) window.__simPlayheadInterp = { lastMin: -1, lastMinTs: 0 };
+          const interp = window.__simPlayheadInterp;
+          if (simTimeMinutes !== interp.lastMin) {
+            interp.lastMin = simTimeMinutes;
+            interp.lastMinTs = Date.now();
+          }
+          const elapsedSec = (Date.now() - interp.lastMinTs) / 1000;
+          // speed is sim-minutes-per-real-minute, so sim-minutes-per-real-second = speed/60
+          const fractionalMin = (currentSpeed / 60) * elapsedSec;
+          interpolatedSimMinutes = simTimeMinutes + fractionalMin;
+          // Clamp to window bounds
+          interpolatedSimMinutes = Math.max(WINDOW_START_MIN, Math.min(WINDOW_END_MIN, interpolatedSimMinutes));
+        }
+
         // Check if sim time is within the visible range of this timeline
-        if (simTimeMinutes < WINDOW_START_MIN || simTimeMinutes > WINDOW_END_MIN) return;
+        if (interpolatedSimMinutes < WINDOW_START_MIN || interpolatedSimMinutes > WINDOW_END_MIN) return;
 
         // Check if device is connected and running (same logic as lock UI)
         const serialState = window.__serialState || null;
@@ -13548,7 +13585,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!hasConnection || (!hasLoadedProfile && !hasActiveProgram)) return;
 
         // Calculate playhead position as percentage
-        const posPct = ((simTimeMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+        const posPct = ((interpolatedSimMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
 
         // Check if we're in a HOLD state and should render hold progress
         const holdState = window.__holdState;
@@ -13632,7 +13669,77 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           host.appendChild(playhead);
         }
+
+        // Store window bounds on host for the fast interpolation loop
+        host.dataset.windowStart = WINDOW_START_MIN;
+        host.dataset.windowEnd = WINDOW_END_MIN;
+        host.dataset.windowSpan = WINDOW_SPAN;
       }
+
+      // --- Fast sim-time playhead interpolation loop ---
+      // Repositions existing playhead elements at 100ms for smooth movement.
+      // Does NOT create/remove DOM or rebuild the timeline — purely visual position update.
+      (function startPlayheadInterpolationLoop() {
+        setInterval(function () {
+          const playheads = document.querySelectorAll('.timeline-playhead');
+          if (!playheads.length) return;
+
+          const now = Date.now();
+
+          // --- Sim-time playhead interpolation data ---
+          let simInterpMin = null;
+          const simTile = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
+          if (simTile) {
+            const valEl = simTile.querySelector('span');
+            if (valEl) {
+              const simStr = valEl.textContent.trim();
+              if (simStr && simStr.includes(':')) {
+                const sp = simStr.split(':');
+                const h = parseInt(sp[0], 10), mn = parseInt(sp[1], 10);
+                if (!isNaN(h) && !isNaN(mn)) {
+                  const baseMin = h * 60 + mn;
+                  const spdTile = window.kvCache.get('speed');
+                  const spdSpan = spdTile ? spdTile.querySelector('span') : null;
+                  const spdTxt = spdSpan ? spdSpan.textContent.trim() : '';
+                  const spd = parseFloat(spdTxt);
+                  if (!isNaN(spd) && spd !== 0 && spdTxt !== 'HOLD') {
+                    if (!window.__simPlayheadInterp) window.__simPlayheadInterp = { lastMin: -1, lastMinTs: 0 };
+                    const interp = window.__simPlayheadInterp;
+                    if (baseMin !== interp.lastMin) { interp.lastMin = baseMin; interp.lastMinTs = now; }
+                    const elapsed = (now - interp.lastMinTs) / 1000;
+                    simInterpMin = baseMin + (spd / 60) * elapsed;
+                  }
+                }
+              }
+            }
+          }
+
+          // --- Update each playhead ---
+          playheads.forEach(function (ph) {
+            if (ph.dataset.clockBar) {
+              // Clock playhead: advance using stored rate (% per second)
+              const basePct = parseFloat(ph.dataset.clockPct);
+              const rate = parseFloat(ph.dataset.clockRate);
+              const ts = parseFloat(ph.dataset.clockTs);
+              if (isNaN(basePct) || isNaN(rate) || isNaN(ts) || rate <= 0) return;
+              const elapsed = (now - ts) / 1000;
+              const newPct = Math.min(100, Math.max(0, basePct + rate * elapsed));
+              ph.style.left = newPct + '%';
+            } else if (simInterpMin !== null) {
+              // Sim-time playhead: use interpolated sim minutes
+              const host = ph.parentElement;
+              if (!host) return;
+              const ws = parseFloat(host.dataset.windowStart);
+              const we = parseFloat(host.dataset.windowEnd);
+              const wspan = parseFloat(host.dataset.windowSpan);
+              if (isNaN(ws) || isNaN(wspan) || wspan <= 0) return;
+              const clamped = Math.max(ws, Math.min(we, simInterpMin));
+              const pct = ((clamped - ws) / wspan) * 100;
+              ph.style.left = pct + '%';
+            }
+          });
+        }, 100);
+      })();
 
       // Make timeline segments draggable
       function makeDraggable(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN) {
