@@ -2327,17 +2327,19 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     /* SunColor tile: uses default 2rem font like other tiles */
 
-    /* SolarMode tile: text like SCIENTIFIC/CUSTOM needs to fit */
+    /* SolarMode tile: text like SCIENTIFIC/CUSTOM needs to fit, vertically centered */
     .mon-kv.solar-mode.mode-advanced span,
     .mon-kv.solar-mode.mode-custom span {
       font-size: 1.2rem;
-      padding-top: 0.45rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.4rem;
     }
 
     /* SunColor tile: CUSTOM (r,g,b) text needs smaller font to fit */
     .mon-kv.sun-color-tile span {
-      font-size: clamp(0.85rem, 3.5vw, 1.3rem);
-      word-break: break-word;
+      font-size: clamp(0.75rem, 3.2vw, 1.2rem);
     }
 
     /* Active (ON) tile highlight */
@@ -3585,8 +3587,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .clock-tl-total-label {
       text-align: center;
-      font-size: 11px;
-      color: #777;
+      font-size: 16.5px;
+      color: #000;
       margin-top: 2px;
       font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     }
@@ -11427,7 +11429,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!Array.isArray(rgb) || rgb.length !== 3) return { r: 30, g: 130, b: 235 }; // default sky blue
         const [r, g, b] = rgb;
         // Known mappings: device RGB → display-friendly RGB
-        if (r === 0 && g === 0 && b === 255) return { r: 30, g: 130, b: 235 };    // blue → sky blue
+        if (r === 0 && g === 0 && b === 255) return { r: 30, g: 80, b: 245 };    // blue → vivid blue
         if (r === 255 && g <= 80 && b <= 30) return { r: 220, g: 60, b: 50 };     // red → warm red
         if (r === 0 && g === 255 && b === 0) return { r: 50, g: 175, b: 80 };     // green → leafy green
         // Fallback: soften by blending 80% toward a lighter version
@@ -11518,12 +11520,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           div.dataset.segRealSec = seg.realSeconds;
 
           // Format real duration
-          const durMin = Math.round(seg.realSeconds / 60);
+          const durSec = Math.round(seg.realSeconds);
           let durStr = '';
-          if (durMin >= 60) {
+          if (durSec >= 3600) {
+            const durMin = Math.round(durSec / 60);
             durStr = Math.floor(durMin / 60) + 'h' + (durMin % 60 ? durMin % 60 + 'm' : '');
+          } else if (durSec >= 60) {
+            durStr = Math.round(durSec / 60) + 'm';
           } else {
-            durStr = durMin + 'm';
+            durStr = durSec + 's';
           }
 
           // Direction arrow for reverse segments
@@ -11764,48 +11769,78 @@ https://github.com/odeepllama/SolarSim/tree/main
               } else {
                 currentSegProgress = 0;
               }
-            } else if (!segments[i].isJump && !segments[i].isLastStep) {
+            } else if (!segments[i].isJump) {
               const parseHHMM2 = v => {
                 const s2 = String(v).padStart(4, '0');
                 return parseInt(s2.slice(0, 2), 10) * 60 + parseInt(s2.slice(2), 10);
               };
               const stepSimTime = parseHHMM2(programSteps[currentStepIdx].sim_time_hhmm);
-              const nextIdx = currentStepIdx + 1;
-              if (nextIdx < programSteps.length) {
-                const nextSimTime = parseHHMM2(programSteps[nextIdx].sim_time_hhmm);
-                const spd = programSteps[currentStepIdx].speed || 1;
-                // Check cross-day using day field
-                const curDay = programSteps[currentStepIdx].day || 1;
-                const nxtDay = programSteps[nextIdx].day || curDay;
-                const isCrossDay = (nxtDay !== curDay);
+              const spd = programSteps[currentStepIdx].speed || 1;
+
+              if (segments[i].isLastStep) {
+                // Last step: compute progress towards estimated end (sunset/sunrise)
+                const stepData = programSteps[currentStepIdx];
                 let totalSimSpan;
                 if (spd > 0) {
-                  if (isCrossDay && programSteps[currentStepIdx].sunset != null) {
-                    // Cross-day: progress within daytime segment only (sunset-based)
-                    const sunset = Math.floor(programSteps[currentStepIdx].sunset / 100) * 60 + (programSteps[currentStepIdx].sunset % 100);
-                    totalSimSpan = sunset - stepSimTime;
-                    if (totalSimSpan < 0) totalSimSpan += 1440;
-                  } else {
-                    totalSimSpan = nextSimTime - stepSimTime;
-                    if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
-                    else if (totalSimSpan < 0) totalSimSpan += 1440;
-                  }
-                  let progress = simTimeMinutes - stepSimTime;
-                  if (progress < 0) progress += 1440;
-                  currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                  const sunset = stepData.sunset != null
+                    ? (Math.floor(stepData.sunset / 100) * 60 + (stepData.sunset % 100))
+                    : 18 * 60;
+                  totalSimSpan = sunset - stepSimTime;
+                  if (totalSimSpan < 0) totalSimSpan += 1440;
                 } else {
-                  if (isCrossDay && programSteps[currentStepIdx].sunrise != null) {
-                    const sunrise = Math.floor(programSteps[currentStepIdx].sunrise / 100) * 60 + (programSteps[currentStepIdx].sunrise % 100);
-                    totalSimSpan = stepSimTime - sunrise;
-                    if (totalSimSpan < 0) totalSimSpan += 1440;
-                  } else {
-                    totalSimSpan = stepSimTime - nextSimTime;
-                    if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
-                    else if (totalSimSpan < 0) totalSimSpan += 1440;
-                  }
-                  let progress = stepSimTime - simTimeMinutes;
+                  const sunrise = stepData.sunrise != null
+                    ? (Math.floor(stepData.sunrise / 100) * 60 + (stepData.sunrise % 100))
+                    : 6 * 60;
+                  totalSimSpan = stepSimTime - sunrise;
+                  if (totalSimSpan < 0) totalSimSpan += 1440;
+                }
+                let progress;
+                if (spd > 0) {
+                  progress = simTimeMinutes - stepSimTime;
                   if (progress < 0) progress += 1440;
-                  currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                } else {
+                  progress = stepSimTime - simTimeMinutes;
+                  if (progress < 0) progress += 1440;
+                }
+                currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+              } else {
+                // Non-last step: compute progress towards next step's sim time
+                const nextIdx = currentStepIdx + 1;
+                if (nextIdx < programSteps.length) {
+                  const nextSimTime = parseHHMM2(programSteps[nextIdx].sim_time_hhmm);
+                  // Check cross-day using day field
+                  const curDay = programSteps[currentStepIdx].day || 1;
+                  const nxtDay = programSteps[nextIdx].day || curDay;
+                  const isCrossDay = (nxtDay !== curDay);
+                  let totalSimSpan;
+                  if (spd > 0) {
+                    if (isCrossDay && programSteps[currentStepIdx].sunset != null) {
+                      // Cross-day: progress within daytime segment only (sunset-based)
+                      const sunset = Math.floor(programSteps[currentStepIdx].sunset / 100) * 60 + (programSteps[currentStepIdx].sunset % 100);
+                      totalSimSpan = sunset - stepSimTime;
+                      if (totalSimSpan < 0) totalSimSpan += 1440;
+                    } else {
+                      totalSimSpan = nextSimTime - stepSimTime;
+                      if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                      else if (totalSimSpan < 0) totalSimSpan += 1440;
+                    }
+                    let progress = simTimeMinutes - stepSimTime;
+                    if (progress < 0) progress += 1440;
+                    currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                  } else {
+                    if (isCrossDay && programSteps[currentStepIdx].sunrise != null) {
+                      const sunrise = Math.floor(programSteps[currentStepIdx].sunrise / 100) * 60 + (programSteps[currentStepIdx].sunrise % 100);
+                      totalSimSpan = stepSimTime - sunrise;
+                      if (totalSimSpan < 0) totalSimSpan += 1440;
+                    } else {
+                      totalSimSpan = stepSimTime - nextSimTime;
+                      if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                      else if (totalSimSpan < 0) totalSimSpan += 1440;
+                    }
+                    let progress = stepSimTime - simTimeMinutes;
+                    if (progress < 0) progress += 1440;
+                    currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                  }
                 }
               }
             }
@@ -13458,17 +13493,26 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // When forward/reverse strips are split, only show playhead on the active strip
         if (filterDirection) {
-          // Read the actual device-reported speed from the status tile
-          const speedTile = window.kvCache && window.kvCache.get && window.kvCache.get('speed');
-          if (speedTile) {
-            const speedSpan = speedTile.querySelector('span');
-            const speedText = speedSpan ? speedSpan.textContent.trim() : '';
-            // Parse speed value from text like "-600X", "1X", "600X"
-            const speedVal = parseFloat(speedText);
-            if (!isNaN(speedVal)) {
-              const isReverse = speedVal < 0;
-              if (filterDirection === 'forward' && isReverse) return;
-              if (filterDirection === 'reverse' && !isReverse) return;
+          // Use current step's speed to determine which strip the playhead belongs on
+          const stepIdx1 = window.__currentStepIndex || 0;
+          if (stepIdx1 > 0 && typeof programSteps !== 'undefined' && Array.isArray(programSteps) && stepIdx1 <= programSteps.length) {
+            const currentStep = programSteps[stepIdx1 - 1];
+            const stepSpeed = currentStep.speed !== undefined ? currentStep.speed : 1;
+            const isReverse = stepSpeed < 0;
+            if (filterDirection === 'forward' && isReverse) return;
+            if (filterDirection === 'reverse' && !isReverse) return;
+          } else {
+            // Fallback: read speed from status tile
+            const speedTile = window.kvCache && window.kvCache.get && window.kvCache.get('speed');
+            if (speedTile) {
+              const speedSpan = speedTile.querySelector('span');
+              const speedText = speedSpan ? speedSpan.textContent.trim() : '';
+              const speedVal = parseFloat(speedText);
+              if (!isNaN(speedVal)) {
+                const isReverse = speedVal < 0;
+                if (filterDirection === 'forward' && isReverse) return;
+                if (filterDirection === 'reverse' && !isReverse) return;
+              }
             }
           }
         }
@@ -14552,8 +14596,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
     .clock-tl-total-label {
       text-align: center;
-      font-size: 11px;
-      color: #777;
+      font-size: 16.5px;
+      color: #000;
       margin-top: 2px;
       font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     }
@@ -18968,15 +19012,20 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
 
-          // Direct day sync from firmware "Step applied" message (most reliable source)
-          // This message is proven to reach the browser and contains the day number directly
-          const mStepApplied = line.match(/\[PROGRAM\]\s*Step\s+applied:\s*day=(\d+)/i);
+          // Direct step/day sync from firmware "Step applied" message
+          // Format: [PROGRAM] Step applied: step=X day=Y color=[R,G,B]
+          const mStepApplied = line.match(/\[PROGRAM\]\s*Step\s+applied:\s*step=(\d+)\s+day=(\d+)/i);
           if (mStepApplied) {
-            const appliedDay = parseInt(mStepApplied[1], 10);
+            const appliedStep = parseInt(mStepApplied[1], 10); // 1-based
+            const appliedDay = parseInt(mStepApplied[2], 10);
+            // Always update step index from device (critical for reverse-speed steps)
+            if (appliedStep > 0) {
+              window.__currentStepIndex = appliedStep;
+            }
             if (appliedDay > 0 && appliedDay !== window.__playheadCurrentDay) {
               window.__playheadCurrentDay = appliedDay;
               window.__dayWrapCount = appliedDay - 1;
-              window.__playheadManuallySet = true; // Lock to device-reported day, prevent periodic override
+              window.__playheadManuallySet = true; // Lock to device-reported day
               if (typeof renderTimelineStrip === 'function') {
                 try { renderTimelineStrip(); } catch (_e) { }
               }
@@ -19156,7 +19205,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
               // Don't fall back to form values — they may be stale/default.
               // The actual RGB line arrives later in the status dump and will update the tile.
-              setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM (${rgb[0]},${rgb[1]},${rgb[2]})` : icon + ' CUSTOM');
+              setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM<br>(${rgb[0]},${rgb[1]},${rgb[2]})` : icon + ' CUSTOM');
             } else {
               setKV('sunColor', 'SunColor', icon + ' ' + val);
             }
@@ -19174,11 +19223,20 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Stash for visualizer
               try { const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {}); st.__sunCustomRGB = [r, g, b]; } catch (_) { }
               // If SunColor tile exists or after mode is CUSTOM, show numbers
-              setKV('sunColor', 'SunColor', `☀ CUSTOM (${r},${g},${b})`);
+              setKV('sunColor', 'SunColor', `☀ CUSTOM<br>(${r},${g},${b})`);
               updated = true;
             } catch (_) { }
           }
-          const mSolar = line.match(reSolarMode); if (mSolar) { setKV('solarMode', 'SolarMode', mSolar[1]); updated = true; }
+          const mSolar = line.match(reSolarMode); if (mSolar) {
+            let modeVal = mSolar[1];
+            if (modeVal.toUpperCase() === 'CUSTOM') {
+              let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
+              setKV('solarMode', 'SolarMode', rgb ? `CUSTOM<br>(${rgb[0]},${rgb[1]},${rgb[2]})` : 'CUSTOM');
+            } else {
+              setKV('solarMode', 'SolarMode', modeVal);
+            }
+            updated = true;
+          }
           const mProg = line.match(reProgramEnabled); if (mProg) { setKV('program', 'Program', mProg[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
           const mRotEn = line.match(reRotationEnabled); if (mRotEn) { setKV('rotation', 'RotationImaging', mRotEn[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
           const mRotToggle = line.match(reRotationToggle); if (mRotToggle) { setKV('rotation', 'RotationImaging', mRotToggle[1] === 'True' ? 'ON' : 'OFF'); updated = true; }
@@ -19508,7 +19566,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           const span = box.querySelector('span');
           const newText = val == null ? '—' : val;
-          if (span.textContent !== newText) {
+          // sunColor and solarMode tiles may contain HTML (e.g. <br> for CUSTOM rgb wrapping)
+          if (k === 'sunColor' || k === 'solarMode') {
+            if (span.innerHTML !== newText) {
+              span.innerHTML = newText;
+              try { scheduleVisLogAlign(); } catch (_) { }
+            }
+          } else if (span.textContent !== newText) {
             // Set new text without any flash animation to minimize overhead at high update rates
             span.textContent = newText;
             // Realign log column after status changes (tiles may have reflowed)
@@ -22279,7 +22343,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Check for sim time updates every second (gated behind connection state)
         // (will only re-render when time actually changes, which is once per minute)
-        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) { updatePlayhead(); if (typeof window.renderClockTimePlayhead === 'function') window.renderClockTimePlayhead(); } }, 1000);
+        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) { updatePlayhead(); if (typeof window.renderClockTimePlayhead === 'function') window.renderClockTimePlayhead(); } }, 200);
       })();
 
       // Background Color Chooser Logic

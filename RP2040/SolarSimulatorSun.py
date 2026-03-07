@@ -549,7 +549,7 @@ def apply_step_settings(step_arg):
     # Log step activation with day info
     _day_val = step_arg.get("day", "?")
     _sun_rgb_log = step_arg.get("sun_color_rgb", "default")
-    print(f"[PROGRAM] Step applied: day={_day_val} color={_sun_rgb_log}")
+    print(f"[PROGRAM] Step applied: step={current_program_step + 1} day={_day_val} color={_sun_rgb_log}")
     # Apply per-step sun color
     sun_rgb = step_arg.get("sun_color_rgb")
     if isinstance(sun_rgb, list) and len(sun_rgb) == 3:
@@ -578,6 +578,7 @@ def advance_program():
     global current_program_step, current_step_repeat, current_program_repeat
     global program_step_start_sim_time, start_real_time_ms, frozen_sim_time_minutes
     global program_has_completed_all_repeats, cross_day_has_left, cross_day_prev_sim
+    global last_printed_minute
     previous_step = PROGRAM_STEPS[current_program_step]
     previous_was_hold = previous_step.get("speed", 1) == 0
     step = PROGRAM_STEPS[current_program_step]
@@ -617,6 +618,7 @@ def advance_program():
     program_step_start_sim_time = 0
     cross_day_has_left = False
     cross_day_prev_sim = -1
+    last_printed_minute = 0  # Reset so status prints immediately for the new step
 
 def _sync_step_to_time(time_minutes):
     """Find and apply the program step that owns the given time.
