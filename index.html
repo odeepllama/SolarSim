@@ -11239,6 +11239,22 @@ https://github.com/odeepllama/SolarSim/tree/main
         const segments = [];
         if (!programSteps || programSteps.length === 0) return { segments, totalRealSeconds: 0 };
 
+        // Pre-compute inherited sunrise/sunset per step (same pattern as renderProgramSteps).
+        // Only the first step of each day typically has explicit sunrise/sunset;
+        // subsequent steps inherit from the most recent explicit value within the same day.
+        const inhRise = new Array(programSteps.length);
+        const inhSet = new Array(programSteps.length);
+        let curDay = -1, lastRise = null, lastSet = null;
+        for (let k = 0; k < programSteps.length; k++) {
+          const s = programSteps[k];
+          const d = s.day || 1;
+          if (d !== curDay) { curDay = d; lastRise = null; lastSet = null; }
+          if (s.sunrise != null) lastRise = s.sunrise;
+          if (s.sunset != null) lastSet = s.sunset;
+          inhRise[k] = lastRise;
+          inhSet[k] = lastSet;
+        }
+
         let activeSpeed = programSteps[0].speed !== undefined ? programSteps[0].speed : 1;
 
 
@@ -11304,8 +11320,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (isCrossDayStep) {
                 // Cross-day: use sunset-based duration (night segment added separately below)
                 isDayCrossing = true;
-                if (step.sunset != null) {
-                  const stepSunset = Math.floor(step.sunset / 100) * 60 + (step.sunset % 100);
+                if (inhSet[i] != null) {
+                  const stepSunset = Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100);
                   simDuration = stepSunset - simTime;
                   if (simDuration < 0) simDuration += 1440;
                 } else {
@@ -11314,8 +11330,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               } else if (simDuration <= 0) {
                 isDayCrossing = true;
                 // Same-day wrap: use per-step sunset if available, otherwise wrap
-                if (step.sunset != null) {
-                  const stepSunset = Math.floor(step.sunset / 100) * 60 + (step.sunset % 100);
+                if (inhSet[i] != null) {
+                  const stepSunset = Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100);
                   simDuration = stepSunset - simTime;
                   if (simDuration < 0) simDuration = 0;
                 } else {
@@ -11326,8 +11342,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               simDuration = simTime - nextSimTime;
               if (isCrossDayStep) {
                 isDayCrossing = true;
-                if (step.sunrise != null) {
-                  const stepSunrise = Math.floor(step.sunrise / 100) * 60 + (step.sunrise % 100);
+                if (inhRise[i] != null) {
+                  const stepSunrise = Math.floor(inhRise[i] / 100) * 60 + (inhRise[i] % 100);
                   simDuration = simTime - stepSunrise;
                   if (simDuration < 0) simDuration += 1440;
                 } else {
@@ -11336,8 +11352,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               } else if (simDuration <= 0) {
                 isDayCrossing = true;
                 // Same-day wrap reverse: use per-step sunrise if available
-                if (step.sunrise != null) {
-                  const stepSunrise = Math.floor(step.sunrise / 100) * 60 + (step.sunrise % 100);
+                if (inhRise[i] != null) {
+                  const stepSunrise = Math.floor(inhRise[i] / 100) * 60 + (inhRise[i] % 100);
                   simDuration = simTime - stepSunrise;
                   if (simDuration < 0) simDuration = 0;
                 } else {
@@ -11362,12 +11378,14 @@ https://github.com/odeepllama/SolarSim/tree/main
               simColor: step.sun_color_rgb
             });
 
-            // Insert night segment between days
-            if (isDayCrossing && step.sunset != null) {
-              const curSunset = Math.floor(step.sunset / 100) * 60 + (step.sunset % 100);
-              const nextSunrise = nextStep.sunrise != null
-                ? (Math.floor(nextStep.sunrise / 100) * 60 + (nextStep.sunrise % 100))
-                : 6 * 60; // default 06:00
+            // Insert night segment between days (use inherited sunset/sunrise)
+            if (isDayCrossing && inhSet[i] != null) {
+              const curSunset = Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100);
+              const nextSunrise = inhRise[i + 1] != null
+                ? (Math.floor(inhRise[i + 1] / 100) * 60 + (inhRise[i + 1] % 100))
+                : (nextStep.sunrise != null
+                  ? (Math.floor(nextStep.sunrise / 100) * 60 + (nextStep.sunrise % 100))
+                  : 6 * 60); // default 06:00
               // Night duration: from sunset to next sunrise (wraps through midnight)
               let nightMin = nextSunrise - curSunset;
               if (nightMin < 0) nightMin += 1440; // e.g. 2200 → 0600 = -16h → +8h
@@ -11389,9 +11407,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           } else {
             // Last step (no next step) — estimate duration to end of day
-            // Use per-step sunset if available, otherwise default 18:00
-            const stepSunset = step.sunset != null ? (Math.floor(step.sunset / 100) * 60 + (step.sunset % 100)) : 18 * 60;
-            const stepSunrise = step.sunrise != null ? (Math.floor(step.sunrise / 100) * 60 + (step.sunrise % 100)) : 6 * 60;
+            // Use inherited sunset/sunrise if available, otherwise default 18:00/06:00
+            const stepSunset = inhSet[i] != null ? (Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100)) : 18 * 60;
+            const stepSunrise = inhRise[i] != null ? (Math.floor(inhRise[i] / 100) * 60 + (inhRise[i] % 100)) : 6 * 60;
             let estimatedSimDur;
             if (speed > 0) {
               estimatedSimDur = stepSunset - simTime;
@@ -11575,6 +11593,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Build label text based on available space
           // HOLD labels only shown if segment is wide enough (≥8%), matching ultra bar behaviour
           if (seg.isNight) {
+            // Dark pill for night: white text on almost-black background
+            label.style.background = 'rgba(20,20,40,0.9)';
+            label.style.border = '1px solid rgba(255,255,255,0.2)';
+            label.style.color = '#fff';
             if (widthPct >= 8) {
               label.textContent = '☽ Night (' + durStr + ')';
             } else if (widthPct > 2) {
@@ -11582,7 +11604,6 @@ https://github.com/odeepllama/SolarSim/tree/main
             } else {
               label.textContent = '';
             }
-            label.style.color = '#fff';
           } else if (seg.isHold) {
             if (widthPct >= 8) {
               label.textContent = 'HOLD ' + durStr;
@@ -12448,13 +12469,31 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (moonEl) { moonEl.style.textShadow = '0 0 3px #f5c842, 1px 0 1px #f5c842, -1px 0 1px #f5c842, 0 1px 1px #f5c842, 0 -1px 1px #f5c842'; moonEl.style.fontWeight = '900'; bar.appendChild(moonEl); }
 
         // Night overlays: dark regions before sunrise and after sunset
-        const mkNightOverlay = (leftPct, widthPct) => {
+        const mkNightOverlay = (leftPct, widthPct, nightMinutes) => {
           const ov = document.createElement('div');
-          ov.style.cssText = `position:absolute;bottom:0;height:100%;pointer-events:none;z-index:52;border-radius:3px;`;
+          ov.style.cssText = `position:absolute;bottom:0;height:100%;pointer-events:none;z-index:150;border-radius:3px;display:flex;align-items:center;justify-content:center;`;
           ov.style.left = leftPct + '%';
           ov.style.width = widthPct + '%';
-          ov.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #2d2d5e 100%)';
-          ov.style.opacity = '0.75';
+          // Use rgba instead of opacity so label text stays fully visible
+          ov.style.background = 'linear-gradient(180deg, rgba(26,26,62,0.85) 0%, rgba(45,45,94,0.85) 100%)';
+          // Add night pill label: white text on dark pill
+          const nightPillCss = 'background:rgba(20,20,40,0.9);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:1px 8px;color:#fff;font-size:inherit;font-weight:600;white-space:nowrap;pointer-events:none;font-family:inherit;';
+          if (nightMinutes >= 120) {
+            const lbl = document.createElement('span');
+            lbl.style.cssText = nightPillCss;
+            const durH = Math.floor(nightMinutes / 60);
+            const durM = nightMinutes % 60;
+            const durStr = durH > 0
+              ? durH + 'h' + (durM > 0 ? durM + 'm' : '')
+              : durM + 'm';
+            lbl.textContent = '☽ Night (' + durStr + ')';
+            ov.appendChild(lbl);
+          } else if (nightMinutes >= 30) {
+            const lbl = document.createElement('span');
+            lbl.style.cssText = nightPillCss;
+            lbl.textContent = '☽';
+            ov.appendChild(lbl);
+          }
           return ov;
         };
         // Pre-sunrise night overlay
@@ -12463,7 +12502,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (riseMin > wStart) {
             const leftPct = 0;
             const widthPct = ((riseMin - wStart) / wSpan) * 100;
-            bar.appendChild(mkNightOverlay(leftPct, widthPct));
+            bar.appendChild(mkNightOverlay(leftPct, widthPct, riseMin - wStart));
           }
         }
         // Post-sunset night overlay
@@ -12472,7 +12511,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (setMin < wEnd) {
             const leftPct = ((setMin - wStart) / wSpan) * 100;
             const widthPct = ((wEnd - setMin) / wSpan) * 100;
-            bar.appendChild(mkNightOverlay(leftPct, widthPct));
+            bar.appendChild(mkNightOverlay(leftPct, widthPct, wEnd - setMin));
           }
         }
       }
