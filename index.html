@@ -11264,11 +11264,19 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (nextSimTime !== null) {
             let simDuration;
             let isDayCrossing = false;
+            // Check if this is a cross-day step using the day field
+            const stepDay = step.day || 1;
+            const nextStepDay = nextStep.day || stepDay;
+            const isCrossDayStep = (nextStepDay !== stepDay);
             if (speed > 0) {
               simDuration = nextSimTime - simTime;
-              if (simDuration <= 0) {
+              if (isCrossDayStep) {
+                // Cross-day: add 1440 per day difference (through midnight)
                 isDayCrossing = true;
-                // Day crossing: use per-step sunset if available, otherwise wrap
+                simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+              } else if (simDuration <= 0) {
+                isDayCrossing = true;
+                // Same-day wrap: use per-step sunset if available, otherwise wrap
                 if (step.sunset != null) {
                   const stepSunset = Math.floor(step.sunset / 100) * 60 + (step.sunset % 100);
                   simDuration = stepSunset - simTime;
@@ -11279,9 +11287,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
             } else {
               simDuration = simTime - nextSimTime;
-              if (simDuration <= 0) {
+              if (isCrossDayStep) {
                 isDayCrossing = true;
-                // Day crossing reverse: use per-step sunrise if available
+                simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+              } else if (simDuration <= 0) {
+                isDayCrossing = true;
+                // Same-day wrap reverse: use per-step sunrise if available
                 if (step.sunrise != null) {
                   const stepSunrise = Math.floor(step.sunrise / 100) * 60 + (step.sunrise % 100);
                   simDuration = simTime - stepSunrise;
@@ -11751,16 +11762,22 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (nextIdx < programSteps.length) {
                 const nextSimTime = parseHHMM2(programSteps[nextIdx].sim_time_hhmm);
                 const spd = programSteps[currentStepIdx].speed || 1;
+                // Check cross-day using day field
+                const curDay = programSteps[currentStepIdx].day || 1;
+                const nxtDay = programSteps[nextIdx].day || curDay;
+                const isCrossDay = (nxtDay !== curDay);
                 let totalSimSpan;
                 if (spd > 0) {
                   totalSimSpan = nextSimTime - stepSimTime;
-                  if (totalSimSpan < 0) totalSimSpan += 1440;
+                  if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                  else if (totalSimSpan < 0) totalSimSpan += 1440;
                   let progress = simTimeMinutes - stepSimTime;
                   if (progress < 0) progress += 1440;
                   currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
                 } else {
                   totalSimSpan = stepSimTime - nextSimTime;
-                  if (totalSimSpan < 0) totalSimSpan += 1440;
+                  if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                  else if (totalSimSpan < 0) totalSimSpan += 1440;
                   let progress = stepSimTime - simTimeMinutes;
                   if (progress < 0) progress += 1440;
                   currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
@@ -18637,6 +18654,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Intercept restart/reset commands to reset playhead state immediately
             if (trimmedLine === 'restart' || trimmedLine === 'reset') {
+              window.__currentStepIndex = 0; // Reset step index so clock playhead clears
+              window.__playheadManuallySet = false; // Allow auto-detection again
               if (typeof window.__resetPlayheadToDay1 === 'function') {
                 window.__resetPlayheadToDay1();
               }
