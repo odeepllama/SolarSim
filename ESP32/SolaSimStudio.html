@@ -7680,28 +7680,36 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Only update program steps for the timeline/visualization
           if (cfg.PROGRAM_STEPS && Array.isArray(cfg.PROGRAM_STEPS)) {
-            programSteps.length = 0;
-            cfg.PROGRAM_STEPS.forEach(step => {
-              programSteps.push({
-                sim_time_hhmm: step.sim_time_hhmm || 0,
-                speed: step.speed !== undefined ? step.speed : 1,
-                intensity_scale: step.intensity_scale,
-                sun_color_rgb: step.sun_color_rgb,
-                dual_sun: step.dual_sun,
-                transition: step.transition,
-                hold_minutes: step.hold_minutes,
-                repeat: step.repeat,
-                sunrise: step.sunrise,
-                sunset: step.sunset,
-                day: step.day
+            // Fingerprint the incoming steps to avoid unnecessary DOM rebuilds.
+            // renderProgramSteps() creates hundreds of DOM elements with event
+            // listener closures; rebuilding every 4s poll causes a massive
+            // memory leak as detached DOM trees accumulate.
+            const incomingFingerprint = JSON.stringify(cfg.PROGRAM_STEPS);
+            if (incomingFingerprint !== window.__lastDeviceStepsFingerprint) {
+              window.__lastDeviceStepsFingerprint = incomingFingerprint;
+              programSteps.length = 0;
+              cfg.PROGRAM_STEPS.forEach(step => {
+                programSteps.push({
+                  sim_time_hhmm: step.sim_time_hhmm || 0,
+                  speed: step.speed !== undefined ? step.speed : 1,
+                  intensity_scale: step.intensity_scale,
+                  sun_color_rgb: step.sun_color_rgb,
+                  dual_sun: step.dual_sun,
+                  transition: step.transition,
+                  hold_minutes: step.hold_minutes,
+                  repeat: step.repeat,
+                  sunrise: step.sunrise,
+                  sunset: step.sunset,
+                  day: step.day
+                });
               });
-            });
-            renderProgramSteps();
+              renderProgramSteps();
 
-            // Update the profile text preview to show the program steps
-            // This ensures the textarea is populated even when not explicitly loading from device
-            if (typeof updatePreview === 'function') {
-              updatePreview();
+              // Update the profile text preview to show the program steps
+              // This ensures the textarea is populated even when not explicitly loading from device
+              if (typeof updatePreview === 'function') {
+                updatePreview();
+              }
             }
           }
 
@@ -13589,8 +13597,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // speed is sim-minutes-per-real-minute, so sim-minutes-per-real-second = speed/60
           const fractionalMin = (currentSpeed / 60) * elapsedSec;
           interpolatedSimMinutes = simTimeMinutes + fractionalMin;
-          // Clamp to window bounds
-          interpolatedSimMinutes = Math.max(WINDOW_START_MIN, Math.min(WINDOW_END_MIN, interpolatedSimMinutes));
+          // Don't clamp — let the out-of-bounds check below hide the playhead
         }
 
         // Check if sim time is within the visible range of this timeline
@@ -13753,8 +13760,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               const we = parseFloat(host.dataset.windowEnd);
               const wspan = parseFloat(host.dataset.windowSpan);
               if (isNaN(ws) || isNaN(wspan) || wspan <= 0) return;
-              const clamped = Math.max(ws, Math.min(we, simInterpMin));
-              const pct = ((clamped - ws) / wspan) * 100;
+              if (simInterpMin < ws || simInterpMin > we) { ph.style.display = 'none'; return; }
+              ph.style.display = '';
+              const pct = ((simInterpMin - ws) / wspan) * 100;
               ph.style.left = pct + '%';
             }
           });
