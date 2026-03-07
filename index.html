@@ -11271,9 +11271,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (speed > 0) {
               simDuration = nextSimTime - simTime;
               if (isCrossDayStep) {
-                // Cross-day: add 1440 per day difference (through midnight)
+                // Cross-day: use sunset-based duration (night segment added separately below)
                 isDayCrossing = true;
-                simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+                if (step.sunset != null) {
+                  const stepSunset = Math.floor(step.sunset / 100) * 60 + (step.sunset % 100);
+                  simDuration = stepSunset - simTime;
+                  if (simDuration < 0) simDuration += 1440;
+                } else {
+                  simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+                }
               } else if (simDuration <= 0) {
                 isDayCrossing = true;
                 // Same-day wrap: use per-step sunset if available, otherwise wrap
@@ -11289,7 +11295,13 @@ https://github.com/odeepllama/SolarSim/tree/main
               simDuration = simTime - nextSimTime;
               if (isCrossDayStep) {
                 isDayCrossing = true;
-                simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+                if (step.sunrise != null) {
+                  const stepSunrise = Math.floor(step.sunrise / 100) * 60 + (step.sunrise % 100);
+                  simDuration = simTime - stepSunrise;
+                  if (simDuration < 0) simDuration += 1440;
+                } else {
+                  simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+                }
               } else if (simDuration <= 0) {
                 isDayCrossing = true;
                 // Same-day wrap reverse: use per-step sunrise if available
@@ -11768,16 +11780,29 @@ https://github.com/odeepllama/SolarSim/tree/main
                 const isCrossDay = (nxtDay !== curDay);
                 let totalSimSpan;
                 if (spd > 0) {
-                  totalSimSpan = nextSimTime - stepSimTime;
-                  if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
-                  else if (totalSimSpan < 0) totalSimSpan += 1440;
+                  if (isCrossDay && programSteps[currentStepIdx].sunset != null) {
+                    // Cross-day: progress within daytime segment only (sunset-based)
+                    const sunset = Math.floor(programSteps[currentStepIdx].sunset / 100) * 60 + (programSteps[currentStepIdx].sunset % 100);
+                    totalSimSpan = sunset - stepSimTime;
+                    if (totalSimSpan < 0) totalSimSpan += 1440;
+                  } else {
+                    totalSimSpan = nextSimTime - stepSimTime;
+                    if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                    else if (totalSimSpan < 0) totalSimSpan += 1440;
+                  }
                   let progress = simTimeMinutes - stepSimTime;
                   if (progress < 0) progress += 1440;
                   currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
                 } else {
-                  totalSimSpan = stepSimTime - nextSimTime;
-                  if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
-                  else if (totalSimSpan < 0) totalSimSpan += 1440;
+                  if (isCrossDay && programSteps[currentStepIdx].sunrise != null) {
+                    const sunrise = Math.floor(programSteps[currentStepIdx].sunrise / 100) * 60 + (programSteps[currentStepIdx].sunrise % 100);
+                    totalSimSpan = stepSimTime - sunrise;
+                    if (totalSimSpan < 0) totalSimSpan += 1440;
+                  } else {
+                    totalSimSpan = stepSimTime - nextSimTime;
+                    if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                    else if (totalSimSpan < 0) totalSimSpan += 1440;
+                  }
                   let progress = stepSimTime - simTimeMinutes;
                   if (progress < 0) progress += 1440;
                   currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
@@ -18955,6 +18980,18 @@ https://github.com/odeepllama/SolarSim/tree/main
               if (typeof renderTimelineStrip === 'function') {
                 try { renderTimelineStrip(); } catch (_e) { }
               }
+            }
+          }
+
+          // Detect firmware restart/reset response to reset playhead state
+          if (/\[SERIAL CMD\]\s*(Restarting simulation|Simulation restarted)/i.test(line)) {
+            window.__currentStepIndex = 0;
+            window.__playheadManuallySet = false;
+            if (typeof window.__resetPlayheadToDay1 === 'function') {
+              window.__resetPlayheadToDay1();
+            }
+            if (typeof window.renderClockTimePlayhead === 'function') {
+              window.renderClockTimePlayhead();
             }
           }
 
