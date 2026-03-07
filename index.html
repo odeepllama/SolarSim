@@ -7993,6 +7993,26 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (effectiveDay !== prevDay) firstOfDayIndices.add(i);
         }
 
+        // Pre-compute inherited sunrise/sunset per step.
+        // Steps without explicit values inherit from the most recent step
+        // in the same day that has them (matching firmware behavior).
+        const globalRise = state.SOLAR_MODE === 'CUSTOM' && state.CUSTOM_SUNRISE_HHMM != null ? state.CUSTOM_SUNRISE_HHMM : 600;
+        const globalSet = state.SOLAR_MODE === 'CUSTOM' && state.CUSTOM_SUNSET_HHMM != null ? state.CUSTOM_SUNSET_HHMM : 1800;
+        const inheritedSunrise = new Array(programSteps.length);
+        const inheritedSunset = new Array(programSteps.length);
+        {
+          let lastDay = -1, runRise = globalRise, runSet = globalSet;
+          for (let i = 0; i < programSteps.length; i++) {
+            const s = programSteps[i];
+            const day = s.day != null ? s.day : (stepToDayMap.get(i) || 1);
+            if (day !== lastDay) { runRise = globalRise; runSet = globalSet; lastDay = day; }
+            if (s.sunrise != null) runRise = s.sunrise;
+            if (s.sunset != null) runSet = s.sunset;
+            inheritedSunrise[i] = runRise;
+            inheritedSunset[i] = runSet;
+          }
+        }
+
         programSteps.forEach((step, idx) => {
           const tr = document.createElement('tr');
           tr.setAttribute('data-step-index', idx);
@@ -8048,8 +8068,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           let isNighttimeStep = false;
           if (document.getElementById('perStepDayLength')?.checked) {
             const stepTime = step.sim_time_hhmm != null ? step.sim_time_hhmm : 0;
-            const stepRise = step.sunrise != null ? step.sunrise : 600;
-            const stepSet = step.sunset != null ? step.sunset : 1800;
+            const stepRise = inheritedSunrise[idx];
+            const stepSet = inheritedSunset[idx];
             // Find the next step's time to determine this step's end time
             // Use next step regardless of day — physically, the step runs until the next one starts
             let nextStepTime = null;
