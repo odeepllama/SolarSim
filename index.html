@@ -2338,7 +2338,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     /* SunColor tile: CUSTOM (r,g,b) text needs smaller font to fit */
-    .mon-kv.sun-color-tile span {
+    .mon-kv.sun-color-tile.sun-custom span {
       font-size: clamp(0.75rem, 3.2vw, 1.2rem);
     }
 
@@ -8535,6 +8535,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
             renderProgramSteps();
             updatePreview(true);
+          } else if (field === 'sunrise' || field === 'sunset') {
+            // Re-render table on blur to update sunrise/sunset editability and row formatting
+            renderProgramSteps();
+            updatePreview(true);
           }
         }, true); // Use capture phase to catch blur events
 
@@ -8660,17 +8664,35 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (field === 'day') {
               // Day changed: full re-render to update sunrise/sunset editability,
               // row backgrounds, and multi-day timeline
+              // Save focus info before re-render
+              const focusField = field;
+              const focusRow = row;
+              const focusCursorPos = e.target.selectionStart;
               renderProgramSteps();
               updatePreview(false);
+              // Restore focus after re-render
+              requestAnimationFrame(() => {
+                const tbody = document.querySelector('#programStepsTable tbody');
+                if (tbody) {
+                  const tr = tbody.querySelectorAll('tr')[focusRow];
+                  if (tr) {
+                    const input = tr.querySelector(`input[data-f="${focusField}"]`);
+                    if (input) {
+                      input.focus();
+                      if (focusCursorPos != null) {
+                        try { input.setSelectionRange(focusCursorPos, focusCursorPos); } catch (ex) { }
+                      }
+                    }
+                  }
+                }
+              });
               return;
             }
 
-            // For sunrise/sunset, update timeline immediately but debounce table re-render
-            // to avoid destroying the active input while user is typing
+            // For sunrise/sunset, update timeline immediately but defer table re-render
+            // to blur event to avoid destroying the active input while user is typing
             if (field === 'sunrise' || field === 'sunset') {
               updatePreview(false);
-              if (window._sunriseRenderTimer) clearTimeout(window._sunriseRenderTimer);
-              window._sunriseRenderTimer = setTimeout(() => renderProgramSteps(), 400);
               return;
             }
 
@@ -8961,6 +8983,16 @@ https://github.com/odeepllama/SolarSim/tree/main
             programSteps.splice(idx + 1, 0, clone);
           }
           renderProgramSteps(); updatePreview(true); updateMaxStepsUI();
+          // Auto-switch to multi-day view if program now has 2+ days
+          const dayCheck = analyzeMultiDayProgram(true);
+          if (dayCheck.days.length > 1) {
+            const sdCheckbox = document.getElementById('singleDayVisualization');
+            if (sdCheckbox && sdCheckbox.checked) {
+              sdCheckbox.checked = false;
+              try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
+              renderTimelineStrip();
+            }
+          }
         });
 
         // Utility function to add minutes to HHMM format time
@@ -12904,29 +12936,28 @@ https://github.com/odeepllama/SolarSim/tree/main
         };
 
 
-        // Find the highest dayNumber (the program's starting day)
-        const highestDayNumber = Math.max(...daysToShow.map(d => d.dayNumber));
+        // Find the starting day — the day containing the first program step (lowest global index)
+        // This works for both forward programs (first step on Day 1) and reverse programs (first step on Day 2)
+        const startingDayNumber = daysToShow.reduce((best, d) => {
+          const minIdx = d.steps.length > 0 ? Math.min(...d.steps.map(s => s.index)) : Infinity;
+          return (best === null || minIdx < best.minIdx) ? { dayNum: d.dayNumber, minIdx } : best;
+        }, null)?.dayNum ?? daysToShow[0].dayNumber;
+
+        // Determine program flow direction: if starting day is the highest, flow goes high→low (reverse program)
+        const flowAscending = startingDayNumber <= Math.min(...daysToShow.map(d => d.dayNumber));
 
         daysToShow.forEach((dayInfo, dayIndex) => {
-          // In program flow, the PREVIOUS day is the one with HIGHER dayNumber (we go backward from Day 1 to Day 0)
-          // But daysToShow is sorted in ascending order (Day 0, then Day 1, etc.)
-          // So we need to look FORWARD in the array to find the day that comes BEFORE in program flow
-          const nextDayInArray = dayIndex < daysToShow.length - 1 ? daysToShow[dayIndex + 1] : null;
-
-          // The "previous day" in program flow is the one with higher dayNumber
-          const prevDayInFlow = dayInfo.dayNumber < highestDayNumber ? nextDayInArray : null;
+          // Previous day in program flow depends on flow direction
+          const prevDayInFlow = flowAscending
+            ? (dayIndex > 0 ? daysToShow[dayIndex - 1] : null)                              // Day 1→2: look backward
+            : (dayIndex < daysToShow.length - 1 ? daysToShow[dayIndex + 1] : null);          // Day 2→1: look forward
           const prevDayOrphanedTime = prevDayInFlow?.orphanedHoldEndTime;
 
           // Get the last step's speed from the day that comes BEFORE in program flow
           let prevDayLastSpeed = undefined;
           if (prevDayInFlow && prevDayInFlow.steps && prevDayInFlow.steps.length > 0) {
-            // Fix: If the previous day in flow is the starting day (highest day number),
-            // use its FIRST step's speed instead of its last step's speed.
-            // This prevents jumped-to days from inheriting the wrong speed.
-            const isPrevDayStartingDay = prevDayInFlow.dayNumber === highestDayNumber;
-            const stepToUse = isPrevDayStartingDay
-              ? prevDayInFlow.steps[0]  // Use FIRST step of starting day
-              : prevDayInFlow.steps[prevDayInFlow.steps.length - 1];  // Use LAST step normally
+            // Use the last step of the previous day (since that's what was running before this day starts)
+            const stepToUse = prevDayInFlow.steps[prevDayInFlow.steps.length - 1];
 
             if (stepToUse && stepToUse.step) {
               prevDayLastSpeed = stepToUse.step.speed !== undefined ? stepToUse.step.speed : 1;
@@ -12934,7 +12965,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           // Pre-check for reverse
-          const isStartingDay = (dayInfo.dayNumber === highestDayNumber);
+          const isStartingDay = (dayInfo.dayNumber === startingDayNumber);
           const daySteps = dayInfo.steps;
           const hasReverse = daySteps.some(s => (s.step.speed !== undefined ? s.step.speed : 1) < 0);
 
@@ -13315,9 +13346,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         let initialDualSun = false;
         let initialSunColorRgb = undefined;
 
-        // If starting day (program entry point), force initialSpeed = 1, no negative speed head
+        // If starting day (program entry point), use form's default speed
         if (isStartingDay === true) {
-          initialSpeed = 1;
+          initialSpeed = parseFloat(document.getElementById('TIME_SCALE')?.value) || 1;
         } else if (allSteps.length > 0 && !isStartingDay) {
           // For non-starting days, inherit speed from previous day's last step
           if (prevDayLastSpeed !== undefined) {
@@ -15594,6 +15625,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             renderProgramSteps();
             updatePreview(true);
             updateMaxStepsUI();
+            // Auto-switch to multi-day view if loaded profile has 2+ days
+            const dayCheck = analyzeMultiDayProgram(true);
+            if (dayCheck.days.length > 1) {
+              const sdCheckbox = document.getElementById('singleDayVisualization');
+              if (sdCheckbox && sdCheckbox.checked) {
+                sdCheckbox.checked = false;
+                try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
+              }
+            }
           }
         }
         window.renderRecentProfiles = function () {
@@ -19687,7 +19727,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const mSpeed = line.match(reSpeed);
           if (mSpeed) {
             const speedValue = mSpeed[1];
-            setKV('speed', 'Speed', speedValue);
+            setKV('speed', 'Speed', speedValue.toUpperCase());
             updated = true;
 
             // Detect hold completion: if we had a hold state and speed changed from HOLD/0X to a non-zero speed
@@ -20050,7 +20090,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
         // updateSunMarkerFromPlain removed
-        function handleStatus(o, raw) { setKV('sim', 'SimTime', fmtHHMM(o.sim)); setKV('speed', 'Speed', o.speed); }
+        function handleStatus(o, raw) { setKV('sim', 'SimTime', fmtHHMM(o.sim)); setKV('speed', 'Speed', String(o.speed).toUpperCase()); }
         const kvCache = new Map();
         // Expose for helpers that wish to read tiles
         try { window.kvCache = kvCache; } catch (_) { }
@@ -20278,7 +20318,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           setKV('sim', 'SimTime', fmtHHMM(formState.START_TIME_HHMM || 600));
           setKV('speed', 'Speed', (formState.TIME_SCALE ?? 1) === 0 ? 'HOLD' : String(formState.TIME_SCALE ?? 1) + 'X');
           setKV('intensity', 'Intensity', String(formState.INTENSITY_SCALE ?? 1));
-          setKV('sunColor', 'SunColor', String(formState.SUN_COLOR_MODE || 'BLUE'));
+          const scMode = String(formState.SUN_COLOR_MODE || 'BLUE');
+          if (scMode.toUpperCase() === 'CUSTOM') {
+            const r = formState.CUSTOM_SUN_R ?? 255, g = formState.CUSTOM_SUN_G ?? 0, b = formState.CUSTOM_SUN_B ?? 0;
+            setKV('sunColor', 'SunColor', `CUSTOM<br>(${r},${g},${b})`);
+          } else {
+            setKV('sunColor', 'SunColor', scMode);
+          }
           // Apply sun-color CSS classes for font sizing (matches live tile logic)
           const sunEl = kvCache && kvCache.get ? kvCache.get('sunColor') : null;
           if (sunEl) {
