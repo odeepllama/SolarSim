@@ -13334,6 +13334,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (ps.intensity_scale !== undefined) { const _v = parseFloat(ps.intensity_scale); initialIntensity = isNaN(_v) ? 1.0 : _v; }
             initialDualSun = ps.dual_sun === true || ps.dual_sun === 'true' || ps.dual_sun === 1;
             if (ps.sun_color_rgb !== undefined) initialSunColorRgb = ps.sun_color_rgb;
+          } else {
+            // No prior steps on this non-starting day — use form's default intensity
+            const formIntensity = parseFloat(document.getElementById('INTENSITY_SCALE')?.value);
+            if (!isNaN(formIntensity)) initialIntensity = formIntensity;
           }
         } else {
           // For starting day, only get intensity and dual sun from prior steps, not speed
@@ -13343,6 +13347,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (ps.intensity_scale !== undefined) { const _v2 = parseFloat(ps.intensity_scale); initialIntensity = isNaN(_v2) ? 1.0 : _v2; }
             initialDualSun = ps.dual_sun === true || ps.dual_sun === 'true' || ps.dual_sun === 1;
             if (ps.sun_color_rgb !== undefined) initialSunColorRgb = ps.sun_color_rgb;
+          } else if (allSteps.length > 0) {
+            // No prior steps — use the form's default intensity (device starting conditions)
+            const formIntensity = parseFloat(document.getElementById('INTENSITY_SCALE')?.value);
+            if (!isNaN(formIntensity)) initialIntensity = formIntensity;
           }
         }
 
@@ -15793,6 +15801,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             else { // fallback: minimal refresh
               Object.assign(state, snap.state || {});
               programSteps = Array.isArray(snap.PROGRAM_STEPS) ? snap.PROGRAM_STEPS : [];
+              state.PROGRAM_STEPS = programSteps;
+              state.PROGRAM_ENABLED = programSteps.length > 0;
+              syncFormFromState();
               renderProgramSteps(); updatePreview(true);
             }
             $apply.title = 'Applied default';
