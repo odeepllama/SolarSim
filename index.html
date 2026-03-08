@@ -13940,6 +13940,12 @@ https://github.com/odeepllama/SolarSim/tree/main
         const existingPlayhead = host.querySelector('.timeline-playhead');
         if (existingPlayhead) existingPlayhead.remove();
 
+        // Always store window bounds and direction on host for the fast interpolation loop
+        host.dataset.windowStart = WINDOW_START_MIN;
+        host.dataset.windowEnd = WINDOW_END_MIN;
+        host.dataset.windowSpan = WINDOW_SPAN;
+        if (filterDirection) host.dataset.filterDirection = filterDirection;
+
         // Check if this timeline is for the current playhead day
         const currentPlayheadDay = window.__playheadCurrentDay || 1;
         const timelineDayNumber = dayInfo && dayInfo.dayNumber !== undefined ? dayInfo.dayNumber : 1;
@@ -13948,30 +13954,31 @@ https://github.com/odeepllama/SolarSim/tree/main
           return; // Only show playhead on the current day
         }
 
-        // When forward/reverse strips are split, only show playhead on the active strip
+        // Determine if playhead should be initially visible or hidden on this bar
+        let initiallyHidden = false;
         if (filterDirection) {
-          // Use current step's speed to determine which strip the playhead belongs on
+          // Detect current speed direction
+          let detectedReverse = false;
           const stepIdx1 = window.__currentStepIndex || 0;
           if (stepIdx1 > 0 && typeof programSteps !== 'undefined' && Array.isArray(programSteps) && stepIdx1 <= programSteps.length) {
             const currentStep = programSteps[stepIdx1 - 1];
             const stepSpeed = currentStep.speed !== undefined ? currentStep.speed : 1;
-            const isReverse = stepSpeed < 0;
-            if (filterDirection === 'forward' && isReverse) return;
-            if (filterDirection === 'reverse' && !isReverse) return;
+            detectedReverse = stepSpeed < 0;
           } else {
             // Fallback: read speed from status tile
             const speedTile = window.kvCache && window.kvCache.get && window.kvCache.get('speed');
             if (speedTile) {
               const speedSpan = speedTile.querySelector('span');
               const speedText = speedSpan ? speedSpan.textContent.trim() : '';
-              const speedVal = parseFloat(speedText);
+              const speedVal = parseFloat(speedText.replace(/\u2212/g, '-'));
               if (!isNaN(speedVal)) {
-                const isReverse = speedVal < 0;
-                if (filterDirection === 'forward' && isReverse) return;
-                if (filterDirection === 'reverse' && !isReverse) return;
+                detectedReverse = speedVal < 0;
               }
             }
           }
+          // If this bar doesn't match the current direction, create the playhead but hide it
+          if (filterDirection === 'forward' && detectedReverse) initiallyHidden = true;
+          if (filterDirection === 'reverse' && !detectedReverse) initiallyHidden = true;
         }
 
         // Get current sim time from kvCache (same source as SimTime status tile)
@@ -13999,7 +14006,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const speedTile = window.kvCache && window.kvCache.get && window.kvCache.get('speed');
         const speedSpan = speedTile ? speedTile.querySelector('span') : null;
         const speedText = speedSpan ? speedSpan.textContent.trim() : '';
-        const currentSpeed = parseFloat(speedText);
+        const currentSpeed = parseFloat(speedText.replace(/\u2212/g, '-'));
         if (!isNaN(currentSpeed) && currentSpeed !== 0 && speedText !== 'HOLD') {
           // Track when the tile's integer minute last changed
           if (!window.__simPlayheadInterp) window.__simPlayheadInterp = { lastMin: -1, lastMinTs: 0 };
@@ -14016,7 +14023,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         // Check if sim time is within the visible range of this timeline
-        if (interpolatedSimMinutes < WINDOW_START_MIN || interpolatedSimMinutes > WINDOW_END_MIN) return;
+        // For hidden playheads (wrong direction), create them anyway for the interp loop to show later
+        const outOfRange = interpolatedSimMinutes < WINDOW_START_MIN || interpolatedSimMinutes > WINDOW_END_MIN;
+        if (outOfRange && !initiallyHidden) return;
 
         // Check if device is connected and running (same logic as lock UI)
         const serialState = window.__serialState || null;
@@ -14027,7 +14036,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (!hasConnection || (!hasLoadedProfile && !hasActiveProgram)) return;
 
         // Calculate playhead position as percentage
-        const posPct = ((interpolatedSimMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+        const posPct = outOfRange ? 0 : ((interpolatedSimMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
 
         // Check if we're in a HOLD state and should render hold progress
         const holdState = window.__holdState;
@@ -14036,7 +14045,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // as long as we're on the right day and there's an active hold segment at current time
         const isActiveHold = holdState && holdState.dayNumber === currentPlayheadDay;
 
-        if (isActiveHold) {
+        if (isActiveHold && !initiallyHidden) {
           // Remove any existing hold progress indicator
           const existingHoldProgress = host.querySelector('.timeline-hold-progress');
           if (existingHoldProgress) existingHoldProgress.remove();
@@ -14097,7 +14106,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           host.appendChild(playhead);
         } else {
-          // Normal playhead (not in HOLD)
+          // Normal playhead (not in HOLD, or hidden on inactive bar)
           // Remove any existing hold progress indicator if present
           const existingHoldProgress = host.querySelector('.timeline-hold-progress');
           if (existingHoldProgress) existingHoldProgress.remove();
@@ -14106,16 +14115,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           const playhead = document.createElement('div');
           playhead.className = 'timeline-playhead';
           playhead.style.left = posPct + '%';
+          if (initiallyHidden) playhead.style.display = 'none';
           playhead.style.cursor = 'help'; // Help cursor for tooltip
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})`;
 
           host.appendChild(playhead);
         }
-
-        // Store window bounds on host for the fast interpolation loop
-        host.dataset.windowStart = WINDOW_START_MIN;
-        host.dataset.windowEnd = WINDOW_END_MIN;
-        host.dataset.windowSpan = WINDOW_SPAN;
       }
 
       // --- Fast sim-time playhead interpolation loop ---
@@ -14130,6 +14135,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // --- Sim-time playhead interpolation data ---
           let simInterpMin = null;
+          let currentSpeedVal = NaN;
           const simTile = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
           if (simTile) {
             const valEl = simTile.querySelector('span');
@@ -14143,7 +14149,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                   const spdTile = window.kvCache.get('speed');
                   const spdSpan = spdTile ? spdTile.querySelector('span') : null;
                   const spdTxt = spdSpan ? spdSpan.textContent.trim() : '';
-                  const spd = parseFloat(spdTxt);
+                  // Replace Unicode minus (U+2212) with ASCII hyphen for parseFloat
+                  const spd = parseFloat(spdTxt.replace(/\u2212/g, '-'));
+                  currentSpeedVal = spd;
                   if (!isNaN(spd) && spd !== 0 && spdTxt !== 'HOLD') {
                     if (!window.__simPlayheadInterp) window.__simPlayheadInterp = { lastMin: -1, lastMinTs: 0 };
                     const interp = window.__simPlayheadInterp;
@@ -14155,6 +14163,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
             }
           }
+
+          // Determine current direction for forward/reverse bar switching
+          const isReverse = !isNaN(currentSpeedVal) && currentSpeedVal < 0;
 
           // --- Update each playhead ---
           playheads.forEach(function (ph) {
@@ -14174,6 +14185,14 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Sim-time playhead: use interpolated sim minutes
               const host = ph.parentElement;
               if (!host) return;
+
+              // Direction-aware visibility: hide playhead on wrong bar
+              const barDir = host.dataset.filterDirection;
+              if (barDir && !isNaN(currentSpeedVal)) {
+                if (barDir === 'forward' && isReverse) { ph.style.display = 'none'; return; }
+                if (barDir === 'reverse' && !isReverse) { ph.style.display = 'none'; return; }
+              }
+
               const ws = parseFloat(host.dataset.windowStart);
               const we = parseFloat(host.dataset.windowEnd);
               const wspan = parseFloat(host.dataset.windowSpan);
