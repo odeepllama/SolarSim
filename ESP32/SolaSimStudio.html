@@ -11053,6 +11053,10 @@ https://github.com/odeepllama/SolarSim/tree/main
   .tl-seg.dragging{ opacity:0.5; }
   .tl-seg-ghost{ position:absolute; top:0; bottom:0; border:3px solid #ff6600; background:rgba(255,165,0,0.3); z-index:80; pointer-events:none; box-sizing:border-box; }
   .tl-drag-time-label{ position:absolute; top:-25px; background:#333; color:#fff; padding:2px 6px; border-radius:3px; font-size:12px; font-weight:600; z-index:200; pointer-events:none; white-space:nowrap; }
+  .tl-daylength-handle{ position:absolute; top:0; bottom:0; width:24px; cursor:ew-resize; z-index:160; background:transparent; margin-left:-12px; touch-action:none; }
+  .tl-daylength-handle:hover{ background:rgba(245,166,35,0.3); }
+  .tl-daylength-handle.dragging{ background:rgba(245,166,35,0.5); }
+  .tl-daylength-ghost{ position:absolute; top:0; bottom:0; width:3px; margin-left:-1px; background:#f5a623; z-index:170; pointer-events:none; box-shadow:0 0 6px rgba(245,166,35,0.6); }
   `;
         document.head.appendChild(css);
       }
@@ -12597,7 +12601,7 @@ https://github.com/odeepllama/SolarSim/tree/main
        * @param {Object} dayInfo - Day data with steps array
        * @param {Object} globalWindow - {start, end} in minutes
        */
-      function addDayLengthMarkers(bar, dayInfo, globalWindow) {
+      function addDayLengthMarkers(bar, dayInfo, globalWindow, readOnly) {
         if (!document.getElementById('perStepDayLength')?.checked) return;
         const steps = dayInfo.steps;
         // Find earliest sunrise and latest sunset across all steps on this day
@@ -12631,6 +12635,31 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (rise !== null) bar.appendChild(mkMarker('☀️', '#f5a623', rise, '25px'));
         const moonEl = set !== null ? mkMarker('☽', '#f5c842', set, '29px') : null;
         if (moonEl) { moonEl.style.textShadow = '0 0 3px #f5c842, 1px 0 1px #f5c842, -1px 0 1px #f5c842, 0 1px 1px #f5c842, 0 -1px 1px #f5c842'; moonEl.style.fontWeight = '900'; bar.appendChild(moonEl); }
+
+        // Add draggable handles for sunrise/sunset (only when editable)
+        if (!readOnly) {
+          const riseMin = rise !== null ? toMin(rise) : null;
+          const setMin = set !== null ? toMin(set) : null;
+          const MIN_DAY_SPAN = 30; // Minimum 30 minutes between sunrise and sunset
+          if (riseMin !== null && riseMin >= wStart && riseMin <= wEnd) {
+            const risePct = ((riseMin - wStart) / wSpan) * 100;
+            const handle = document.createElement('div');
+            handle.className = 'tl-daylength-handle';
+            handle.style.left = risePct + '%';
+            handle.title = 'Drag to adjust sunrise time';
+            bar.appendChild(handle);
+            addSunriseSunsetDragHandler(handle, bar, 'sunrise', riseMin, dayInfo, wStart, wEnd, wSpan, setMin, riseMin, MIN_DAY_SPAN);
+          }
+          if (setMin !== null && setMin >= wStart && setMin <= wEnd) {
+            const setPct = ((setMin - wStart) / wSpan) * 100;
+            const handle = document.createElement('div');
+            handle.className = 'tl-daylength-handle';
+            handle.style.left = setPct + '%';
+            handle.title = 'Drag to adjust sunset time';
+            bar.appendChild(handle);
+            addSunriseSunsetDragHandler(handle, bar, 'sunset', setMin, dayInfo, wStart, wEnd, wSpan, setMin, riseMin, MIN_DAY_SPAN);
+          }
+        }
 
         // Night overlays: dark regions before sunrise and after sunset
         const mkNightOverlay = (leftPct, widthPct, nightMinutes) => {
@@ -12678,6 +12707,150 @@ https://github.com/odeepllama/SolarSim/tree/main
             bar.appendChild(mkNightOverlay(leftPct, widthPct, wEnd - setMin));
           }
         }
+      }
+
+      // Drag handler for sunrise/sunset markers on the speed timeline
+      function addSunriseSunsetDragHandler(handle, host, type, originalMin, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN, sunsetMin, sunriseMin, MIN_DAY_SPAN) {
+        let isDragging = false;
+        let ghostLine = null;
+        let timeLabel = null;
+        const SNAP_INTERVAL = 15;
+
+        function snapToGrid(minutes) {
+          return Math.round(minutes / SNAP_INTERVAL) * SNAP_INTERVAL;
+        }
+
+        function xPosToMinutes(clientX) {
+          const rect = host.getBoundingClientRect();
+          const xPct = (clientX - rect.left) / rect.width;
+          const minutes = WINDOW_START_MIN + (xPct * WINDOW_SPAN);
+          return snapToGrid(Math.max(WINDOW_START_MIN, Math.min(WINDOW_END_MIN, minutes)));
+        }
+
+        function constrain(newMinutes) {
+          if (type === 'sunrise') {
+            // Sunrise: between window start and sunset − MIN_DAY_SPAN
+            const max = sunsetMin != null ? sunsetMin - MIN_DAY_SPAN : WINDOW_END_MIN;
+            return Math.max(WINDOW_START_MIN, Math.min(max, newMinutes));
+          } else {
+            // Sunset: between sunrise + MIN_DAY_SPAN and window end
+            const min = sunriseMin != null ? sunriseMin + MIN_DAY_SPAN : WINDOW_START_MIN;
+            return Math.max(min, Math.min(WINDOW_END_MIN, newMinutes));
+          }
+        }
+
+        function minToHHMM(m) {
+          const h = Math.floor(m / 60);
+          const mm = m % 60;
+          return (h < 10 ? '' + h : String(h).padStart(2, '0')) + String(mm).padStart(2, '0');
+        }
+
+        function startDrag(clientX) {
+          // Check if editing is locked
+          if (window.__programEditingLocked && window.__programEditingLocked()) {
+            if (window.__flashProgramLock) window.__flashProgramLock();
+            return false;
+          }
+          saveTimelineUndoState();
+          timelineDragInProgress = true;
+          isDragging = true;
+          handle.classList.add('dragging');
+          document.body.style.cursor = 'ew-resize';
+
+          // Create ghost vertical line
+          ghostLine = document.createElement('div');
+          ghostLine.className = 'tl-daylength-ghost';
+          host.appendChild(ghostLine);
+
+          // Create time label
+          timeLabel = document.createElement('div');
+          timeLabel.className = 'tl-drag-time-label';
+          host.appendChild(timeLabel);
+
+          // Initial position
+          const pct = ((originalMin - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+          ghostLine.style.left = pct + '%';
+          timeLabel.style.left = pct + '%';
+          timeLabel.textContent = formatHHMM(originalMin);
+
+          return true;
+        }
+
+        function updateDrag(clientX) {
+          if (!isDragging) return;
+          const rawMin = xPosToMinutes(clientX);
+          const cMin = constrain(rawMin);
+          const pct = ((cMin - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+          ghostLine.style.left = pct + '%';
+          timeLabel.style.left = pct + '%';
+          timeLabel.textContent = formatHHMM(cMin);
+        }
+
+        function finishDrag(clientX) {
+          if (!isDragging) return;
+          isDragging = false;
+          handle.classList.remove('dragging');
+          document.body.style.cursor = '';
+          timelineDragInProgress = false;
+
+          if (ghostLine) ghostLine.remove();
+          if (timeLabel) timeLabel.remove();
+
+          const rawMin = xPosToMinutes(clientX);
+          const finalMin = constrain(rawMin);
+          if (finalMin === originalMin) return; // No change
+
+          // Convert minutes to HHMM
+          const newHHMM = parseInt(minToHHMM(finalMin));
+
+          // Update all steps on this day
+          const field = type === 'sunrise' ? 'sunrise' : 'sunset';
+          for (const s of dayInfo.steps) {
+            if (s.step[field] != null) {
+              s.step[field] = newHHMM;
+              // Also ensure programSteps array is in sync
+              if (s.index >= 0 && programSteps[s.index]) {
+                programSteps[s.index][field] = newHHMM;
+              }
+            }
+          }
+
+          // Refresh the UI
+          renderProgramSteps();
+          updatePreview(true);
+        }
+
+        // --- Mouse Events ---
+        handle.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          if (startDrag(e.clientX)) {
+            const onMove = (ev) => { updateDrag(ev.clientX); ev.preventDefault(); };
+            const onUp = (ev) => {
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+              finishDrag(ev.clientX);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          }
+        });
+
+        // --- Touch Events ---
+        handle.addEventListener('touchstart', (e) => {
+          e.stopPropagation();
+          if (e.cancelable) e.preventDefault();
+          if (startDrag(e.touches[0].clientX)) {
+            const onMove = (ev) => { updateDrag(ev.touches[0].clientX); if (ev.cancelable) ev.preventDefault(); };
+            const onEnd = (ev) => {
+              document.removeEventListener('touchmove', onMove);
+              document.removeEventListener('touchend', onEnd);
+              finishDrag(ev.changedTouches[0].clientX);
+            };
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+          }
+        }, { passive: false });
       }
 
       function renderMultiDayTimeline(container, dayData, readOnly = false, suppressIntensityKey = false) {
@@ -12794,7 +12967,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             container.appendChild(daySection);
 
             renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, undefined);
-            addDayLengthMarkers(bar, dayInfo, globalWindow);
+            addDayLengthMarkers(bar, dayInfo, globalWindow, readOnly);
           } else {
             // === WITH REVERSE: Day N + SPEED stacked in label, then REVERSE row below ===
             const fwdRow = document.createElement('div');
@@ -12836,7 +13009,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             container.appendChild(daySection);
 
             renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'forward');
-            addDayLengthMarkers(bar, dayInfo, globalWindow);
+            addDayLengthMarkers(bar, dayInfo, globalWindow, readOnly);
             renderDayTimeline(reverseBar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'reverse');
           }
 
@@ -13057,7 +13230,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           ws = Math.floor(ws / 60) * 60; we = Math.ceil(we / 60) * 60;
           if (we === ws) we = ws + 60;
-          addDayLengthMarkers(bar, dayInfo, { start: ws, end: we });
+          addDayLengthMarkers(bar, dayInfo, { start: ws, end: we }, readOnly);
         }
 
         // Reverse speed bar — only if reverse steps exist (ultra bar handles color/intensity in segments)
