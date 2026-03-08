@@ -11406,32 +11406,141 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
             }
           } else {
-            // Last step (no next step) — estimate duration to end of day
+            // Last step (no next step)
             // Use inherited sunset/sunrise if available, otherwise default 18:00/06:00
             const stepSunset = inhSet[i] != null ? (Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100)) : 18 * 60;
             const stepSunrise = inhRise[i] != null ? (Math.floor(inhRise[i] / 100) * 60 + (inhRise[i] % 100)) : 6 * 60;
-            let estimatedSimDur;
-            if (speed > 0) {
-              estimatedSimDur = stepSunset - simTime;
-              if (estimatedSimDur < 0) estimatedSimDur += 1440; // wrap to next day
+
+            // Check if the program repeats (infinite or >1)
+            const progRepeats = state.PROGRAM_REPEATS !== undefined ? state.PROGRAM_REPEATS : -1;
+            const willRepeat = (progRepeats === -1 || progRepeats > 1);
+            const firstStep = programSteps[0];
+            const firstSimTime = parseHHMM(firstStep.sim_time_hhmm);
+
+            if (willRepeat && programSteps.length > 1) {
+              // Repeating program: show full cycle from last step to first step's time
+              // Split into daytime portion (to sunset) + night + dawn (sunrise to first step)
+              if (speed > 0) {
+                // Daytime segment: lastStep → sunset
+                let daytimeDur = stepSunset - simTime;
+                if (daytimeDur < 0) daytimeDur += 1440;
+                if (daytimeDur > 0) {
+                  const daytimeRealSec = (daytimeDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: simLabel + '→' + fmtHHMM(stepSunset),
+                    speedLabel: speed + 'x',
+                    speed: speed,
+                    realSeconds: daytimeRealSec,
+                    isHold: false,
+                    isJump: false,
+                    stepIndex: i,
+                    isLastStep: true,
+                    simColor: step.sun_color_rgb
+                  });
+                }
+                // Night segment: sunset → next cycle's sunrise (use first step's sunrise or inherited)
+                const nextSunrise = firstStep.sunrise != null
+                  ? (Math.floor(firstStep.sunrise / 100) * 60 + (firstStep.sunrise % 100))
+                  : stepSunrise;
+                let nightDur = nextSunrise - stepSunset;
+                if (nightDur <= 0) nightDur += 1440;
+                if (nightDur > 0 && nightDur < 1440) {
+                  const nightRealSec = (nightDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: fmtHHMM(stepSunset) + '→' + fmtHHMM(nextSunrise),
+                    speedLabel: '☽ Night',
+                    speed: speed,
+                    realSeconds: nightRealSec,
+                    isHold: false,
+                    isJump: false,
+                    isNight: true,
+                    stepIndex: i,
+                    isLastStepNight: true,
+                    simColor: null
+                  });
+                }
+                // Dawn segment: sunrise → first step's time (if first step starts after sunrise)
+                if (firstSimTime > nextSunrise) {
+                  let dawnDur = firstSimTime - nextSunrise;
+                  if (dawnDur > 0) {
+                    const dawnRealSec = (dawnDur * 60) / Math.abs(speed);
+                    segments.push({
+                      simLabel: fmtHHMM(nextSunrise) + '→' + fmtHHMM(firstSimTime),
+                      speedLabel: speed + 'x',
+                      speed: speed,
+                      realSeconds: dawnRealSec,
+                      isHold: false,
+                      isJump: false,
+                      stepIndex: i,
+                      isLastStep: true,
+                      simColor: step.sun_color_rgb
+                    });
+                  }
+                }
+              } else {
+                // Reverse speed: lastStep → sunrise (daytime), then night → sunset, then dusk → first step
+                let daytimeDur = simTime - stepSunrise;
+                if (daytimeDur < 0) daytimeDur += 1440;
+                if (daytimeDur > 0) {
+                  const daytimeRealSec = (daytimeDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: simLabel + '→' + fmtHHMM(stepSunrise),
+                    speedLabel: speed + 'x',
+                    speed: speed,
+                    realSeconds: daytimeRealSec,
+                    isHold: false,
+                    isJump: false,
+                    stepIndex: i,
+                    isLastStep: true,
+                    simColor: step.sun_color_rgb
+                  });
+                }
+                // Night segment (reverse): sunrise → previous sunset
+                const prevSunset = firstStep.sunset != null
+                  ? (Math.floor(firstStep.sunset / 100) * 60 + (firstStep.sunset % 100))
+                  : stepSunset;
+                let nightDur = stepSunrise - prevSunset;
+                if (nightDur <= 0) nightDur += 1440;
+                if (nightDur > 0 && nightDur < 1440) {
+                  const nightRealSec = (nightDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: fmtHHMM(stepSunrise) + '→' + fmtHHMM(prevSunset),
+                    speedLabel: '☽ Night',
+                    speed: speed,
+                    realSeconds: nightRealSec,
+                    isHold: false,
+                    isJump: false,
+                    isNight: true,
+                    stepIndex: i,
+                    isLastStepNight: true,
+                    simColor: null
+                  });
+                }
+              }
             } else {
-              estimatedSimDur = simTime - stepSunrise; // run back to sunrise
-              if (estimatedSimDur < 0) estimatedSimDur += 1440;
-            }
-            // If last step is already at the end boundary, no tail needed
-            if (estimatedSimDur > 0) {
-              const realSec = (estimatedSimDur * 60) / Math.abs(speed);
-              segments.push({
-                simLabel: simLabel + '→…',
-                speedLabel: speed + 'x',
-                speed: speed,
-                realSeconds: realSec,
-                isHold: false,
-                isJump: false,
-                stepIndex: i,
-                isLastStep: true,
-                simColor: step.sun_color_rgb
-              });
+              // Non-repeating or single-step: estimate duration to sunset/sunrise only
+              let estimatedSimDur;
+              if (speed > 0) {
+                estimatedSimDur = stepSunset - simTime;
+                if (estimatedSimDur < 0) estimatedSimDur += 1440;
+              } else {
+                estimatedSimDur = simTime - stepSunrise;
+                if (estimatedSimDur < 0) estimatedSimDur += 1440;
+              }
+              if (estimatedSimDur > 0) {
+                const realSec = (estimatedSimDur * 60) / Math.abs(speed);
+                segments.push({
+                  simLabel: simLabel + '→…',
+                  speedLabel: speed + 'x',
+                  speed: speed,
+                  realSeconds: realSec,
+                  isHold: false,
+                  isJump: false,
+                  stepIndex: i,
+                  isLastStep: true,
+                  simColor: step.sun_color_rgb
+                });
+              }
             }
           }
           activeSpeed = speed;
@@ -11588,15 +11697,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Label using same pill style as sim-time bar (tl-seg-label-bg)
           const label = document.createElement('span');
-          label.className = 'tl-seg-label-bg';
 
           // Build label text based on available space
           // HOLD labels only shown if segment is wide enough (≥8%), matching ultra bar behaviour
           if (seg.isNight) {
-            // Dark pill for night: white text on almost-black background
-            label.style.background = 'rgba(20,20,40,0.9)';
-            label.style.border = '1px solid rgba(255,255,255,0.2)';
-            label.style.color = '#fff';
+            // Night pill: match the speed bar's night overlay style exactly
+            // Do NOT use tl-seg-label-bg class (white background) for night labels
+            label.style.cssText = 'background:rgba(20,20,40,0.9);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:1px 8px;color:#fff;font-size:inherit;font-weight:600;white-space:nowrap;pointer-events:none;font-family:inherit;display:inline-block;position:relative;z-index:100;';
             if (widthPct >= 8) {
               label.textContent = '☽ Night (' + durStr + ')';
             } else if (widthPct > 2) {
@@ -11605,23 +11712,37 @@ https://github.com/odeepllama/SolarSim/tree/main
               label.textContent = '';
             }
           } else if (seg.isHold) {
+            label.className = 'tl-seg-label-bg';
             if (widthPct >= 8) {
               label.textContent = 'HOLD ' + durStr;
             } else {
               label.textContent = ''; // too narrow — tooltip only
             }
           } else if (widthPct > 10) {
+            label.className = 'tl-seg-label-bg';
             label.textContent = seg.speedLabel + ' (' + durStr + ')';
           } else if (widthPct > 2) {
+            label.className = 'tl-seg-label-bg';
             label.textContent = seg.speedLabel;
           } else {
+            label.className = 'tl-seg-label-bg';
             label.textContent = '';
           }
 
           // Position label at fixed 40% from top of strip (matches ultra-bar)
           // Centered on the segment's midpoint
           const segCenter = cumulativePct + widthPct / 2;
-          label.setAttribute('style', `position:absolute !important; z-index:100 !important; left:${segCenter}% !important; top:40% !important; transform:translate(-50%,-50%) !important;`);
+          // For night labels, merge positioning with existing cssText (dark pill style)
+          // For other labels, setAttribute is fine since tl-seg-label-bg class handles appearance
+          if (seg.isNight) {
+            label.style.position = 'absolute';
+            label.style.zIndex = '100';
+            label.style.left = segCenter + '%';
+            label.style.top = '40%';
+            label.style.transform = 'translate(-50%,-50%)';
+          } else {
+            label.setAttribute('style', `position:absolute !important; z-index:100 !important; left:${segCenter}% !important; top:40% !important; transform:translate(-50%,-50%) !important;`);
+          }
 
           // Tooltip — always present with full info (especially useful for narrow HOLD segments)
           const intensityStr = programSteps[seg.stepIndex] ? (programSteps[seg.stepIndex].intensity_scale != null ? programSteps[seg.stepIndex].intensity_scale : 1.0) : '?';
@@ -11680,13 +11801,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           let cumPct = 0;
           let firstDaySeen = false;
           let lastDayEndPct = 0;
+          let hasLastStepNight = false;
           segments.forEach(seg => {
             if (seg.isJump || seg.realSeconds <= 0) return;
             const wPct = (seg.realSeconds / totalRealSeconds) * 100;
             if (seg.isNight) {
               // ☽ at start of night (but not at the very beginning of the bar)
               if (cumPct > 0.5) mkMoon(cumPct);
-              mkSun(cumPct + wPct);
+              // ☀️ at end of night — but NOT for the trailing night of a repeating last step
+              // (the bar ends there; no dawn follows within this cycle)
+              if (!seg.isLastStepNight) {
+                mkSun(cumPct + wPct);
+              } else {
+                hasLastStepNight = true;
+              }
             } else {
               // Track first sunrise and last sunset positions
               if (!firstDaySeen) {
@@ -11697,7 +11825,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             cumPct += wPct;
           });
           // ☽ at end of last daytime segment (final sunset)
-          if (firstDaySeen && lastDayEndPct > 0 && lastDayEndPct < 100.1) {
+          // Skip if the per-segment loop already placed one at the night boundary
+          if (firstDaySeen && lastDayEndPct > 0 && lastDayEndPct < 100.1 && !hasLastStepNight) {
             mkMoon(lastDayEndPct);
           }
 
@@ -11723,8 +11852,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               nightOv.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #2d2d5e 100%)';
               nightOv.style.opacity = '0.75';
               bar.appendChild(nightOv);
-              // ☀️ marker at end of pre-sunrise night, ☽ at start
-              mkMoon(0);
+              // ☀️ marker at end of pre-sunrise night (dawn)
+              // No ☽ at position 0 — the dark overlay already indicates night;
+              // ☽ should only mark sunset transitions
               mkSun(preSunrisePct);
             } else if (firstDaySeen) {
               // No pre-sunrise night, ☀️ at start of clock bar
@@ -11827,22 +11957,24 @@ https://github.com/odeepllama/SolarSim/tree/main
               const stepSimTime = parseHHMM2(programSteps[currentStepIdx].sim_time_hhmm);
               const spd = programSteps[currentStepIdx].speed || 1;
 
-              if (segments[i].isLastStep) {
-                // Last step: compute progress towards estimated end (sunset/sunrise)
-                const stepData = programSteps[currentStepIdx];
-                let totalSimSpan;
-                if (spd > 0) {
-                  const sunset = stepData.sunset != null
-                    ? (Math.floor(stepData.sunset / 100) * 60 + (stepData.sunset % 100))
-                    : 18 * 60;
-                  totalSimSpan = sunset - stepSimTime;
-                  if (totalSimSpan < 0) totalSimSpan += 1440;
-                } else {
-                  const sunrise = stepData.sunrise != null
-                    ? (Math.floor(stepData.sunrise / 100) * 60 + (stepData.sunrise % 100))
-                    : 6 * 60;
-                  totalSimSpan = stepSimTime - sunrise;
-                  if (totalSimSpan < 0) totalSimSpan += 1440;
+              if (segments[i].isLastStep || segments[i].isLastStepNight) {
+                // Last step (may span multiple segments: daytime + night + dawn)
+                // Compute total real seconds across ALL segments belonging to this step
+                let totalLastStepRealSec = 0;
+                let lastStepStartSegIdx = -1;
+                for (let si = 0; si < segments.length; si++) {
+                  if (segments[si].stepIndex === currentStepIdx && (segments[si].isLastStep || segments[si].isLastStepNight)) {
+                    if (lastStepStartSegIdx < 0) lastStepStartSegIdx = si;
+                    totalLastStepRealSec += segments[si].realSeconds;
+                  }
+                }
+                // Compute how many real seconds into the last-step group we are
+                // using sim time progress across the full span
+                let totalSimSpan = 0;
+                for (let si = 0; si < segments.length; si++) {
+                  if (segments[si].stepIndex === currentStepIdx && (segments[si].isLastStep || segments[si].isLastStepNight)) {
+                    totalSimSpan += segments[si].realSeconds * Math.abs(spd) / 60; // sim-minutes
+                  }
                 }
                 let progress;
                 if (spd > 0) {
@@ -11852,7 +11984,32 @@ https://github.com/odeepllama/SolarSim/tree/main
                   progress = stepSimTime - simTimeMinutes;
                   if (progress < 0) progress += 1440;
                 }
-                currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                // Race-condition guard: if step index updated before sim-time tile,
+                // the wrap gives a falsely huge progress. Detect and clamp to 0.
+                if (progress > totalSimSpan && (1440 - progress) < 60) {
+                  progress = 0;
+                }
+                const overallProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                // Map overall progress back to position within the segment group
+                const progressRealSec = overallProgress * totalLastStepRealSec;
+                // Find which segment we're in and compute local progress
+                let cumGroupSec = 0;
+                for (let si = lastStepStartSegIdx; si < segments.length; si++) {
+                  if (segments[si].stepIndex !== currentStepIdx) break;
+                  if (!(segments[si].isLastStep || segments[si].isLastStepNight)) break;
+                  if (cumGroupSec + segments[si].realSeconds >= progressRealSec) {
+                    // We're in this segment
+                    foundSegIdx = si;
+                    currentSegRealSec = segments[si].realSeconds;
+                    completedRealSec = 0;
+                    for (let sj = 0; sj < si; sj++) completedRealSec += segments[sj].realSeconds;
+                    currentSegProgress = currentSegRealSec > 0
+                      ? Math.min(1, (progressRealSec - cumGroupSec) / currentSegRealSec)
+                      : 0;
+                    break;
+                  }
+                  cumGroupSec += segments[si].realSeconds;
+                }
               } else {
                 // Non-last step: compute progress towards next step's sim time
                 const nextIdx = currentStepIdx + 1;
@@ -11876,6 +12033,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                     }
                     let progress = simTimeMinutes - stepSimTime;
                     if (progress < 0) progress += 1440;
+                    // Race-condition guard: step index ahead of sim-time tile
+                    if (progress > totalSimSpan && (1440 - progress) < 60) progress = 0;
                     currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
                   } else {
                     if (isCrossDay && programSteps[currentStepIdx].sunrise != null) {
@@ -11889,6 +12048,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                     }
                     let progress = stepSimTime - simTimeMinutes;
                     if (progress < 0) progress += 1440;
+                    // Race-condition guard: step index ahead of sim-time tile
+                    if (progress > totalSimSpan && (1440 - progress) < 60) progress = 0;
                     currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
                   }
                 }
@@ -11953,6 +12114,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           playhead.dataset.clockPct = posPct;
           playhead.dataset.clockRate = pctPerSec;
           playhead.dataset.clockTs = interpTs;
+          // Clamp at segment end so the fast loop can't overshoot into next segment
+          const segEndPct = ((completedRealSec + currentSegRealSec) / totalRealSeconds) * 100;
+          playhead.dataset.clockMaxPct = Math.min(100, segEndPct);
           playhead.dataset.clockBar = '1'; // Flag to distinguish from sim-time playheads
           bar.appendChild(playhead);
         });
@@ -13789,7 +13953,10 @@ https://github.com/odeepllama/SolarSim/tree/main
               const ts = parseFloat(ph.dataset.clockTs);
               if (isNaN(basePct) || isNaN(rate) || isNaN(ts) || rate <= 0) return;
               const elapsed = (now - ts) / 1000;
-              const newPct = Math.min(100, Math.max(0, basePct + rate * elapsed));
+              // Clamp to segment end (clockMaxPct) to prevent overshooting into next segment
+              const maxPct = parseFloat(ph.dataset.clockMaxPct);
+              const ceiling = (!isNaN(maxPct) && maxPct > 0) ? maxPct : 100;
+              const newPct = Math.min(ceiling, Math.max(0, basePct + rate * elapsed));
               ph.style.left = newPct + '%';
             } else if (simInterpMin !== null) {
               // Sim-time playhead: use interpolated sim minutes
