@@ -1,0 +1,19 @@
+NOTE = "Test: Reverse multi-day. Starts on Day 2 at 1800 with -600 speed, forward from 0600. Day 1 continues forward."
+START_TIME_HHMM = 1800
+TIME_SCALE = 1
+INTENSITY_SCALE = 0.5
+SOLAR_MODE = "CUSTOM"
+CUSTOM_SUNRISE_HHMM = 0600
+CUSTOM_SUNSET_HHMM = 1800
+SUN_COLOR_MODE = "BLUE"
+DUAL_SUN_ENABLED = False
+SIMULATION_DATE = 20250320
+LATITUDE = 0
+PROGRAM_ENABLED = True
+PROGRAM_REPEATS = -1
+PROGRAM_STEPS = [
+  {"sim_time_hhmm": 1800, "speed": -600, "intensity_scale": 0.5, "day": 2, "sunrise": 600, "sunset": 1800},
+  {"sim_time_hhmm": 600, "speed": 600, "intensity_scale": 0.3, "day": 2},
+  {"sim_time_hhmm": 700, "speed": 600, "intensity_scale": 0.3, "day": 1, "sunrise": 530, "sunset": 1900},
+  {"sim_time_hhmm": 1200, "speed": 600, "intensity_scale": 0.3, "day": 1}
+]
