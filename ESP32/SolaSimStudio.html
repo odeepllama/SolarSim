@@ -400,8 +400,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .program-steps-table td.sim-time-cell input[data-f='sim_time_hhmm'] {
-      width: 58px;
-      padding: 4px 0px 4px 22px;
+      width: 68px;
+      padding: 4px 4px 4px 26px;
       line-height: 1.25;
       height: 30px;
       font-size: 17px;
@@ -426,7 +426,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       .program-steps-table th,
       .program-steps-table td {
-        padding: 4px 4px;
+        padding: 4px 5px;
       }
 
       .program-steps-table button.row-act {
@@ -444,12 +444,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       .program-steps-table th:last-child,
       .program-steps-table td:last-child {
         white-space: nowrap;
-        min-width: 170px;
-      }
-
-      .program-steps-table input[data-f='sunrise'],
-      .program-steps-table input[data-f='sunset'] {
-        width: 50px !important;
+        min-width: 130px;
       }
 
       /* Shrink Speed, Intensity, Hold, Repeat inputs by 10% */
@@ -5340,7 +5335,7 @@ https://github.com/odeepllama/SolarSim/tree/main
                   id="recalcDaysBtn" type="button" title="Recalculate day numbers from time sequence"
                   style="background:none;border:none;cursor:pointer;padding:0;margin:0;font-size:20px;line-height:1;opacity:0.65"
                   onclick="if(window.__recalcDays)window.__recalcDays()">🔄</button></span></th>
-            <th style="max-width:78px" title="Simulation time in 24hr HHMM format (0000–2359)">Sim Time</th>
+            <th style="max-width:90px" title="Simulation time in 24hr HHMM format (0000–2359)">Sim Time</th>
             <th title="Time scale multiplier (e.g. 1, 2, −1). Negative = reverse. 0 = hold.">Speed</th>
             <th title="Light intensity (0.0–1.0). Leave empty for global setting.">Intensity</th>
             <th title="Per-step sun color (R, G, B: 0–255 each)">Sun Color</th>
@@ -8237,7 +8232,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     </select>`));
           // Hold minutes cell - highlight only if hold_minutes > 0 AND speed is 0
           const holdBg = (step.speed === 0 && step.hold_minutes && step.hold_minutes > 0) ? '#f08080' : '';
-          tr.appendChild(mkCell(`<input data-f='hold_minutes' type='number' min='0' value='${step.hold_minutes ?? ''}' style='width:45px'/>`, holdBg, holdBg ? '700' : ''));
+          tr.appendChild(mkCell(`<input data-f='hold_minutes' type='number' min='0' value='${step.hold_minutes ?? ''}' style='width:65px'/>`, holdBg, holdBg ? '700' : ''));
           // Repeat cell - highlight if value is present
           const repBg = (step.repeat && step.repeat > 0) ? '#ffc107' : '';
           tr.appendChild(mkCell(`<input data-f='repeat' type='number' min='0' value='${step.repeat ?? ''}' style='width:55px'/>`, repBg, repBg ? '700' : ''));
