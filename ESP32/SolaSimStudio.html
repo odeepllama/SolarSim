@@ -4567,7 +4567,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             <p>Program steps allow you to automate sun simulation and device actions over time. Each row in the table
               represents a step with specific parameters:</p>
             <ul>
-              <li><code>sim_time_hhmm</code>: Target simulation time (HHMM, 24-hour format)</li>
+              <li><code>sim_time_hhmm</code>: Target simulation time shown in the <strong>Sim Time</strong> column
+                (HHMM, 24-hour format). This is the simulated hour of the day, not wall-clock time.</li>
               <li><code>transition</code>: <strong>RUN</strong> (advance time) or <strong>JUMP</strong> (instant move,
                 no duration)</li>
               <li><code>speed</code>: Time scale (negative = reverse, 0 = hold). Leave empty to keep current speed.</li>
@@ -4597,6 +4598,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                 bars for each day.</li>
               <li>Check <strong>Visualize all steps on a single day</strong> to flatten everything onto one bar
                 (useful for comparing step timing across days).</li>
+              <li>Click the <strong>🔄</strong> icon in the <strong>Day</strong> column header to recalculate all day
+                numbers from the time sequence. This is useful after duplicating or deleting steps that disrupted day
+                assignments. The action is undoable (Ctrl+Z / ⌘Z).</li>
             </ul>
             <p><strong>Step and Day Navigation:</strong></p>
             <ul>
@@ -4641,11 +4645,15 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><strong>Markers:</strong> ⚡ (JUMP transitions), hatched bars (HOLD segments), ↺ (day wrap/new day).
               </li>
               <li><strong>☀️ and ☽ Icons:</strong> When <strong>Per-Step Day Length</strong> is enabled, sun (☀️)
-                and moon (☽) markers appear on the timeline to indicate sunrise and sunset positions. These help you
-                visually confirm where daytime begins and ends for each day.</li>
+                and moon (☽) markers appear on the timeline to indicate sunrise and sunset positions. These are
+                visual indicators — to adjust sunrise or sunset times, edit the values directly in the step table's
+                Sunrise/Sunset columns, or drag segment borders on the speed bar beneath the markers.</li>
               <li><strong>Night Overlays:</strong> Dark shaded regions on the timeline represent nighttime — periods
                 before sunrise or after sunset where the simulated sun is below the horizon and no light is produced.
                 These overlays appear on both the sim-time and clock-time bars.</li>
+              <li><strong>Hide Final Night:</strong> Check <strong>Hide final night on clock bar</strong> to remove the
+                trailing night segment from the clock-time bar. This reduces visual clutter when the final night period
+                is not relevant to your experiment planning.</li>
               <li><strong>Multi-Day Layout:</strong> Programs spanning multiple days are displayed as separate bars
                 (Day 1, Day 2, etc.) with a shared time axis for easy comparison. Each day shows its own sunrise,
                 sunset, and night overlay based on its steps' sunrise/sunset values.</li>
@@ -5298,8 +5306,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           <tr>
             <th style="width:22px" title="Drag to reorder">⠿</th>
             <th title="Step number (auto-assigned)">Step</th>
-            <th title="Day number (auto-assigned from time sequence)">Day</th>
-            <th style="max-width:90px" title="Simulation time in 24hr HHMM format (0000–2359)">Time</th>
+            <th title="Day number (auto-assigned from time sequence)"><span
+                style="display:inline-flex;align-items:center;justify-content:center;gap:4px">Day <button
+                  id="recalcDaysBtn" type="button" title="Recalculate day numbers from time sequence"
+                  style="background:none;border:none;cursor:pointer;padding:0;margin:0;font-size:20px;line-height:1;opacity:0.65"
+                  onclick="if(window.__recalcDays)window.__recalcDays()">🔄</button></span></th>
+            <th style="max-width:90px" title="Simulation time in 24hr HHMM format (0000–2359)">Sim Time</th>
             <th title="Time scale multiplier (e.g. 1, 2, −1). Negative = reverse. 0 = hold.">Speed</th>
             <th title="Light intensity (0.0–1.0). Leave empty for global setting.">Intensity</th>
             <th title="Per-step sun color (R, G, B: 0–255 each)">Sun Color</th>
@@ -5629,7 +5641,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li>Click <strong>Add Step</strong> to create a new sequence.</li>
               <li>For each step, define:
                 <ul>
-                  <li><strong>Time</strong>: When this step targets (e.g., <code>1200</code>).</li>
+                  <li><strong>Sim Time</strong>: When this step targets (e.g., <code>1200</code>). This is the simulated
+                    hour of the day, not wall-clock time.</li>
                   <li><strong>Transition</strong>: <code>RUN</code> (simulate time passing) or <code>JUMP</code> (skip
                     instantly).</li>
                   <li><strong>Speed/Intensity</strong>: The conditions during this step.</li>
@@ -6101,7 +6114,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideProgramTimeline: 'Program Step Timeline Visualization',
           guideProgramTimelineDesc: 'The timeline visualizes your program as a color-coded strip. Each segment\u2019s <strong>color reflects the sun color</strong>, <strong>opacity shows intensity</strong>, and <strong>height indicates speed</strong> \u2014 giving an at-a-glance view of the entire experiment. Drag segment edges to adjust timing. Use the <strong>Sim / Clock / Both</strong> toggle to switch between simulation time and clock time. When <strong>Per-Step Day Length</strong> is enabled, \u2600\ufe0f and \u263d markers show sunrise/sunset positions, and dark overlays indicate nighttime periods. Multi-day programs display separate bars for each day.',
           guideProgramSteps: 'Program Step Editing',
-          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step can have different speeds, intensities, sun colors, and transition behaviors (RUN, JUMP, or HOLD). Enable <strong>Per-Step Day Length</strong> to set custom sunrise/sunset times per step for CUSTOM solar mode. The <strong>intensity cell</strong> previews the sun color at the step\u2019s opacity, and the <strong>speed cell</strong> uses blue (forward) or red (reverse) shading. Nighttime steps have greyed-out intensity and sun color cells. The effective sunrise and sunset for each day are highlighted in <strong style="background:#fff9c4;padding:0 3px">yellow</strong> and <strong style="background:#1a237e;color:#fff;padding:0 3px">blue</strong> respectively.',
+          guideProgramStepsDesc: 'Add, edit, and organize program steps. Each step defines a <strong>Sim Time</strong> (simulated hour, not wall-clock), speed, intensity, sun color, and transition (RUN, JUMP, or HOLD). Enable <strong>Per-Step Day Length</strong> to set custom sunrise/sunset times per step for CUSTOM solar mode. The <strong>intensity cell</strong> previews the sun color at the step\u2019s opacity, and the <strong>speed cell</strong> uses blue (forward) or red (reverse) shading. Nighttime steps have greyed-out intensity and sun color cells. Click <strong>🔄</strong> in the Day header to recalculate day numbers from the time sequence. Check <strong>Hide final night on clock bar</strong> to remove the trailing night from the clock bar.',
           guideProfileTextWindow: 'Profile Text Window',
           guideProfileTextWindowDesc: 'View and edit the raw profile text. Advanced users can directly modify parameters here before uploading to the device.',
           guideRecentProfiles: 'Recent Profiles',
@@ -9150,6 +9163,25 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', sun_color_rgb: inheritedColor || [0, 0, 255], intensity_scale: 1, sunrise: inheritedRise, sunset: inheritedSet });
         });
+
+        // Recalculate day numbers: clear all manual overrides so auto-detection runs fresh
+        window.__recalcDays = function () {
+          if (!programSteps || programSteps.length === 0) return;
+          // Save undo snapshot
+          if (typeof createAppStateSnapshot === 'function' && typeof undoBuffer !== 'undefined') {
+            undoBuffer.push(createAppStateSnapshot());
+            if (undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE) undoBuffer.shift();
+            redoBuffer.length = 0;
+            try { localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer)); } catch (_) { }
+          }
+          // Clear all manual day assignments so auto-detection takes over
+          programSteps.forEach(s => { delete s.day; });
+          renderProgramSteps();
+          updatePreview(true);
+          if (typeof renderTimelineStrip === 'function') {
+            try { renderTimelineStrip(); } catch (_) { }
+          }
+        };
 
         // Single-day visualization checkbox
         document.getElementById('singleDayVisualization')?.addEventListener('change', (e) => {
@@ -14991,7 +15023,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         let html = '<table class="print-steps-table">';
         html += '<thead><tr>';
-        html += '<th>#</th><th>Day</th><th>Time</th><th>Speed</th><th>Intensity</th>';
+        html += '<th>#</th><th>Day</th><th>Sim Time</th><th>Speed</th><th>Intensity</th>';
         html += '<th>Dual Sun</th><th>Sun Color</th><th>Trans</th><th>Hold</th><th>Repeat</th>';
         html += '</tr></thead><tbody>';
 
