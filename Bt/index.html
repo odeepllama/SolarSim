@@ -168,6 +168,21 @@ https://github.com/odeepllama/SolarSim/tree/main
       letter-spacing: 0.01em;
     }
 
+    #appTitle {
+      display: flex;
+      align-items: center;
+      gap: 0.15em;
+      margin: 12px 0 0.25em 0;
+    }
+
+    #appTitle .logo-img {
+      height: 1.67em;
+      width: auto;
+      vertical-align: middle;
+      margin-top: -0.11em;
+      margin-bottom: -0.11em;
+    }
+
     #appTitle.jp-heading {
       font-size: 1.55rem !important;
     }
@@ -4117,16 +4132,38 @@ https://github.com/odeepllama/SolarSim/tree/main
           </div>
 
           <h4>Timeline Visualization</h4>
-          <p>Visual preview of your program sequence with color-coded steps. <button class="help-expand-btn"
-              onclick="toggleHelpDetail(this)">Learn more ▼</button></p>
+          <p>Visual preview of your program sequence using the Ultra Bar — a color-coded strip that encodes
+            three dimensions at once. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more
+              ▼</button></p>
           <div class="help-detail" style="display:none;">
-            <p>The timeline provides a graphical overview of your program steps, showing how simulated time and device
-              actions progress:</p>
+            <p>The timeline provides an at-a-glance graphical overview of your entire experiment:</p>
             <ul>
-              <li><strong>Color Legend:</strong> Blue ≤1x, Green ≤2x, Yellow ≤6x, Orange 7x+. Saturation indicates
-                intensity (pale = low, vibrant = high).</li>
+              <li><strong>Ultra Bar Encoding:</strong> Each segment's <strong>color</strong> reflects the step's sun
+                color,
+                <strong>opacity</strong> shows intensity (faint = low, solid = full), and <strong>height</strong>
+                indicates
+                speed (taller = faster). This lets you see color, brightness, and speed simultaneously.
+              </li>
+              <li><strong>Sim / Clock / Both Toggle:</strong> Switch the timeline axis between <strong>Sim</strong>
+                (simulated hours of the day), <strong>Clock</strong> (real-world wall-clock duration of the experiment),
+                or show <strong>Both</strong> bars together. The clock-time bar is especially useful for planning how
+                long
+                your experiment will actually take.</li>
               <li><strong>Markers:</strong> ⚡ (JUMP transitions), hatched bars (HOLD segments), ↺ (day wrap/new day).
               </li>
+              <li><strong>☀️ and ☽ Icons:</strong> When <strong>Per-Step Day Length</strong> is enabled, sun (☀️)
+                and moon (☽) markers appear on the timeline to indicate sunrise and sunset positions. These are
+                visual indicators — to adjust sunrise or sunset times, edit the values directly in the step table's
+                Sunrise/Sunset columns, or drag segment borders on the speed bar beneath the markers.</li>
+              <li><strong>Night Overlays:</strong> Dark shaded regions on the timeline represent nighttime — periods
+                before sunrise or after sunset where the simulated sun is below the horizon and no light is produced.
+                These overlays appear on both the sim-time and clock-time bars.</li>
+              <li><strong>Hide Final Night:</strong> Check <strong>Hide final night on clock bar</strong> to remove the
+                trailing night segment from the clock-time bar. This reduces visual clutter when the final night period
+                is not relevant to your experiment planning.</li>
+              <li><strong>Multi-Day Layout:</strong> Programs spanning multiple days are displayed as separate bars
+                (Day 1, Day 2, etc.) with a shared time axis for easy comparison. Each day shows its own sunrise,
+                sunset, and night overlay based on its steps' sunrise/sunset values.</li>
               <li><strong>Step Navigation:</strong> Use navigation buttons to move the playhead between steps and days
                 for focused editing and review.</li>
               <li><strong>Drag to Edit:</strong> Drag segment boundaries or entire segments to adjust timing and order
@@ -4738,7 +4775,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           <tr>
             <th style="width:32px" title="Drag to reorder">⠿</th>
             <th title="Step number (auto-assigned)">Step</th>
-            <th title="Day number (auto-assigned from time sequence)">Day</th>
+            <th title="Day number (auto-assigned from time sequence)"><span
+                style="display:inline-flex;align-items:center;justify-content:center;gap:4px">Day <button
+                  id="recalcDaysBtn" type="button" title="Recalculate day numbers from time sequence"
+                  style="background:none;border:none;cursor:pointer;padding:0;margin:0;font-size:20px;line-height:1;opacity:0.65"
+                  onclick="if(window.__recalcDays)window.__recalcDays()">🔄</button></span></th>
             <th title="Simulation time in 24hr HHMM format (0000–2359)">Time (sim, hhmm)</th>
             <th title="Time scale multiplier (e.g. 1, 2, −1). Negative = reverse. 0 = hold.">Speed</th>
             <th title="Light intensity (0.0–1.0). Leave empty for global setting.">Intensity</th>
@@ -5394,6 +5435,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       // ============================================================================
 
 
+      const SOLASIM_LOGO_B64 = '/9j/4AAQSkZJRgABAgCeF53+AAD/4g0sSUNDX1BST0ZJTEUAAQEAAA0cYXBwbAIQAABtbnRyUkdCIFhZWiAH6gACABkACAAiACphY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFkZXNjAAABUAAAAGJkc2NtAAABtAAAAfhjcHJ0AAADrAAAACN3dHB0AAAD0AAAABRyWFlaAAAD5AAAABRnWFlaAAAD+AAAABRiWFlaAAAEDAAAABRyVFJDAAAEIAAACAxhYXJnAAAMLAAAACB2Y2d0AAAMTAAAADBuZGluAAAMfAAAAD5tbW9kAAAMvAAAACh2Y2dwAAAM5AAAADhiVFJDAAAEIAAACAxnVFJDAAAEIAAACAxhYWJnAAAMLAAAACBhYWdnAAAMLAAAACBkZXNjAAAAAAAAAAhEaXNwbGF5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbWx1YwAAAAAAAAAnAAAADGhySFIAAAAUAAAB5GtvS1IAAAAUAAAB5G5iTk8AAAAUAAAB5GlkAAAAAAAUAAAB5Gh1SFUAAAAUAAAB5GNzQ1oAAAAUAAAB5HNsU0kAAAAUAAAB5GRhREsAAAAUAAAB5G5sTkwAAAAUAAAB5GZpRkkAAAAUAAAB5Gl0SVQAAAAUAAAB5GVzRVMAAAAUAAAB5HJvUk8AAAAUAAAB5GZyQ0EAAAAUAAAB5GFyAAAAAAAUAAAB5HVrVUEAAAAUAAAB5GhlSUwAAAAUAAAB5HpoVFcAAAAUAAAB5HZpVk4AAAAUAAAB5HNrU0sAAAAUAAAB5HpoQ04AAAAUAAAB5HJ1UlUAAAAUAAAB5GVuR0IAAAAUAAAB5GZyRlIAAAAUAAAB5G1zAAAAAAAUAAAB5GhpSU4AAAAUAAAB5HRoVEgAAAAUAAAB5GNhRVMAAAAUAAAB5GVuQVUAAAAUAAAB5GVzWEwAAAAUAAAB5GRlREUAAAAUAAAB5GVuVVMAAAAUAAAB5HB0QlIAAAAUAAAB5HBsUEwAAAAUAAAB5GVsR1IAAAAUAAAB5HN2U0UAAAAUAAAB5HRyVFIAAAAUAAAB5HB0UFQAAAAUAAAB5GphSlAAAAAUAAAB5ABQAEgATAAgADMAMgA4AFAANgBWdGV4dAAAAABDb3B5cmlnaHQgQXBwbGUgSW5jLiwgMjAyNgAAWFlaIAAAAAAAAPPYAAEAAAABFghYWVogAAAAAAAAg3IAADtSAAAAgVhZWiAAAAAAAABLSgAAtbwAAA06WFlaIAAAAAAAACgaAAAO8gAAxXFjdXJ2AAAAAAAABAAAAAAFAAoADwAUABkAHgAjACgALQAyADYAOwBAAEUASgBPAFQAWQBeAGMAaABtAHIAdwB8AIEAhgCLAJAAlQCaAJ8AowCoAK0AsgC3ALwAwQDGAMsA0ADVANsA4ADlAOsA8AD2APsBAQEHAQ0BEwEZAR8BJQErATIBOAE+AUUBTAFSAVkBYAFnAW4BdQF8AYMBiwGSAZoBoQGpAbEBuQHBAckB0QHZAeEB6QHyAfoCAwIMAhQCHQImAi8COAJBAksCVAJdAmcCcQJ6AoQCjgKYAqICrAK2AsECywLVAuAC6wL1AwADCwMWAyEDLQM4A0MDTwNaA2YDcgN+A4oDlgOiA64DugPHA9MD4APsA/kEBgQTBCAELQQ7BEgEVQRjBHEEfgSMBJoEqAS2BMQE0wThBPAE/gUNBRwFKwU6BUkFWAVnBXcFhgWWBaYFtQXFBdUF5QX2BgYGFgYnBjcGSAZZBmoGewaMBp0GrwbABtEG4wb1BwcHGQcrBz0HTwdhB3QHhgeZB6wHvwfSB+UH+AgLCB8IMghGCFoIbgiCCJYIqgi+CNII5wj7CRAJJQk6CU8JZAl5CY8JpAm6Cc8J5Qn7ChEKJwo9ClQKagqBCpgKrgrFCtwK8wsLCyILOQtRC2kLgAuYC7ALyAvhC/kMEgwqDEMMXAx1DI4MpwzADNkM8w0NDSYNQA1aDXQNjg2pDcMN3g34DhMOLg5JDmQOfw6bDrYO0g7uDwkPJQ9BD14Peg+WD7MPzw/sEAkQJhBDEGEQfhCbELkQ1xD1ERMRMRFPEW0RjBGqEckR6BIHEiYSRRJkEoQSoxLDEuMTAxMjE0MTYxODE6QTxRPlFAYUJxRJFGoUixStFM4U8BUSFTQVVhV4FZsVvRXgFgMWJhZJFmwWjxayFtYW+hcdF0EXZReJF64X0hf3GBsYQBhlGIoYrxjVGPoZIBlFGWsZkRm3Gd0aBBoqGlEadxqeGsUa7BsUGzsbYxuKG7Ib2hwCHCocUhx7HKMczBz1HR4dRx1wHZkdwx3sHhYeQB5qHpQevh7pHxMfPh9pH5Qfvx/qIBUgQSBsIJggxCDwIRwhSCF1IaEhziH7IiciVSKCIq8i3SMKIzgjZiOUI8Ij8CQfJE0kfCSrJNolCSU4JWgllyXHJfcmJyZXJocmtyboJxgnSSd6J6sn3CgNKD8ocSiiKNQpBik4KWspnSnQKgIqNSpoKpsqzysCKzYraSudK9EsBSw5LG4soizXLQwtQS12Last4S4WLkwugi63Lu4vJC9aL5Evxy/+MDUwbDCkMNsxEjFKMYIxujHyMioyYzKbMtQzDTNGM38zuDPxNCs0ZTSeNNg1EzVNNYc1wjX9Njc2cjauNuk3JDdgN5w31zgUOFA4jDjIOQU5Qjl/Obw5+To2OnQ6sjrvOy07azuqO+g8JzxlPKQ84z0iPWE9oT3gPiA+YD6gPuA/IT9hP6I/4kAjQGRApkDnQSlBakGsQe5CMEJyQrVC90M6Q31DwEQDREdEikTORRJFVUWaRd5GIkZnRqtG8Ec1R3tHwEgFSEtIkUjXSR1JY0mpSfBKN0p9SsRLDEtTS5pL4kwqTHJMuk0CTUpNk03cTiVObk63TwBPSU+TT91QJ1BxULtRBlFQUZtR5lIxUnxSx1MTU19TqlP2VEJUj1TbVShVdVXCVg9WXFapVvdXRFeSV+BYL1h9WMtZGllpWbhaB1pWWqZa9VtFW5Vb5Vw1XIZc1l0nXXhdyV4aXmxevV8PX2Ffs2AFYFdgqmD8YU9homH1YklinGLwY0Njl2PrZEBklGTpZT1lkmXnZj1mkmboZz1nk2fpaD9olmjsaUNpmmnxakhqn2r3a09rp2v/bFdsr20IbWBtuW4SbmtuxG8eb3hv0XArcIZw4HE6cZVx8HJLcqZzAXNdc7h0FHRwdMx1KHWFdeF2Pnabdvh3VnezeBF4bnjMeSp5iXnnekZ6pXsEe2N7wnwhfIF84X1BfaF+AX5ifsJ/I3+Ef+WAR4CogQqBa4HNgjCCkoL0g1eDuoQdhICE44VHhauGDoZyhteHO4efiASIaYjOiTOJmYn+imSKyoswi5aL/IxjjMqNMY2Yjf+OZo7OjzaPnpAGkG6Q1pE/kaiSEZJ6kuOTTZO2lCCUipT0lV+VyZY0lp+XCpd1l+CYTJi4mSSZkJn8mmia1ZtCm6+cHJyJnPedZJ3SnkCerp8dn4uf+qBpoNihR6G2oiailqMGo3aj5qRWpMelOKWpphqmi6b9p26n4KhSqMSpN6mpqhyqj6sCq3Wr6axcrNCtRK24ri2uoa8Wr4uwALB1sOqxYLHWskuywrM4s660JbSctRO1irYBtnm28Ldot+C4WbjRuUq5wro7urW7LrunvCG8m70VvY++Cr6Evv+/er/1wHDA7MFnwePCX8Lbw1jD1MRRxM7FS8XIxkbGw8dBx7/IPci8yTrJuco4yrfLNsu2zDXMtc01zbXONs62zzfPuNA50LrRPNG+0j/SwdNE08bUSdTL1U7V0dZV1tjXXNfg2GTY6Nls2fHadtr724DcBdyK3RDdlt4c3qLfKd+v4DbgveFE4cziU+Lb42Pj6+Rz5PzlhOYN5pbnH+ep6DLovOlG6dDqW+rl63Dr++yG7RHtnO4o7rTvQO/M8Fjw5fFy8f/yjPMZ86f0NPTC9VD13vZt9vv3ivgZ+Kj5OPnH+lf65/t3/Af8mP0p/br+S/7c/23//3BhcmEAAAAAAAMAAAACZmYAAPKnAAANWQAAE9AAAApbdmNndAAAAAAAAAABAAEAAAAAAAAAAQAAAAEAAAAAAAAAAQAAAAEAAAAAAAAAAQAAbmRpbgAAAAAAAAA2AACvQAAAT0AAAEKAAACvQAAAJwAAAA4AAABQQAAAVEAAAjMzAAIzMwACMzMAAAAAAAAAAG1tb2QAAAAAAABBDAAACQsAAADD118bgAAAAAAAAAAAAAAAAAAAAAB2Y2dwAAAAAAADAAAAAmZmAAMAAAACZmYAAwAAAAJmZgAAAAIzMwAAAAAAAjMzAAAAAAACMzMAAP/+ABBMYXZjNjIuMTEuMTAwAP/bAEMACAoKCwoLDQ0NDQ0NEA8QEBAQEBAQEBAQEBISEhUVFRISEhAQEhIUFBUVFxcXFRUVFRcXGRkZHh4cHCMjJCsrM//EAKYAAQACAgMBAAAAAAAAAAAAAAAHBgUEAQgCAwEAAgMBAQAAAAAAAAAAAAAAAAQBAwUCBhAAAgEDAgMGAgcGBAQHAQAAAQIDBAARBRIhMQZBYRNRcSIygUJSghShkWJyBxWxIzNDkqLBslPCNOHRJLODFvBzEQACAgECBAUCBAcBAQEAAAABAAIDESEEMRJRQXFhEyIygbGRQqHRI1LBFOEzcvCCYv/AABEIAGQBFQMBEgACEgADEgD/2gAMAwEAAhEDEQA/AJ/tcMsMq1wjCK6h1J1FDoUAwBLUyg+DF2f/ANH7Qg/NjwFy30Uyul0A4lGqywQHm5rUtVotJh8WrmWMfRXm7nyRBxb+Q7b6400GqdU6ics00rcZJW/twpnu4Ko+io5nldUITsOIjLumVe2hwx0Hcl7lIR1Jc4CVsv8A2jda/wDeFUSMUoKZIhyDze+Q+iKQoPdlrkPRumNO0ZVZEE0+PdUSAF8/oHJB6cfMm04bIDWcvw/dTtvnadTgdBwb5bg/lCxCuMPM9WMEn651DDx/e1U8R7IadfkHCnFz1bxGzhpofxLkq2b5dfsvMFjqLqjQZE/icLTRE4/qqg3dyTRDbu7jn0uX9Wp4arT6qKZQyGGQnPYQpIYeRU8Qb1fQ29w/hywf/di5sCYziR1Cl6lsD7hkLUgDE5fWmalT6rSR1VOSUfsPxIw5ow7CD/53Gf7uJXaGviOditC47mZWB/MKLJwMJGJ4he33ygfIsxkJDIVtvwky/a85FplWsRhlWuWGEVrGUZVrhGEVrERFaxGUVxj1P1j/AAyQ0dCEknX+7I3uSE/VABG5/Pjhe3jYvUbb1BzS0j92Fey7l0HFk64c0HqjWDqsNFqi8KgDbuiEUiFlLIwAAyrYxxFouldRV6ZnWeHHXKypwsnzAS7sx2vNRcYVrlhEVrERFaxERXFPVPWP3NnotPIMw9ss/NYj2qnYZPMngvrYv7fa8/unw7Dqitbdy6R4t31XXtN0df8A1UwDkZWJPfK32RyHe2B33B2g9N1vUMrVEzukBbMlQ+WeVu0R7viPmx4Dv5WrXVO34j69nXuvhQOWIBPTsPFulOMOJUYVmw5PDq2Wr/eJOzbaOjRR2NOxdj9iPaP9RuTdO0HTNKUfdqZFbtlYb5T6u3H5DA7rXjsRxnP8P8qE7bLD7pHw7Np3B7BZjCMeAYnHWPUyf1Wo0MY4nNLOq4/a3fjc7Xo/2u34c+v/AEHJVfWt/l/ReaDoHWFLrMgppU+7VBHtXdujlxz2NwOe3aR6E3SOuKKLSq+jrqRRC8hZyE4DxYWUhwByJz7sc8W3dtpVa55o9ei3tJGyE4S1AH3V67hPTgWm6IjKMhozrfxhfxYo35blVseozeSydCQup2fta4REVrERFaxERWsREVrERFaxEZVrEYRWsREVrlGUfhPMlPDJNIcJGjOx8lUZP4XWerpGi0CvK8yiJ8nkVT+BNgGSAO7ft9boeLB01a7fhJ6+VtZU63qLzMC0tRIFjT6oJxHGO4cB65N5npCJJdfog/0TI4/aWNiv48b24RjTXjsBktW7OKZfQfq50ibJeL3T/sDO+h6PDotEkEYBc4aaTtkkxxPoOSjsF2C8a2w2zMj9B0DUvwgIDH4vatYiIrreua/R6HDumO+VwfChX4nI7T9VQebH5ZNy3VVStOBw7noy1TmIDX8HBdbawun6a1Mjf1qsFAO1Yv8AEf5j2jvPddK0TSKzqnUG1TUc/d92cHIEu08IoweUS/SPby55u3a1epZntHX6rNtkdvD06+Pc9P8ALxdPljjuWmETbLmlwbv0Rpr0OkiWRdslU3jYPMR4xHn1GW+1d+AAGBwAtXdWc9unCOio3Ux5Y+Le82uWGUVrEYZVrlhEVrGUYVrGERWsRGWp9T60NF05pEI8eX+lAP1EcX9EHH1wLh3rPU/4hq7xocx0gMKeRf8AxG/ze37NsUVerMDsNS6e0r5K8njLX6NVk+SPn2U7pc0sdHc6K0f+J6g9ZUDxIqY7zu4+JO3Fc557fjPfi5I09I+lumxJMPekZmkHa00nJPz2p8r43dnpwEI6Z/QKEyb7tO5wPAPVMeaXMe33WY/wq2svjUuu1C8Vo0G498UZ/lI4F5HoWgkMVTqs/GWsdtpPPYGJZvtvn5KLvHs2n/Red3IZjWOEB+rV8r/B6pjoZHiWT7WiiywrWMoitcMoy0frDWm0jT9sLYqKkmOM9qLj3yeqjgO8i4269qGl1lYvowwIB6uSxP8AL8rZ21Xqz14DU/sv7GOKyepaLZ8kfMq24Pux0DhOmtEbXK/w3LCCP+pUN2kZ4ID9Zz2+WTcqdAU6R6S8wHumnfce5MKo+XE/O7txb6MNOJ0Dnbw5tx0AeKoepLy7rW3Hsz1LIUMMdPGkUSLGiKFVVGAoHIC/taRJOpYWOCK1iIyrjPqnqyOijeioXElU/sZ04iDPA4I5y9gUfCeJsXtvtjM889IjXx/wirbaB7Y6lqnUcrdQ9R09BTnekLCEkcRnO6d/RVGPVbt/RvTjaZEayqXFTOuAh5wxnjg/rfm3ly87ZoHobeVh4y/8FXdX+oeWPxj+rVYfUsER2bqa+XU8SyMAFAA4ADA+V8F0UqCygtwUEgFvQdtpIssPu1iIyrWIjCtYyiK1wiIrWIywrWIiK1iIyrWIjCtYyyjitWoRqWn1VLy8aNlU+Tc1PyYC8rfcJck4y6FreJDmiR1enqXTTVGk6hHLtKTUs3uRuHFThkPqMj53OHVPSi6sDVUu1KtRxHJZwOQY9jj6LfI36SQF1ZHaQcjb7g1e2Wsfs5IJhLwXraufUcfu3HTdSptVpUqaZwytzH0kbtRx2MP/ABF9adP1HUen6xmj3RSKds0EgIV8fRkX+TDiOw2rOEq5GMuLvzrrvj16EN0ZCYyHNjKVZ/o9qbrWh9QUeuQ7ojsmUDxYGPvTvH1k8mHzwb86320ypODw7F1WqFgmNPwdjUNC03VJopqunEzxDauWYDGc4ZQQGGeODedvmFs4AiJxlqejCMiCRnD0+ERY1CooVVACqoAAA5AAcALM20E88f8A7tuXiRwM4J8hxRl9XrQ1Ec4Ow8RzB5+vkR3i+leq+NpkBkSj8oyGCGGyUDHB7HgRwUU293jYbXTGRzBB5EXr7fBqZZWwEdV92RhSvYc3FV3POcJDEocR2x1V+U07iyyWkJge7oR2SUMAS4gveeeuMRxBOnXKrXI8KNM+I0ilcdgB4k92L48SJ5klG4AKy7mG1CD2gsR+ANzu7MGuEc88pDGOg4pz1TtjZqMAjJ0Bz4s1RzzE8ADn+jGJCJj55wNT+jkrx9QjVXhokmI8kyFGGTjkuR53oKVsTfyxjP2fmMT+jS3QIryTHXtn7v3hnEzyheIjYLkcicAn8uV+kSKnQIu1FHLjj+fM3fXaLJTA4ROM9WYiuqIiMRDxKJiI57jLBMpnJyS7F/BZkaQxqdzBdxxxAzyyfM+V3NYnEy5QckDLy9GJAyRh0dWrhpun1VUf8KJmXvfkg+bEC6F+8KtMVBT0qnjUS7m/YiGf+Ir+V3wjzzjHqVvZxzYZfyj7tUjyxJaLziIHVi7p2ibU9ZpY39wMnjSk9qp72z+0eHzvb0Wv/hNJV1EPurKnFJSqBllHOSTHqUVPNvnehfL06jjpgPF0fUnGJ+MfdL9lasc8x+LMDygnudA3fqCd+pdZg0WmY+BA++pkXluX4j5f0x7R+trtvS2g/wAGpC8vGqqMPMx4le0Rg92cse1s2pSBRUbZcTpEK99vqy0+I0H7t8z6kxAcBxbaocg14ni22CGOmijhiUIkaqiKOQVRgC/sSFBJIAAySeAA8za5JJJPEsNuMaI83TKnrLQqWTwzUmUg4JhRpFH2lG0/ImxZjtrpDPL+OjLSbYDu3O6fUdX6JTwRTfefEWUkKsaMzjbz3rgFMZ+ljutdvG3tJI5eHVuajbADOW4Xp0dZBX08dRTv4kUgyrYI7iCDxBB4EG6GZRMSYnQhteQQRkMLfvBoXir4KwD2TRCMnykjJ4H1UjHobmHVNNp9WpJKWoGVfiCPiRh8Lr3j8eV6uxmOWUO4OXLhM1yEh2U9xHUFblETGCxb0DrEcfi6bMwUu/i0+eG4kYeP14BgO3jcfavo9boVUI5gcZzDOmQr45FT9Fx2rzF6O9qORYPArtV0L46fUKu3mPj+CvOBrP2L2nuIemutPE2UmqOA3BY6o8A3ks3YD+vke2/POlftDH3V8O8eng6qnXfnSX4stsu9WXJGQRkcCM+R879A5vNRbRpGkdHabpM33jMlVKCTG023EfeFUAbv1HJ8sXeLas3Nlg5dIjoO6q0wpjE54t6tYiIxHoeoCfqevNawEp8SGmD8owkmPDTPAEqOzieN53UND0DWq58VKpVj+6tPNHvbb2shDe4dpAB8707q+XbV8nDjLHmOJaK77qYYxmPbmGijXPN0ubwDbOquyXHXyLf7xun6dBpsHgw7yM5ZpHaSRz5szfgBgDsFpvc5mZycfQYCy8RiIjAcleAqNf0qlrFopapEnYquzDHaW+EMwBVSc8MkXw2xpslHmETjq9tZsiDgnVz917Xdbp9DozPL7nY7YogcGR/LuUc2PYLqbqqjbLlGnU9Ht4nMQGWw314m6v6ihqhJI3hfC4pmhCxlG4ge5fEwRybdm6XbG0olHTXtzZ7tjmm6wHXTyew96lJUCrpoKhRgTRJIB5b1Bx8s3iMkcpI6HDpMA5ALt2uEZRWuWEYVrERlWsZRFaxhhlXhdU1mh0eHxKqULn4IxxkkPkq/7nAHabl7rrnacRH7BHiU4wGriuoOmqXXI93CGpUYjmA5/okH0k/Fey6I+r9RdVO0WnRGjpc7WlDFeH65sZz+iIZ87spvlSese4W/To2+th55dP8AH7vFlYmPPq0c1lvx0DHDpXaHXldzU9RTt8SMD+RHBlYdh5jmLlKXoCKPTpyJ5J63bvRvhj3DiU28Sd3LcxznjeiOS+HUFzRvZc40Aj0VvdXLzC0duOU65LqwdX6/q+ym06jh8cIDLJ8XdvAcqiLn626430nUJNLr4KpCR4bjePrRng6n1XPzvqW2pq1nM47BftgLIEeWjAunPSIGVaEuWQLLSdJavqR3axqsrA8fBiYsB3cQsY+SG5MaPxwGErhSAV2HHPjnvvL/ALiuH+qseJca2g2nWycccBE4wevmuelKXzkfouxljsD4uNo9KTTYYIqV2CwqUHineWXOcEjHLPDuvfQVSnaxjZfr8d2PTlnvvm+mc9x68JRjM6SGPbINcI7uPtJhKP8AP+bHgkJCMOQgkduoeiazqAQenZxFTUZJdsMEbZGv0S4+JyO3HYLw9QxEUeeatKp9dwP8rytxuiZGUsSETywj2MhxkfDso3A8kc9pTB8crVVXADTIzI98dguVfKXmIkeGH4zSNIdzEsfM8b0We1pWTsOZElkBthERGAMN4DtQ1EkTjwztf6OOTH6rDkc8rxoY+ImOe5ceubboslCQ5Tg/ofIh4rHuHir2Vgj3ajv1HmFqQ9ks9C32GGm1ONaiVNxYY2knEZXgQACO3jnnenpcJqKWT+pJGhqJSuxtpI4duM49L9HCuvdRFkxknt2GGrb1epUfdKI5pY5ThwJynt5GETjHcd23cS5LI6AkQiDnVz8FNDTKViRUB4nHb6k8TekkddEdiyRyJ2SSZ8RR3gcG7uN6FdUKhiIwrRhua/aJRnH+aXyH7qUpymcyOW4yqlrymJ6D4n9mEevKrx9Z8Hsp4UT7T+8/gV/K631BIZ9Z1BuZNRIg+ydg/lfp9lHFeep+zfQOWiH/ADlx7zmeOjXZrYfFkjonpwAJqlUuSeNKh7B/ziPM/Q/PyuV6WIQU8MQGBHGiAeW1QLR3d+Sa4/8A0f6OcTkk+axTX+Y/RbGgDs3S+rtZ/hOmsEbE9TmKHHNcj3yfZHL9RFws7er1bB0GpZabZ8kfMsbdYdSyV870NK5FNEdshU/9w458ucangB9I8fK8d0Zpa6jqqvIu6KlHjMDyL5xGD9r3fZt/a0CI55cTw8g97uzkrwOMtPorXWZPKOH3eaY80vBufT3RVMtOKnVE3u67lgJKpEp7X2kEvjiRnC+t5nrbWf4dp/3WJsT1YKcOaRfTbuz8I9T5Wrfu5GWKzgDv3LVtavUnk8I/durpGMye7p8scdywXVrBJXTJRK3hNMyQKTuJUthePM57O67D0fRffdbpsjKwbp2/+P4f9ZW9eBIrBnxxktO7ly1Hz0UTgy066NlIzMeWr2C0uhTTaCnpF/wowpPm3Nm+bEm9isqoqGmlqZjtSJC7H07B3k8B33izlzyMupeYxMiAOJ0dCMeWIDJOASXbuO+j1qaz79q9SWBrpMRpk7VjjyBgf6Qf099wt7jljy1j8g1PmWVerJzI927V1DTajTvT1MayxtzB5g9jKeasOwjjeJ1jqHT9FX+vJulIysEeDI3qOSjvbHda0ZSgcxOC2V0zt+I06ng3ECQwXmdkYcfwYO6h6YqtEkLrmakY+yXHFM/QlA5Hyb4W9eF2V6vqPrDdHTx/dKJuDHisZH65CN0p/Sgx53sUbkW6HSXTr4KwjRttZHnmoWVGGvENxNl3DQOh031hJpSimrfEnpgPYw90sP6RkjcndnK9nC67r+gzaDUxxO/jJIm9JAu0Ejg64yeKnv5EXZuNpz+6GAe47FYouFwJ4EHg8V3cuktQ12Vms9WRm6v1fVmMejaaxHLxZRvx64KxJ9p2vIdB6oaqgejf46Qjb3xPkr/lII9MXn/21Vf+2z6B43lfLZzDhL7rPqzl8I/VnbyzHHRrWraZ1Cmnz1uq6oVVAMU8TH3OxCqp2eHGOJ4/FwvNfvDqilJSUwP92VpG9Il4fi34XdVOn1IwrrznuXjYR98pdB92ucbOUmUvoHvcn2gdWj9F0DVmtQyDIWlBmcj02qv2iePcDd//AHfUgj0+oqSOM820fsRDH/EWtzeSEasfzaBS30s2CP8AKPu0UAmfhqsbcYiT1LJckiwxvIxwqKWY+QUZP4XRutdWXT9LaBT/AFqsGJR2hP8AEf8AL2jva88dFva1+pYD2jqs8Gi6fLHHVhyizrWvJJIdomqWqJCeAWJCZGyfIIuLxdG7gSxwgmapC0yAc8SMNwH7WAnoTerP+Ft8dI4HiW2wDQnhH3H6cFOPvsz55eI9BxOjKmmxt1brkmoTjNDRttp42Htdua5Hf/cf7K8rvdHTQ9OaLt4YpoXlkb68m0sx+bcB3YvLsP8AbUiA+c9ZHoFSUjdbn+Y4Hgtx/iz5j8RwbwBXDwDBPVFT9912sKe7EggQefhgJw9WzddSeTxxNzk8TxAefvLZz3nde1thyUx8Mt/KOTlPDGPooWnmsP4Nedc+bMlfq9aGptA0fjURRRxTzDlFsQBgrcQu36b9nIcbymk6f/8AWdDqq2fjVvE88zHiwbGUiz3Mfd5sTeRCuHuut+JJIHVrsn69sYj45wB/VdlOWkIccano9xj6cCTx4ljHSNW1Kg1iJTUzSZqRDMjSPIkmZNjfET6qed8dJUprdcpt3uERaoc96cRn7ZW9K2qudJIiB7cjTGGd1LkpI64iqQnKM8ZzrhKRzWD8XspeM1Ovi0uimqpeUa5A7XY8FQd7HAvAe4QNkhEd3TeJSEQS5LIOe7n3XRuj6aoWimrakky18xqCD9Xkpx38SP04vha3Mo84hHhAcr000g8pJ/Mct6uq9S62uh0BlXBnkPhwKfrY4sR9VBxPmcDttVvoq9WeOw4t7VZPkjnv2cb1L1VDoymCDbNVsOC80hB5NJjt+qnM9vC6x0h0+ax/4xqGZWdy8Cvx3tnjO+efH4B8/K7KNubTk6R69W/c3AfwoaAccfZ5stENBqWqmvPvl9Hzo/SlVq0v8S1t5G8TDLCxIdx2eJj+2nlGuDjyuZbLNxGsclIx/wDpzUhUZe6f4Lj8ooo4I1jiRY0QYVFAVVHkAOF/W546nVGODLxdR6q1ldI02Qqf684MUC9uSPc/og4+uBcLFFRtmOg1KNNs+SPmeD1xrShqqop8HjTbf2d7Y/C8houmtquo09KoOGcNIfqxLxcn5cB3kXu1/COegeLrBXWT9B4udL5HxeoR5pAPZqhbwtOpTJw200O71EYzeR2jGMcB2el+dtkIc8jwBJTGeLqQBIiPBlx33moPw0r8fhLMoH2vK8lyvO/ub5cNvIZ4Ekfq6B0Grf6cO9g8AC0NV1ChlAMijxAwBlVeYcD40H+15RXmrHQquyBWDbj8Um08MDsXN4e52k9Zgc3NrMDtLqFyM7dzIEDlqBznvLH9HRoujoCeUj4k8COhVjGFYOTmZHDtH/LHrjjwdPtHYR6hsf73IWoeHGiNsjaRpEVQyKxbJ4jiM8u28AV+Y+uj6PcmMBEgDmMgAMDV3xMd4y+mv2fP0gyJ1IABJ14NGpKV53xF7ifb4hyIo888E43vjkByu/ahGpo5htHtRmXA+EgZBHkReTVTnhxOmeAHh1Ls7iI9GWnAZHkXYuuAHu0A15eMpePQONST6kdeJALqS08lDTo1M74gUZiOCrqPiPLO4885vJUjNJTQsxyWjQk+ZxdNlcqYCVcjiHGPYjutUnmqgTrkBsjMWzImBmZ+XcHt9GiwATkB2JfUFRFUIrxurAjPMZHqO6/okUcZJVEUnmQoBPrgXMLYWAGJBy9CEY8AB4BJQlAkSGHkyJ4kl6u6mvga7VCTgFrnZv2fG3Z/y3LvUvRx1eo+90sqRTMAJUkz4cm0YDZUEq2OB4EG/R160Rx/J/RzKNz6Q5ZDI7Y4hypaWHxW7Kec5Ghb3WV1NQUz1M8ipEozu+t5BfrE9gHO4vouhquV4v4pXGWGL4II3kcY+qGfARf2VzjtFqRjKZ5QMlfnu4jPpw5Se+jeSIjJVo0n80sjo0nXJa/WUbWZUKUxmFNToforhjw7OY9zdrHA5X2CqNMo6qiNDJCv3faFEa+0KF+HbjkV5gi26eSo+kNZYzI+bjCcoy5gderRZzT9/bgHQMQRjGjC/SOu6dolHXtUM3jO6FI1UlpQqnAU42j3E5yRi75S9C6NTTCRhPUYOQkzgp8wqru9Dkd16m6pstnDlGmOPRUlu7ZDGQPAaqVM4wjLPFvFEAc6ljTUKas1LT6zX60FTK8UdNHxwsZcDcM/RA9q/WJLXPGoafBqNFLRyjEcibfbgFMcVK9g2kAj0t2uUa7IUw7ZMj1LkwmYSEhxCvIGUTM/RelESGGKP3cxKZtQl+kqQoPRi5P/AAi/nD0NrNNK60+oxRRuNjujTIzJ5Mijj6b8d96O/PwHiUO7rkBzV5I64wqbcfIoKJg6S0crrtW/UmpRaJRMTBG4krZl+EbDxUHlheXe+PK8Bq8sOhRfwLStz1E+0Vc4/uyM/wAMK45ZzyHwqccybqqHoQNsuJ0gG6oG4+tbpEfEdnuZ9SXIOHdrn7ByQ4niXNax1R4GzSNBTe6gQCSMbwuBjZCOIZh2ueA77s3THTMOiQiSQK9XIvvfmIwf8OPuH0j9I911VbfmzZacDjr38Wm+82nTSI4D+r3OzHsh4NldfIPNweidEqjfe9Xb7zOx3mEsWQHzlYnMrd3w+tyndtu6J9tftj17qDxCnvPUrL5VVRQqgKAMAAYAHkAOV+rGUZYw/eHEjaZTSH4kqQF9HjfcPwH5XW+v9UWoqoaCNsinzJLj/muMBfsrz/at7ZH+KR1DfsayAZnvoPBV3HwHi1bieSI9HX/d87DVp1HJqVs/KRMfzN5r93lCQKuuYYDbYIz549z/AI7Rfe+/1x/6ad9PWMOmpY2/yPg97aPGX0cX+8NmOo0in4RTEj1MjZ/kLkDqfpsa9FE0cixVEOdjMCUZW5o2OI4jIIzjyu3YfCfio7e/0SdMg8Xnc/IeCxbX6g8wunpqbTOmqSed1jjWIyux83dmx3k5wBzJupUPQ9c5ij1Kt3UsRytPE8jA+YG4KqA9pAJ8sXF4lPcSAGTnC1Pdx1NcMSP5jhK8RqBPRqjRLTmloOzQteranVqgahKpSKYvHSoeyGI4z82PE9rZxyuU+pukpdTNK1C0MIgi8DwnyqBAcrtKq3LJyMcbd28Y1jkGpGsj5ns5u33Iq5uYE51yr2EyPN2PBatp58cuBhp3Qemfe9QescZSkHt8jK4IH+Vcn1xct9P6QNF0+OmyryZLyuvJnbyzxwBhRnytve2YgID83Hwcy6z1ZmX4DyadvHMs9FuuHJHDg+uqh4NEZUziaaOJz5LxY/mVA+d3iaGKojaOWNJUbmjqGU+oORd2ziDcPIEqgJGoOHi84h4t+M8Xr/0VpA1HUfvEgzFR7ZCOxpT/AG1PpgsfQXPdNSU1GhSnhigUnJWNFQE+ZCgcb2t5byQ5Rxl9nGMpSOSSfFz6Ic0s9gvgAcBhp/XEzRaHKB/iSwxn03bv+m7Hq+mR6vQy0kh27wCrgZ2OpyrY7ePMdotrZjN0fIEtFdhqmJDs03n+GW2ceeJDGf7vIEzX1RwCojiBPYvF2/kPyvXp+htXQvEa+KGCTAl8JpT4ijzjwqn7Rxehv5awj4lmW8qOD6ZMhwzjRV2w+RYFEx+bAclVyt1frCUkJJ06ibfPIPhmbuPfxVO7c1yLpmmU2k0qU1OuFHFmPxO3azHtJ/IchdUR/a1cx/2T4DoFKc5WSMpcfs9n+NPA+I4+axGIgMByaqqqFUAAAAAcAAOQF+rrR6Rgzq8tqXUlJp5bagEEQ7jO2Wb1xj8r3OutLqYqqLVqcNtCosrLzieM5SQ/pPAZ7COPO9bbeyic++v6PG0siYmqXfh5+Sld7rBHwer4nImGYookgjSKNQqRqEVRyCqMAflcR0n7xEEKiqo5GkAwXhZdjnz2tgrny43m8dS6Mtic+2Qx5rfDRUG401DMNwPqPX9fUKUo4UpFP02Piy/LICL+TXmuvDZRGsjzeQ0C4oS3BPAYZW1rXqLRId8zbpGB8OBSPEkP/Svmx4fO4E0/QtY1+YyhZGDn31VQW2/5m9z+i5+V51VUrTiP1PYOxO6qgY0/5C3OYgNfwUIwnYc/qXQrq+u1+v8AEkDSyyHZFDGCQozwjQfzPbzN9gNC6aotDXcn9aoYYedxx/ZQfQXu5ntN9whCiHQDiXGtvncddB2DzIyskvwrjDzPV1ul+nV0SnLy4aqmA8VhxCDmIlPkPpHtPdd1udxd60tPiOH7qyVV8g825WsRGHgjIwe2+bggEYPdllh8IgjVVXgFAA9Bfu+YxEIiI4DQPTJOTk90dCWDfVQS43BA4/ZJ5N/te/as6ua6E+IiCPDzWm2M8QlHrj6+TS8EAjB4g3zZxRlh14IEp12R5C5yFJJC9y55DuvYuuusVjAzjp0bHuUjM5PF4VrERFaxERWsREVrERFaxERWsREdOsqBR0s9Q3EQxSSY89ik4v5alTGsoKqnHOWGWMerKQPxvqI5pAdThmB5ZRPQgsE4BKSGQR5MR9D0P8RrqrVan3vG5257Zpcsz/ZU4H7XdeP6T6gi0J6ijrleNHkyWCkmKRRtYOo92DgcRnBHK9Hdy5Ixqjppr4Nm5pN2Jw10/EKlEeYmRearPTyJM+3S5+s9BhTcKozH6sUchY/5lVR8yLx1qO1ul+XHivtJugO7dLgfV+u6urVoqFDRxngZCQZyO7Htj+WT32q7FWyjHWZ5vLs3KE7yfjo3jqfqqLSUampislYwx5rBn6T/AKvqp8zwuLNG6X1HWnEhDQwE5aolBy+eewHi5P1vh77T2+3NpydI/d0bdzXSMDU9BwDfbaIaDj9lSFUp68B1cRpemVmu1vhR7mZzvmmbJCAn3SOfM9g5k32T0vSqTSKcQUybRzdjxeRvrO3afwHZd1lkKIfoB1cCyyVkuaR/w8RibJfcunGAgMB2KChh06lipYBhIl2jzJ5lj3sck3v3EpGcjI8S8MxiIjAelaxGEeL5sREVrGWWFa4REVrEZYVrlhEVrlhEVrlhlFa5YRhWsZRHyVDAggEEYIPEEHsN+rERlqk/SehVDFmoY1J5+Gzxj/LGyr+F2u7xuLojAmfurNRqgfytrXKbprRaNg0VDBuHJnBkI9PELYux3fK+2XGZaWsVwH5Q2PGMXzYyiK1iMIrXCMorWIwyrXKMIrWIiK1iMorXCMIrWIjLxfNiMIrXKIitcIiK1iIitYiMvF82IwitYjKNQ1rpnTNU3TyxtHMBxlhIRmx9fIKt6kZ77s9R/Zk/ZNsVX2V6A6dC0Di0zrjLUjVsPBgiHpmikqPDMtTjOODR5/8Aau1Uv/efavXO5njhH9f3VT8VL0o57to4tl0/pLRaHbItP4zjBDznxMHuU4T/AE3bl+Eeguqe5tnoZYHlorNkaoDt+LaODzjF82IyitYiIrWIwitcoiK1wiIrWMsorXCMIrXKMo8WuEYZV82IwitYiMq1iMIrWMoj/9k=';
+
       // LANGUAGE TRANSLATION OBJECT (partial, for main nav/monitor/FTUE)
       const TRANSLATIONS = {
         en: {
@@ -5726,7 +5769,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         currentLang = lang;
         localStorage.setItem(LANG_STORAGE_KEY, lang);
         // Main navigation and monitor controls (legacy direct mapping)
-        document.getElementById('appTitle').textContent = TRANSLATIONS[lang].appTitle;
+        document.getElementById('appTitle').innerHTML = '<img class="logo-img" src="data:image/jpeg;base64,' + SOLASIM_LOGO_B64 + '" alt="SolaSim"> Studio - Benchtop Solar Simulator';
         // Adjust monitor/toolbar button size for Japanese
         const monitorBtnIds = [
           'toggleMonitorBtn', 'monitorConnectBtn', 'monitorBTConnectBtn', 'quickEditBtn', 'monitorRefreshBtn', 'monitorDisconnectBtn',
@@ -8188,6 +8231,25 @@ https://github.com/odeepllama/SolarSim/tree/main
           addProgramStep({ sim_time_hhmm: simTime, speed: 1, dual_sun: dualSunEnabled, transition: 'RUN', sun_color_rgb: inheritedColor });
         });
 
+        // Recalculate day numbers: clear all manual overrides so auto-detection runs fresh
+        window.__recalcDays = function () {
+          if (!programSteps || programSteps.length === 0) return;
+          // Save undo snapshot
+          if (typeof createAppStateSnapshot === 'function' && typeof undoBuffer !== 'undefined') {
+            undoBuffer.push(createAppStateSnapshot());
+            if (undoBuffer.length > CONFIG.UNDO_BUFFER_SIZE) undoBuffer.shift();
+            redoBuffer.length = 0;
+            try { localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer)); } catch (_) { }
+          }
+          // Clear all manual day assignments so auto-detection takes over
+          programSteps.forEach(s => { delete s.day; });
+          renderProgramSteps();
+          updatePreview(true);
+          if (typeof renderTimelineStrip === 'function') {
+            try { renderTimelineStrip(); } catch (_) { }
+          }
+        };
+
         // Single-day visualization checkbox
         document.getElementById('singleDayVisualization')?.addEventListener('change', (e) => {
           // Save to localStorage
@@ -10114,7 +10176,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   /* Jump marker — pin above bar with dashed line through it */
   .tl-jump{ position:absolute; top:-30px; bottom:0; width:28px; margin-left:-14px; border-left:none; z-index:70; pointer-events:auto; cursor:default; }
   .tl-jump::before{ content:''; position:absolute; top:28px; bottom:0; left:50%; width:0; border-left:3px dashed #d08000; transform:translateX(-50%); }
-  .tl-jump:after{ content:'⚡'; position:absolute; top:0; left:50%; transform:translateX(-50%); background:#fff3cd; border:3px solid #d08000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.3); pointer-events:none; }
+  .tl-jump:after{ content:attr(data-label); position:absolute; top:0; left:50%; transform:translateX(-50%); background:#fff3cd; border:3px solid #d08000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#d08000; box-shadow:0 2px 6px rgba(0,0,0,0.3); pointer-events:none; }
     /* Axis placed above segments but below jump markers */
     .tl-axis{ position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:25; }
   /* Hour tick lines removed per request */
@@ -10148,6 +10210,10 @@ https://github.com/odeepllama/SolarSim/tree/main
   .tl-seg.dragging{ opacity:0.5; }
   .tl-seg-ghost{ position:absolute; top:0; bottom:0; border:3px solid #ff6600; background:rgba(255,165,0,0.3); z-index:80; pointer-events:none; box-sizing:border-box; }
   .tl-drag-time-label{ position:absolute; top:-25px; background:#333; color:#fff; padding:2px 6px; border-radius:3px; font-size:12px; font-weight:600; z-index:200; pointer-events:none; white-space:nowrap; }
+  .tl-daylength-handle{ position:absolute; top:0; bottom:0; width:24px; cursor:ew-resize; z-index:160; background:transparent; margin-left:-12px; touch-action:none; }
+  .tl-daylength-handle:hover{ background:rgba(245,166,35,0.3); }
+  .tl-daylength-handle.dragging{ background:rgba(245,166,35,0.5); }
+  .tl-daylength-ghost{ position:absolute; top:0; bottom:0; width:3px; margin-left:-1px; background:#f5a623; z-index:170; pointer-events:none; box-shadow:0 0 6px rgba(245,166,35,0.6); }
   `;
         document.head.appendChild(css);
       }
@@ -10501,7 +10567,16 @@ https://github.com/odeepllama/SolarSim/tree/main
        * Segments are sized proportional to their real-world duration.
        */
       function renderClockTimeTimeline(container, isReadOnly) {
-        const { segments, totalRealSeconds } = computeClockTimeSegments();
+        const raw = computeClockTimeSegments();
+        const hideFinalNight = document.getElementById('hideClockFinalNight')?.checked;
+        // Filter out isLastStepNight segments if checkbox is checked
+        const segments = hideFinalNight
+          ? raw.segments.filter(s => !s.isLastStepNight)
+          : raw.segments;
+        // Recalculate total when segments were filtered
+        const totalRealSeconds = hideFinalNight
+          ? segments.reduce((sum, s) => sum + (s.isJump ? 0 : s.realSeconds), 0)
+          : raw.totalRealSeconds;
         if (totalRealSeconds <= 0 || segments.length === 0) return;
 
         // Clock section: matches multi-day layout with 75px label + bar
@@ -10534,12 +10609,17 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (widthPct < 0.1) return; // Skip negligible segments
 
           const div = document.createElement('div');
-          div.className = 'clock-tl-seg' + (seg.isHold ? ' hold-seg' : '') + (seg.speed < 0 ? ' reverse-seg' : '');
+          div.className = 'clock-tl-seg' + (seg.isHold ? ' hold-seg' : '') + (seg.isNight ? ' night-seg' : '') + (seg.speed < 0 ? ' reverse-seg' : '');
           div.style.left = cumulativePct + '%';
           div.style.width = widthPct + '%';
 
           // Ultra bar: sun color + intensity opacity + speed height
-          if (!seg.isHold) {
+          if (seg.isNight) {
+            // Night segments: dark background, full height
+            div.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #2d2d5e 100%)';
+            div.style.height = '100%';
+            div.style.opacity = '0.85';
+          } else if (!seg.isHold) {
             const dc = sunColorToDisplayColor(seg.simColor);
             const stepData = programSteps[seg.stepIndex] || {};
             const rawInt = stepData.intensity_scale;
@@ -10551,6 +10631,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             div.style.height = heightPct + '%';
             div.style.top = 'auto';
             div.style.bottom = '0';
+          } else {
+            // HOLD segments fill full bar height with hatched pattern
+            div.style.height = '100%';
           }
 
           // Store data attributes for playhead calculation
@@ -10559,12 +10642,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           div.dataset.segRealSec = seg.realSeconds;
 
           // Format real duration
-          const durMin = Math.round(seg.realSeconds / 60);
+          const durSec = Math.round(seg.realSeconds);
           let durStr = '';
-          if (durMin >= 60) {
+          if (durSec >= 3600) {
+            const durMin = Math.round(durSec / 60);
             durStr = Math.floor(durMin / 60) + 'h' + (durMin % 60 ? durMin % 60 + 'm' : '');
+          } else if (durSec >= 60) {
+            durStr = Math.round(durSec / 60) + 'm';
           } else {
-            durStr = durMin + 'm';
+            durStr = durSec + 's';
           }
 
           // Direction arrow for reverse segments
@@ -10577,27 +10663,54 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           // Label using same pill style as sim-time bar (tl-seg-label-bg)
           const label = document.createElement('span');
-          label.className = 'tl-seg-label-bg';
 
           // Build label text based on available space
-          // Lower thresholds than before — labels are absolutely positioned in strip,
-          // so they're not clipped by narrow segments (consistent with ultra-bar)
-          if (seg.isHold) {
-            label.textContent = 'HOLD ' + durStr;
+          // HOLD labels only shown if segment is wide enough (≥8%), matching ultra bar behaviour
+          if (seg.isNight) {
+            // Night pill: match the speed bar's night overlay style exactly
+            // Do NOT use tl-seg-label-bg class (white background) for night labels
+            label.style.cssText = 'background:rgba(20,20,40,0.9);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:1px 8px;color:#fff;font-size:inherit;font-weight:600;white-space:nowrap;pointer-events:none;font-family:inherit;display:inline-block;position:relative;z-index:100;';
+            if (widthPct >= 8) {
+              label.textContent = '☽ Night (' + durStr + ')';
+            } else if (widthPct > 2) {
+              label.textContent = '☽';
+            } else {
+              label.textContent = '';
+            }
+          } else if (seg.isHold) {
+            label.className = 'tl-seg-label-bg';
+            if (widthPct >= 8) {
+              label.textContent = 'HOLD ' + durStr;
+            } else {
+              label.textContent = ''; // too narrow — tooltip only
+            }
           } else if (widthPct > 10) {
+            label.className = 'tl-seg-label-bg';
             label.textContent = seg.speedLabel + ' (' + durStr + ')';
           } else if (widthPct > 2) {
+            label.className = 'tl-seg-label-bg';
             label.textContent = seg.speedLabel;
           } else {
+            label.className = 'tl-seg-label-bg';
             label.textContent = '';
           }
 
           // Position label at fixed 40% from top of strip (matches ultra-bar)
           // Centered on the segment's midpoint
           const segCenter = cumulativePct + widthPct / 2;
-          label.setAttribute('style', `position:absolute !important; z-index:100 !important; left:${segCenter}% !important; top:40% !important; transform:translate(-50%,-50%) !important;`);
+          // For night labels, merge positioning with existing cssText (dark pill style)
+          // For other labels, setAttribute is fine since tl-seg-label-bg class handles appearance
+          if (seg.isNight) {
+            label.style.position = 'absolute';
+            label.style.zIndex = '100';
+            label.style.left = segCenter + '%';
+            label.style.top = '40%';
+            label.style.transform = 'translate(-50%,-50%)';
+          } else {
+            label.setAttribute('style', `position:absolute !important; z-index:100 !important; left:${segCenter}% !important; top:40% !important; transform:translate(-50%,-50%) !important;`);
+          }
 
-          // Tooltip
+          // Tooltip — always present with full info (especially useful for narrow HOLD segments)
           const intensityStr = programSteps[seg.stepIndex] ? (programSteps[seg.stepIndex].intensity_scale != null ? programSteps[seg.stepIndex].intensity_scale : 1.0) : '?';
           div.title = `Step ${seg.stepIndex + 1}: ${seg.simLabel}\nSpeed: ${seg.speedLabel}\nIntensity: ${intensityStr}\nReal duration: ${durStr}`;
 
@@ -10633,6 +10746,89 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         clockRow.appendChild(bar);
+
+        // Add ☀️/☽ markers to clock bar at day/night boundaries
+        if (document.getElementById('perStepDayLength')?.checked) {
+          const mkSun = (pct) => {
+            const mk = document.createElement('span');
+            mk.style.cssText = 'position:absolute;top:-18px;display:flex;align-items:center;font-size:25px;pointer-events:none;z-index:55;transform:translateX(-50%);line-height:1;color:#f5a623;';
+            mk.style.left = pct + '%';
+            mk.textContent = '☀️';
+            bar.appendChild(mk);
+          };
+          const mkMoon = (pct) => {
+            const mk = document.createElement('span');
+            mk.style.cssText = 'position:absolute;top:-18px;display:flex;align-items:center;font-size:29px;pointer-events:none;z-index:55;transform:translateX(-50%);line-height:1;color:#f5c842;font-weight:900;text-shadow:0 0 3px #f5c842,1px 0 1px #f5c842,-1px 0 1px #f5c842,0 1px 1px #f5c842,0 -1px 1px #f5c842;';
+            mk.style.left = pct + '%';
+            mk.textContent = '☽';
+            bar.appendChild(mk);
+          };
+
+          let cumPct = 0;
+          let firstDaySeen = false;
+          let lastDayEndPct = 0;
+          let hasLastStepNight = false;
+          segments.forEach(seg => {
+            if (seg.isJump || seg.realSeconds <= 0) return;
+            const wPct = (seg.realSeconds / totalRealSeconds) * 100;
+            if (seg.isNight) {
+              // ☽ at start of night (but not at the very beginning of the bar)
+              if (cumPct > 0.5) mkMoon(cumPct);
+              // ☀️ at end of night — but NOT for the trailing night of a repeating last step
+              // (the bar ends there; no dawn follows within this cycle)
+              if (!seg.isLastStepNight) {
+                mkSun(cumPct + wPct);
+              } else {
+                hasLastStepNight = true;
+              }
+            } else {
+              // Track first sunrise and last sunset positions
+              if (!firstDaySeen) {
+                firstDaySeen = true;
+              }
+              lastDayEndPct = cumPct + wPct;
+            }
+            cumPct += wPct;
+          });
+          // ☽ at end of last daytime segment (final sunset)
+          // Skip if the per-segment loop already placed one at the night boundary
+          if (firstDaySeen && lastDayEndPct > 0 && lastDayEndPct < 100.1 && !hasLastStepNight) {
+            mkMoon(lastDayEndPct);
+          }
+
+          // Pre-sunrise night overlay on clock bar
+          // If the first step starts before sunrise, compute the pre-sunrise % and overlay it
+          if (programSteps.length > 0) {
+            const parseHHMM_cl = v => { const s = String(v).padStart(4, '0'); return parseInt(s.slice(0, 2), 10) * 60 + parseInt(s.slice(2), 10); };
+            const firstStep = programSteps[0];
+            const firstSimTime = parseHHMM_cl(firstStep.sim_time_hhmm);
+            const firstSunrise = firstStep.sunrise != null
+              ? (Math.floor(firstStep.sunrise / 100) * 60 + (firstStep.sunrise % 100))
+              : 6 * 60;
+            if (firstSimTime < firstSunrise) {
+              // Calculate real seconds for the pre-sunrise portion
+              const preSunriseMin = firstSunrise - firstSimTime;
+              const firstSpeed = Math.abs(firstStep.speed !== undefined ? firstStep.speed : 1) || 1;
+              const preSunriseRealSec = (preSunriseMin * 60) / firstSpeed;
+              const preSunrisePct = (preSunriseRealSec / totalRealSeconds) * 100;
+              // Add night overlay at start of clock bar
+              const nightOv = document.createElement('div');
+              nightOv.style.cssText = 'position:absolute;bottom:0;left:0;height:100%;pointer-events:none;z-index:52;border-radius:3px 0 0 3px;';
+              nightOv.style.width = preSunrisePct + '%';
+              nightOv.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #2d2d5e 100%)';
+              nightOv.style.opacity = '0.75';
+              bar.appendChild(nightOv);
+              // ☀️ marker at end of pre-sunrise night (dawn)
+              // No ☽ at position 0 — the dark overlay already indicates night;
+              // ☽ should only mark sunset transitions
+              mkSun(preSunrisePct);
+            } else if (firstDaySeen) {
+              // No pre-sunrise night, ☀️ at start of clock bar
+              mkSun(0);
+            }
+          }
+        }
+
         clockSection.appendChild(clockRow);
 
         // Total duration label
@@ -10643,6 +10839,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         const totS = Math.round(totalRealSeconds % 60);
         totalLabel.textContent = 'Total real time: ' + totH + 'h ' + totM + 'm' + (totS > 0 ? ' ' + totS + 's' : '');
         clockSection.appendChild(totalLabel);
+
+        // Intensity key — added by _renderTimelineStripImmediate via flag
+        if (window.__appendClockIntensityKey) {
+          const keyEl = buildIntensityKey(programSteps);
+          if (keyEl) {
+            keyEl.style.marginTop = '0';
+            clockSection.appendChild(keyEl);
+          }
+        }
 
         container.appendChild(clockSection);
       }
@@ -10657,8 +10862,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (bars.length === 0) return;
 
         // Check device connection — hide playhead when not connected (matches ultra bar behaviour)
-        // Use transport === 'ble' instead of bleDevice because bleDevice persists for auto-reconnect
         const _ms = window.__solarSimMonitorState;
+        // Use transport === 'ble' instead of bleDevice because bleDevice may persist for auto-reconnect
         const _connected = _ms && (_ms.port || _ms.transport === 'ble');
 
         // Get current step index (1-based, 0 = before program starts)
@@ -10710,29 +10915,109 @@ https://github.com/odeepllama/SolarSim/tree/main
               } else {
                 currentSegProgress = 0;
               }
-            } else if (!segments[i].isJump && !segments[i].isLastStep) {
+            } else if (!segments[i].isJump) {
               const parseHHMM2 = v => {
                 const s2 = String(v).padStart(4, '0');
                 return parseInt(s2.slice(0, 2), 10) * 60 + parseInt(s2.slice(2), 10);
               };
               const stepSimTime = parseHHMM2(programSteps[currentStepIdx].sim_time_hhmm);
-              const nextIdx = currentStepIdx + 1;
-              if (nextIdx < programSteps.length) {
-                const nextSimTime = parseHHMM2(programSteps[nextIdx].sim_time_hhmm);
-                const spd = programSteps[currentStepIdx].speed || 1;
-                let totalSimSpan;
+              const spd = programSteps[currentStepIdx].speed || 1;
+
+              if (segments[i].isLastStep || segments[i].isLastStepNight) {
+                // Last step (may span multiple segments: daytime + night + dawn)
+                // Compute total real seconds across ALL segments belonging to this step
+                let totalLastStepRealSec = 0;
+                let lastStepStartSegIdx = -1;
+                for (let si = 0; si < segments.length; si++) {
+                  if (segments[si].stepIndex === currentStepIdx && (segments[si].isLastStep || segments[si].isLastStepNight)) {
+                    if (lastStepStartSegIdx < 0) lastStepStartSegIdx = si;
+                    totalLastStepRealSec += segments[si].realSeconds;
+                  }
+                }
+                // Compute how many real seconds into the last-step group we are
+                // using sim time progress across the full span
+                let totalSimSpan = 0;
+                for (let si = 0; si < segments.length; si++) {
+                  if (segments[si].stepIndex === currentStepIdx && (segments[si].isLastStep || segments[si].isLastStepNight)) {
+                    totalSimSpan += segments[si].realSeconds * Math.abs(spd) / 60; // sim-minutes
+                  }
+                }
+                let progress;
                 if (spd > 0) {
-                  totalSimSpan = nextSimTime - stepSimTime;
-                  if (totalSimSpan < 0) totalSimSpan += 1440;
-                  let progress = simTimeMinutes - stepSimTime;
+                  progress = simTimeMinutes - stepSimTime;
                   if (progress < 0) progress += 1440;
-                  currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
                 } else {
-                  totalSimSpan = stepSimTime - nextSimTime;
-                  if (totalSimSpan < 0) totalSimSpan += 1440;
-                  let progress = stepSimTime - simTimeMinutes;
+                  progress = stepSimTime - simTimeMinutes;
                   if (progress < 0) progress += 1440;
-                  currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                }
+                // Race-condition guard: if step index updated before sim-time tile,
+                // the wrap gives a falsely huge progress. Detect and clamp to 0.
+                if (progress > totalSimSpan && (1440 - progress) < 60) {
+                  progress = 0;
+                }
+                const overallProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                // Map overall progress back to position within the segment group
+                const progressRealSec = overallProgress * totalLastStepRealSec;
+                // Find which segment we're in and compute local progress
+                let cumGroupSec = 0;
+                for (let si = lastStepStartSegIdx; si < segments.length; si++) {
+                  if (segments[si].stepIndex !== currentStepIdx) break;
+                  if (!(segments[si].isLastStep || segments[si].isLastStepNight)) break;
+                  if (cumGroupSec + segments[si].realSeconds >= progressRealSec) {
+                    // We're in this segment
+                    foundSegIdx = si;
+                    currentSegRealSec = segments[si].realSeconds;
+                    completedRealSec = 0;
+                    for (let sj = 0; sj < si; sj++) completedRealSec += segments[sj].realSeconds;
+                    currentSegProgress = currentSegRealSec > 0
+                      ? Math.min(1, (progressRealSec - cumGroupSec) / currentSegRealSec)
+                      : 0;
+                    break;
+                  }
+                  cumGroupSec += segments[si].realSeconds;
+                }
+              } else {
+                // Non-last step: compute progress towards next step's sim time
+                const nextIdx = currentStepIdx + 1;
+                if (nextIdx < programSteps.length) {
+                  const nextSimTime = parseHHMM2(programSteps[nextIdx].sim_time_hhmm);
+                  // Check cross-day using day field
+                  const curDay = programSteps[currentStepIdx].day || 1;
+                  const nxtDay = programSteps[nextIdx].day || curDay;
+                  const isCrossDay = (nxtDay !== curDay);
+                  let totalSimSpan;
+                  if (spd > 0) {
+                    if (isCrossDay && programSteps[currentStepIdx].sunset != null) {
+                      // Cross-day: progress within daytime segment only (sunset-based)
+                      const sunset = Math.floor(programSteps[currentStepIdx].sunset / 100) * 60 + (programSteps[currentStepIdx].sunset % 100);
+                      totalSimSpan = sunset - stepSimTime;
+                      if (totalSimSpan < 0) totalSimSpan += 1440;
+                    } else {
+                      totalSimSpan = nextSimTime - stepSimTime;
+                      if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                      else if (totalSimSpan < 0) totalSimSpan += 1440;
+                    }
+                    let progress = simTimeMinutes - stepSimTime;
+                    if (progress < 0) progress += 1440;
+                    // Race-condition guard: step index ahead of sim-time tile
+                    if (progress > totalSimSpan && (1440 - progress) < 60) progress = 0;
+                    currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                  } else {
+                    if (isCrossDay && programSteps[currentStepIdx].sunrise != null) {
+                      const sunrise = Math.floor(programSteps[currentStepIdx].sunrise / 100) * 60 + (programSteps[currentStepIdx].sunrise % 100);
+                      totalSimSpan = stepSimTime - sunrise;
+                      if (totalSimSpan < 0) totalSimSpan += 1440;
+                    } else {
+                      totalSimSpan = stepSimTime - nextSimTime;
+                      if (isCrossDay) totalSimSpan += 1440 * Math.abs(nxtDay - curDay);
+                      else if (totalSimSpan < 0) totalSimSpan += 1440;
+                    }
+                    let progress = stepSimTime - simTimeMinutes;
+                    if (progress < 0) progress += 1440;
+                    // Race-condition guard: step index ahead of sim-time tile
+                    if (progress > totalSimSpan && (1440 - progress) < 60) progress = 0;
+                    currentSegProgress = totalSimSpan > 0 ? Math.min(1, progress / totalSimSpan) : 0;
+                  }
                 }
               }
             }
@@ -10750,6 +11035,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         const elapsedM = Math.floor((playheadRealSec % 3600) / 60);
         const tooltipText = `Elapsed: ${elapsedH}h ${elapsedM}m\nSim Time: ${simTimeStr}\nStep: ${currentStep1}/${programSteps.length}`;
 
+        // Compute the rate of position change (% per real second)
+        // Within the current segment, sim time advances at |speed| sim-min/real-min
+        // That maps to segRealSec of real time for the whole segment, spanning segWidthPct% of the bar
+        const segWidthPct = (currentSegRealSec / totalRealSeconds) * 100;
+        // pct-per-second = segWidthPct / segRealSec (uniform advance through segment)
+        const pctPerSec = currentSegRealSec > 0 ? segWidthPct / currentSegRealSec : 0;
+        const interpTs = Date.now();
+
         // Draw playhead on every clock-timeline-strip in the page
         bars.forEach(bar => {
           // Remove existing playhead & hold progress
@@ -10761,11 +11054,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Draw HOLD progress bar if in hold
           if (isInHold && currentSegRealSec > 0) {
             const segStartPct = (completedRealSec / totalRealSeconds) * 100;
-            const segWidthPct = (currentSegRealSec / totalRealSeconds) * 100;
+            const segWidthPctH = (currentSegRealSec / totalRealSeconds) * 100;
             const holdProgress = document.createElement('div');
             holdProgress.className = 'timeline-hold-progress';
             holdProgress.style.left = segStartPct + '%';
-            holdProgress.style.width = (segWidthPct * currentSegProgress) + '%';
+            holdProgress.style.width = (segWidthPctH * currentSegProgress) + '%';
             holdProgress.style.pointerEvents = 'auto';
             holdProgress.style.cursor = 'help';
             const holdState2 = window.__holdState;
@@ -10783,11 +11076,99 @@ https://github.com/odeepllama/SolarSim/tree/main
           playhead.style.left = posPct + '%';
           playhead.style.cursor = 'help';
           playhead.title = tooltipText;
+          // Store interpolation data for the fast loop
+          playhead.dataset.clockPct = posPct;
+          playhead.dataset.clockRate = pctPerSec;
+          playhead.dataset.clockTs = interpTs;
+          // Clamp at segment end so the fast loop can't overshoot into next segment
+          const segEndPct = ((completedRealSec + currentSegRealSec) / totalRealSeconds) * 100;
+          playhead.dataset.clockMaxPct = Math.min(100, segEndPct);
+          playhead.dataset.clockBar = '1'; // Flag to distinguish from sim-time playheads
           bar.appendChild(playhead);
         });
       }
       // Make globally accessible
       window.renderClockTimePlayhead = renderClockTimePlayhead;
+
+      (function startPlayheadInterpolationLoop() {
+        setInterval(function () {
+          const playheads = document.querySelectorAll('.timeline-playhead');
+          if (!playheads.length) return;
+
+          const now = Date.now();
+
+          // --- Sim-time playhead interpolation data ---
+          let simInterpMin = null;
+          let currentSpeedVal = NaN;
+          const simTile = window.kvCache && window.kvCache.get && window.kvCache.get('sim');
+          if (simTile) {
+            const valEl = simTile.querySelector('span');
+            if (valEl) {
+              const simStr = valEl.textContent.trim();
+              if (simStr && simStr.includes(':')) {
+                const sp = simStr.split(':');
+                const h = parseInt(sp[0], 10), mn = parseInt(sp[1], 10);
+                if (!isNaN(h) && !isNaN(mn)) {
+                  const baseMin = h * 60 + mn;
+                  const spdTile = window.kvCache.get('speed');
+                  const spdSpan = spdTile ? spdTile.querySelector('span') : null;
+                  const spdTxt = spdSpan ? spdSpan.textContent.trim() : '';
+                  // Replace Unicode minus (U+2212) with ASCII hyphen for parseFloat
+                  const spd = parseFloat(spdTxt.replace(/\u2212/g, '-'));
+                  currentSpeedVal = spd;
+                  if (!isNaN(spd) && spd !== 0 && spdTxt !== 'HOLD') {
+                    if (!window.__simPlayheadInterp) window.__simPlayheadInterp = { lastMin: -1, lastMinTs: 0 };
+                    const interp = window.__simPlayheadInterp;
+                    if (baseMin !== interp.lastMin) { interp.lastMin = baseMin; interp.lastMinTs = now; }
+                    const elapsed = (now - interp.lastMinTs) / 1000;
+                    simInterpMin = baseMin + (spd / 60) * elapsed;
+                  }
+                }
+              }
+            }
+          }
+
+          // Determine current direction for forward/reverse bar switching
+          const isReverse = !isNaN(currentSpeedVal) && currentSpeedVal < 0;
+
+          // --- Update each playhead ---
+          playheads.forEach(function (ph) {
+            if (ph.dataset.clockBar) {
+              // Clock playhead: advance using stored rate (% per second)
+              const basePct = parseFloat(ph.dataset.clockPct);
+              const rate = parseFloat(ph.dataset.clockRate);
+              const ts = parseFloat(ph.dataset.clockTs);
+              if (isNaN(basePct) || isNaN(rate) || isNaN(ts) || rate <= 0) return;
+              const elapsed = (now - ts) / 1000;
+              // Clamp to segment end (clockMaxPct) to prevent overshooting into next segment
+              const maxPct = parseFloat(ph.dataset.clockMaxPct);
+              const ceiling = (!isNaN(maxPct) && maxPct > 0) ? maxPct : 100;
+              const newPct = Math.min(ceiling, Math.max(0, basePct + rate * elapsed));
+              ph.style.left = newPct + '%';
+            } else if (simInterpMin !== null) {
+              // Sim-time playhead: use interpolated sim minutes
+              const host = ph.parentElement;
+              if (!host) return;
+
+              // Direction-aware visibility: hide playhead on wrong bar
+              const barDir = host.dataset.filterDirection;
+              if (barDir && !isNaN(currentSpeedVal)) {
+                if (barDir === 'forward' && isReverse) { ph.style.display = 'none'; return; }
+                if (barDir === 'reverse' && !isReverse) { ph.style.display = 'none'; return; }
+              }
+
+              const ws = parseFloat(host.dataset.windowStart);
+              const we = parseFloat(host.dataset.windowEnd);
+              const wspan = parseFloat(host.dataset.windowSpan);
+              if (isNaN(ws) || isNaN(wspan) || wspan <= 0) return;
+              if (simInterpMin < ws || simInterpMin > we) { ph.style.display = 'none'; return; }
+              ph.style.display = '';
+              const pct = ((simInterpMin - ws) / wspan) * 100;
+              ph.style.left = pct + '%';
+            }
+          });
+        }, 100);
+      })();
 
       // Core timeline render logic (called by debounced wrapper)
       function _renderTimelineStripImmediate() {
@@ -10822,9 +11203,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           window.__maxProgramDays = dayData.days.length || 1;
 
           if (dayData.days.length > 1) {
-            renderMultiDayTimeline(simContainer, dayData);
+            // Multi-day: per-day intensity keys are added inside renderMultiDayTimeline
+            // but only in sim-only mode (in 'both' mode, key goes beneath clock bar)
+            renderMultiDayTimeline(simContainer, dayData, false, viewMode !== 'sim');
           } else {
             renderSingleDayTimeline(simContainer);
+            // Single-day, sim-only: add intensity key beneath all bars
+            if (viewMode === 'sim') {
+              const keyEl = buildIntensityKey(programSteps);
+              if (keyEl) simContainer.appendChild(keyEl);
+            }
           }
         } else {
           // Even in 'clock' mode, we need day data for mirror timeline
@@ -10834,7 +11222,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Render clock-time timeline if mode is 'clock' or 'both'
         if (viewMode === 'clock' || viewMode === 'both') {
+          window.__appendClockIntensityKey = true;
           renderClockTimeTimeline(container);
+          window.__appendClockIntensityKey = false;
         }
 
         // Update mirror timeline in Device Program Status section
@@ -11219,7 +11609,275 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Render multi-day timeline with stacked bars
       // readOnly parameter disables drag interactions for device status mirror
-      function renderMultiDayTimeline(container, dayData, readOnly = false) {
+      let __globalJumpNum = 0; // Global jump counter across all days, reset each render pass
+
+      // After a full render pass, if only one JUMP exists in the whole program,
+      // strip the number from its label (show ⚡ instead of ⚡1)
+      function stripSoloJumpNumber(container) {
+        if (__globalJumpNum === 1 && container) {
+          container.querySelectorAll('.tl-jump').forEach(el => {
+            el.setAttribute('data-label', '⚡');
+            // Also simplify tooltip
+            const title = el.getAttribute('title') || '';
+            el.title = title.replace(/^Jump #\d+: /, '');
+          });
+        }
+      }
+
+      function addDayLengthMarkers(bar, dayInfo, globalWindow, readOnly) {
+        if (!document.getElementById('perStepDayLength')?.checked) return;
+        const steps = dayInfo.steps;
+        // Find earliest sunrise and latest sunset across all steps on this day
+        let rise = null, set = null;
+        for (const s of steps) {
+          if (s.step.sunrise != null) {
+            rise = (rise === null) ? s.step.sunrise : Math.min(rise, s.step.sunrise);
+          }
+          if (s.step.sunset != null) {
+            set = (set === null) ? s.step.sunset : Math.max(set, s.step.sunset);
+          }
+        }
+        if (rise === null && set === null) return; // no per-step values
+        // Default sunrise/sunset when only one is specified
+        if (rise === null) rise = 600;   // default 06:00
+        if (set === null) set = 1800;    // default 18:00
+        // Convert HHMM to minutes
+        const toMin = hhmm => Math.floor(hhmm / 100) * 60 + (hhmm % 100);
+        const wStart = globalWindow.start;
+        const wEnd = globalWindow.end;
+        const wSpan = wEnd - wStart;
+        if (wSpan <= 0) return;
+        const mkMarker = (text, color, minVal, fontSize) => {
+          const m = document.createElement('span');
+          m.style.cssText = `position:absolute;top:-18px;display:flex;align-items:center;font-size:${fontSize || '15px'};pointer-events:none;z-index:55;transform:translateX(-50%);line-height:1;`;
+          m.style.left = ((toMin(minVal) - wStart) / wSpan * 100) + '%';
+          m.style.color = color;
+          m.textContent = text;
+          return m;
+        };
+        if (rise !== null) bar.appendChild(mkMarker('☀️', '#f5a623', rise, '25px'));
+        const moonEl = set !== null ? mkMarker('☽', '#f5c842', set, '29px') : null;
+        if (moonEl) { moonEl.style.textShadow = '0 0 3px #f5c842, 1px 0 1px #f5c842, -1px 0 1px #f5c842, 0 1px 1px #f5c842, 0 -1px 1px #f5c842'; moonEl.style.fontWeight = '900'; bar.appendChild(moonEl); }
+
+        // Add draggable handles for sunrise/sunset (only when editable)
+        if (!readOnly) {
+          const riseMin = rise !== null ? toMin(rise) : null;
+          const setMin = set !== null ? toMin(set) : null;
+          const MIN_DAY_SPAN = 30; // Minimum 30 minutes between sunrise and sunset
+          if (riseMin !== null && riseMin >= wStart && riseMin <= wEnd) {
+            const risePct = ((riseMin - wStart) / wSpan) * 100;
+            const handle = document.createElement('div');
+            handle.className = 'tl-daylength-handle';
+            handle.style.left = risePct + '%';
+            handle.title = 'Drag to adjust sunrise time';
+            bar.appendChild(handle);
+            addSunriseSunsetDragHandler(handle, bar, 'sunrise', riseMin, dayInfo, wStart, wEnd, wSpan, setMin, riseMin, MIN_DAY_SPAN);
+          }
+          if (setMin !== null && setMin >= wStart && setMin <= wEnd) {
+            const setPct = ((setMin - wStart) / wSpan) * 100;
+            const handle = document.createElement('div');
+            handle.className = 'tl-daylength-handle';
+            handle.style.left = setPct + '%';
+            handle.title = 'Drag to adjust sunset time';
+            bar.appendChild(handle);
+            addSunriseSunsetDragHandler(handle, bar, 'sunset', setMin, dayInfo, wStart, wEnd, wSpan, setMin, riseMin, MIN_DAY_SPAN);
+          }
+        }
+
+        // Night overlays: dark regions before sunrise and after sunset
+        const mkNightOverlay = (leftPct, widthPct, nightMinutes) => {
+          const ov = document.createElement('div');
+          ov.style.cssText = `position:absolute;bottom:0;height:100%;pointer-events:none;z-index:150;border-radius:3px;display:flex;align-items:center;justify-content:center;`;
+          ov.style.left = leftPct + '%';
+          ov.style.width = widthPct + '%';
+          // Use rgba instead of opacity so label text stays fully visible
+          ov.style.background = 'linear-gradient(180deg, rgba(26,26,62,0.85) 0%, rgba(45,45,94,0.85) 100%)';
+          // Add night pill label: white text on dark pill
+          const nightPillCss = 'background:rgba(20,20,40,0.9);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:1px 8px;color:#fff;font-size:inherit;font-weight:600;white-space:nowrap;pointer-events:none;font-family:inherit;';
+          if (nightMinutes >= 120) {
+            const lbl = document.createElement('span');
+            lbl.style.cssText = nightPillCss;
+            const durH = Math.floor(nightMinutes / 60);
+            const durM = nightMinutes % 60;
+            const durStr = durH > 0
+              ? durH + 'h' + (durM > 0 ? durM + 'm' : '')
+              : durM + 'm';
+            lbl.textContent = '☽ Night (' + durStr + ')';
+            ov.appendChild(lbl);
+          } else if (nightMinutes >= 30) {
+            const lbl = document.createElement('span');
+            lbl.style.cssText = nightPillCss;
+            lbl.textContent = '☽';
+            ov.appendChild(lbl);
+          }
+          return ov;
+        };
+        // Pre-sunrise night overlay
+        if (rise !== null) {
+          const riseMin = toMin(rise);
+          if (riseMin > wStart) {
+            const leftPct = 0;
+            const widthPct = ((riseMin - wStart) / wSpan) * 100;
+            bar.appendChild(mkNightOverlay(leftPct, widthPct, riseMin - wStart));
+          }
+        }
+        // Post-sunset night overlay
+        if (set !== null) {
+          const setMin = toMin(set);
+          if (setMin < wEnd) {
+            const leftPct = ((setMin - wStart) / wSpan) * 100;
+            const widthPct = ((wEnd - setMin) / wSpan) * 100;
+            bar.appendChild(mkNightOverlay(leftPct, widthPct, wEnd - setMin));
+          }
+        }
+      }
+
+      // Drag handler for sunrise/sunset markers on the speed timeline
+      function addSunriseSunsetDragHandler(handle, host, type, originalMin, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN, sunsetMin, sunriseMin, MIN_DAY_SPAN) {
+        let isDragging = false;
+        let ghostLine = null;
+        let timeLabel = null;
+        const SNAP_INTERVAL = 15;
+
+        function snapToGrid(minutes) {
+          return Math.round(minutes / SNAP_INTERVAL) * SNAP_INTERVAL;
+        }
+
+        function xPosToMinutes(clientX) {
+          const rect = host.getBoundingClientRect();
+          const xPct = (clientX - rect.left) / rect.width;
+          const minutes = WINDOW_START_MIN + (xPct * WINDOW_SPAN);
+          return snapToGrid(Math.max(WINDOW_START_MIN, Math.min(WINDOW_END_MIN, minutes)));
+        }
+
+        function constrain(newMinutes) {
+          if (type === 'sunrise') {
+            // Sunrise: between window start and sunset − MIN_DAY_SPAN
+            const max = sunsetMin != null ? sunsetMin - MIN_DAY_SPAN : WINDOW_END_MIN;
+            return Math.max(WINDOW_START_MIN, Math.min(max, newMinutes));
+          } else {
+            // Sunset: between sunrise + MIN_DAY_SPAN and window end
+            const min = sunriseMin != null ? sunriseMin + MIN_DAY_SPAN : WINDOW_START_MIN;
+            return Math.max(min, Math.min(WINDOW_END_MIN, newMinutes));
+          }
+        }
+
+        function minToHHMM(m) {
+          const h = Math.floor(m / 60);
+          const mm = m % 60;
+          return (h < 10 ? '' + h : String(h).padStart(2, '0')) + String(mm).padStart(2, '0');
+        }
+
+        function startDrag(clientX) {
+          // Check if editing is locked
+          if (window.__programEditingLocked && window.__programEditingLocked()) {
+            if (window.__flashProgramLock) window.__flashProgramLock();
+            return false;
+          }
+          saveTimelineUndoState();
+          timelineDragInProgress = true;
+          isDragging = true;
+          handle.classList.add('dragging');
+          document.body.style.cursor = 'ew-resize';
+
+          // Create ghost vertical line
+          ghostLine = document.createElement('div');
+          ghostLine.className = 'tl-daylength-ghost';
+          host.appendChild(ghostLine);
+
+          // Create time label
+          timeLabel = document.createElement('div');
+          timeLabel.className = 'tl-drag-time-label';
+          host.appendChild(timeLabel);
+
+          // Initial position
+          const pct = ((originalMin - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+          ghostLine.style.left = pct + '%';
+          timeLabel.style.left = pct + '%';
+          timeLabel.textContent = formatHHMM(originalMin);
+
+          return true;
+        }
+
+        function updateDrag(clientX) {
+          if (!isDragging) return;
+          const rawMin = xPosToMinutes(clientX);
+          const cMin = constrain(rawMin);
+          const pct = ((cMin - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+          ghostLine.style.left = pct + '%';
+          timeLabel.style.left = pct + '%';
+          timeLabel.textContent = formatHHMM(cMin);
+        }
+
+        function finishDrag(clientX) {
+          if (!isDragging) return;
+          isDragging = false;
+          handle.classList.remove('dragging');
+          document.body.style.cursor = '';
+          timelineDragInProgress = false;
+
+          if (ghostLine) ghostLine.remove();
+          if (timeLabel) timeLabel.remove();
+
+          const rawMin = xPosToMinutes(clientX);
+          const finalMin = constrain(rawMin);
+          if (finalMin === originalMin) return; // No change
+
+          // Convert minutes to HHMM
+          const newHHMM = parseInt(minToHHMM(finalMin));
+
+          // Update all steps on this day
+          const field = type === 'sunrise' ? 'sunrise' : 'sunset';
+          for (const s of dayInfo.steps) {
+            if (s.step[field] != null) {
+              s.step[field] = newHHMM;
+              // Also ensure programSteps array is in sync
+              if (s.index >= 0 && programSteps[s.index]) {
+                programSteps[s.index][field] = newHHMM;
+              }
+            }
+          }
+
+          // Refresh the UI
+          renderProgramSteps();
+          updatePreview(true);
+        }
+
+        // --- Mouse Events ---
+        handle.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          if (startDrag(e.clientX)) {
+            const onMove = (ev) => { updateDrag(ev.clientX); ev.preventDefault(); };
+            const onUp = (ev) => {
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+              finishDrag(ev.clientX);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          }
+        });
+
+        // --- Touch Events ---
+        handle.addEventListener('touchstart', (e) => {
+          e.stopPropagation();
+          if (e.cancelable) e.preventDefault();
+          if (startDrag(e.touches[0].clientX)) {
+            const onMove = (ev) => { updateDrag(ev.touches[0].clientX); if (ev.cancelable) ev.preventDefault(); };
+            const onEnd = (ev) => {
+              document.removeEventListener('touchmove', onMove);
+              document.removeEventListener('touchend', onEnd);
+              finishDrag(ev.changedTouches[0].clientX);
+            };
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+          }
+        }, { passive: false });
+      }
+
+      function renderMultiDayTimeline(container, dayData, readOnly = false, suppressIntensityKey = false) {
+        __globalJumpNum = 0; // Reset global jump numbering for this render pass
         container.innerHTML = '';
 
         const MAX_DISPLAY_DAYS = 7;
@@ -11324,6 +11982,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const wEnd = globalWindow.end;
 
           renderDayTimeline(bar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, hasReverse ? 'forward' : undefined);
+          addDayLengthMarkers(bar, dayInfo, globalWindow, readOnly);
 
           // Forward intensity bar
           if (hasAnyDayColor || hasAnyDayIntensity) {
@@ -11349,7 +12008,55 @@ https://github.com/odeepllama/SolarSim/tree/main
             barColumn.appendChild(reverseBar);
             renderDayTimeline(reverseBar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'reverse');
           }
+
+          // Intensity key beneath this day's bars (only for editable view)
+          if (!readOnly && !suppressIntensityKey) {
+            const keyEl = buildIntensityKey(daySteps.map(s => s.step));
+            if (keyEl) container.appendChild(keyEl);
+          }
         });
+        stripSoloJumpNumber(container);
+      }
+
+      function buildIntensityKey(steps) {
+        const hasVaryingIntensity = steps.some(s => s.intensity_scale != null && s.intensity_scale !== 1);
+        if (!hasVaryingIntensity) return null;
+        const keyRow = document.createElement('div');
+        keyRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:4px;margin-left:98px;font-size:16px;color:#000;font-family:Inter,system-ui,sans-serif;';
+        keyRow.innerHTML = '<span style="font-weight:600;margin-right:3px;">Intensity:</span>';
+        // Determine swatch color: use the most common step color, fall back to grey only if no steps have color
+        const stepsWithColor = steps.filter(s => s.sun_color_rgb);
+        let keyColor;
+        if (stepsWithColor.length) {
+          // Find the most common RGB value among steps
+          const colorCounts = new Map();
+          stepsWithColor.forEach(s => {
+            const key = s.sun_color_rgb.join(',');
+            colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+          });
+          let bestKey = null, bestCount = 0;
+          for (const [k, count] of colorCounts) {
+            if (count > bestCount) { bestKey = k; bestCount = count; }
+          }
+          const bestRgb = bestKey.split(',').map(Number);
+          keyColor = sunColorToDisplayColor(bestRgb);
+        } else {
+          keyColor = { r: 128, g: 128, b: 128 };
+        }
+        [0.1, 0.5, 1.0].forEach(val => {
+          // Composite against white so page background doesn't bleed through
+          const sr = Math.round(keyColor.r * val + 255 * (1 - val));
+          const sg = Math.round(keyColor.g * val + 255 * (1 - val));
+          const sb = Math.round(keyColor.b * val + 255 * (1 - val));
+          const swatch = document.createElement('span');
+          swatch.style.cssText = `display:inline-block;width:27px;height:18px;border:1px solid #999;border-radius:2px;vertical-align:middle;margin-right:3px;background:rgb(${sr},${sg},${sb});`;
+          keyRow.appendChild(swatch);
+          const label = document.createElement('span');
+          label.textContent = val.toString();
+          label.style.marginRight = '9px';
+          keyRow.appendChild(label);
+        });
+        return keyRow;
       }
 
       // Build a sun color strip element from step data
@@ -11461,6 +12168,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Render single day timeline (original behavior)
       // readOnly parameter disables drag interactions for device status mirror
       function renderSingleDayTimeline(container, readOnly = false) {
+        __globalJumpNum = 0; // Reset global jump numbering for this render pass
         container.innerHTML = '';
 
         const wrapper = document.createElement('div');
@@ -11546,6 +12254,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           barColumn.appendChild(reverseBar);
           renderDayTimeline(reverseBar, dayInfo, null, readOnly, null, false, undefined, 'reverse');
         }
+        stripSoloJumpNumber(container);
       }
 
       // Render timeline for a single day bar
@@ -12168,8 +12877,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (j.m < WINDOW_START_MIN || j.m > WINDOW_END_MIN) return;
           const posPct = ((j.m - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
           const dispNum = stepOrder.get(j.index) || '?';
-          const jumpLabel = j.isImplicitHoldJump ? `⚡ HOLD ends → ${formatHHMM(j.m)}` : `⚡ JUMP → ${formatHHMM(j.m)}`;
-          const mk = document.createElement('div'); mk.className = 'tl-jump'; mk.style.left = posPct + '%'; mk.title = jumpLabel; host.appendChild(mk);
+          __globalJumpNum++;
+          const jumpLabel = j.isImplicitHoldJump
+            ? `Jump #${__globalJumpNum}: HOLD ends → ${formatHHMM(j.m)}`
+            : `Jump #${__globalJumpNum}: JUMP → ${formatHHMM(j.m)}`;
+          const mk = document.createElement('div'); mk.className = 'tl-jump'; mk.style.left = posPct + '%'; mk.title = jumpLabel;
+          mk.setAttribute('data-label', `⚡${__globalJumpNum}`);
+          host.appendChild(mk);
         });
 
         // Render playhead if device is connected and sim time is within visible range
@@ -18116,7 +18830,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
         // updateSunMarkerFromPlain removed
-        function handleStatus(o, raw) { setKV('sim', 'SimTime', fmtHHMM(o.sim)); setKV('speed', 'Speed', o.speed); }
+        function handleStatus(o, raw) { setKV('sim', 'SimTime', fmtHHMM(o.sim)); setKV('speed', 'Speed', String(o.speed).toUpperCase()); }
         const kvCache = new Map();
         // Expose for helpers that wish to read tiles
         try { window.kvCache = kvCache; } catch (_) { }
@@ -18399,6 +19113,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           // Helper: delay
           function qeDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+          // Helper: scroll to Examples button and open the examples popover
+          function scrollToExamplesAndOpen() {
+            const exBtn = document.getElementById('exampleStepsBtn');
+            if (exBtn) {
+              const y = exBtn.getBoundingClientRect().top + window.pageYOffset - 80;
+              window.scrollTo({ top: y, behavior: 'smooth' });
+              setTimeout(() => exBtn.click(), 500);
+            }
+          }
 
           const lang = () => (document.getElementById('langToggleBtn')?.getAttribute('data-lang') || 'en');
           const getLang = () => TRANSLATIONS[lang()] || TRANSLATIONS.en;
