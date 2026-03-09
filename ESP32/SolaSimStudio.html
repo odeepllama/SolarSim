@@ -7119,6 +7119,19 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           if (s.transition && !['RUN', 'JUMP'].includes(String(s.transition).toUpperCase())) errorState.programErrors.push(`Step ${i + 1}: transition must be RUN or JUMP`);
           if (s.intensity_scale !== undefined && s.intensity_scale < 0) errorState.programErrors.push(`Step ${i + 1}: intensity_scale<0`);
+          // Validate sunrise/sunset: must be valid HHMM (0-2359, minutes < 60)
+          if (s.sunrise != null && s.sunrise !== '') {
+            const riseVal = parseInt(String(s.sunrise), 10);
+            if (isNaN(riseVal) || riseVal < 0 || riseVal > 2359 || (riseVal % 100) >= 60) {
+              errorState.programErrors.push(`Step ${i + 1}: invalid sunrise (must be HHMM 0000–2359)`);
+            }
+          }
+          if (s.sunset != null && s.sunset !== '') {
+            const setVal = parseInt(String(s.sunset), 10);
+            if (isNaN(setVal) || setVal < 0 || setVal > 2359 || (setVal % 100) >= 60) {
+              errorState.programErrors.push(`Step ${i + 1}: invalid sunset (must be HHMM 0000–2359)`);
+            }
+          }
         });
       }
 
@@ -8487,6 +8500,33 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Now trigger re-render
             renderProgramSteps();
             updatePreview(true);
+          } else if (field === 'sunrise' || field === 'sunset') {
+            // Validate sunrise/sunset HHMM on blur
+            const rawVal = e.target.value.trim();
+            const td = e.target.closest('td');
+            if (rawVal !== '') {
+              const numVal = parseInt(rawVal, 10);
+              if (isNaN(numVal) || numVal < 0 || numVal > 2359 || (numVal % 100) >= 60) {
+                // Flash input red and revert to the last valid value
+                const inputElem = e.target;
+                inputElem.style.backgroundColor = '#ff6666';
+                inputElem.style.transition = 'background-color 0.3s ease-in-out';
+                setTimeout(() => { inputElem.style.backgroundColor = ''; }, 1200);
+                // Revert programSteps to previous valid value
+                const tr = e.target.closest('tr');
+                const row = Array.from(tr.parentNode.children).indexOf(tr);
+                if (row >= 0 && row < programSteps.length) {
+                  // Restore the default (600 for sunrise, 1800 for sunset) if no prior value
+                  const defaultVal = field === 'sunrise' ? 600 : 1800;
+                  programSteps[row][field] = defaultVal;
+                  e.target.value = defaultVal;
+                }
+              }
+            }
+            // Clear any cell highlight from the input handler
+            if (td) td.style.backgroundColor = '';
+            renderProgramSteps();
+            updatePreview(true);
           } else if (field === 'sim_time_hhmm') {
             const td = e.target.closest('td'); if (!td) return;
             const tr = e.target.closest('tr'); const row = Array.from(tr.parentNode.children).indexOf(tr);
@@ -8695,10 +8735,26 @@ https://github.com/odeepllama/SolarSim/tree/main
               return;
             }
 
-            // For sunrise/sunset, update timeline immediately but defer table re-render
-            // to blur event to avoid destroying the active input while user is typing
+            // For sunrise/sunset, validate HHMM and update timeline only if valid
             if (field === 'sunrise' || field === 'sunset') {
-              updatePreview(false);
+              const rawVal = e.target.value.trim();
+              const td = e.target.closest('td');
+              if (rawVal === '') {
+                // Empty is allowed (clears the value)
+                if (td) { td.style.backgroundColor = ''; }
+                updatePreview(false);
+              } else {
+                const numVal = parseInt(rawVal, 10);
+                const isValid = !isNaN(numVal) && numVal >= 0 && numVal <= 2359 && (numVal % 100) < 60;
+                if (td) {
+                  td.style.backgroundColor = isValid ? '' : '#ff6666';
+                }
+                if (isValid) {
+                  updatePreview(false);
+                }
+                // If invalid, do NOT update timeline — value stays in programSteps
+                // but timeline won't reflect the bad value
+              }
               return;
             }
 
