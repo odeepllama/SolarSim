@@ -5282,10 +5282,16 @@ https://github.com/odeepllama/SolarSim/tree/main
         <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
         <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
       </label>
-      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-        <input type="checkbox" id="perStepDayLength" style="cursor: pointer;">
-        <span data-i18n="perStepDayLength">Per-step day length (sunrise/sunset)</span>
-      </label>
+      <div style="display:flex; flex-wrap:wrap; gap:4px 16px;">
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="perStepDayLength" style="cursor: pointer;">
+          <span data-i18n="perStepDayLength">Per-step day length (sunrise/sunset)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="hideClockFinalNight" style="cursor: pointer;">
+          <span>Hide final night on clock bar</span>
+        </label>
+      </div>
       <div id="errorBannerInline"></div>
       <table class="program-steps-table" id="programStepsTable">
         <thead>
@@ -9120,6 +9126,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
 
+        // Hide final night on clock bar checkbox
+        document.getElementById('hideClockFinalNight')?.addEventListener('change', (e) => {
+          try { localStorage.setItem('hideClockFinalNight', e.target.checked ? 'true' : 'false'); } catch (_) { }
+          if (typeof renderTimelineStrip === 'function') {
+            try { renderTimelineStrip(); } catch (_e) { }
+          }
+        });
+
         // Restore per-step day length preference
         {
           const cb = document.getElementById('perStepDayLength');
@@ -9131,6 +9145,13 @@ https://github.com/odeepllama/SolarSim/tree/main
                 document.querySelectorAll('.dual-sun-col').forEach(el => { el.style.display = 'none'; });
               }
             }
+          }
+        }
+        // Restore hide-final-night preference
+        {
+          const cb = document.getElementById('hideClockFinalNight');
+          if (cb) {
+            try { cb.checked = localStorage.getItem('hideClockFinalNight') === 'true'; } catch (_) { }
           }
         }
 
@@ -11646,7 +11667,16 @@ https://github.com/odeepllama/SolarSim/tree/main
        * Segments are sized proportional to their real-world duration.
        */
       function renderClockTimeTimeline(container, isReadOnly) {
-        const { segments, totalRealSeconds } = computeClockTimeSegments();
+        const raw = computeClockTimeSegments();
+        const hideFinalNight = document.getElementById('hideClockFinalNight')?.checked;
+        // Filter out isLastStepNight segments if checkbox is checked
+        const segments = hideFinalNight
+          ? raw.segments.filter(s => !s.isLastStepNight)
+          : raw.segments;
+        // Recalculate total when segments were filtered
+        const totalRealSeconds = hideFinalNight
+          ? segments.reduce((sum, s) => sum + (s.isJump ? 0 : s.realSeconds), 0)
+          : raw.totalRealSeconds;
         if (totalRealSeconds <= 0 || segments.length === 0) return;
 
         // Clock section: matches multi-day layout with 75px label + bar
@@ -19093,6 +19123,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.__deviceConfig = {};
               window.__deviceProfile = null;
               window.__loadedProfile = null;
+              window.__simPlayheadInterp = null; // Reset stale interpolation state
               if (typeof window.__updateProgramTitles === 'function') {
                 window.__updateProgramTitles();
               }
@@ -19523,6 +19554,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             updateLoadCurrentButton();
             // Reset playhead to Day 1 when profile is loaded
             if (typeof window.__resetPlayheadToDay1 === 'function') window.__resetPlayheadToDay1();
+            // Re-render timeline so playhead gate passes now that profile is set
+            if (typeof renderTimelineStrip === 'function') { try { renderTimelineStrip(); } catch (_e) { } }
           }
           const mAutoload = line.match(reAutoloadProfile);
           if (mAutoload) {
@@ -19532,6 +19565,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             updateLoadCurrentButton();
             // Reset playhead to Day 1 when profile is auto-loaded
             if (typeof window.__resetPlayheadToDay1 === 'function') window.__resetPlayheadToDay1();
+            // Re-render timeline so playhead gate passes now that profile is set
+            if (typeof renderTimelineStrip === 'function') { try { renderTimelineStrip(); } catch (_e) { } }
           }
           // Parse "Loaded Profile:" from status command output
           const mLoadedStatus = line.match(reLoadedProfileStatus);
@@ -19564,6 +19599,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.__deviceProfile = profileName;
               window.__loadedProfile = profileName; // Device profile takes precedence
               window.__formProfile = null; // Clear form profile when device has one
+              // Re-render timeline so playhead gate passes now that profile is set
+              if (typeof renderTimelineStrip === 'function') { try { renderTimelineStrip(); } catch (_e) { } }
             }
             updateLoadCurrentButton();
           }
@@ -19604,7 +19641,12 @@ https://github.com/odeepllama/SolarSim/tree/main
             const appliedDay = parseInt(mStepApplied[2], 10);
             // Always update step index from device (critical for reverse-speed steps)
             if (appliedStep > 0) {
+              const wasFirstStep = window.__currentStepIndex === 0;
               window.__currentStepIndex = appliedStep;
+              // First step after connection: ensure timeline renders with playhead
+              if (wasFirstStep && typeof renderTimelineStrip === 'function') {
+                try { renderTimelineStrip(); } catch (_e) { }
+              }
             }
             if (appliedDay > 0 && appliedDay !== window.__playheadCurrentDay) {
               window.__playheadCurrentDay = appliedDay;
