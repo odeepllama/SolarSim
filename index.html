@@ -400,8 +400,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .program-steps-table td.sim-time-cell input[data-f='sim_time_hhmm'] {
-      width: 68px;
-      padding: 4px 4px 4px 26px;
+      width: 58px;
+      padding: 4px 0px 4px 22px;
       line-height: 1.25;
       height: 30px;
       font-size: 17px;
@@ -8208,7 +8208,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     </select>`));
           // Hold minutes cell - highlight only if hold_minutes > 0 AND speed is 0
           const holdBg = (step.speed === 0 && step.hold_minutes && step.hold_minutes > 0) ? '#f08080' : '';
-          tr.appendChild(mkCell(`<input data-f='hold_minutes' type='number' min='0' value='${step.hold_minutes ?? ''}' style='width:65px'/>`, holdBg, holdBg ? '700' : ''));
+          tr.appendChild(mkCell(`<input data-f='hold_minutes' type='number' min='0' value='${step.hold_minutes ?? ''}' style='width:45px'/>`, holdBg, holdBg ? '700' : ''));
           // Repeat cell - highlight if value is present
           const repBg = (step.repeat && step.repeat > 0) ? '#ffc107' : '';
           tr.appendChild(mkCell(`<input data-f='repeat' type='number' min='0' value='${step.repeat ?? ''}' style='width:55px'/>`, repBg, repBg ? '700' : ''));
