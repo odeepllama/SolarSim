@@ -4,7 +4,7 @@
   <img src="SolaSim%20logo.png" alt="SolaSim Logo" width="300">
 </p>
 
-**SolaSim** is an open-source solar simulator for plant biology research. It uses LED panels and "sun" tracking to recreate realistic daylight cycles — from simple sunrise-to-sunset sequences to multi-day scientific simulations based on real latitude and date.
+**SolaSim** is an open-source solar simulator for phototaxis research. It uses LED panels and "sun" tracking on a semi-circular array of LED panels to recreate realistic daylight cycles — from simple sunrise-to-sunset sequences to multi-day scientific simulations based on real latitude and date.
 
 Built with MicroPython firmware and using a browser-based control interface, it's designed to be affordable, reproducible, and accessible to researchers and educators.
 
