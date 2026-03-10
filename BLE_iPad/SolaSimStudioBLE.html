@@ -17581,15 +17581,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             let line = timestamp + ' | ' + command;
 
-            // Add simtime and realtime if available (for automated triggers)
-            if (entry.speed !== undefined && entry.speed !== 1 && entry.simTime) {
-              if (entry.speed === 0) {
-                // HOLD mode: only simtime
-                line += ' | simtime ' + entry.simTime;
-              } else if (entry.realTime) {
-                // Other speeds: both simtime and realtime
-                line += ' | simtime ' + entry.simTime + ' | realtime ' + entry.realTime;
-              }
+            // Add simtime if available (timestamp already provides the real clock time)
+            if (entry.simTime) {
+              line += ' | simtime ' + entry.simTime;
             }
 
             return line;
