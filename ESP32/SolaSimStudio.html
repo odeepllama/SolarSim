@@ -12552,8 +12552,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             currentDay = nextStep.day;
             continue; // skip midnight-crossing check
           }
-          // If both steps have manual day overrides to the SAME day, skip midnight detection
-          if (nextStep && step._dayManualOverride && nextStep._dayManualOverride
+          // If either step has a manual day override and both agree on the SAME day, skip midnight detection
+          if (nextStep && (step._dayManualOverride || nextStep._dayManualOverride)
             && step.day != null && nextStep.day != null && step.day === nextStep.day) {
             continue; // User explicitly says same day — no crossing
           }
