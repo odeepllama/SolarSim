@@ -4744,11 +4744,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     <div id="formContainer"></div>
     <div id="programSection" data-section="program-steps-section" style="display:none;">
-      <h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
-      <div class="timeline-view-toggle" id="timelineViewToggle">
-        <button data-mode="sim" class="active" title="Simulation time axis">Sim</button>
-        <button data-mode="clock" title="Real-world clock time axis">Clock</button>
-        <button data-mode="both" title="Show both timelines">Both</button>
+      <div class="timeline-header-row">
+        <h2 id="programTimelineTitle" data-i18n="programStepTimeline">Program Step Timeline</h2>
+        <div class="timeline-view-toggle" id="timelineViewToggle">
+          <button data-mode="sim" class="active" title="Simulation time axis">Sim-Time</button>
+          <button data-mode="clock" title="Real-world clock time axis">Clock-Time</button>
+          <button data-mode="both" title="Show both timelines">Both</button>
+        </div>
       </div>
       <div id="timelineContainer" style="margin:6px 0 10px;"></div>
       <h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
@@ -4763,13 +4765,21 @@ https://github.com/odeepllama/SolarSim/tree/main
         <button id="printSummaryBtn2" type="button" class="secondary"
           title="Generate and print a summary of current configuration and program steps">Print Summary</button>
       </div>
-      <div
-        style="margin: 8px 0; padding: 6px 10px; background: #f0f0f0; border-left: 3px solid #3478f6; border-radius: 3px;">
-        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
-          <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
-          <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer; margin-top:-4px;">
+        <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
+        <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
+      </label>
+      <div style="display:flex; flex-wrap:wrap; gap:4px 16px;">
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="perStepDayLength" style="cursor: pointer;">
+          <span data-i18n="perStepDayLength">Per-step day length (sunrise/sunset)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="hideClockFinalNight" style="cursor: pointer;">
+          <span>Hide final night on clock bar</span>
         </label>
       </div>
+      <div id="errorBannerInline"></div>
       <table class="program-steps-table" id="programStepsTable">
         <thead>
           <tr>
@@ -4784,7 +4794,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             <th title="Time scale multiplier (e.g. 1, 2, −1). Negative = reverse. 0 = hold.">Speed</th>
             <th title="Light intensity (0.0–1.0). Leave empty for global setting.">Intensity</th>
             <th title="Per-step sun color (R, G, B: 0–255 each)">Sun Color</th>
-            <th title="Enable mirrored sun for this step">Dual Sun</th>
+            <th class="dual-sun-col" title="Enable mirrored sun for this step">Dual Sun</th>
+            <th class="day-length-col" style="display:none" title="Step sunrise time (HHMM, for CUSTOM solar mode)">
+              Sunrise
+            </th>
+            <th class="day-length-col" style="display:none" title="Step sunset time (HHMM, for CUSTOM solar mode)">
+              Sunset
+            </th>
             <th title="RUN = advance time at speed, JUMP = instant reposition">Transition</th>
             <th title="Real-time pause in minutes (only applies when Speed = 0)">Hold (mins)</th>
             <th title="Repeat this step N additional times">Repeat</th>
@@ -8264,6 +8280,52 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
 
+        // Per-step day length checkbox
+        document.getElementById('perStepDayLength')?.addEventListener('change', (e) => {
+          try { localStorage.setItem('perStepDayLength', e.target.checked ? 'true' : 'false'); } catch (_) { }
+          document.querySelectorAll('.day-length-col').forEach(el => {
+            el.style.display = e.target.checked ? '' : 'none';
+          });
+          // Hide Dual Sun column when day-length is active (iPad/touch only)
+          if (navigator.maxTouchPoints > 1) {
+            document.querySelectorAll('.dual-sun-col').forEach(el => {
+              el.style.display = e.target.checked ? 'none' : '';
+            });
+          }
+          if (typeof renderTimelineStrip === 'function') {
+            try { renderTimelineStrip(); } catch (_e) { }
+          }
+        });
+
+        // Hide final night on clock bar checkbox
+        document.getElementById('hideClockFinalNight')?.addEventListener('change', (e) => {
+          try { localStorage.setItem('hideClockFinalNight', e.target.checked ? 'true' : 'false'); } catch (_) { }
+          if (typeof renderTimelineStrip === 'function') {
+            try { renderTimelineStrip(); } catch (_e) { }
+          }
+        });
+
+        // Restore per-step day length preference
+        {
+          const cb = document.getElementById('perStepDayLength');
+          if (cb) {
+            try { cb.checked = localStorage.getItem('perStepDayLength') === 'true'; } catch (_) { }
+            if (cb.checked) {
+              document.querySelectorAll('.day-length-col').forEach(el => { el.style.display = ''; });
+              if (navigator.maxTouchPoints > 1) {
+                document.querySelectorAll('.dual-sun-col').forEach(el => { el.style.display = 'none'; });
+              }
+            }
+          }
+        }
+        // Restore hide-final-night preference
+        {
+          const cb = document.getElementById('hideClockFinalNight');
+          if (cb) {
+            try { cb.checked = localStorage.getItem('hideClockFinalNight') === 'true'; } catch (_) { }
+          }
+        }
+
         // Restore single-day visualization preference on load
         document.addEventListener('DOMContentLoaded', () => {
           const checkbox = document.getElementById('singleDayVisualization');
@@ -9992,9 +10054,28 @@ https://github.com/odeepllama/SolarSim/tree/main
   .timeline-bar-labels .speed-label{ height:56px; }
   .timeline-bar-labels .color-label{ height:54px; margin-top:3px; }
 
-  /* ============================================================================
+   /* ============================================================================
    CLOCK-TIME TIMELINE & VIEW MODE TOGGLE
    ============================================================================ */
+    .timeline-header-row {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 1rem;
+      border-bottom: 1px solid #1f1e1f;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-top: 2rem;
+    }
+
+    .timeline-header-row h2 {
+      background: none;
+      border: none;
+      box-shadow: none;
+      margin: 0;
+      padding: 0;
+    }
+
     .timeline-view-toggle {
       display: inline-flex;
       gap: 0;
