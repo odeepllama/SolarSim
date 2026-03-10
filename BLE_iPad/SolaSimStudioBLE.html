@@ -7371,6 +7371,35 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
         });
 
+        // Build set of first-of-day step indices for sunrise/sunset editing
+        const firstOfDayIndices = new Set();
+        dayData.days.forEach(day => {
+          if (day.steps && day.steps.length > 0) firstOfDayIndices.add(day.steps[0].index);
+        });
+        for (let i = 0; i < programSteps.length; i++) {
+          const effectiveDay = programSteps[i].day != null ? programSteps[i].day : (stepToDayMap.get(i) || 1);
+          if (i === 0) { firstOfDayIndices.add(i); continue; }
+          const prevDay = programSteps[i - 1].day != null ? programSteps[i - 1].day : (stepToDayMap.get(i - 1) || 1);
+          if (effectiveDay !== prevDay) firstOfDayIndices.add(i);
+        }
+
+        // Pre-compute inherited sunrise/sunset per step
+        const globalRise = state.SOLAR_MODE === 'CUSTOM' && state.CUSTOM_SUNRISE_HHMM != null ? state.CUSTOM_SUNRISE_HHMM : 600;
+        const globalSet = state.SOLAR_MODE === 'CUSTOM' && state.CUSTOM_SUNSET_HHMM != null ? state.CUSTOM_SUNSET_HHMM : 1800;
+        const inheritedSunrise = new Array(programSteps.length);
+        const inheritedSunset = new Array(programSteps.length);
+        {
+          let lastDay = -1, runRise = globalRise, runSet = globalSet;
+          for (let i = 0; i < programSteps.length; i++) {
+            const s = programSteps[i];
+            const day = s.day != null ? s.day : (stepToDayMap.get(i) || 1);
+            if (day !== lastDay) { runRise = globalRise; runSet = globalSet; lastDay = day; }
+            if (s.sunrise != null) runRise = s.sunrise;
+            if (s.sunset != null) runSet = s.sunset;
+            inheritedSunrise[i] = runRise;
+            inheritedSunset[i] = runSet;
+          }
+        }
 
         programSteps.forEach((step, idx) => {
           const tr = document.createElement('tr');
@@ -7459,9 +7488,28 @@ https://github.com/odeepllama/SolarSim/tree/main
             colorCell.style.background = `linear-gradient(rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45), rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.45)), #fff`;
           }
           tr.appendChild(colorCell);
+          // Rise/Set visibility (also controls dual-sun column hiding)
+          const dayLenVisible = document.getElementById('perStepDayLength')?.checked;
           // Dual sun cell - highlight if checked
           const dualBg = step.dual_sun ? '#90be6d' : '';
-          tr.appendChild(mkCell(`<input data-f='dual_sun' type='checkbox' ${step.dual_sun ? 'checked' : ''} style='text-align:center; display:block; margin:0 auto;'/>`, dualBg, step.dual_sun ? '700' : ''));
+          const dualCell = mkCell(`<input data-f='dual_sun' type='checkbox' ${step.dual_sun ? 'checked' : ''} style='text-align:center; display:block; margin:0 auto;'/>`, dualBg, step.dual_sun ? '700' : '');
+          dualCell.className = 'dual-sun-col';
+          if (dayLenVisible && navigator.maxTouchPoints > 1) dualCell.style.display = 'none';
+          tr.appendChild(dualCell);
+          // Rise/Set cells — only editable on first step of each day
+          const riseDisplay = dayLenVisible ? '' : 'display:none';
+          const isFirstOfDay = firstOfDayIndices.has(idx);
+          const riseVal = isFirstOfDay ? (step.sunrise != null ? step.sunrise : (dayLenVisible ? 600 : '')) : '';
+          const setVal = isFirstOfDay ? (step.sunset != null ? step.sunset : (dayLenVisible ? 1800 : '')) : '';
+          if (dayLenVisible && isFirstOfDay && step.sunrise == null) step.sunrise = 600;
+          if (dayLenVisible && isFirstOfDay && step.sunset == null) step.sunset = 1800;
+          if (dayLenVisible && !isFirstOfDay) { step.sunrise = undefined; step.sunset = undefined; }
+          const riseTd = mkCell(`<input data-f='sunrise' type='number' min='0' max='2359' value='${riseVal}' style='width:60px' placeholder='—' ${!isFirstOfDay ? 'disabled' : ''}/>`);
+          riseTd.className = 'day-length-col'; riseTd.style.cssText = riseDisplay;
+          tr.appendChild(riseTd);
+          const setTd = mkCell(`<input data-f='sunset' type='number' min='0' max='2359' value='${setVal}' style='width:60px' placeholder='—' ${!isFirstOfDay ? 'disabled' : ''}/>`);
+          setTd.className = 'day-length-col'; setTd.style.cssText = riseDisplay;
+          tr.appendChild(setTd);
           const transitionVal = (step.transition || 'RUN').toUpperCase();
           tr.appendChild(mkCell(`<select data-f='transition'>
       <option value='RUN' ${transitionVal === 'RUN' ? 'selected' : ''}>RUN</option>
