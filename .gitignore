@@ -1,4 +1,21 @@
-# Ignore VS Code workspace files
-Workspace_202511.code-workspace
-ESP32_Bluetooth/pyrightconfig.json
+# macOS
+.DS_Store
+
+# VS Code / Editor
+*.code-workspace
 __pycache__/
+
+# Internal project files (not needed by public visitors)
+Backups/
+~Docs/
+.lh/
+.agents/
+Overview.md
+workflow_overview.md
+
+# Old monolithic firmware files (superseded by modular ESP32/RP2040 code)
+SolarSimulator.py
+SolarSimulator_rtc.py
+
+# Tooling config
+ESP32_Bluetooth/pyrightconfig.json
