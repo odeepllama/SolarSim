@@ -465,9 +465,33 @@ https://github.com/odeepllama/SolarSim/tree/main
       }
 
       /* Hide Repeat column on iPad to free space for action buttons */
-      .program-steps-table th:nth-child(11),
-      .program-steps-table td:nth-child(11) {
+      .program-steps-table th:nth-child(13),
+      .program-steps-table td:nth-child(13) {
         display: none;
+      }
+    }
+
+    /* iPad Pro 12.9" landscape: CSS width ≈ 1366px */
+    @media (min-width: 1200px) and (max-width: 1399px) {
+
+      .program-steps-table th,
+      .program-steps-table td {
+        padding: 4px 4px;
+      }
+
+      .program-steps-table th:last-child,
+      .program-steps-table td:last-child {
+        white-space: nowrap;
+        min-width: 160px;
+      }
+
+      .program-steps-table input[data-f='sunrise'],
+      .program-steps-table input[data-f='sunset'] {
+        width: 50px !important;
+      }
+
+      .program-steps-table input[data-f='hold_minutes'] {
+        width: 50px !important;
       }
     }
 
