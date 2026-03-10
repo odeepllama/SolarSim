@@ -11278,7 +11278,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         const simTimeMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
 
         // Compute segments for position mapping
-        const { segments, totalRealSeconds } = computeClockTimeSegments();
+        const raw = computeClockTimeSegments();
+        // Apply the same hideFinalNight filter as the clock bar renderer
+        const hideFinalNight = document.getElementById('hideClockFinalNight')?.checked;
+        const segments = hideFinalNight
+          ? raw.segments.filter(s => !s.isLastStepNight)
+          : raw.segments;
+        const totalRealSeconds = hideFinalNight
+          ? segments.reduce((sum, s) => sum + (s.isJump ? 0 : s.realSeconds), 0)
+          : raw.totalRealSeconds;
         if (totalRealSeconds <= 0) return;
 
         // Find the segment for the current step
