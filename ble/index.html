@@ -9920,14 +9920,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (hasColor || hasIntensity) {
             const { forward, reverse } = partitionForwardReverse(currentDayInfo.steps);
             if (forward.length > 0) {
-              barCol.appendChild(buildIntensityStrip(forward, globalWindow.start, globalWindow.end, curHasReverse ? 'forward-intensity' : 'only-intensity'));
+              // Intensity strip removed — ultra bar shows color+intensity+speed together
+              // barCol.appendChild(buildIntensityStrip(forward, globalWindow.start, globalWindow.end, curHasReverse ? 'forward-intensity' : 'only-intensity'));
             }
             if (curHasReverse && reverse.length > 0) {
               const revBar = document.createElement('div');
               revBar.className = 'timeline-strip reverse-strip readonly';
               barCol.appendChild(revBar);
               renderDayTimeline(revBar, currentDayInfo, globalWindow, true, null, false, undefined, 'reverse');
-              barCol.appendChild(buildIntensityStrip(reverse, globalWindow.start, globalWindow.end, 'reverse-intensity'));
+              // barCol.appendChild(buildIntensityStrip(reverse, globalWindow.start, globalWindow.end, 'reverse-intensity'));
             }
           } else if (curHasReverse) {
             const revBar = document.createElement('div');
@@ -9971,14 +9972,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (hasColor || hasIntensity) {
             const { forward: fwd, reverse: rev } = partitionForwardReverse(profileDayInfo.steps);
             if (fwd.length > 0) {
-              barCol.appendChild(buildIntensityStrip(fwd, globalWindow.start, globalWindow.end, profHasReverse ? 'forward-intensity' : 'only-intensity'));
+              // Intensity strip removed — ultra bar shows color+intensity+speed together
+              // barCol.appendChild(buildIntensityStrip(fwd, globalWindow.start, globalWindow.end, profHasReverse ? 'forward-intensity' : 'only-intensity'));
             }
             if (profHasReverse && rev.length > 0) {
               const revBar = document.createElement('div');
               revBar.className = 'timeline-strip reverse-strip readonly';
               barCol.appendChild(revBar);
               renderDayTimeline(revBar, profileDayInfo, globalWindow, true, null, false, undefined, 'reverse');
-              barCol.appendChild(buildIntensityStrip(rev, globalWindow.start, globalWindow.end, 'reverse-intensity'));
+              // barCol.appendChild(buildIntensityStrip(rev, globalWindow.start, globalWindow.end, 'reverse-intensity'));
             }
           } else if (profHasReverse) {
             const revBar = document.createElement('div');
@@ -12390,7 +12392,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (hasAnyDayColor || hasAnyDayIntensity) {
             const { forward, reverse } = partitionForwardReverse(daySteps);
             if (forward.length > 0) {
-              barColumn.appendChild(buildIntensityStrip(forward, wStart, wEnd, hasReverse ? 'forward-intensity' : 'only-intensity'));
+              // Intensity strip removed — ultra bar shows color+intensity+speed together
+              // barColumn.appendChild(buildIntensityStrip(forward, wStart, wEnd, hasReverse ? 'forward-intensity' : 'only-intensity'));
             }
 
             // Reverse speed bar + intensity (only if reverse steps exist)
@@ -12400,7 +12403,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               reverseBar.setAttribute('data-day', dayInfo.dayNumber);
               barColumn.appendChild(reverseBar);
               renderDayTimeline(reverseBar, dayInfo, globalWindow, readOnly, prevDayOrphanedTime, isStartingDay, prevDayLastSpeed, 'reverse');
-              barColumn.appendChild(buildIntensityStrip(reverse, wStart, wEnd, 'reverse-intensity'));
+              // barColumn.appendChild(buildIntensityStrip(reverse, wStart, wEnd, 'reverse-intensity'));
             }
           } else if (hasReverse) {
             // Has reverse steps but no colour/intensity data — still show reverse speed bar
@@ -12632,12 +12635,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             // Forward intensity bar
             if (forward.length > 0) {
-              barColumn.appendChild(buildIntensityStrip(forward, wStart, wEnd, hasReverse ? 'forward-intensity' : 'only-intensity'));
-              // Add COLOR/INTENSITY label
-              const colorLbl = document.createElement('div');
-              colorLbl.className = 'bar-label color-label';
-              colorLbl.innerHTML = 'COLOR/<br>INTENSITY';
-              labelCol.appendChild(colorLbl);
+              // Intensity strip removed — ultra bar shows color+intensity+speed together
+              // barColumn.appendChild(buildIntensityStrip(forward, wStart, wEnd, hasReverse ? 'forward-intensity' : 'only-intensity'));
+              // COLOR/INTENSITY label removed (redundant with ultra bar)
+              // const colorLbl = document.createElement('div');
+              // colorLbl.className = 'bar-label color-label';
+              // colorLbl.innerHTML = 'COLOR/<br>INTENSITY';
+              // labelCol.appendChild(colorLbl);
             }
 
             // Reverse speed bar + intensity - only if reverse steps exist
@@ -12646,7 +12650,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               reverseBar.className = readOnly ? 'timeline-strip reverse-strip readonly' : 'timeline-strip reverse-strip';
               barColumn.appendChild(reverseBar);
               renderDayTimeline(reverseBar, dayInfo, null, readOnly, null, false, undefined, 'reverse');
-              barColumn.appendChild(buildIntensityStrip(reverse, wStart, wEnd, 'reverse-intensity'));
+              // barColumn.appendChild(buildIntensityStrip(reverse, wStart, wEnd, 'reverse-intensity'));
             }
           }
         } else if (hasReverse) {
