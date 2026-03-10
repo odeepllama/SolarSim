@@ -7393,6 +7393,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         dayData.days.forEach(day => {
           day.steps.forEach(stepInfo => {
             stepToDayMap.set(stepInfo.index, day.dayNumber);
+            // Store day directly into the step object for firmware export
+            // Skip if user has manually overridden this step's day number
+            if (programSteps[stepInfo.index] && !programSteps[stepInfo.index]._dayManualOverride) {
+              programSteps[stepInfo.index].day = day.dayNumber;
+            }
           });
         });
 
@@ -7457,8 +7462,13 @@ https://github.com/odeepllama/SolarSim/tree/main
           idxCell.classList.add('step-index');
           if (dayTooltip) idxCell.title = dayTooltip;
           tr.appendChild(idxCell);
-          // Day column - shows the day number for this step
-          const dayCell = mkCell(dayNum !== undefined ? dayNum : '');
+          // Day column - editable day number for this step (auto-populated, user-overridable)
+          const autoDay = stepToDayMap.get(idx);
+          const storedDay = step.day;
+          const displayDay = storedDay != null ? storedDay : (autoDay != null ? autoDay : 1);
+          if (storedDay == null && autoDay != null) step.day = autoDay;
+          const isOverridden = storedDay != null && autoDay != null && storedDay !== autoDay;
+          const dayCell = mkCell(`<input data-f='day' type='number' min='1' value='${displayDay}' style='width:36px; text-align:center; font-weight:700; ${isOverridden ? "border:2px solid #e65100; background:#fff3e0;" : ""}' title='${isOverridden ? "Manual override (auto=" + autoDay + ")" : "Day " + displayDay + " (auto-assigned)"}'/>`);
           dayCell.classList.add('day-number-cell');
           tr.appendChild(dayCell);
           // Format time with 4-digit padding for display (1 -> 0001, 600 -> 0600)
@@ -8000,9 +8010,32 @@ https://github.com/odeepllama/SolarSim/tree/main
             updatePreview(false);
             return;
           }
-          else if (['speed', 'hold_minutes', 'intensity_scale', 'repeat'].includes(field)) {
+          else if (['speed', 'hold_minutes', 'intensity_scale', 'repeat', 'day'].includes(field)) {
             const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
             programSteps[row][field] = val;
+            // Mark day as manually overridden so auto-recalculation won't clobber it
+            if (field === 'day' && val != null) programSteps[row]._dayManualOverride = true;
+
+            // For day field changes, trigger full re-render to update row backgrounds and timeline
+            if (field === 'day') {
+              const focusRow = row;
+              renderProgramSteps();
+              updatePreview(false);
+              requestAnimationFrame(() => {
+                const tbody = document.querySelector('#programStepsTable tbody');
+                if (tbody) {
+                  const tr = tbody.querySelectorAll('tr')[focusRow];
+                  if (tr) {
+                    const input = tr.querySelector("input[data-f='day']");
+                    if (input) input.focus();
+                  }
+                }
+              });
+              if (typeof renderTimelineStrip === 'function') {
+                try { renderTimelineStrip(); } catch (_) { }
+              }
+              return;
+            }
 
             // For speed field, update cell background color dynamically
             if (field === 'speed') {
@@ -11755,6 +11788,18 @@ https://github.com/odeepllama/SolarSim/tree/main
           currentDayMinutes.push({ step, m, index: i });
 
           // Check for day boundary crossing to NEXT step
+          // First: respect explicit step.day overrides
+          if (nextStep && step.day != null && nextStep.day != null && nextStep.day !== step.day) {
+            // Explicit day boundary — finalize current day
+            result.days.push({
+              dayNumber: step.day,
+              steps: currentDayMinutes,
+              orphanedHoldEndTime: null
+            });
+            currentDayMinutes = [];
+            currentDay = nextStep.day;
+            continue; // skip midnight-crossing check
+          }
           // If both steps have manual day overrides to the SAME day, skip midnight detection
           if (nextStep && step._dayManualOverride && nextStep._dayManualOverride
             && step.day != null && nextStep.day != null && step.day === nextStep.day) {
