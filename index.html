@@ -8036,7 +8036,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           day.steps.forEach(stepInfo => {
             stepToDayMap.set(stepInfo.index, day.dayNumber);
             // Store day directly into the step object for firmware export
-            if (programSteps[stepInfo.index]) programSteps[stepInfo.index].day = day.dayNumber;
+            // Skip if user has manually overridden this step's day number
+            if (programSteps[stepInfo.index] && !programSteps[stepInfo.index]._dayManualOverride) {
+              programSteps[stepInfo.index].day = day.dayNumber;
+            }
           });
         });
 
@@ -8742,6 +8745,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           else if (['speed', 'hold_minutes', 'intensity_scale', 'repeat', 'sunrise', 'sunset', 'day'].includes(field)) {
             const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
             programSteps[row][field] = val;
+            // Mark day as manually overridden so auto-recalculation won't clobber it
+            if (field === 'day' && val != null) programSteps[row]._dayManualOverride = true;
 
             // For day field changes, trigger full re-render to update row backgrounds and timeline
             if (field === 'day') {
@@ -9199,7 +9204,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             try { localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer)); } catch (_) { }
           }
           // Clear all manual day assignments so auto-detection takes over
-          programSteps.forEach(s => { delete s.day; });
+          programSteps.forEach(s => { delete s.day; delete s._dayManualOverride; });
           renderProgramSteps();
           updatePreview(true);
           if (typeof renderTimelineStrip === 'function') {
@@ -12546,6 +12551,11 @@ https://github.com/odeepllama/SolarSim/tree/main
             currentDayMinutes = [];
             currentDay = nextStep.day;
             continue; // skip midnight-crossing check
+          }
+          // If both steps have manual day overrides to the SAME day, skip midnight detection
+          if (nextStep && step._dayManualOverride && nextStep._dayManualOverride
+            && step.day != null && nextStep.day != null && step.day === nextStep.day) {
+            continue; // User explicitly says same day — no crossing
           }
           // Then: detect midnight crossing from time progression
           if (nextStep) {
