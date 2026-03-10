@@ -14,29 +14,29 @@ jobs:
           mkdir -p deploy
 
           if [ "${{ github.ref_name }}" = "main" ]; then
-            # SolaSimStudio (unified wired USB) → /
+            # SolaSimStudio (USB wired) → /
             if [ -f ESP32/SolaSimStudio.html ]; then
               cp ESP32/SolaSimStudio.html deploy/index.html
               cp -f planty.svg planty_b\&w.svg deploy/ 2>/dev/null || true
             fi
-            # SolaSimStudioBLE (iPad BLE) → /Bt/
+            # SolaSimStudioBLE (iPad BLE) → /ble/
             if [ -f BLE_iPad/SolaSimStudioBLE.html ]; then
-              mkdir -p deploy/Bt
-              cp BLE_iPad/SolaSimStudioBLE.html deploy/Bt/index.html
-              cp -f planty.svg planty_b\&w.svg deploy/Bt/ 2>/dev/null || true
+              mkdir -p deploy/ble
+              cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/index.html
+              cp -f planty.svg planty_b\&w.svg deploy/ble/ 2>/dev/null || true
             fi
           else
-            # SolaSimStudio (unified wired USB) → /test/
+            # SolaSimStudio (USB wired) → /test/
             if [ -f ESP32/SolaSimStudio.html ]; then
               mkdir -p deploy/test
               cp ESP32/SolaSimStudio.html deploy/test/index.html
               cp -f planty.svg planty_b\&w.svg deploy/test/ 2>/dev/null || true
             fi
-            # SolaSimStudioBLE (iPad BLE) → /Bt/test/
+            # SolaSimStudioBLE (iPad BLE) → /ble/test/
             if [ -f BLE_iPad/SolaSimStudioBLE.html ]; then
-              mkdir -p deploy/Bt/test
-              cp BLE_iPad/SolaSimStudioBLE.html deploy/Bt/test/index.html
-              cp -f planty.svg planty_b\&w.svg deploy/Bt/test/ 2>/dev/null || true
+              mkdir -p deploy/ble/test
+              cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/test/index.html
+              cp -f planty.svg planty_b\&w.svg deploy/ble/test/ 2>/dev/null || true
             fi
           fi
       - name: Deploy to GitHub Pages
