@@ -8331,7 +8331,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             try { localStorage.setItem(CONFIG.UNDO_STORAGE_KEY, JSON.stringify(undoBuffer)); } catch (_) { }
           }
           // Clear all manual day assignments so auto-detection takes over
-          programSteps.forEach(s => { delete s.day; });
+          programSteps.forEach(s => { delete s.day; delete s._dayManualOverride; });
           renderProgramSteps();
           updatePreview(true);
           if (typeof renderTimelineStrip === 'function') {
@@ -11755,6 +11755,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           currentDayMinutes.push({ step, m, index: i });
 
           // Check for day boundary crossing to NEXT step
+          // If both steps have manual day overrides to the SAME day, skip midnight detection
+          if (nextStep && step._dayManualOverride && nextStep._dayManualOverride
+            && step.day != null && nextStep.day != null && step.day === nextStep.day) {
+            continue; // User explicitly says same day — no crossing
+          }
           if (nextStep) {
             const mNext = parseHHMM(nextStep.sim_time_hhmm);
             if (mNext != null) {
