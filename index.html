@@ -12542,20 +12542,28 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Check for day boundary crossing to NEXT step
           // First: respect explicit step.day overrides
           if (nextStep && step.day != null && nextStep.day != null && nextStep.day !== step.day) {
-            // Explicit day boundary — finalize current day
-            result.days.push({
-              dayNumber: step.day,
-              steps: currentDayMinutes,
-              orphanedHoldEndTime: null
-            });
-            currentDayMinutes = [];
-            currentDay = nextStep.day;
-            continue; // skip midnight-crossing check
+            // If EITHER step has a manual override, the mismatch may be stale
+            // (user is editing one step at a time). Trust the override and skip.
+            if (step._dayManualOverride || nextStep._dayManualOverride) {
+              // Use the overridden step's day as the running day
+              if (step._dayManualOverride) currentDay = step.day;
+              // Don't split — let midnight detection handle it below (it will also be skipped)
+            } else {
+              // Both are auto-assigned and disagree — explicit day boundary
+              result.days.push({
+                dayNumber: step.day,
+                steps: currentDayMinutes,
+                orphanedHoldEndTime: null
+              });
+              currentDayMinutes = [];
+              currentDay = nextStep.day;
+              continue; // skip midnight-crossing check
+            }
           }
-          // If either step has a manual day override and both agree on the SAME day, skip midnight detection
-          if (nextStep && (step._dayManualOverride || nextStep._dayManualOverride)
-            && step.day != null && nextStep.day != null && step.day === nextStep.day) {
-            continue; // User explicitly says same day — no crossing
+          // If either step has a manual day override, skip midnight detection entirely.
+          // The user has explicitly stated what day this step belongs to.
+          if (nextStep && (step._dayManualOverride || nextStep._dayManualOverride)) {
+            continue; // User override takes precedence over auto-detection
           }
           // Then: detect midnight crossing from time progression
           if (nextStep) {
