@@ -18161,7 +18161,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           try {
             // Log command if it's from a known source
             if (opts.logSource) {
-              logCommand(line, opts.logSource);
+              // Capture simtime from kvCache for the log entry
+              const meta = {};
+              if (window.kvCache && window.kvCache.get) {
+                const simValue = window.kvCache.get('sim');
+                if (simValue) {
+                  const valueEl = simValue.querySelector('span');
+                  if (valueEl) meta.simTime = valueEl.textContent.trim();
+                }
+              }
+              logCommand(line, opts.logSource, Object.keys(meta).length ? meta : undefined);
             }
 
             // Process time aliases before other processing
