@@ -4,11 +4,9 @@
   <img src="SolaSim%20logo.png" alt="SolaSim Logo" width="300">
 </p>
 
-**SolaSim** is an open-source solar simulator for plant biology research. It uses LED panels and servo-driven sun tracking to recreate realistic daylight cycles — from simple sunrise-to-sunset sequences to multi-day scientific simulations based on real latitude and date.
+**SolaSim** is an open-source solar simulator for plant biology research. It uses LED panels and "sun" tracking to recreate realistic daylight cycles — from simple sunrise-to-sunset sequences to multi-day scientific simulations based on real latitude and date.
 
-Built with MicroPython firmware and browser-based control interfaces, it's designed to be affordable, reproducible, and accessible to researchers and educators.
-
-> 🧪 Developed at [Akita International University](https://web.aiu.ac.jp/en/) for photobiology and plant science experiments.
+Built with MicroPython firmware and using a browser-based control interface, it's designed to be affordable, reproducible, and accessible to researchers and educators.
 
 ---
 
@@ -17,7 +15,7 @@ Built with MicroPython firmware and browser-based control interfaces, it's desig
 - **Solar Simulation Modes** — BASIC (fixed 6 AM–6 PM) and SCIENTIFIC (astronomical calculations from latitude/date)
 - **Multi-Step Programs** — Sequences with per-step speed, intensity, sun colour, hold/repeat, and multi-day support
 - **360° Rotation Imaging** — Servo-driven turntable with camera trigger for time-lapse and stills capture
-- **Wireless (BLE) & Wired (USB)** — Control from an iPad over Bluetooth or a desktop browser over USB
+- **Browser-Based Control** — Connect via USB from Chrome/Edge/Opera using Web Serial. Wireless BLE support (ESP32-S3) is in development
 - **Real-Time Monitoring** — Live status tiles, solar arc visualisation, interactive timeline with playhead
 - **Profile Management** — Save, load, compare, and share experiment profiles
 - **English & Japanese UI** — Full bilingual interface with one-click toggle
@@ -26,38 +24,35 @@ Built with MicroPython firmware and browser-based control interfaces, it's desig
 
 ## 🌐 Try It Now
 
-The web interfaces are hosted on GitHub Pages — no installation required:
+The web interface is hosted on GitHub Pages — no installation required:
 
-| Interface | URL | Use Case |
-|-----------|-----|----------|
-| **BLE (iPad)** | [odeepllama.github.io/SolarSim/ble/](https://odeepllama.github.io/SolarSim/ble/) | Wireless control via Bluefy browser on iPad |
-| **USB (Desktop)** | [odeepllama.github.io/SolarSim/](https://odeepllama.github.io/SolarSim/) | Wired control via Chrome/Edge/Opera |
+👉 **[odeepllama.github.io/SolarSim/](https://odeepllama.github.io/SolarSim/)** — Open in Chrome, Edge, or Opera and connect to your device via USB.
 
-> **Note:** Web Serial and Web Bluetooth APIs require a compatible browser. See the in-app Help panel for details.
+> **Note:** The Web Serial API requires a Chromium-based browser. See the in-app Help panel for details.
+>
+> *Experimental:* A BLE version for iPad is available at [/SolarSim/ble/](https://odeepllama.github.io/SolarSim/ble/) (requires [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) browser and ESP32-S3 hardware).
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    Web Interfaces                        │
-│                                                          │
-│  SolaSimStudio.html          SolaSimStudioBLE.html       │
-│  (USB — Web Serial API)      (iPad — Web Bluetooth API)  │
-│  Desktop Chrome/Edge/Opera   Bluefy browser on iPad      │
-└──────────┬───────────────────────────────┬───────────────┘
-           │ USB Serial                    │ BLE (NUS)
-┌──────────▼──────────┐      ┌─────────────▼──────────────┐
-│  ESP32-S3 Firmware  │      │  ESP32-S3 BLE Firmware     │
-│  (ESP32/)           │      │  (BLE_iPad/)               │
-│  USB + BLE capable  │      │  BLE-optimised, debounced  │
-└─────────────────────┘      └────────────────────────────┘
-┌─────────────────────┐
-│  RP2040 Firmware    │
-│  (RP2040/)          │
-│  USB-only           │
-└─────────────────────┘
+┌────────────────────────────────┐
+│     SolaSimStudio.html         │
+│     (Web Serial API)           │
+│     Chrome / Edge / Opera      │
+└──────────────┬─────────────────┘
+               │ USB Serial
+┌──────────────▼─────────────────┐
+│  RP2040 Firmware               │  ← Recommended
+│  (RP2040/)                     │
+│  Single-file MicroPython       │
+└────────────────────────────────┘
+┌────────────────────────────────┐
+│  ESP32-S3 Firmware             │  ← Experimental (USB + BLE)
+│  (ESP32/ and BLE_iPad/)        │
+│  Modular MicroPython           │
+└────────────────────────────────┘
 ```
 
 ---
@@ -66,25 +61,23 @@ The web interfaces are hosted on GitHub Pages — no installation required:
 
 | Folder | Description |
 |--------|-------------|
+| `RP2040/` | **RP2040 firmware** — recommended, single-file MicroPython |
 | `ESP32/` | ESP32-S3 firmware (modular MicroPython) + USB web interface |
-| `BLE_iPad/` | ESP32-S3 BLE-optimised firmware + BLE web interface for iPad |
-| `RP2040/` | RP2040 firmware (single-file MicroPython, USB-only) |
+| `BLE_iPad/` | ESP32-S3 BLE firmware + wireless web interface *(experimental)* |
 | `Profiles/` | Example experiment profiles |
-| `~Docs/` | Documentation and user guide |
-| `.github/` | GitHub Actions workflow for auto-deployment |
 
 ---
 
 ## 🔧 Hardware Requirements
 
-- **Microcontroller**: ESP32-S3 (recommended) or RP2040
-- **LED Panels**: NeoPixel/WS2812B addressable LED strips or matrices
-- **Servos**: For sun arc positioning and 360° rotation platform
-- **OLED Display**: SSD1306 128×64 for on-device status
-- **Camera Trigger**: Optional servo-based shutter trigger for imaging
-- **3D-Printed Parts**: Housing and mounting components (STL files coming soon)
+- **Microcontroller**: RP2040 (recommended) or ESP32-S3
+- **LED Panels**: NeoPixel/WS2812B addressable 8x8 LED matrices
+- **Servos**: For 360° rotation platform and camera triggering (metal gear servos recommended)
+- **OLED Display**: SSD1306 128×64 for on-device status with ESP32-S3 (optional)
+- **Camera Trigger**: Optional Bluetooth camera trigger for use with smartphones
+- **3D-Printed Parts**: Housing and mounting components ([Printable STL files](https://www.printables.com/model/1632518-solarsim-an-inexpensive-open-source-benchtop-solar))
 
-> 📋 Full parts list: [Bill of Materials (Google Sheet)](https://docs.google.com/spreadsheets/d/1aQhFblNy1jl5k1DLb-90Tq7NmfreDscm0g0mmVD8wfg/edit?usp=sharing)
+> 📋 Full parts list: [Bill of Materials (Google Sheet)](Coming soon!)
 
 ---
 
@@ -92,35 +85,26 @@ The web interfaces are hosted on GitHub Pages — no installation required:
 
 ### 1. Flash MicroPython Firmware
 
-Download the appropriate MicroPython firmware for your board:
-- **ESP32-S3**: Firmware `.bin` file included in `ESP32/`
-- **RP2040**: Firmware `.uf2` file included in `RP2040/`
+Flash the RP2040 with MicroPython — the `.uf2` firmware file is included in `RP2040/`. Hold the BOOTSEL button, plug in USB, and drag the `.uf2` file to the drive that appears.
 
 ### 2. Upload Project Files
 
 Using [mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html):
 
 ```bash
-# For ESP32-S3 (BLE version for iPad)
-cd BLE_iPad
-mpremote connect /dev/YOUR_PORT cp boot.py main.py hardware.py simulator.py program_engine.py ble_comms.py ssd1306.py :
-
-# For ESP32-S3 (USB version)
-cd ESP32
-mpremote connect /dev/YOUR_PORT cp boot.py main.py hardware.py simulator.py program_engine.py ble_comms.py ssd1306.py :
+cd RP2040
+mpremote connect /dev/YOUR_PORT cp main.py SolarSimulatorSun.py :
 ```
 
 ### 3. Connect via Browser
 
-- **iPad (BLE)**: Open [SolaSim BLE](https://odeepllama.github.io/SolarSim/ble/) in the [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) browser
-- **Desktop (USB)**: Open [SolaSim USB](https://odeepllama.github.io/SolarSim/) in Chrome, Edge, or Opera
+Open [SolaSim Studio](https://odeepllama.github.io/SolarSim/) in Chrome, Edge, or Opera and click **Connect to Device**.
 
 ---
 
 ## 📖 Documentation
 
-- **In-App Help**: Click the **Help** button in any web interface for a full interactive guide
-- **User Guide**: See [`~Docs/SolarSimUserGuide.md`](~Docs/SolarSimUserGuide.md)
+- **In-App Help**: Click the **Help** button in the web interface for a full interactive guide
 
 ---
 
