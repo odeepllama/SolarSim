@@ -15787,6 +15787,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
           if ('PROGRAM_STEPS' in obj) {
             programSteps = Array.isArray(obj.PROGRAM_STEPS) ? obj.PROGRAM_STEPS : [];
+            // Restore _dayManualOverride for steps with explicit day values from saved profile
+            programSteps.forEach(s => { if (s.day !== undefined) s._dayManualOverride = true; });
             state.PROGRAM_STEPS = programSteps;
             state.PROGRAM_ENABLED = programSteps.length > 0;
             changed = true;
