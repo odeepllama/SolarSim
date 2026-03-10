@@ -3988,12 +3988,13 @@ https://github.com/odeepllama/SolarSim/tree/main
                 </p>
               </div>
             </li>
-            <li><strong>Print Summary</strong>: Generate a printer-friendly PDF-style summary. <button
+            <li><strong>Export Summary</strong>: Generate a shareable summary of your experiment configuration. <button
                 class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
-                <p>Opens a print-ready page showing a summary of key settings, program steps, and the timeline
-                  visualisation. Useful for documentation, lab notebooks, or sharing experiment configurations with
-                  collaborators. Available from both the Profile Management toolbar and the Program Steps toolbar.</p>
+                <p>Creates an HTML summary file containing key settings, program steps, and the timeline
+                  visualisation. Uses the iOS share sheet so you can save to Files, AirDrop, email, or
+                  share with collaborators. Available from both the Profile Management toolbar and the Program Steps
+                  toolbar.</p>
               </div>
             </li>
             <li><strong>Download Profile</strong>: Save the current form as a .txt file to your computer. <button
@@ -4752,8 +4753,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         title="Upload directly to the connected MicroPython board via Web Serial (raw REPL)"
         data-i18n="uploadToDevice">Upload to Device</button>
       <button type="button" id="printSummaryBtn" class="secondary"
-        title="Generate a printer-friendly PDF summary with timeline visualization and key settings"
-        data-i18n="printSummary">Print Summary</button>
+        title="Export a summary with timeline visualization and key settings" data-i18n="printSummary">Export
+        Summary</button>
     </div>
 
     <h2 data-section="program-settings-header" data-i18n="programSettingsHeader">Program Settings</h2>
@@ -4787,7 +4788,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           title="Revert to previous steps before loading example">Revert</button>
         <button id="clearStepsBtn" type="button" class="danger">Clear Steps</button>
         <button id="printSummaryBtn2" type="button" class="secondary"
-          title="Generate and print a summary of current configuration and program steps">Print Summary</button>
+          title="Export a summary of current configuration and program steps">Export Summary</button>
       </div>
       <label style="display:flex; align-items:center; gap:4px; cursor:pointer; margin-top:-4px;">
         <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
@@ -5547,7 +5548,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           downloadProfile: 'Download Profile',
           importProfile: 'Import Profile',
           uploadToDevice: 'Upload to Device',
-          printSummary: 'Print Summary',
+          printSummary: 'Export Summary',
           programSettingsHeader: 'Program Settings',
           formDiffers: 'Form differs from device',
           showFirstDifference: 'Show First Difference',
@@ -5760,7 +5761,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           downloadProfile: 'プロファイルをダウンロード',
           importProfile: 'プロファイルをインポート',
           uploadToDevice: 'デバイスにアップロード',
-          printSummary: '印刷用サマリー',
+          printSummary: 'サマリー出力',
           programSettingsHeader: 'プログラム設定',
           formDiffers: 'フォームがデバイスと異なります',
           showFirstDifference: '最初の差分を表示',
@@ -14595,45 +14596,22 @@ https://github.com/odeepllama/SolarSim/tree/main
 </html>
   `;
 
-        // Create hidden iframe for silent printing (no new tab)
-        let printFrame = document.getElementById('printFrame');
+        // Export as shareable HTML file (Bluefy doesn't support window.print)
+        const filename = sanitizedName + '_summary.html';
+        const blob = new Blob([printHTML], { type: 'text/html' });
 
-        // Remove old frame if exists
-        if (printFrame) {
-          printFrame.remove();
+        // Try Web Share API first (works well on iOS/Bluefy)
+        if (navigator.canShare) {
+          const file = new File([blob], filename, { type: 'text/html' });
+          if (navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: profileName + ' Summary' }).catch(() => { });
+            return;
+          }
         }
 
-        // Create new iframe
-        printFrame = document.createElement('iframe');
-        printFrame.id = 'printFrame';
-        printFrame.style.position = 'absolute';
-        printFrame.style.width = '0';
-        printFrame.style.height = '0';
-        printFrame.style.border = 'none';
-        printFrame.style.visibility = 'hidden';
-        document.body.appendChild(printFrame);
-
-        // Write content to iframe
-        const frameDoc = printFrame.contentWindow.document;
-        frameDoc.open();
-        frameDoc.write(printHTML);
-        frameDoc.close();
-
-        // Wait for content to load, then trigger print dialog
-        printFrame.contentWindow.addEventListener('load', () => {
-          setTimeout(() => {
-            // Temporarily change the main page title to control PDF filename
-            const originalTitle = document.title;
-            document.title = `${sanitizedName}_summary`;
-
-            printFrame.contentWindow.print();
-
-            // Restore original title after a short delay
-            setTimeout(() => {
-              document.title = originalTitle;
-            }, 1000);
-          }, 250);
-        });
+        // Fallback: open in new tab
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
       }
 
       // ============ End Print Summary Functions ============
