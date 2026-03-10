@@ -10579,7 +10579,7 @@ https://github.com/odeepllama/SolarSim/tree/main
        * RUN steps: realSeconds = simMinutes / speed.
        */
       function computeClockTimeSegments() {
-        const parseHHMM_clk = v => {
+        const parseHHMM = v => {
           const s = String(v).padStart(4, '0');
           return parseInt(s.slice(0, 2), 10) * 60 + parseInt(s.slice(2), 10);
         };
@@ -10592,18 +10592,35 @@ https://github.com/odeepllama/SolarSim/tree/main
         const segments = [];
         if (!programSteps || programSteps.length === 0) return { segments, totalRealSeconds: 0 };
 
+        // Pre-compute inherited sunrise/sunset per step (same pattern as renderProgramSteps).
+        // Only the first step of each day typically has explicit sunrise/sunset;
+        // subsequent steps inherit from the most recent explicit value within the same day.
+        const inhRise = new Array(programSteps.length);
+        const inhSet = new Array(programSteps.length);
+        let curDay = -1, lastRise = null, lastSet = null;
+        for (let k = 0; k < programSteps.length; k++) {
+          const s = programSteps[k];
+          const d = s.day || 1;
+          if (d !== curDay) { curDay = d; lastRise = null; lastSet = null; }
+          if (s.sunrise != null) lastRise = s.sunrise;
+          if (s.sunset != null) lastSet = s.sunset;
+          inhRise[k] = lastRise;
+          inhSet[k] = lastSet;
+        }
+
         let activeSpeed = programSteps[0].speed !== undefined ? programSteps[0].speed : 1;
+
 
         for (let i = 0; i < programSteps.length; i++) {
           const step = programSteps[i];
           const speed = step.speed !== undefined ? step.speed : 1;
           const trans = (step.transition || 'RUN').toUpperCase();
-          const simTime = parseHHMM_clk(step.sim_time_hhmm);
+          const simTime = parseHHMM(step.sim_time_hhmm);
           const simLabel = fmtHHMM(simTime);
 
           // What's the next step's time? (needed for RUN duration)
           const nextStep = programSteps[i + 1];
-          const nextSimTime = nextStep ? parseHHMM_clk(nextStep.sim_time_hhmm) : null;
+          const nextSimTime = nextStep ? parseHHMM(nextStep.sim_time_hhmm) : null;
 
           if (trans === 'JUMP') {
             // JUMP: instant, zero real time
@@ -10646,12 +10663,56 @@ https://github.com/odeepllama/SolarSim/tree/main
           // RUN step: calculate sim duration to next step
           if (nextSimTime !== null) {
             let simDuration;
+            let isDayCrossing = false;
+            // Check if this is a cross-day step using the day field
+            const stepDay = step.day || 1;
+            const nextStepDay = nextStep.day || stepDay;
+            const isCrossDayStep = (nextStepDay !== stepDay);
             if (speed > 0) {
               simDuration = nextSimTime - simTime;
-              if (simDuration < 0) simDuration += 1440; // wrap forward
+              if (isCrossDayStep) {
+                // Cross-day: use sunset-based duration (night segment added separately below)
+                isDayCrossing = true;
+                if (inhSet[i] != null) {
+                  const stepSunset = Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100);
+                  simDuration = stepSunset - simTime;
+                  if (simDuration < 0) simDuration += 1440;
+                } else {
+                  simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+                }
+              } else if (simDuration <= 0) {
+                isDayCrossing = true;
+                // Same-day wrap: use per-step sunset if available, otherwise wrap
+                if (inhSet[i] != null) {
+                  const stepSunset = Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100);
+                  simDuration = stepSunset - simTime;
+                  if (simDuration < 0) simDuration = 0;
+                } else {
+                  simDuration += 1440; // wrap forward
+                }
+              }
             } else {
               simDuration = simTime - nextSimTime;
-              if (simDuration < 0) simDuration += 1440; // wrap backward
+              if (isCrossDayStep) {
+                isDayCrossing = true;
+                if (inhRise[i] != null) {
+                  const stepSunrise = Math.floor(inhRise[i] / 100) * 60 + (inhRise[i] % 100);
+                  simDuration = simTime - stepSunrise;
+                  if (simDuration < 0) simDuration += 1440;
+                } else {
+                  simDuration += 1440 * Math.abs(nextStepDay - stepDay);
+                }
+              } else if (simDuration <= 0) {
+                isDayCrossing = true;
+                // Same-day wrap reverse: use per-step sunrise if available
+                if (inhRise[i] != null) {
+                  const stepSunrise = Math.floor(inhRise[i] / 100) * 60 + (inhRise[i] % 100);
+                  simDuration = simTime - stepSunrise;
+                  if (simDuration < 0) simDuration = 0;
+                } else {
+                  simDuration += 1440; // wrap backward
+                }
+              }
             }
             const realSec = (simDuration * 60) / Math.abs(speed);
 
@@ -10669,31 +10730,171 @@ https://github.com/odeepllama/SolarSim/tree/main
               stepIndex: i,
               simColor: step.sun_color_rgb
             });
-          } else {
-            // Last step (no next step) — estimate duration to 18:00 (or wrap)
-            const endOfDay = 18 * 60; // 18:00 in minutes
-            let estimatedSimDur;
-            if (speed > 0) {
-              estimatedSimDur = endOfDay - simTime;
-              if (estimatedSimDur <= 0) estimatedSimDur += 1440; // wrap to next day
-            } else {
-              estimatedSimDur = simTime - (6 * 60); // run back to 06:00
-              if (estimatedSimDur <= 0) estimatedSimDur += 1440;
+
+            // Insert night segment between days (use inherited sunset/sunrise)
+            if (isDayCrossing && inhSet[i] != null) {
+              const curSunset = Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100);
+              const nextSunrise = inhRise[i + 1] != null
+                ? (Math.floor(inhRise[i + 1] / 100) * 60 + (inhRise[i + 1] % 100))
+                : (nextStep.sunrise != null
+                  ? (Math.floor(nextStep.sunrise / 100) * 60 + (nextStep.sunrise % 100))
+                  : 6 * 60); // default 06:00
+              // Night duration: from sunset to next sunrise (wraps through midnight)
+              let nightMin = nextSunrise - curSunset;
+              if (nightMin < 0) nightMin += 1440; // e.g. 2200 → 0600 = -16h → +8h
+              if (nightMin === 0) nightMin = 0; // no night gap
+              if (nightMin > 0) {
+                const nightRealSec = (nightMin * 60) / Math.abs(speed);
+                segments.push({
+                  simLabel: fmtHHMM(curSunset) + '→' + fmtHHMM(nextSunrise),
+                  speedLabel: '☽ Night',
+                  speed: speed,
+                  realSeconds: nightRealSec,
+                  isHold: false,
+                  isJump: false,
+                  isNight: true,
+                  stepIndex: i,
+                  simColor: null
+                });
+              }
             }
-            // Minimum 30 min sim-time to ensure visibility
-            estimatedSimDur = Math.max(estimatedSimDur, 30);
-            const realSec = (estimatedSimDur * 60) / Math.abs(speed);
-            segments.push({
-              simLabel: simLabel + '→…',
-              speedLabel: speed + 'x',
-              speed: speed,
-              realSeconds: realSec,
-              isHold: false,
-              isJump: false,
-              stepIndex: i,
-              isLastStep: true,
-              simColor: step.sun_color_rgb
-            });
+          } else {
+            // Last step (no next step)
+            // Use inherited sunset/sunrise if available, otherwise default 18:00/06:00
+            const stepSunset = inhSet[i] != null ? (Math.floor(inhSet[i] / 100) * 60 + (inhSet[i] % 100)) : 18 * 60;
+            const stepSunrise = inhRise[i] != null ? (Math.floor(inhRise[i] / 100) * 60 + (inhRise[i] % 100)) : 6 * 60;
+
+            // Check if the program repeats (infinite or >1)
+            const progRepeats = state.PROGRAM_REPEATS !== undefined ? state.PROGRAM_REPEATS : -1;
+            const willRepeat = (progRepeats === -1 || progRepeats > 1);
+            const firstStep = programSteps[0];
+            const firstSimTime = parseHHMM(firstStep.sim_time_hhmm);
+
+            if (willRepeat && programSteps.length > 1) {
+              // Repeating program: show full cycle from last step to first step's time
+              // Split into daytime portion (to sunset) + night + dawn (sunrise to first step)
+              if (speed > 0) {
+                // Daytime segment: lastStep → sunset
+                let daytimeDur = stepSunset - simTime;
+                if (daytimeDur < 0) daytimeDur += 1440;
+                if (daytimeDur > 0) {
+                  const daytimeRealSec = (daytimeDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: simLabel + '→' + fmtHHMM(stepSunset),
+                    speedLabel: speed + 'x',
+                    speed: speed,
+                    realSeconds: daytimeRealSec,
+                    isHold: false,
+                    isJump: false,
+                    stepIndex: i,
+                    isLastStep: true,
+                    simColor: step.sun_color_rgb
+                  });
+                }
+                // Night segment: sunset → next cycle's sunrise (use first step's sunrise or inherited)
+                const nextSunrise = firstStep.sunrise != null
+                  ? (Math.floor(firstStep.sunrise / 100) * 60 + (firstStep.sunrise % 100))
+                  : stepSunrise;
+                let nightDur = nextSunrise - stepSunset;
+                if (nightDur <= 0) nightDur += 1440;
+                if (nightDur > 0 && nightDur < 1440) {
+                  const nightRealSec = (nightDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: fmtHHMM(stepSunset) + '→' + fmtHHMM(nextSunrise),
+                    speedLabel: '☽ Night',
+                    speed: speed,
+                    realSeconds: nightRealSec,
+                    isHold: false,
+                    isJump: false,
+                    isNight: true,
+                    stepIndex: i,
+                    isLastStepNight: true,
+                    simColor: null
+                  });
+                }
+                // Dawn segment: sunrise → first step's time (if first step starts after sunrise)
+                if (firstSimTime > nextSunrise) {
+                  let dawnDur = firstSimTime - nextSunrise;
+                  if (dawnDur > 0) {
+                    const dawnRealSec = (dawnDur * 60) / Math.abs(speed);
+                    segments.push({
+                      simLabel: fmtHHMM(nextSunrise) + '→' + fmtHHMM(firstSimTime),
+                      speedLabel: speed + 'x',
+                      speed: speed,
+                      realSeconds: dawnRealSec,
+                      isHold: false,
+                      isJump: false,
+                      stepIndex: i,
+                      isLastStep: true,
+                      simColor: step.sun_color_rgb
+                    });
+                  }
+                }
+              } else {
+                // Reverse speed: lastStep → sunrise (daytime), then night → sunset, then dusk → first step
+                let daytimeDur = simTime - stepSunrise;
+                if (daytimeDur < 0) daytimeDur += 1440;
+                if (daytimeDur > 0) {
+                  const daytimeRealSec = (daytimeDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: simLabel + '→' + fmtHHMM(stepSunrise),
+                    speedLabel: speed + 'x',
+                    speed: speed,
+                    realSeconds: daytimeRealSec,
+                    isHold: false,
+                    isJump: false,
+                    stepIndex: i,
+                    isLastStep: true,
+                    simColor: step.sun_color_rgb
+                  });
+                }
+                // Night segment (reverse): sunrise → previous sunset
+                const prevSunset = firstStep.sunset != null
+                  ? (Math.floor(firstStep.sunset / 100) * 60 + (firstStep.sunset % 100))
+                  : stepSunset;
+                let nightDur = stepSunrise - prevSunset;
+                if (nightDur <= 0) nightDur += 1440;
+                if (nightDur > 0 && nightDur < 1440) {
+                  const nightRealSec = (nightDur * 60) / Math.abs(speed);
+                  segments.push({
+                    simLabel: fmtHHMM(stepSunrise) + '→' + fmtHHMM(prevSunset),
+                    speedLabel: '☽ Night',
+                    speed: speed,
+                    realSeconds: nightRealSec,
+                    isHold: false,
+                    isJump: false,
+                    isNight: true,
+                    stepIndex: i,
+                    isLastStepNight: true,
+                    simColor: null
+                  });
+                }
+              }
+            } else {
+              // Non-repeating or single-step: estimate duration to sunset/sunrise only
+              let estimatedSimDur;
+              if (speed > 0) {
+                estimatedSimDur = stepSunset - simTime;
+                if (estimatedSimDur < 0) estimatedSimDur += 1440;
+              } else {
+                estimatedSimDur = simTime - stepSunrise;
+                if (estimatedSimDur < 0) estimatedSimDur += 1440;
+              }
+              if (estimatedSimDur > 0) {
+                const realSec = (estimatedSimDur * 60) / Math.abs(speed);
+                segments.push({
+                  simLabel: simLabel + '→…',
+                  speedLabel: speed + 'x',
+                  speed: speed,
+                  realSeconds: realSec,
+                  isHold: false,
+                  isJump: false,
+                  stepIndex: i,
+                  isLastStep: true,
+                  simColor: step.sun_color_rgb
+                });
+              }
+            }
           }
           activeSpeed = speed;
         }
