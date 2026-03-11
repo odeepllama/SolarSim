@@ -17937,8 +17937,18 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Serialize BLE writes — Web Bluetooth throws "GATT operation already
         // in progress" if a second writeValue starts before the first resolves.
+        // Each write races against a 5-second timeout to prevent a hung GATT
+        // operation from permanently blocking the queue (common on iOS/Bluefy).
+        const BLE_WRITE_TIMEOUT_MS = 5000;
         function bleWrite(char, data) {
-          const p = state._bleWriteQueue.then(() => char.writeValueWithoutResponse(data));
+          const p = state._bleWriteQueue.then(() =>
+            Promise.race([
+              char.writeValueWithoutResponse(data),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('BLE write timeout')), BLE_WRITE_TIMEOUT_MS)
+              )
+            ])
+          );
           // Always settle the queue so future writes aren't blocked by errors
           state._bleWriteQueue = p.catch(() => { });
           return p;
@@ -19764,8 +19774,17 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!state.port && state.transport !== 'ble') return;
           if (state._bleStatusPending) return; // debounce concurrent calls
           if (state.transport === 'ble') state._bleStatusPending = true;
+          // Safety auto-reset: if the write hangs (Promise never resolves),
+          // force-clear the debounce flag after 10s so polling can resume.
+          const safetyTimer = setTimeout(() => {
+            if (state._bleStatusPending) {
+              console.warn('[BLE] Safety reset: _bleStatusPending was stuck, clearing');
+              state._bleStatusPending = false;
+            }
+          }, 10000);
           state.__silentStatusUntil = performance.now() + 1500; // suppress typical status lines
           sendLine('status', { silentEcho: true }).finally(() => {
+            clearTimeout(safetyTimer);
             // Reset debounce flag after write completes (or fails)
             setTimeout(() => { state._bleStatusPending = false; }, 500);
           });
