@@ -1046,10 +1046,7 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
     if not ROTATION_ENABLED and rotation_state == 'IDLE' and not manual_rotation_triggered:
         return
     
-    # Only start a new cycle if we're in 1X mode 
-    # (but continue a cycle that's already in progress regardless of speed)
-    if sim_time_scale > 1 and rotation_state == 'IDLE':
-        return
+
     
     # Check if we need to initialize a new rotation cycle (at startup or hourly)
     current_sim_minute = int(abs_sim_time)
