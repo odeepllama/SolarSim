@@ -5353,6 +5353,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         <button id="addStepBtn" type="button">Add Step</button>
         <button id="addDayBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;"
           title="Add a new step with the same simtime as the last step">Add Day</button>
+        <button id="duplicateDayBtn" type="button" style="background:#ff9800; color:#000; font-weight:600;"
+          title="Duplicate the last day's steps as a new day">Duplicate Day</button>
         <button id="exampleStepsBtn" type="button" class="secondary" style="font-weight:600;">Examples…</button>
         <button id="clearStepsBtn" type="button" class="danger">Clear Steps</button>
         <button id="printSummaryBtn2" type="button" class="secondary"
@@ -9203,6 +9205,52 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         });
 
+        // Duplicate Day button - clones the last day's steps as a new day
+        document.getElementById('duplicateDayBtn').addEventListener('click', (e) => {
+          // Check if editing is locked (device running)
+          if (window.__programEditingLocked && window.__programEditingLocked()) {
+            if (window.__flashProgramLock) window.__flashProgramLock();
+            return;
+          }
+
+          if (programSteps.length === 0) return;
+
+          // Find the last day's steps
+          const analysis = analyzeMultiDayProgram(true);
+          const lastDay = analysis.days[analysis.days.length - 1];
+          if (!lastDay || !lastDay.steps || lastDay.steps.length === 0) return;
+
+          const newDayNumber = (lastDay.dayNumber || 1) + 1;
+          const stepsToAdd = lastDay.steps.length;
+
+          // Check max steps limit
+          if (programSteps.length + stepsToAdd > MAX_PROGRAM_STEPS) {
+            showMaxStepsPopover(e.currentTarget);
+            return;
+          }
+
+          saveUndoState();
+
+          // Clone each step from the last day with incremented day number
+          lastDay.steps.forEach(s => {
+            const clone = JSON.parse(JSON.stringify(s.step));
+            clone.day = newDayNumber;
+            clone._dayManualOverride = true;
+            programSteps.push(clone);
+          });
+
+          renderProgramSteps();
+          updatePreview(true);
+          updateMaxStepsUI();
+
+          // Auto-switch to multi-day view
+          const sdCheckbox = document.getElementById('singleDayVisualization');
+          if (sdCheckbox && sdCheckbox.checked) {
+            sdCheckbox.checked = false;
+            try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
+          }
+        });
+
         // Add Step button - creates step with last step's simtime + 60 minutes
         document.getElementById('addStepBtn').addEventListener('click', (e) => {
           // Check if maximum steps limit reached
@@ -12621,23 +12669,17 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Both steps explicitly agree on the same day — trust it, skip midnight detection
               continue;
             }
-            // Steps disagree on day number
-            if (step._dayManualOverride || nextStep._dayManualOverride) {
-              // At least one has a manual override — mismatch may be stale
-              // (user is editing one step at a time). Trust the override and skip.
-              if (step._dayManualOverride) currentDay = step.day;
-              // Don't split — also skip midnight detection below
-            } else {
-              // Both are auto-assigned and disagree — explicit day boundary
-              result.days.push({
-                dayNumber: step.day,
-                steps: currentDayMinutes,
-                orphanedHoldEndTime: null
-              });
-              currentDayMinutes = [];
-              currentDay = nextStep.day;
-              continue; // skip midnight-crossing check
-            }
+            // Steps disagree on day number — split into a new day.
+            // This handles both auto-assigned disagreements AND manual overrides.
+            // When the user manually sets a different day number, that IS the intent.
+            result.days.push({
+              dayNumber: step.day,
+              steps: currentDayMinutes,
+              orphanedHoldEndTime: null
+            });
+            currentDayMinutes = [];
+            currentDay = nextStep.day;
+            continue; // skip midnight-crossing check
           }
           // If either step has a manual day override, skip midnight detection entirely.
           if (nextStep && (step._dayManualOverride || nextStep._dayManualOverride)) {
