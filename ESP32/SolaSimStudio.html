@@ -12125,7 +12125,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Intensity key — added by _renderTimelineStripImmediate via flag
         if (window.__appendClockIntensityKey) {
-          const keyEl = buildIntensityKey(programSteps);
+          const keyEl = buildIntensityKey(programSteps, window.__hasTimelineOverlap);
           if (keyEl) {
             keyEl.style.marginTop = '0';
             clockSection.appendChild(keyEl);
@@ -12402,6 +12402,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         container.innerHTML = '';
+        window.__hasTimelineOverlap = false; // Reset overlap flag for this render cycle
 
         // Render sim-time timeline if mode is 'sim' or 'both'
         if (viewMode === 'sim' || viewMode === 'both') {
@@ -12421,7 +12422,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             renderSingleDayTimeline(simContainer);
             // Single-day, sim-only: add intensity key beneath all bars
             if (viewMode === 'sim') {
-              const keyEl = buildIntensityKey(programSteps);
+              const keyEl = buildIntensityKey(programSteps, window.__hasTimelineOverlap);
               if (keyEl) simContainer.appendChild(keyEl);
             }
           }
@@ -13284,7 +13285,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Intensity key beneath this day's bars (only for editable view)
           if (!readOnly && !suppressIntensityKey) {
             const dayRawSteps = daySteps.map(s => s.step);
-            const keyEl = buildIntensityKey(dayRawSteps);
+            const keyEl = buildIntensityKey(dayRawSteps, window.__hasTimelineOverlap);
             if (keyEl) daySection.appendChild(keyEl);
           }
         });
@@ -13399,44 +13400,59 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Build intensity color key row — returns a DOM element or null
       // steps: array of step objects to inspect for color uniformity
-      function buildIntensityKey(steps) {
+      function buildIntensityKey(steps, hasOverlap = false) {
         const hasVaryingIntensity = steps.some(s => s.intensity_scale != null && s.intensity_scale !== 1);
-        if (!hasVaryingIntensity) return null;
+        if (!hasVaryingIntensity && !hasOverlap) return null;
         const keyRow = document.createElement('div');
         keyRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:4px;margin-left:98px;font-size:16px;color:#000;font-family:Inter,system-ui,sans-serif;';
-        keyRow.innerHTML = '<span style="font-weight:600;margin-right:3px;">Intensity:</span>';
-        // Determine swatch color: use the most common step color, fall back to grey only if no steps have color
-        const stepsWithColor = steps.filter(s => s.sun_color_rgb);
-        let keyColor;
-        if (stepsWithColor.length) {
-          // Find the most common RGB value among steps
-          const colorCounts = new Map();
-          stepsWithColor.forEach(s => {
-            const key = s.sun_color_rgb.join(',');
-            colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
-          });
-          let bestKey = null, bestCount = 0;
-          for (const [k, count] of colorCounts) {
-            if (count > bestCount) { bestKey = k; bestCount = count; }
+        if (hasVaryingIntensity) {
+          keyRow.innerHTML = '<span style="font-weight:600;margin-right:3px;">Intensity:</span>';
+          // Determine swatch color: use the most common step color, fall back to grey only if no steps have color
+          const stepsWithColor = steps.filter(s => s.sun_color_rgb);
+          let keyColor;
+          if (stepsWithColor.length) {
+            // Find the most common RGB value among steps
+            const colorCounts = new Map();
+            stepsWithColor.forEach(s => {
+              const key = s.sun_color_rgb.join(',');
+              colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+            });
+            let bestKey = null, bestCount = 0;
+            for (const [k, count] of colorCounts) {
+              if (count > bestCount) { bestKey = k; bestCount = count; }
+            }
+            const bestRgb = bestKey.split(',').map(Number);
+            keyColor = sunColorToDisplayColor(bestRgb);
+          } else {
+            keyColor = { r: 128, g: 128, b: 128 };
           }
-          const bestRgb = bestKey.split(',').map(Number);
-          keyColor = sunColorToDisplayColor(bestRgb);
-        } else {
-          keyColor = { r: 128, g: 128, b: 128 };
+          [0.1, 0.5, 1.0].forEach(val => {
+            // Composite against white so page background doesn't bleed through
+            const sr = Math.round(keyColor.r * val + 255 * (1 - val));
+            const sg = Math.round(keyColor.g * val + 255 * (1 - val));
+            const sb = Math.round(keyColor.b * val + 255 * (1 - val));
+            const swatch = document.createElement('span');
+            swatch.style.cssText = `display:inline-block;width:27px;height:18px;border:1px solid #999;border-radius:2px;vertical-align:middle;margin-right:3px;background:rgb(${sr},${sg},${sb});`;
+            keyRow.appendChild(swatch);
+            const label = document.createElement('span');
+            label.textContent = val.toString();
+            label.style.marginRight = '9px';
+            keyRow.appendChild(label);
+          });
         }
-        [0.1, 0.5, 1.0].forEach(val => {
-          // Composite against white so page background doesn't bleed through
-          const sr = Math.round(keyColor.r * val + 255 * (1 - val));
-          const sg = Math.round(keyColor.g * val + 255 * (1 - val));
-          const sb = Math.round(keyColor.b * val + 255 * (1 - val));
-          const swatch = document.createElement('span');
-          swatch.style.cssText = `display:inline-block;width:27px;height:18px;border:1px solid #999;border-radius:2px;vertical-align:middle;margin-right:3px;background:rgb(${sr},${sg},${sb});`;
-          keyRow.appendChild(swatch);
-          const label = document.createElement('span');
-          label.textContent = val.toString();
-          label.style.marginRight = '9px';
-          keyRow.appendChild(label);
-        });
+        // Overlap key: solid black line swatch + label
+        if (hasOverlap) {
+          const gap = document.createElement('span');
+          gap.style.cssText = 'display:inline-block;width:12px;';
+          keyRow.appendChild(gap);
+          const olLabel = document.createElement('span');
+          olLabel.style.cssText = 'font-weight:600;margin-right:6px;';
+          olLabel.textContent = 'Step overlap:';
+          keyRow.appendChild(olLabel);
+          const olLine = document.createElement('span');
+          olLine.style.cssText = 'display:inline-block;width:36px;height:3px;background:#000;border-radius:1px;vertical-align:middle;';
+          keyRow.appendChild(olLine);
+        }
         return keyRow;
       }
 
@@ -14144,6 +14160,40 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (filterDirection === 'forward') {
           const firstFwdSeg = host.querySelector('.tl-seg.run:not(.reverse):not(.hold)');
           if (firstFwdSeg) firstFwdSeg.classList.add('forward-arrow');
+        }
+
+        // Overlap indicator: thin black line above bar where 2+ forward segments cover the same time
+        if (filterDirection !== 'reverse' && otherSegments.length > 1) {
+          // Build sorted list of segment intervals (in minutes)
+          const intervals = otherSegments
+            .filter(s => s.speed > 0) // only forward RUN segments
+            .map(s => ({ start: Math.min(s.startMin, s.endMin), end: Math.max(s.startMin, s.endMin) }))
+            .filter(iv => iv.end - iv.start >= 5); // skip tiny segments
+          // Sweep-line to find overlap regions
+          if (intervals.length > 1) {
+            const events = [];
+            intervals.forEach(iv => { events.push({ t: iv.start, type: 1 }); events.push({ t: iv.end, type: -1 }); });
+            events.sort((a, b) => a.t - b.t || a.type - b.type);
+            let depth = 0, overlapStart = null;
+            const overlaps = [];
+            events.forEach(ev => {
+              depth += ev.type;
+              if (depth >= 2 && overlapStart === null) overlapStart = ev.t;
+              if (depth < 2 && overlapStart !== null) { overlaps.push({ start: overlapStart, end: ev.t }); overlapStart = null; }
+            });
+            if (overlaps.length > 0) window.__hasTimelineOverlap = true;
+            overlaps.forEach(ov => {
+              const leftPct = ((ov.start - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+              const widthPct = ((ov.end - ov.start) / WINDOW_SPAN) * 100;
+              if (widthPct < 0.5) return;
+              const line = document.createElement('div');
+              line.style.cssText = `position:absolute;top:-1px;height:3px;background:#000;z-index:200;pointer-events:none;border-radius:1px;`;
+              line.style.left = leftPct + '%';
+              line.style.width = widthPct + '%';
+              line.title = `Overlap: ${formatHHMM(ov.start)}–${formatHHMM(ov.end)} (multiple passes)`;
+              host.appendChild(line);
+            });
+          }
         }
 
         // Render jump markers inside window — globally numbered across all days
