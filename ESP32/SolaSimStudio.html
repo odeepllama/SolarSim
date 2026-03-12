@@ -15745,45 +15745,68 @@ https://github.com/odeepllama/SolarSim/tree/main
 </html>
   `;
 
-        // Create hidden iframe for silent printing (no new tab)
-        let printFrame = document.getElementById('printFrame');
+        // Detect iOS/iPadOS (iframe.contentWindow.print() fails silently on iOS)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        // Remove old frame if exists
-        if (printFrame) {
-          printFrame.remove();
-        }
+        if (isIOS) {
+          // iOS path: open in a new window and print from there
+          const printWin = window.open('', '_blank');
+          if (!printWin) {
+            alert('Please allow pop-ups for this site to use Print Summary.');
+            return;
+          }
+          printWin.document.open();
+          printWin.document.write(printHTML);
+          printWin.document.close();
 
-        // Create new iframe
-        printFrame = document.createElement('iframe');
-        printFrame.id = 'printFrame';
-        printFrame.style.position = 'absolute';
-        printFrame.style.width = '0';
-        printFrame.style.height = '0';
-        printFrame.style.border = 'none';
-        printFrame.style.visibility = 'hidden';
-        document.body.appendChild(printFrame);
-
-        // Write content to iframe
-        const frameDoc = printFrame.contentWindow.document;
-        frameDoc.open();
-        frameDoc.write(printHTML);
-        frameDoc.close();
-
-        // Wait for content to load, then trigger print dialog
-        printFrame.contentWindow.addEventListener('load', () => {
-          setTimeout(() => {
-            // Temporarily change the main page title to control PDF filename
-            const originalTitle = document.title;
-            document.title = `${sanitizedName}_summary`;
-
-            printFrame.contentWindow.print();
-
-            // Restore original title after a short delay
+          // Wait for content to render, then trigger print
+          printWin.addEventListener('load', () => {
             setTimeout(() => {
-              document.title = originalTitle;
-            }, 1000);
-          }, 250);
-        });
+              printWin.print();
+            }, 400);
+          });
+        } else {
+          // Desktop path: hidden iframe for silent printing (no new tab)
+          let printFrame = document.getElementById('printFrame');
+
+          // Remove old frame if exists
+          if (printFrame) {
+            printFrame.remove();
+          }
+
+          // Create new iframe
+          printFrame = document.createElement('iframe');
+          printFrame.id = 'printFrame';
+          printFrame.style.position = 'absolute';
+          printFrame.style.width = '0';
+          printFrame.style.height = '0';
+          printFrame.style.border = 'none';
+          printFrame.style.visibility = 'hidden';
+          document.body.appendChild(printFrame);
+
+          // Write content to iframe
+          const frameDoc = printFrame.contentWindow.document;
+          frameDoc.open();
+          frameDoc.write(printHTML);
+          frameDoc.close();
+
+          // Wait for content to load, then trigger print dialog
+          printFrame.contentWindow.addEventListener('load', () => {
+            setTimeout(() => {
+              // Temporarily change the main page title to control PDF filename
+              const originalTitle = document.title;
+              document.title = `${sanitizedName}_summary`;
+
+              printFrame.contentWindow.print();
+
+              // Restore original title after a short delay
+              setTimeout(() => {
+                document.title = originalTitle;
+              }, 1000);
+            }, 250);
+          });
+        }
       }
 
       // ============ End Print Summary Functions ============
