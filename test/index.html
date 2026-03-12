@@ -3589,7 +3589,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .clock-tl-axis-label {
       position: absolute;
-      bottom: 4px;
+      bottom: 1px;
       transform: translateX(-50%);
       font-size: 13px;
       font-weight: 500;
@@ -3780,6 +3780,27 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .live-on-device-badge.visible {
+      display: inline-flex;
+    }
+
+    /* No Device Connected badge (shown when disconnected) */
+    .no-device-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-left: 12px;
+      padding: 4px 14px 4px 10px;
+      background: #dc3545;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: Inter, system-ui, sans-serif;
+      border-radius: 999px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .no-device-badge.visible {
       display: inline-flex;
     }
 
@@ -4165,7 +4186,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     <div id="monitorControls"></div>
     <!-- Sun Position removed -->
     <div class="mini-sect-title" data-section="monitor-status-tiles">Status Tiles <span id="liveOnDeviceBadge"
-        class="live-on-device-badge"><span class="live-on-device-dot"></span>Live on Device</span></div>
+        class="live-on-device-badge"><span class="live-on-device-dot"></span>Live on Device</span><span
+        id="noDeviceBadge" class="no-device-badge visible">No Device Connected</span></div>
     <div id="monitorStatusGrid" data-section="monitor-status-tiles"></div>
     <!-- Sun Arc + Log side-by-side -->
     <div id="monitorVisLogRow" class="vislog-row">
@@ -4310,9 +4332,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     <aside id="helpPanel" aria-hidden="true" aria-label="Usage Help">
       <header>
-        <h3>Usage & Help</h3>
+        <h3 data-i18n="helpPanelTitle">Usage & Help</h3>
         <div style="display:flex; gap:6px;">
-          <button id="helpCloseBtn" type="button" class="secondary" aria-label="Close help">Close ✕</button>
+          <button id="helpCloseBtn" type="button" class="secondary" aria-label="Close help"
+            data-i18n="helpCloseBtn">Close ✕</button>
         </div>
       </header>
       <div class="help-body" tabindex="-1" id="helpBodyScroll">
@@ -5300,6 +5323,16 @@ https://github.com/odeepllama/SolarSim/tree/main
         </div>
       </div>
       <div id="timelineContainer" style="margin:6px 0 10px;"></div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:2px; margin-bottom:6px;">
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
+          <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="hideClockFinalNight" style="cursor: pointer;">
+          <span data-i18n="hideClockFinalNight">Hide final night on clock bar</span>
+        </label>
+      </div>
       <h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
       <div class="toolbar">
         <button id="addStepBtn" type="button">Add Step</button>
@@ -5309,19 +5342,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         <button id="clearStepsBtn" type="button" class="danger">Clear Steps</button>
         <button id="printSummaryBtn2" type="button" class="secondary"
           title="Generate and print a summary of current configuration and program steps">Print Summary</button>
-      </div>
-      <label style="display:flex; align-items:center; gap:4px; cursor:pointer; margin-top:-4px;">
-        <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
-        <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
-      </label>
-      <div style="display:flex; flex-wrap:wrap; gap:4px 16px;">
-        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;">
           <input type="checkbox" id="perStepDayLength" style="cursor: pointer;">
-          <span data-i18n="perStepDayLength">Per-step day length (sunrise/sunset)</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-          <input type="checkbox" id="hideClockFinalNight" style="cursor: pointer;">
-          <span>Hide final night on clock bar</span>
+          <span data-i18n="perStepDayLength">Variable Day Length (Sunrise and Sunset)</span>
         </label>
       </div>
       <div id="errorBannerInline"></div>
@@ -6046,6 +6069,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           programStepTimeline: 'Program Step Timeline',
           programStepEditing: 'Program Step Editing',
           visualizeSingleDay: 'Visualize all steps on a single day',
+          hideClockFinalNight: 'Hide final night on clock bar',
+          perStepDayLength: 'Variable Day Length (Sunrise and Sunset)',
+          helpPanelTitle: 'Usage & Help',
+          helpCloseBtn: 'Close ✕',
           programStepBehavior: 'Program Step Behavior:',
           speed: 'Speed:',
           speedDesc: 'Applies from step\'s start until next speed change',
@@ -6209,6 +6236,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           programStepTimeline: 'プログラムステップタイムライン',
           programStepEditing: 'プログラムステップ編集',
           visualizeSingleDay: 'すべてのステップを1日に表示',
+          hideClockFinalNight: 'クロックバーの最後の夜を非表示',
+          perStepDayLength: '可変日長（日の出と日の入り）',
+          helpPanelTitle: '使い方とヘルプ',
+          helpCloseBtn: '閉じる ✕',
           programStepBehavior: 'プログラムステップの動作:',
           speed: 'スピード:',
           speedDesc: 'ステップ開始から次のスピード変更まで適用',
@@ -19232,11 +19263,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           badge(c ? 'CONNECTED' : 'DISCONNECTED', c ? 'green' : 'red');
           // Show/hide Live on Device badge (suppress during Quick Edit)
           const lodBadge = document.getElementById('liveOnDeviceBadge');
+          const noDevBadge = document.getElementById('noDeviceBadge');
           if (lodBadge) {
             if (c && !state.__quickEditActive) {
               lodBadge.classList.add('visible');
             } else {
               lodBadge.classList.remove('visible');
+            }
+          }
+          // Show/hide No Device Connected badge (inverse of Live on Device)
+          if (noDevBadge) {
+            if (!c) {
+              noDevBadge.classList.add('visible');
+            } else {
+              noDevBadge.classList.remove('visible');
             }
           }
           // Transition tiles between offline (grey) and live modes
