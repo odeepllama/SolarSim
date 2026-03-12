@@ -2469,12 +2469,23 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     /* Offline sun-custom tile: scale text to fit like live tiles */
-    .mon-kv.tile-offline.sun-custom span {
-      font-size: clamp(0.75rem, 3.2vw, 1.2rem) !important;
+    .mon-kv.tile-offline.sun-custom span,
+    .mon-kv.tile-offline.sun-color-tile.sun-custom span {
+      font-size: clamp(0.6rem, 2.5vw, 1rem) !important;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: nowrap !important;
       max-width: 100%;
+      display: block !important;
+    }
+
+    /* Also ensure the live CUSTOM tile clamp covers tight viewports */
+    .mon-kv.sun-color-tile.sun-custom span {
+      font-size: clamp(0.6rem, 2.5vw, 1rem);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
     }
 
     /* Grey→live flash animation */
