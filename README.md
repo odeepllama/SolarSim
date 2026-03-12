@@ -15,7 +15,7 @@ Built with MicroPython firmware and using a browser-based control interface, it'
 - **Solar Simulation Modes** — BASIC (fixed 6 AM–6 PM) and SCIENTIFIC (astronomical calculations from latitude/date)
 - **Multi-Step Programs** — Sequences with per-step speed, intensity, sun colour, hold/repeat, and multi-day support
 - **360° Rotation Imaging** — Servo-driven turntable with camera trigger for time-lapse and stills capture
-- **Browser-Based Control** — Connect via USB from Chrome/Edge/Opera using Web Serial. Wireless BLE support (ESP32-S3) is in development
+- **Browser-Based Control** — Connect via USB from Chrome/Edge/Opera using Web Serial
 - **Real-Time Monitoring** — Live status tiles, solar arc visualisation, interactive timeline with playhead
 - **Profile Management** — Save, load, compare, and share experiment profiles
 - **English & Japanese UI** — Full bilingual interface with one-click toggle
@@ -29,8 +29,6 @@ The web interface is hosted on GitHub Pages — no installation required:
 👉 **[odeepllama.github.io/SolarSim/](https://odeepllama.github.io/SolarSim/)** — Open in Chrome, Edge, or Opera and connect to your device via USB.
 
 > **Note:** The Web Serial API requires a Chromium-based browser. See the in-app Help panel for details.
->
-> *Experimental:* A BLE version for iPad is available at [/SolarSim/ble/](https://odeepllama.github.io/SolarSim/ble/) (requires [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) browser and ESP32-S3 hardware).
 
 ---
 
@@ -49,8 +47,8 @@ The web interface is hosted on GitHub Pages — no installation required:
 │  Single-file MicroPython       │
 └────────────────────────────────┘
 ┌────────────────────────────────┐
-│  ESP32-S3 Firmware             │  ← Experimental (USB + BLE)
-│  (ESP32/ and BLE_iPad/)        │
+│  ESP32-S3 Firmware             │  ← Experimental
+│  (ESP32/)                      │
 │  Modular MicroPython           │
 └────────────────────────────────┘
 ```
@@ -63,7 +61,7 @@ The web interface is hosted on GitHub Pages — no installation required:
 |--------|-------------|
 | `RP2040/` | **RP2040 firmware** — recommended, single-file MicroPython |
 | `ESP32/` | ESP32-S3 firmware (modular MicroPython) + USB web interface |
-| `BLE_iPad/` | ESP32-S3 BLE firmware + wireless web interface *(experimental)* |
+
 | `Profiles/` | Example experiment profiles |
 
 ---
