@@ -8445,7 +8445,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             repeatInfo = ` (${repeatS}s from repeats)`;
           }
         }
-        const text = `Net span: ${netH}h ${netM}m | Traversed: ${travH}h ${travM}m | Est. real: ${realH}h ${realM}m ${realS}s${repeatInfo}`;
+        // Full cycle: time from first step back to first step (24h for single-day repeating programs)
+        const fullCycle = CONFIG.MINUTES_PER_DAY;
+        const fcH = Math.floor(fullCycle / CONFIG.SECONDS_PER_MINUTE), fcM = fullCycle % CONFIG.SECONDS_PER_MINUTE;
+        const text = `Net span: ${netH}h ${netM}m (full cycle ${fcH}h ${fcM}m) | Traversed: ${travH}h ${travM}m | Est. real: ${realH}h ${realM}m ${realS}s${repeatInfo}`;
         return { text, spanMinutes: netSpan, realSeconds, traversedMinutes: traversed };
       }
 
@@ -16094,6 +16097,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           } catch (e) { console.warn('Apply default failed', e); alert('Could not apply default (corrupt data).'); }
         }
 
+        // Default starter program: one step at 06:00 sunrise, speed 1, blue sun, full intensity
+        function seedDefaultProgram() {
+          if (programSteps.length > 0) return; // Don't overwrite existing steps
+          programSteps.push({
+            sim_time_hhmm: 600,
+            speed: 1,
+            intensity_scale: 1,
+            sun_color_rgb: [0, 0, 255],
+            transition: 'RUN'
+          });
+          state.PROGRAM_ENABLED = true;
+          state.PROGRAM_STEPS = programSteps;
+        }
+
         function clearDefault() {
           try {
             localStorage.removeItem(SAVE_KEY);
@@ -16102,6 +16119,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             Object.keys(FIELDS).forEach(k => { state[k] = FIELDS[k].default; });
             programSteps.length = 0;
             state.PROGRAM_ENABLED = false;
+            // Seed the default starter step
+            seedDefaultProgram();
             buildForm(); renderProgramSteps(); updatePreview(true);
             if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (_) { }
             updateButtons();
@@ -16129,6 +16148,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           setTimeout(() => {
             applyDefault();
           }, 100);
+        }
+
+        // FTUE: seed a default starter step on first load when no saved default exists
+        if (!hasDefault() && programSteps.length === 0) {
+          seedDefaultProgram();
+          renderProgramSteps(); updatePreview(true);
         }
       })();
 
