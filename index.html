@@ -2468,6 +2468,21 @@ https://github.com/odeepllama/SolarSim/tree/main
       color: #222 !important;
     }
 
+    /* Offline sun-custom tile: shrink text so both lines fit in tile */
+    .mon-kv.tile-offline.sun-custom span,
+    .mon-kv.tile-offline.sun-color-tile.sun-custom span {
+      font-size: 1rem !important;
+      line-height: 1.3;
+      word-break: break-all;
+    }
+
+    /* Live CUSTOM tile: same shrink for tight viewports */
+    .mon-kv.sun-color-tile.sun-custom span {
+      font-size: 1rem;
+      line-height: 1.3;
+      word-break: break-all;
+    }
+
     /* Grey→live flash animation */
 
 
@@ -3589,7 +3604,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     .clock-tl-axis-label {
       position: absolute;
-      bottom: 4px;
+      bottom: 1px;
       transform: translateX(-50%);
       font-size: 13px;
       font-weight: 500;
@@ -3780,6 +3795,27 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .live-on-device-badge.visible {
+      display: inline-flex;
+    }
+
+    /* No Device Connected badge (shown when disconnected) */
+    .no-device-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-left: 12px;
+      padding: 4px 14px 4px 10px;
+      background: #dc3545;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: Inter, system-ui, sans-serif;
+      border-radius: 999px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .no-device-badge.visible {
       display: inline-flex;
     }
 
@@ -4165,7 +4201,8 @@ https://github.com/odeepllama/SolarSim/tree/main
     <div id="monitorControls"></div>
     <!-- Sun Position removed -->
     <div class="mini-sect-title" data-section="monitor-status-tiles">Status Tiles <span id="liveOnDeviceBadge"
-        class="live-on-device-badge"><span class="live-on-device-dot"></span>Live on Device</span></div>
+        class="live-on-device-badge"><span class="live-on-device-dot"></span>Live on Device</span><span
+        id="noDeviceBadge" class="no-device-badge visible">No Device Connected</span></div>
     <div id="monitorStatusGrid" data-section="monitor-status-tiles"></div>
     <!-- Sun Arc + Log side-by-side -->
     <div id="monitorVisLogRow" class="vislog-row">
@@ -4310,9 +4347,10 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     <aside id="helpPanel" aria-hidden="true" aria-label="Usage Help">
       <header>
-        <h3>Usage & Help</h3>
+        <h3 data-i18n="helpPanelTitle">Usage & Help</h3>
         <div style="display:flex; gap:6px;">
-          <button id="helpCloseBtn" type="button" class="secondary" aria-label="Close help">Close ✕</button>
+          <button id="helpCloseBtn" type="button" class="secondary" aria-label="Close help"
+            data-i18n="helpCloseBtn">Close ✕</button>
         </div>
       </header>
       <div class="help-body" tabindex="-1" id="helpBodyScroll">
@@ -5300,28 +5338,30 @@ https://github.com/odeepllama/SolarSim/tree/main
         </div>
       </div>
       <div id="timelineContainer" style="margin:6px 0 10px;"></div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:2px; margin-bottom:6px;">
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
+          <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <input type="checkbox" id="hideClockFinalNight" style="cursor: pointer;">
+          <span data-i18n="hideClockFinalNight">Hide final night on clock bar</span>
+        </label>
+      </div>
       <h2 id="programEditingTitle" data-i18n="programStepEditing">Program Step Editing</h2>
       <div class="toolbar">
         <button id="addStepBtn" type="button">Add Step</button>
         <button id="addDayBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;"
           title="Add a new step with the same simtime as the last step">Add Day</button>
+        <button id="duplicateDayBtn" type="button" style="background:#ff9800; color:#000; font-weight:600;"
+          title="Duplicate the last day's steps as a new day">Duplicate Day</button>
         <button id="exampleStepsBtn" type="button" class="secondary" style="font-weight:600;">Examples…</button>
         <button id="clearStepsBtn" type="button" class="danger">Clear Steps</button>
         <button id="printSummaryBtn2" type="button" class="secondary"
           title="Generate and print a summary of current configuration and program steps">Print Summary</button>
-      </div>
-      <label style="display:flex; align-items:center; gap:4px; cursor:pointer; margin-top:-4px;">
-        <input type="checkbox" id="singleDayVisualization" style="cursor: pointer;">
-        <span data-i18n="visualizeSingleDay">Visualize all steps on a single day</span>
-      </label>
-      <div style="display:flex; flex-wrap:wrap; gap:4px 16px;">
-        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;">
           <input type="checkbox" id="perStepDayLength" style="cursor: pointer;">
-          <span data-i18n="perStepDayLength">Per-step day length (sunrise/sunset)</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-          <input type="checkbox" id="hideClockFinalNight" style="cursor: pointer;">
-          <span>Hide final night on clock bar</span>
+          <span data-i18n="perStepDayLength">Variable Day Length (Sunrise and Sunset)</span>
         </label>
       </div>
       <div id="errorBannerInline"></div>
@@ -5368,7 +5408,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           <li><strong data-i18n="runTransitions">RUN transitions:</strong> <span data-i18n="runTransitionsDesc">Advance
               simulated time using active speed</span></li>
           <li><strong data-i18n="jumpTransitions">JUMP transitions:</strong> <span
-              data-i18n="jumpTransitionsDesc">Instantaneous reposition, no simulated time added</span></li>
+              data-i18n="jumpTransitionsDesc">Executes instantly when the previous step completes. The JUMP step’s Sim
+              Time is the target time to jump to — no simulated time elapses during the jump</span></li>
           <li><strong data-i18n="backwardRun">Backward RUN:</strong> <span data-i18n="backwardRunDesc">Negative speed
               runs to earlier time/day when next step is later</span></li>
           <li><strong data-i18n="runJumpSameOrEarlier">RUN/JUMP to same or earlier time:</strong> <span
@@ -6046,6 +6087,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           programStepTimeline: 'Program Step Timeline',
           programStepEditing: 'Program Step Editing',
           visualizeSingleDay: 'Visualize all steps on a single day',
+          hideClockFinalNight: 'Hide final night on clock bar',
+          perStepDayLength: 'Variable Day Length (Sunrise and Sunset)',
+          helpPanelTitle: 'Usage & Help',
+          helpCloseBtn: 'Close ✕',
           programStepBehavior: 'Program Step Behavior:',
           speed: 'Speed:',
           speedDesc: 'Applies from step\'s start until next speed change',
@@ -6054,7 +6099,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           backwardRun: 'Backward RUN:',
           backwardRunDesc: 'Negative speed runs to earlier time/day when next step is later',
           jumpTransitions: 'JUMP transitions:',
-          jumpTransitionsDesc: 'Instantaneous reposition, no simulated time added',
+          jumpTransitionsDesc: 'Executes instantly when the previous step completes. The JUMP step\u2019s Sim Time is the target time to jump to \u2014 no simulated time elapses during the jump',
           runJumpSameOrEarlier: 'RUN/JUMP to same or earlier time:',
           runJumpSameOrEarlierDesc: 'Creates new day',
           holdSpeedZero: 'HOLD (Speed=0):',
@@ -6209,6 +6254,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           programStepTimeline: 'プログラムステップタイムライン',
           programStepEditing: 'プログラムステップ編集',
           visualizeSingleDay: 'すべてのステップを1日に表示',
+          hideClockFinalNight: 'クロックバーの最後の夜を非表示',
+          perStepDayLength: '可変日長（日の出と日の入り）',
+          helpPanelTitle: '使い方とヘルプ',
+          helpCloseBtn: '閉じる ✕',
           programStepBehavior: 'プログラムステップの動作:',
           speed: 'スピード:',
           speedDesc: 'ステップ開始から次のスピード変更まで適用',
@@ -6217,7 +6266,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           backwardRun: '逆方向RUN:',
           backwardRunDesc: '負のスピードで次のステップが後の場合は前日/前時刻へ',
           jumpTransitions: 'JUMP遷移:',
-          jumpTransitionsDesc: '即座に位置変更、シミュレーション時間は進まない',
+          jumpTransitionsDesc: '前のステップ完了時に即座に実行。JUMPステップのSim Timeがジャンプ先の時刻で、シミュレーション時間は経過しません',
           runJumpSameOrEarlier: '同じまたは前の時刻へのRUN/JUMP:',
           runJumpSameOrEarlierDesc: '新しい日を作成',
           holdSpeedZero: 'HOLD（スピード=0）:',
@@ -8268,6 +8317,11 @@ https://github.com/odeepllama/SolarSim/tree/main
     .program-steps-table button.row-act.danger{ background:#c62828; border-color:transparent; }
     .program-steps-table button.row-act.danger:not(:disabled):hover{ background:#b71c1c; }
     .program-steps-table button.row-act.danger:active{ background:#9f1a1a; }
+    /* Touch-device: expand tap targets for row action buttons (iPad etc.) */
+    @media (pointer: coarse) {
+      .program-steps-table button.row-act{ width:40px; height:40px; font-size:16px; margin:0 3px 0 0; }
+      .program-steps-table button.row-act svg{ width:16px; height:16px; }
+    }
   `;
         document.head.appendChild(s);
       }
@@ -8393,7 +8447,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             repeatInfo = ` (${repeatS}s from repeats)`;
           }
         }
-        const text = `Net span: ${netH}h ${netM}m | Traversed: ${travH}h ${travM}m | Est. real: ${realH}h ${realM}m ${realS}s${repeatInfo}`;
+        // Full cycle: time from first step back to first step (24h for single-day repeating programs)
+        const fullCycle = CONFIG.MINUTES_PER_DAY;
+        const fcH = Math.floor(fullCycle / CONFIG.SECONDS_PER_MINUTE), fcM = fullCycle % CONFIG.SECONDS_PER_MINUTE;
+        const text = `Net span: ${netH}h ${netM}m (full cycle ${fcH}h ${fcM}m) | Traversed: ${travH}h ${travM}m | Est. real: ${realH}h ${realM}m ${realS}s${repeatInfo}`;
         return { text, spanMinutes: netSpan, realSeconds, traversedMinutes: traversed };
       }
 
@@ -9145,6 +9202,52 @@ https://github.com/odeepllama/SolarSim/tree/main
               sdCheckbox.checked = false;
               try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
             }
+          }
+        });
+
+        // Duplicate Day button - clones the last day's steps as a new day
+        document.getElementById('duplicateDayBtn').addEventListener('click', (e) => {
+          // Check if editing is locked (device running)
+          if (window.__programEditingLocked && window.__programEditingLocked()) {
+            if (window.__flashProgramLock) window.__flashProgramLock();
+            return;
+          }
+
+          if (programSteps.length === 0) return;
+
+          // Find the last day's steps
+          const analysis = analyzeMultiDayProgram(true);
+          const lastDay = analysis.days[analysis.days.length - 1];
+          if (!lastDay || !lastDay.steps || lastDay.steps.length === 0) return;
+
+          const newDayNumber = (lastDay.dayNumber || 1) + 1;
+          const stepsToAdd = lastDay.steps.length;
+
+          // Check max steps limit
+          if (programSteps.length + stepsToAdd > MAX_PROGRAM_STEPS) {
+            showMaxStepsPopover(e.currentTarget);
+            return;
+          }
+
+          saveUndoState();
+
+          // Clone each step from the last day with incremented day number
+          lastDay.steps.forEach(s => {
+            const clone = JSON.parse(JSON.stringify(s.step));
+            clone.day = newDayNumber;
+            clone._dayManualOverride = true;
+            programSteps.push(clone);
+          });
+
+          renderProgramSteps();
+          updatePreview(true);
+          updateMaxStepsUI();
+
+          // Auto-switch to multi-day view
+          const sdCheckbox = document.getElementById('singleDayVisualization');
+          if (sdCheckbox && sdCheckbox.checked) {
+            sdCheckbox.checked = false;
+            try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
           }
         });
 
@@ -11779,6 +11882,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (isNaN(val)) return 1.0;
         return Math.max(0, Math.min(1, val));
       }
+
+      /**
+       * Pre-composite a display color + opacity to solid RGB over white.
+       * Eliminates semi-transparency so overlapping segments don't blend.
+       */
+      function compositeOverWhite(dc, opac) {
+        const r = Math.round(dc.r * opac + 255 * (1 - opac));
+        const g = Math.round(dc.g * opac + 255 * (1 - opac));
+        const b = Math.round(dc.b * opac + 255 * (1 - opac));
+        return `rgb(${r},${g},${b})`;
+      }
       /**
        * Render the clock-time timeline bar into the given container.
        * Segments are sized proportional to their real-world duration.
@@ -11842,7 +11956,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const rawInt = stepData.intensity_scale;
             const intensity = rawInt != null ? (isNaN(parseFloat(rawInt)) ? 1.0 : parseFloat(rawInt)) : 1.0;
             const opac = intensityToOpacity(intensity);
-            div.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+            div.style.background = compositeOverWhite(dc, opac);
             // Speed-proportional height from bottom
             const heightPct = Math.min(1, Math.abs(seg.speed) / clockMaxAbsSpeed) * 100;
             div.style.height = heightPct + '%';
@@ -12059,7 +12173,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Intensity key — added by _renderTimelineStripImmediate via flag
         if (window.__appendClockIntensityKey) {
-          const keyEl = buildIntensityKey(programSteps);
+          const keyEl = buildIntensityKey(programSteps, window.__hasTimelineOverlap);
           if (keyEl) {
             keyEl.style.marginTop = '0';
             clockSection.appendChild(keyEl);
@@ -12336,6 +12450,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         container.innerHTML = '';
+        window.__hasTimelineOverlap = false; // Reset overlap flag for this render cycle
 
         // Render sim-time timeline if mode is 'sim' or 'both'
         if (viewMode === 'sim' || viewMode === 'both') {
@@ -12355,7 +12470,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             renderSingleDayTimeline(simContainer);
             // Single-day, sim-only: add intensity key beneath all bars
             if (viewMode === 'sim') {
-              const keyEl = buildIntensityKey(programSteps);
+              const keyEl = buildIntensityKey(programSteps, window.__hasTimelineOverlap);
               if (keyEl) simContainer.appendChild(keyEl);
             }
           }
@@ -12554,23 +12669,17 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Both steps explicitly agree on the same day — trust it, skip midnight detection
               continue;
             }
-            // Steps disagree on day number
-            if (step._dayManualOverride || nextStep._dayManualOverride) {
-              // At least one has a manual override — mismatch may be stale
-              // (user is editing one step at a time). Trust the override and skip.
-              if (step._dayManualOverride) currentDay = step.day;
-              // Don't split — also skip midnight detection below
-            } else {
-              // Both are auto-assigned and disagree — explicit day boundary
-              result.days.push({
-                dayNumber: step.day,
-                steps: currentDayMinutes,
-                orphanedHoldEndTime: null
-              });
-              currentDayMinutes = [];
-              currentDay = nextStep.day;
-              continue; // skip midnight-crossing check
-            }
+            // Steps disagree on day number — split into a new day.
+            // This handles both auto-assigned disagreements AND manual overrides.
+            // When the user manually sets a different day number, that IS the intent.
+            result.days.push({
+              dayNumber: step.day,
+              steps: currentDayMinutes,
+              orphanedHoldEndTime: null
+            });
+            currentDayMinutes = [];
+            currentDay = nextStep.day;
+            continue; // skip midnight-crossing check
           }
           // If either step has a manual day override, skip midnight detection entirely.
           if (nextStep && (step._dayManualOverride || nextStep._dayManualOverride)) {
@@ -13218,7 +13327,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Intensity key beneath this day's bars (only for editable view)
           if (!readOnly && !suppressIntensityKey) {
             const dayRawSteps = daySteps.map(s => s.step);
-            const keyEl = buildIntensityKey(dayRawSteps);
+            const keyEl = buildIntensityKey(dayRawSteps, window.__hasTimelineOverlap);
             if (keyEl) daySection.appendChild(keyEl);
           }
         });
@@ -13333,44 +13442,59 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       // Build intensity color key row — returns a DOM element or null
       // steps: array of step objects to inspect for color uniformity
-      function buildIntensityKey(steps) {
+      function buildIntensityKey(steps, hasOverlap = false) {
         const hasVaryingIntensity = steps.some(s => s.intensity_scale != null && s.intensity_scale !== 1);
-        if (!hasVaryingIntensity) return null;
+        if (!hasVaryingIntensity && !hasOverlap) return null;
         const keyRow = document.createElement('div');
         keyRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:4px;margin-left:98px;font-size:16px;color:#000;font-family:Inter,system-ui,sans-serif;';
-        keyRow.innerHTML = '<span style="font-weight:600;margin-right:3px;">Intensity:</span>';
-        // Determine swatch color: use the most common step color, fall back to grey only if no steps have color
-        const stepsWithColor = steps.filter(s => s.sun_color_rgb);
-        let keyColor;
-        if (stepsWithColor.length) {
-          // Find the most common RGB value among steps
-          const colorCounts = new Map();
-          stepsWithColor.forEach(s => {
-            const key = s.sun_color_rgb.join(',');
-            colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
-          });
-          let bestKey = null, bestCount = 0;
-          for (const [k, count] of colorCounts) {
-            if (count > bestCount) { bestKey = k; bestCount = count; }
+        if (hasVaryingIntensity) {
+          keyRow.innerHTML = '<span style="font-weight:600;margin-right:3px;">Intensity:</span>';
+          // Determine swatch color: use the most common step color, fall back to grey only if no steps have color
+          const stepsWithColor = steps.filter(s => s.sun_color_rgb);
+          let keyColor;
+          if (stepsWithColor.length) {
+            // Find the most common RGB value among steps
+            const colorCounts = new Map();
+            stepsWithColor.forEach(s => {
+              const key = s.sun_color_rgb.join(',');
+              colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+            });
+            let bestKey = null, bestCount = 0;
+            for (const [k, count] of colorCounts) {
+              if (count > bestCount) { bestKey = k; bestCount = count; }
+            }
+            const bestRgb = bestKey.split(',').map(Number);
+            keyColor = sunColorToDisplayColor(bestRgb);
+          } else {
+            keyColor = { r: 128, g: 128, b: 128 };
           }
-          const bestRgb = bestKey.split(',').map(Number);
-          keyColor = sunColorToDisplayColor(bestRgb);
-        } else {
-          keyColor = { r: 128, g: 128, b: 128 };
+          [0.1, 0.5, 1.0].forEach(val => {
+            // Composite against white so page background doesn't bleed through
+            const sr = Math.round(keyColor.r * val + 255 * (1 - val));
+            const sg = Math.round(keyColor.g * val + 255 * (1 - val));
+            const sb = Math.round(keyColor.b * val + 255 * (1 - val));
+            const swatch = document.createElement('span');
+            swatch.style.cssText = `display:inline-block;width:27px;height:18px;border:1px solid #999;border-radius:2px;vertical-align:middle;margin-right:3px;background:rgb(${sr},${sg},${sb});`;
+            keyRow.appendChild(swatch);
+            const label = document.createElement('span');
+            label.textContent = val.toString();
+            label.style.marginRight = '9px';
+            keyRow.appendChild(label);
+          });
         }
-        [0.1, 0.5, 1.0].forEach(val => {
-          // Composite against white so page background doesn't bleed through
-          const sr = Math.round(keyColor.r * val + 255 * (1 - val));
-          const sg = Math.round(keyColor.g * val + 255 * (1 - val));
-          const sb = Math.round(keyColor.b * val + 255 * (1 - val));
-          const swatch = document.createElement('span');
-          swatch.style.cssText = `display:inline-block;width:27px;height:18px;border:1px solid #999;border-radius:2px;vertical-align:middle;margin-right:3px;background:rgb(${sr},${sg},${sb});`;
-          keyRow.appendChild(swatch);
-          const label = document.createElement('span');
-          label.textContent = val.toString();
-          label.style.marginRight = '9px';
-          keyRow.appendChild(label);
-        });
+        // Overlap key: solid black line swatch + label
+        if (hasOverlap) {
+          const gap = document.createElement('span');
+          gap.style.cssText = 'display:inline-block;width:12px;';
+          keyRow.appendChild(gap);
+          const olLabel = document.createElement('span');
+          olLabel.style.cssText = 'font-weight:600;margin-right:6px;';
+          olLabel.textContent = 'Step overlap:';
+          keyRow.appendChild(olLabel);
+          const olLine = document.createElement('span');
+          olLine.style.cssText = 'display:inline-block;width:36px;height:3px;background:#000;border-radius:1px;vertical-align:middle;';
+          keyRow.appendChild(olLine);
+        }
         return keyRow;
       }
 
@@ -13767,7 +13891,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Ultra bar: sun color + intensity opacity + speed height
               const dc = sunColorToDisplayColor(seg.sunColorRgb);
               const opac = intensityToOpacity(intensity);
-              bgDiv.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+              bgDiv.style.background = compositeOverWhite(dc, opac);
               // Speed-proportional height
               const heightPct = Math.min(1, Math.abs(speed) / maxAbsSpeed) * 100;
               bgDiv.style.height = heightPct + '%';
@@ -13873,7 +13997,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!hold) {
             const dc = sunColorToDisplayColor(seg.sunColorRgb);
             const opac = intensityToOpacity(intensity);
-            div.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+            div.style.background = compositeOverWhite(dc, opac);
             // Speed-proportional height (capped at 5x)
             const heightPct = Math.min(1, Math.abs(speed) / maxAbsSpeed) * 100;
             div.style.height = heightPct + '%';
@@ -13944,7 +14068,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!hold) {
             const dc2 = sunColorToDisplayColor(seg.sunColorRgb);
             const opac2 = intensityToOpacity(intensity);
-            div.style.background = `rgba(${dc2.r},${dc2.g},${dc2.b},${opac2})`;
+            div.style.background = compositeOverWhite(dc2, opac2);
             // Speed-proportional height (capped at 5x)
             const heightPct2 = Math.min(1, Math.abs(speed) / maxAbsSpeed) * 100;
             div.style.height = heightPct2 + '%';
@@ -14078,6 +14202,40 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (filterDirection === 'forward') {
           const firstFwdSeg = host.querySelector('.tl-seg.run:not(.reverse):not(.hold)');
           if (firstFwdSeg) firstFwdSeg.classList.add('forward-arrow');
+        }
+
+        // Overlap indicator: thin black line above bar where 2+ forward segments cover the same time
+        if (filterDirection !== 'reverse' && otherSegments.length > 1) {
+          // Build sorted list of segment intervals (in minutes)
+          const intervals = otherSegments
+            .filter(s => s.speed > 0) // only forward RUN segments
+            .map(s => ({ start: Math.min(s.startMin, s.endMin), end: Math.max(s.startMin, s.endMin) }))
+            .filter(iv => iv.end - iv.start >= 5); // skip tiny segments
+          // Sweep-line to find overlap regions
+          if (intervals.length > 1) {
+            const events = [];
+            intervals.forEach(iv => { events.push({ t: iv.start, type: 1 }); events.push({ t: iv.end, type: -1 }); });
+            events.sort((a, b) => a.t - b.t || a.type - b.type);
+            let depth = 0, overlapStart = null;
+            const overlaps = [];
+            events.forEach(ev => {
+              depth += ev.type;
+              if (depth >= 2 && overlapStart === null) overlapStart = ev.t;
+              if (depth < 2 && overlapStart !== null) { overlaps.push({ start: overlapStart, end: ev.t }); overlapStart = null; }
+            });
+            if (overlaps.length > 0) window.__hasTimelineOverlap = true;
+            overlaps.forEach(ov => {
+              const leftPct = ((ov.start - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
+              const widthPct = ((ov.end - ov.start) / WINDOW_SPAN) * 100;
+              if (widthPct < 0.5) return;
+              const line = document.createElement('div');
+              line.style.cssText = `position:absolute;top:-1px;height:3px;background:#000;z-index:200;pointer-events:none;border-radius:1px;`;
+              line.style.left = leftPct + '%';
+              line.style.width = widthPct + '%';
+              line.title = `Overlap: ${formatHHMM(ov.start)}–${formatHHMM(ov.end)} (multiple passes)`;
+              host.appendChild(line);
+            });
+          }
         }
 
         // Render jump markers inside window — globally numbered across all days
@@ -15587,45 +15745,68 @@ https://github.com/odeepllama/SolarSim/tree/main
 </html>
   `;
 
-        // Create hidden iframe for silent printing (no new tab)
-        let printFrame = document.getElementById('printFrame');
+        // Detect iOS/iPadOS (iframe.contentWindow.print() fails silently on iOS)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        // Remove old frame if exists
-        if (printFrame) {
-          printFrame.remove();
-        }
+        if (isIOS) {
+          // iOS path: open in a new window and print from there
+          const printWin = window.open('', '_blank');
+          if (!printWin) {
+            alert('Please allow pop-ups for this site to use Print Summary.');
+            return;
+          }
+          printWin.document.open();
+          printWin.document.write(printHTML);
+          printWin.document.close();
 
-        // Create new iframe
-        printFrame = document.createElement('iframe');
-        printFrame.id = 'printFrame';
-        printFrame.style.position = 'absolute';
-        printFrame.style.width = '0';
-        printFrame.style.height = '0';
-        printFrame.style.border = 'none';
-        printFrame.style.visibility = 'hidden';
-        document.body.appendChild(printFrame);
-
-        // Write content to iframe
-        const frameDoc = printFrame.contentWindow.document;
-        frameDoc.open();
-        frameDoc.write(printHTML);
-        frameDoc.close();
-
-        // Wait for content to load, then trigger print dialog
-        printFrame.contentWindow.addEventListener('load', () => {
-          setTimeout(() => {
-            // Temporarily change the main page title to control PDF filename
-            const originalTitle = document.title;
-            document.title = `${sanitizedName}_summary`;
-
-            printFrame.contentWindow.print();
-
-            // Restore original title after a short delay
+          // Wait for content to render, then trigger print
+          printWin.addEventListener('load', () => {
             setTimeout(() => {
-              document.title = originalTitle;
-            }, 1000);
-          }, 250);
-        });
+              printWin.print();
+            }, 400);
+          });
+        } else {
+          // Desktop path: hidden iframe for silent printing (no new tab)
+          let printFrame = document.getElementById('printFrame');
+
+          // Remove old frame if exists
+          if (printFrame) {
+            printFrame.remove();
+          }
+
+          // Create new iframe
+          printFrame = document.createElement('iframe');
+          printFrame.id = 'printFrame';
+          printFrame.style.position = 'absolute';
+          printFrame.style.width = '0';
+          printFrame.style.height = '0';
+          printFrame.style.border = 'none';
+          printFrame.style.visibility = 'hidden';
+          document.body.appendChild(printFrame);
+
+          // Write content to iframe
+          const frameDoc = printFrame.contentWindow.document;
+          frameDoc.open();
+          frameDoc.write(printHTML);
+          frameDoc.close();
+
+          // Wait for content to load, then trigger print dialog
+          printFrame.contentWindow.addEventListener('load', () => {
+            setTimeout(() => {
+              // Temporarily change the main page title to control PDF filename
+              const originalTitle = document.title;
+              document.title = `${sanitizedName}_summary`;
+
+              printFrame.contentWindow.print();
+
+              // Restore original title after a short delay
+              setTimeout(() => {
+                document.title = originalTitle;
+              }, 1000);
+            }, 250);
+          });
+        }
       }
 
       // ============ End Print Summary Functions ============
@@ -16042,6 +16223,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           } catch (e) { console.warn('Apply default failed', e); alert('Could not apply default (corrupt data).'); }
         }
 
+        // Default starter program: one step at 06:00 sunrise, speed 1, blue sun, full intensity
+        function seedDefaultProgram() {
+          if (programSteps.length > 0) return; // Don't overwrite existing steps
+          programSteps.push({
+            sim_time_hhmm: 600,
+            speed: 1,
+            intensity_scale: 1,
+            sun_color_rgb: [0, 0, 255],
+            transition: 'RUN'
+          });
+          state.PROGRAM_ENABLED = true;
+          state.PROGRAM_STEPS = programSteps;
+        }
+
         function clearDefault() {
           try {
             localStorage.removeItem(SAVE_KEY);
@@ -16050,6 +16245,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             Object.keys(FIELDS).forEach(k => { state[k] = FIELDS[k].default; });
             programSteps.length = 0;
             state.PROGRAM_ENABLED = false;
+            // Seed the default starter step
+            seedDefaultProgram();
             buildForm(); renderProgramSteps(); updatePreview(true);
             if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (_) { }
             updateButtons();
@@ -16077,6 +16274,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           setTimeout(() => {
             applyDefault();
           }, 100);
+        }
+
+        // FTUE: seed a default starter step on first load when no saved default exists
+        if (!hasDefault() && programSteps.length === 0) {
+          seedDefaultProgram();
+          renderProgramSteps(); updatePreview(true);
         }
       })();
 
@@ -19232,11 +19435,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           badge(c ? 'CONNECTED' : 'DISCONNECTED', c ? 'green' : 'red');
           // Show/hide Live on Device badge (suppress during Quick Edit)
           const lodBadge = document.getElementById('liveOnDeviceBadge');
+          const noDevBadge = document.getElementById('noDeviceBadge');
           if (lodBadge) {
             if (c && !state.__quickEditActive) {
               lodBadge.classList.add('visible');
             } else {
               lodBadge.classList.remove('visible');
+            }
+          }
+          // Show/hide No Device Connected badge (inverse of Live on Device)
+          if (noDevBadge) {
+            if (!c) {
+              noDevBadge.classList.add('visible');
+            } else {
+              noDevBadge.classList.remove('visible');
             }
           }
           // Transition tiles between offline (grey) and live modes
@@ -19977,7 +20189,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
               // Don't fall back to form values — they may be stale/default.
               // The actual RGB line arrives later in the status dump and will update the tile.
-              setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM<br>(${rgb[0]},${rgb[1]},${rgb[2]})` : icon + ' CUSTOM');
+              setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : icon + ' CUSTOM');
             } else {
               setKV('sunColor', 'SunColor', icon + ' ' + val);
             }
@@ -19995,7 +20207,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Stash for visualizer
               try { const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {}); st.__sunCustomRGB = [r, g, b]; } catch (_) { }
               // If SunColor tile exists or after mode is CUSTOM, show numbers
-              setKV('sunColor', 'SunColor', `☀ CUSTOM<br>(${r},${g},${b})`);
+              setKV('sunColor', 'SunColor', `☀ CUSTOM<br>${r},${g},${b}`);
               updated = true;
             } catch (_) { }
           }
@@ -20003,7 +20215,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             let modeVal = mSolar[1];
             if (modeVal.toUpperCase() === 'CUSTOM') {
               let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
-              setKV('solarMode', 'SolarMode', rgb ? `CUSTOM<br>(${rgb[0]},${rgb[1]},${rgb[2]})` : 'CUSTOM');
+              setKV('solarMode', 'SolarMode', rgb ? `CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : 'CUSTOM');
             } else {
               setKV('solarMode', 'SolarMode', modeVal);
             }
@@ -20528,7 +20740,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const scMode = String(formState.SUN_COLOR_MODE || 'BLUE');
           if (scMode.toUpperCase() === 'CUSTOM') {
             const r = formState.CUSTOM_SUN_R ?? 255, g = formState.CUSTOM_SUN_G ?? 0, b = formState.CUSTOM_SUN_B ?? 0;
-            setKV('sunColor', 'SunColor', `CUSTOM<br>(${r},${g},${b})`);
+            setKV('sunColor', 'SunColor', `CUSTOM<br>${r},${g},${b}`);
           } else {
             setKV('sunColor', 'SunColor', scMode);
           }
