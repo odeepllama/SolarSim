@@ -2468,6 +2468,15 @@ https://github.com/odeepllama/SolarSim/tree/main
       color: #222 !important;
     }
 
+    /* Offline sun-custom tile: scale text to fit like live tiles */
+    .mon-kv.tile-offline.sun-custom span {
+      font-size: clamp(0.75rem, 3.2vw, 1.2rem) !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
     /* Grey→live flash animation */
 
 
@@ -5391,7 +5400,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           <li><strong data-i18n="runTransitions">RUN transitions:</strong> <span data-i18n="runTransitionsDesc">Advance
               simulated time using active speed</span></li>
           <li><strong data-i18n="jumpTransitions">JUMP transitions:</strong> <span
-              data-i18n="jumpTransitionsDesc">Instantaneous reposition, no simulated time added</span></li>
+              data-i18n="jumpTransitionsDesc">Executes instantly when the previous step completes. The JUMP step’s Sim
+              Time is the target time to jump to — no simulated time elapses during the jump</span></li>
           <li><strong data-i18n="backwardRun">Backward RUN:</strong> <span data-i18n="backwardRunDesc">Negative speed
               runs to earlier time/day when next step is later</span></li>
           <li><strong data-i18n="runJumpSameOrEarlier">RUN/JUMP to same or earlier time:</strong> <span
@@ -6081,7 +6091,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           backwardRun: 'Backward RUN:',
           backwardRunDesc: 'Negative speed runs to earlier time/day when next step is later',
           jumpTransitions: 'JUMP transitions:',
-          jumpTransitionsDesc: 'Instantaneous reposition, no simulated time added',
+          jumpTransitionsDesc: 'Executes instantly when the previous step completes. The JUMP step\u2019s Sim Time is the target time to jump to \u2014 no simulated time elapses during the jump',
           runJumpSameOrEarlier: 'RUN/JUMP to same or earlier time:',
           runJumpSameOrEarlierDesc: 'Creates new day',
           holdSpeedZero: 'HOLD (Speed=0):',
@@ -6248,7 +6258,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           backwardRun: '逆方向RUN:',
           backwardRunDesc: '負のスピードで次のステップが後の場合は前日/前時刻へ',
           jumpTransitions: 'JUMP遷移:',
-          jumpTransitionsDesc: '即座に位置変更、シミュレーション時間は進まない',
+          jumpTransitionsDesc: '前のステップ完了時に即座に実行。JUMPステップのSim Timeがジャンプ先の時刻で、シミュレーション時間は経過しません',
           runJumpSameOrEarlier: '同じまたは前の時刻へのRUN/JUMP:',
           runJumpSameOrEarlierDesc: '新しい日を作成',
           holdSpeedZero: 'HOLD（スピード=0）:',
@@ -8299,6 +8309,11 @@ https://github.com/odeepllama/SolarSim/tree/main
     .program-steps-table button.row-act.danger{ background:#c62828; border-color:transparent; }
     .program-steps-table button.row-act.danger:not(:disabled):hover{ background:#b71c1c; }
     .program-steps-table button.row-act.danger:active{ background:#9f1a1a; }
+    /* Touch-device: expand tap targets for row action buttons (iPad etc.) */
+    @media (pointer: coarse) {
+      .program-steps-table button.row-act{ width:40px; height:40px; font-size:16px; margin:0 3px 0 0; }
+      .program-steps-table button.row-act svg{ width:16px; height:16px; }
+    }
   `;
         document.head.appendChild(s);
       }
