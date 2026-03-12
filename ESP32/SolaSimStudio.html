@@ -5353,6 +5353,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         <button id="addStepBtn" type="button">Add Step</button>
         <button id="addDayBtn" type="button" style="background:#ffc107; color:#000; font-weight:600;"
           title="Add a new step with the same simtime as the last step">Add Day</button>
+        <button id="duplicateDayBtn" type="button" style="background:#ff9800; color:#000; font-weight:600;"
+          title="Duplicate the last day's steps as a new day">Duplicate Day</button>
         <button id="exampleStepsBtn" type="button" class="secondary" style="font-weight:600;">Examples…</button>
         <button id="clearStepsBtn" type="button" class="danger">Clear Steps</button>
         <button id="printSummaryBtn2" type="button" class="secondary"
@@ -9200,6 +9202,52 @@ https://github.com/odeepllama/SolarSim/tree/main
               sdCheckbox.checked = false;
               try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
             }
+          }
+        });
+
+        // Duplicate Day button - clones the last day's steps as a new day
+        document.getElementById('duplicateDayBtn').addEventListener('click', (e) => {
+          // Check if editing is locked (device running)
+          if (window.__programEditingLocked && window.__programEditingLocked()) {
+            if (window.__flashProgramLock) window.__flashProgramLock();
+            return;
+          }
+
+          if (programSteps.length === 0) return;
+
+          // Find the last day's steps
+          const analysis = analyzeMultiDayProgram(true);
+          const lastDay = analysis.days[analysis.days.length - 1];
+          if (!lastDay || !lastDay.steps || lastDay.steps.length === 0) return;
+
+          const newDayNumber = (lastDay.dayNumber || 1) + 1;
+          const stepsToAdd = lastDay.steps.length;
+
+          // Check max steps limit
+          if (programSteps.length + stepsToAdd > MAX_PROGRAM_STEPS) {
+            showMaxStepsPopover(e.currentTarget);
+            return;
+          }
+
+          saveUndoState();
+
+          // Clone each step from the last day with incremented day number
+          lastDay.steps.forEach(s => {
+            const clone = JSON.parse(JSON.stringify(s.step));
+            clone.day = newDayNumber;
+            clone._dayManualOverride = true;
+            programSteps.push(clone);
+          });
+
+          renderProgramSteps();
+          updatePreview(true);
+          updateMaxStepsUI();
+
+          // Auto-switch to multi-day view
+          const sdCheckbox = document.getElementById('singleDayVisualization');
+          if (sdCheckbox && sdCheckbox.checked) {
+            sdCheckbox.checked = false;
+            try { localStorage.setItem('singleDayVisualization', 'false'); } catch (e) { }
           }
         });
 
