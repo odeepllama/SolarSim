@@ -11834,6 +11834,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (isNaN(val)) return 1.0;
         return Math.max(0, Math.min(1, val));
       }
+
+      /**
+       * Pre-composite a display color + opacity to solid RGB over white.
+       * Eliminates semi-transparency so overlapping segments don't blend.
+       */
+      function compositeOverWhite(dc, opac) {
+        const r = Math.round(dc.r * opac + 255 * (1 - opac));
+        const g = Math.round(dc.g * opac + 255 * (1 - opac));
+        const b = Math.round(dc.b * opac + 255 * (1 - opac));
+        return `rgb(${r},${g},${b})`;
+      }
       /**
        * Render the clock-time timeline bar into the given container.
        * Segments are sized proportional to their real-world duration.
@@ -11897,7 +11908,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             const rawInt = stepData.intensity_scale;
             const intensity = rawInt != null ? (isNaN(parseFloat(rawInt)) ? 1.0 : parseFloat(rawInt)) : 1.0;
             const opac = intensityToOpacity(intensity);
-            div.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+            div.style.background = compositeOverWhite(dc, opac);
             // Speed-proportional height from bottom
             const heightPct = Math.min(1, Math.abs(seg.speed) / clockMaxAbsSpeed) * 100;
             div.style.height = heightPct + '%';
@@ -13822,7 +13833,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Ultra bar: sun color + intensity opacity + speed height
               const dc = sunColorToDisplayColor(seg.sunColorRgb);
               const opac = intensityToOpacity(intensity);
-              bgDiv.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+              bgDiv.style.background = compositeOverWhite(dc, opac);
               // Speed-proportional height
               const heightPct = Math.min(1, Math.abs(speed) / maxAbsSpeed) * 100;
               bgDiv.style.height = heightPct + '%';
@@ -13928,7 +13939,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!hold) {
             const dc = sunColorToDisplayColor(seg.sunColorRgb);
             const opac = intensityToOpacity(intensity);
-            div.style.background = `rgba(${dc.r},${dc.g},${dc.b},${opac})`;
+            div.style.background = compositeOverWhite(dc, opac);
             // Speed-proportional height (capped at 5x)
             const heightPct = Math.min(1, Math.abs(speed) / maxAbsSpeed) * 100;
             div.style.height = heightPct + '%';
@@ -13999,7 +14010,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!hold) {
             const dc2 = sunColorToDisplayColor(seg.sunColorRgb);
             const opac2 = intensityToOpacity(intensity);
-            div.style.background = `rgba(${dc2.r},${dc2.g},${dc2.b},${opac2})`;
+            div.style.background = compositeOverWhite(dc2, opac2);
             // Speed-proportional height (capped at 5x)
             const heightPct2 = Math.min(1, Math.abs(speed) / maxAbsSpeed) * 100;
             div.style.height = heightPct2 + '%';
