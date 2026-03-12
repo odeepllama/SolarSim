@@ -12621,23 +12621,17 @@ https://github.com/odeepllama/SolarSim/tree/main
               // Both steps explicitly agree on the same day — trust it, skip midnight detection
               continue;
             }
-            // Steps disagree on day number
-            if (step._dayManualOverride || nextStep._dayManualOverride) {
-              // At least one has a manual override — mismatch may be stale
-              // (user is editing one step at a time). Trust the override and skip.
-              if (step._dayManualOverride) currentDay = step.day;
-              // Don't split — also skip midnight detection below
-            } else {
-              // Both are auto-assigned and disagree — explicit day boundary
-              result.days.push({
-                dayNumber: step.day,
-                steps: currentDayMinutes,
-                orphanedHoldEndTime: null
-              });
-              currentDayMinutes = [];
-              currentDay = nextStep.day;
-              continue; // skip midnight-crossing check
-            }
+            // Steps disagree on day number — split into a new day.
+            // This handles both auto-assigned disagreements AND manual overrides.
+            // When the user manually sets a different day number, that IS the intent.
+            result.days.push({
+              dayNumber: step.day,
+              steps: currentDayMinutes,
+              orphanedHoldEndTime: null
+            });
+            currentDayMinutes = [];
+            currentDay = nextStep.day;
+            continue; // skip midnight-crossing check
           }
           // If either step has a manual day override, skip midnight detection entirely.
           if (nextStep && (step._dayManualOverride || nextStep._dayManualOverride)) {
