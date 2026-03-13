@@ -35,7 +35,7 @@ The panels are wired in a left-to-right daisy chain (as viewed from behind):
 
 | Signal | RP2040 Pin | ESP32-S3 Pin |
 |--------|-----------|--------------|
-| NeoPixel Data | *TBD* | *TBD* |
+| NeoPixel Data | **GP15** | **GPIO 4** |
 
 ## Power
 
