@@ -14,9 +14,5 @@ BLE_iPad/
 Overview.md
 workflow_overview.md
 
-# Old monolithic firmware files (superseded by modular ESP32/RP2040 code)
-SolarSimulator.py
+# Old/prototype firmware files (not part of the public release)
 SolarSimulator_rtc.py
-
-# Tooling config
-ESP32_Bluetooth/pyrightconfig.json

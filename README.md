@@ -66,8 +66,9 @@ The web interface is hosted on GitHub Pages — no installation required:
 | `SolaSimStudio.html` | **Web interface** — browser-based control panel (USB via Web Serial) |
 | `RP2040/` | **RP2040 firmware** — recommended, single-file MicroPython |
 | `ESP32/` | ESP32-S3 firmware (modular MicroPython) |
-
 | `Profiles/` | Example experiment profiles |
+| `docs/` | Hardware documentation (pin reference, NeoPixel wiring) |
+| `CONTRIBUTING.md` | Contribution guidelines for developers |
 
 ---
 
@@ -127,6 +128,8 @@ Open [SolaSim Studio](https://odeepllama.github.io/SolarSim/) in Chrome, Edge, o
 ## 📖 Documentation
 
 - **In-App Help**: Click the **Help** button in the web interface for a full interactive guide
+- **[Pin Reference](docs/pin_reference.md)** — GPIO pin assignments for RP2040 and ESP32-S3
+- **[NeoPixel Wiring](docs/neopixel_wiring.md)** — LED panel daisy-chain wiring and power setup
 
 ---
 

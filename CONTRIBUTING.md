@@ -59,4 +59,4 @@ Use the [Feature Request](https://github.com/odeepllama/SolarSim/issues/new?temp
 
 ## Questions?
 
-Open a [Discussion](https://github.com/odeepllama/SolarSim/issues) or reach out via an Issue. We're happy to help!
+Open an [Issue](https://github.com/odeepllama/SolarSim/issues) and we'll be happy to help!
