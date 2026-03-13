@@ -57,10 +57,11 @@ The web interface is hosted on GitHub Pages — no installation required:
 
 ## 📂 Repository Structure
 
-| Folder | Description |
+| Folder / File | Description |
 |--------|-------------|
+| `SolaSimStudio.html` | **Web interface** — browser-based control panel (USB via Web Serial) |
 | `RP2040/` | **RP2040 firmware** — recommended, single-file MicroPython |
-| `ESP32/` | ESP32-S3 firmware (modular MicroPython) + USB web interface |
+| `ESP32/` | ESP32-S3 firmware (modular MicroPython) |
 
 | `Profiles/` | Example experiment profiles |
 
@@ -75,7 +76,7 @@ The web interface is hosted on GitHub Pages — no installation required:
 - **Camera Trigger**: Optional Bluetooth camera trigger for use with smartphones
 - **3D-Printed Parts**: Housing and mounting components ([Printable STL files](https://www.printables.com/model/1632518-solarsim-an-inexpensive-open-source-benchtop-solar))
 
-> 📋 Full parts list: [Bill of Materials (Google Sheet)](Coming soon!)
+> 📋 Full parts list: Bill of Materials — coming soon!
 
 ---
 
@@ -87,12 +88,29 @@ Flash the RP2040 with MicroPython — the `.uf2` firmware file is included in `R
 
 ### 2. Upload Project Files
 
-Using [mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html):
+Upload `main.py` and `main_app.mpy` from the `RP2040/` folder to the device.
+
+**Option A** — Using [Thonny](https://thonny.org/) (recommended for beginners):
+
+1. Open Thonny and select **MicroPython (RP2040)** as the interpreter
+2. Navigate to the `RP2040/` folder in Thonny's file browser
+3. Right-click `main.py` and `main_app.mpy` and choose **Upload to /**
+
+**Option B** — Using [mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html) (command line):
 
 ```bash
 cd RP2040
-mpremote connect /dev/YOUR_PORT cp main.py SolarSimulatorSun.py :
+mpremote connect /dev/YOUR_PORT cp main.py main_app.mpy :
 ```
+
+> **💡 For developers:** `main_app.mpy` is pre-compiled from `SolarSimulatorSun.py` using [mpy-cross](https://pypi.org/project/mpy-cross/). If you modify the source, rebuild it with:
+>
+> ```bash
+> pip install mpy-cross
+> mpy-cross SolarSimulatorSun.py -o main_app.mpy
+> ```
+>
+> The `.mpy` bytecode format is required because the RP2040 has limited RAM and cannot compile the full `.py` file on-device without running out of memory.
 
 ### 3. Connect via Browser
 

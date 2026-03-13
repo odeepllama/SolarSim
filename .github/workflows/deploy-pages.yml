@@ -15,11 +15,13 @@ jobs:
 
           if [ "${{ github.ref_name }}" = "main" ]; then
             # SolaSimStudio (USB wired) → /
-            if [ -f ESP32/SolaSimStudio.html ]; then
-              cp ESP32/SolaSimStudio.html deploy/index.html
+            if [ -f SolaSimStudio.html ]; then
+              cp SolaSimStudio.html deploy/index.html
               cp -f planty.svg planty_b\&w.svg deploy/ 2>/dev/null || true
             fi
             # SolaSimStudioBLE (iPad BLE) → /ble/
+            # NOTE: BLE_iPad/ is currently private (gitignored) and not included in the public repo.
+            # This block will activate once BLE_iPad/ is made public in a future release.
             if [ -f BLE_iPad/SolaSimStudioBLE.html ]; then
               mkdir -p deploy/ble
               cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/index.html
@@ -27,12 +29,13 @@ jobs:
             fi
           else
             # SolaSimStudio (USB wired) → /test/
-            if [ -f ESP32/SolaSimStudio.html ]; then
+            if [ -f SolaSimStudio.html ]; then
               mkdir -p deploy/test
-              cp ESP32/SolaSimStudio.html deploy/test/index.html
+              cp SolaSimStudio.html deploy/test/index.html
               cp -f planty.svg planty_b\&w.svg deploy/test/ 2>/dev/null || true
             fi
             # SolaSimStudioBLE (iPad BLE) → /ble/test/
+            # NOTE: BLE_iPad/ is currently private (see main branch comment above).
             if [ -f BLE_iPad/SolaSimStudioBLE.html ]; then
               mkdir -p deploy/ble/test
               cp BLE_iPad/SolaSimStudioBLE.html deploy/ble/test/index.html
