@@ -8,6 +8,10 @@
 
 Built with MicroPython firmware and using a browser-based control interface, it's designed to be affordable, reproducible, and accessible to researchers and educators.
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="SolaSim Studio web interface" width="800">
+</p>
+
 ---
 
 ## ✨ Key Features
@@ -84,7 +88,9 @@ The web interface is hosted on GitHub Pages — no installation required:
 
 ### 1. Flash MicroPython Firmware
 
-Flash the RP2040 with MicroPython — the `.uf2` firmware file is included in `RP2040/`. Hold the BOOTSEL button, plug in USB, and drag the `.uf2` file to the drive that appears.
+Flash the RP2040 with **MicroPython v1.27.0** — the `.uf2` firmware file is included in `RP2040/`. Hold the BOOTSEL button, plug in USB, and drag the `.uf2` file to the drive that appears.
+
+> **Note:** SolaSim is tested with MicroPython **v1.27.0** (2025-12-09). Other versions may work but are not guaranteed.
 
 ### 2. Upload Project Files
 
