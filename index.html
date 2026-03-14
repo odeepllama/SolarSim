@@ -4169,6 +4169,15 @@ https://github.com/odeepllama/SolarSim/tree/main
 </head>
 
 <body>
+  <!-- Browser compatibility info bar (non-blocking) -->
+  <div id="browserCompatBar"
+    style="display:none; background:#fff3cd; color:#856404; padding:10px 16px; text-align:center; font-size:0.9rem; border-bottom:1px solid #ffc107; position:relative; z-index:9999;">
+    ⚠️ Device connection requires <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>. You can still
+    explore settings and build programs in this browser.
+    <button onclick="this.parentElement.style.display='none'"
+      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#856404;">✕</button>
+  </div>
+  <script>if (!('serial' in navigator)) document.getElementById('browserCompatBar').style.display = 'block';</script>
   <h1 id="appTitle"></h1>
   <div class="monitor-toggle-bar">
     <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" style="display:none"
@@ -4637,8 +4646,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           </ul>
 
           <h4>Program Steps</h4>
-          <p>Define a sequence of timed sun position and light intensity changes. <button class="help-expand-btn"
-              onclick="toggleHelpDetail(this)">Learn more ▼</button></p>
+          <p>Define a sequence of timed sun position and light intensity changes. Click the
+            <strong>Examples…</strong> button below the step table to load ready-made program templates and
+            learn by example. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+          </p>
           <div class="help-detail" style="display:none;">
             <p>Program steps allow you to automate sun simulation and device actions over time. Each row in the table
               represents a step with specific parameters:</p>
@@ -5699,7 +5710,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               hour"), use the <strong>Program Steps</strong> section.</p>
             <ol>
               <li>Ensure <strong>Program Enabled</strong> is checked.</li>
-              <li>Click <strong>Add Step</strong> to create a new sequence.</li>
+              <li>Click <strong>Add Step</strong> to create a new sequence — or click the <strong>Examples…</strong>
+                button to load a ready-made template program.</li>
               <li>For each step, define:
                 <ul>
                   <li><strong>Sim Time</strong>: When this step targets (e.g., <code>1200</code>). This is the simulated
@@ -10115,7 +10127,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           try {
             const parsed = window.__parseProfileText(text);
             if (!parsed) {
-              alert('❌ Failed to parse text: The text does not appear to be a valid profile format.\n\nPlease ensure it contains settings like:\nSTART_TIME_HHMM = 600\nTIME_SCALE = 1\nPROGRAM_STEPS = [...]');
+              alert('This doesn\'t look like a SolaSim profile.\n\nA valid profile starts with settings like:\nSTART_TIME_HHMM = 600\nTIME_SCALE = 1\nPROGRAM_STEPS = [...]');
               return;
             }
             window.__applyProfileObject(parsed);
@@ -10147,7 +10159,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.log('✓ Text loaded into form successfully', 'success');
             }
           } catch (e) {
-            alert('❌ Failed to parse text: ' + e.message);
+            alert('Could not read this profile — it may be incomplete or in an unexpected format.\n\nDetails: ' + e.message);
             console.error('Parse error:', e);
           }
         }
@@ -16195,7 +16207,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
             updateButtons();
             $save.title = 'Default saved';
-          } catch (e) { console.warn('Save default failed', e); alert('Could not save default (storage error).'); }
+          } catch (e) { console.warn('Save default failed', e); alert('Couldn\'t save — your browser\'s storage may be full. Try clearing old data or using a different browser.'); }
         }
         function applyDefault() {
           try {
@@ -16216,7 +16228,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               renderProgramSteps(); updatePreview(true);
             }
             $apply.title = 'Applied default';
-          } catch (e) { console.warn('Apply default failed', e); alert('Could not apply default (corrupt data).'); }
+          } catch (e) { console.warn('Apply default failed', e); alert('The saved default appears to be damaged. You can reset it and save a new one.'); }
         }
 
         // Default starter program: one step at 06:00 sunrise, speed 1, blue sun, full intensity
@@ -16683,7 +16695,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               }, 1600);
             } catch (e) {
               console.warn('Failed to clear load skip pref', e);
-              alert('Could not reset (storage error).');
+              alert('Couldn\'t reset — your browser\'s storage may be full or restricted.');
             }
           });
         }
@@ -17424,11 +17436,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (monitorState && monitorState.transport === 'serial' && deviceType !== 'rp2040') {
           return uploadProfileViaWriteCommand(options);
         }
-        if (!('serial' in navigator)) { alert('Web Serial not supported in this browser. Use recent Chrome / Edge desktop.'); return; }
+        if (!('serial' in navigator)) { alert('Device connection requires Google Chrome or Microsoft Edge.\n\nYou can still explore and build programs in this browser, but uploading to a device is not available.'); return; }
         // Force-refresh the export preview so it reflects current state (including PROGRAM_STEPS)
         if (typeof updatePreview === 'function') updatePreview(true);
         const profileText = document.getElementById('exportPreview').value;
-        if (!profileText) { alert('No profile text to upload.'); return; }
+        if (!profileText) { alert('Nothing to upload — create or load a profile first.'); return; }
         let fn = document.getElementById('filename_preview').value || 'profile.txt';
         fn = fn.replace(/[^a-zA-Z0-9_.-]/g, '_');
         if (!fn.toLowerCase().endsWith('.txt')) fn += '.txt';
@@ -17971,7 +17983,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               setTimeout(() => { resetUploadConfirmBtn.textContent = 'Reset upload confirm'; }, 1600);
             } catch (e) {
               console.warn('Failed to clear upload skip pref', e);
-              alert('Could not reset (storage error).');
+              alert('Couldn\'t reset \u2014 your browser\'s storage may be full or restricted.');
             }
           });
         }
@@ -19477,7 +19489,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         async function ensurePort() {
           if (state.port) return state.port;
-          if (!navigator.serial) { log('Web Serial unsupported in this browser', 'error'); throw new Error('No navigator.serial'); }
+          if (!navigator.serial) { log('This browser doesn\'t support device connections. Use Chrome or Edge to connect.', 'error'); throw new Error('No navigator.serial'); }
           badge('CONNECTING', 'amber');
           try {
             // Try to reuse a previously-granted port (avoids re-prompting
@@ -19522,7 +19534,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               optionalServices: [NUS_SERVICE]
             });
             device.addEventListener('gattserverdisconnected', () => {
-              log('BLE device disconnected', 'error');
+              log('Bluetooth connection lost. Move closer to the device and try reconnecting.', 'error');
               state.bleDevice = null; state.bleServer = null;
               state.bleRxChar = null; state.bleTxChar = null;
               state.transport = null;
@@ -20876,9 +20888,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             const fullErr = (e.message || '').toLowerCase();
             let msg = 'Connection failure';
             if (fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
-              msg = 'Connection failure - port already open';
+              msg = 'The device port is already in use. Close any other tabs or apps (like Thonny) that might be connected, then try again.';
             } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
-              msg = 'Connection failure - no device found';
+              msg = 'No device found. Make sure the USB cable is plugged in and the board is powered on.';
             }
             state.transport = null;
             log(msg, 'error');
