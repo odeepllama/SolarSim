@@ -21,6 +21,7 @@ Built with MicroPython firmware and using a browser-based control interface, it'
 - **360° Rotation Imaging** — Servo-driven turntable with camera trigger for time-lapse and stills capture
 - **Browser-Based Control** — Connect via USB from Chrome/Edge/Opera using Web Serial
 - **Real-Time Monitoring** — Live status tiles, solar arc visualisation, interactive timeline with playhead
+- **Demo Mode** — Preview and validate your program with an animated timeline — no hardware needed
 - **Profile Management** — Save, load, compare, and share experiment profiles
 - **English & Japanese UI** — Full bilingual interface with one-click toggle
 
@@ -33,6 +34,8 @@ The web interface is hosted on GitHub Pages — no installation required:
 👉 **[odeepllama.github.io/SolarSim/](https://odeepllama.github.io/SolarSim/)** — Open in Chrome, Edge, or Opera and connect to your device via USB.
 
 > **Note:** The Web Serial API requires a Chromium-based browser. See the in-app Help panel for details.
+>
+> 💡 **No device yet?** Click **▶ Demo** to preview programs without hardware — great for learning the interface and validating step sequences.
 
 ---
 
@@ -105,6 +108,10 @@ If you prefer to set up manually without the wizard:
 3. **Connect**: Open [SolaSim Studio](https://odeepllama.github.io/SolarSim/) in Chrome, Edge, or Opera and click **Connect to Device**.
 
 > **Note:** SolaSim is tested with MicroPython **v1.27.0** (2025-12-09). Other versions may work but are not guaranteed.
+
+### No Hardware Yet?
+
+You can design and preview programs entirely in the browser. Open [SolaSim Studio](https://odeepllama.github.io/SolarSim/), build your program steps, then click **▶ Demo** to simulate the sequence with an animated timeline playhead. Use Step/Day navigation to jump through your program and verify timing before building hardware.
 
 > **💡 For developers:** `main_app.mpy` is pre-compiled from `SolarSimulatorSun.py` using [mpy-cross](https://pypi.org/project/mpy-cross/). If you modify the source, rebuild it with:
 >
