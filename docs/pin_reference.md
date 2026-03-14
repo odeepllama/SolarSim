@@ -20,6 +20,8 @@ Complete pin assignments for both supported microcontroller platforms. The RP204
 
 ### RP2040:bit
 
+![Micro:bit vs RP2040 board pinouts](microbit%20vs%20RP2040%20board%20pinouts.png)
+
 The [RP2040:bit board](https://spotpear.com/index/study/detail/id/943.html) by Spotpear is pin-compatible with the BBC micro:bit edge connector. This means standard micro:bit breakout boards can be used for convenient access to the GPIO pins listed above.
 
 - Servo 1 is on a **3.3V** output — sufficient for signal but use external 5V for servo power

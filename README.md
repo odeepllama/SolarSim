@@ -64,6 +64,7 @@ The web interface is hosted on GitHub Pages — no installation required:
 | Folder / File | Description |
 |--------|-------------|
 | `SolaSimStudio.html` | **Web interface** — browser-based control panel (USB via Web Serial) |
+| `setup.html` | **Setup Wizard** — browser-based firmware installer for RP2040 |
 | `RP2040/` | **RP2040 firmware** — recommended, single-file MicroPython |
 | `ESP32/` | ESP32-S3 firmware (modular MicroPython) |
 | `Profiles/` | Example experiment profiles |
@@ -87,28 +88,23 @@ The web interface is hosted on GitHub Pages — no installation required:
 
 ## 🚀 Getting Started
 
-### 1. Flash MicroPython Firmware
+### Quick Setup (Recommended)
 
-Flash the RP2040 with **MicroPython v1.27.0** — the `.uf2` firmware file is included in `RP2040/`. Hold the BOOTSEL button, plug in USB, and drag the `.uf2` file to the drive that appears.
+Use the browser-based setup wizard — no software installation required:
+
+👉 **[SolaSim Setup Wizard](https://odeepllama.github.io/SolarSim/setup)** — Open in Chrome/Edge/Opera and follow the guided steps to flash firmware and deploy files.
+
+### Manual Setup (Advanced)
+
+If you prefer to set up manually without the wizard:
+
+> **Note:** The Setup Wizard supports **RP2040 only**. For ESP32-S3 setup, see the `ESP32/` folder and flash using `esptool`.
+
+1. **Flash MicroPython Firmware**: Flash the RP2040 with **MicroPython v1.27.0** — the `.uf2` firmware file is included in `RP2040/`. Hold the BOOTSEL button, plug in USB, and drag the `.uf2` file to the drive that appears.
+2. **Upload Project Files**: Copy `main.py` and `main_app.mpy` from `RP2040/` to the device using [Thonny](https://thonny.org/) or [mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html).
+3. **Connect**: Open [SolaSim Studio](https://odeepllama.github.io/SolarSim/) in Chrome, Edge, or Opera and click **Connect to Device**.
 
 > **Note:** SolaSim is tested with MicroPython **v1.27.0** (2025-12-09). Other versions may work but are not guaranteed.
-
-### 2. Upload Project Files
-
-Upload `main.py` and `main_app.mpy` from the `RP2040/` folder to the device.
-
-**Option A** — Using [Thonny](https://thonny.org/) (recommended for beginners):
-
-1. Open Thonny and select **MicroPython (RP2040)** as the interpreter
-2. Navigate to the `RP2040/` folder in Thonny's file browser
-3. Right-click `main.py` and `main_app.mpy` and choose **Upload to /**
-
-**Option B** — Using [mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html) (command line):
-
-```bash
-cd RP2040
-mpremote connect /dev/YOUR_PORT cp main.py main_app.mpy :
-```
 
 > **💡 For developers:** `main_app.mpy` is pre-compiled from `SolarSimulatorSun.py` using [mpy-cross](https://pypi.org/project/mpy-cross/). If you modify the source, rebuild it with:
 >
@@ -118,10 +114,6 @@ mpremote connect /dev/YOUR_PORT cp main.py main_app.mpy :
 > ```
 >
 > The `.mpy` bytecode format is required because the RP2040 has limited RAM and cannot compile the full `.py` file on-device without running out of memory.
-
-### 3. Connect via Browser
-
-Open [SolaSim Studio](https://odeepllama.github.io/SolarSim/) in Chrome, Edge, or Opera and click **Connect to Device**.
 
 ---
 

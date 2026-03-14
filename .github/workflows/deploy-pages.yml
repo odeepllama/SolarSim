@@ -19,6 +19,13 @@ jobs:
               cp SolaSimStudio.html deploy/index.html
               cp -f planty.svg planty_b\&w.svg deploy/ 2>/dev/null || true
             fi
+            # Setup Wizard → /setup/
+            if [ -f setup.html ]; then
+              mkdir -p deploy/setup
+              cp setup.html deploy/setup/index.html
+              cp -f "SolaSim logo.png" deploy/setup/ 2>/dev/null || true
+              cp -f RP2040/RPI_PICO-*.uf2 deploy/setup/ 2>/dev/null || true
+            fi
             # SolaSimStudioBLE (iPad BLE) → /ble/
             # NOTE: BLE_iPad/ is currently private (gitignored) and not included in the public repo.
             # This block will activate once BLE_iPad/ is made public in a future release.
@@ -33,6 +40,13 @@ jobs:
               mkdir -p deploy/test
               cp SolaSimStudio.html deploy/test/index.html
               cp -f planty.svg planty_b\&w.svg deploy/test/ 2>/dev/null || true
+            fi
+            # Setup Wizard → /test/setup/
+            if [ -f setup.html ]; then
+              mkdir -p deploy/test/setup
+              cp setup.html deploy/test/setup/index.html
+              cp -f "SolaSim logo.png" deploy/test/setup/ 2>/dev/null || true
+              cp -f RP2040/RPI_PICO-*.uf2 deploy/test/setup/ 2>/dev/null || true
             fi
             # SolaSimStudioBLE (iPad BLE) → /ble/test/
             # NOTE: BLE_iPad/ is currently private (see main branch comment above).
