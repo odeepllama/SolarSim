@@ -1,7 +1,7 @@
 # 🌞 SolaSim — Open-Source Solar Simulator
 
 <p align="center">
-  <img src="SolaSim%20logo.png" alt="SolaSim Logo" width="300">
+  <img src="docs/SolaSim%20logo.png" alt="SolaSim Logo" width="300">
 </p>
 
 **SolaSim** is an open-source solar simulator for phototaxis research. It uses LED panels and "sun" tracking on a semi-circular array of LED panels to recreate realistic daylight cycles — from simple sunrise-to-sunset sequences to multi-day scientific simulations based on real latitude and date.
