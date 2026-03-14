@@ -78,7 +78,7 @@ The web interface is hosted on GitHub Pages — no installation required:
 
 ## 🔧 Hardware Requirements
 
-- **Microcontroller**: RP2040 (recommended) or ESP32-S3
+- **Microcontroller**: [RP2040:bit](https://spotpear.com/index/study/detail/id/943.html) (recommended) or ESP32-S3
 - **LED Panels**: NeoPixel/WS2812B addressable 8x8 LED matrices
 - **Servos**: For 360° rotation platform and camera triggering (metal gear servos recommended)
 - **OLED Display**: SSD1306 128×64 for on-device status with ESP32-S3 (optional)
