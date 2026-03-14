@@ -85,6 +85,12 @@ The web interface is hosted on GitHub Pages — no installation required:
 - **Camera Trigger**: Optional Bluetooth camera trigger for use with smartphones
 - **3D-Printed Parts**: Housing and mounting components ([Printable STL files](https://www.printables.com/model/1632518-solarsim-an-inexpensive-open-source-benchtop-solar))
 
+<p align="center">
+  <a href="https://www.printables.com/model/1632518-solarsim-an-inexpensive-open-source-benchtop-solar">
+    <img src="docs/Printables_page.png" alt="SolaSim 3D-printable parts on Printables.com" width="700">
+  </a>
+</p>
+
 > 📋 Full parts list: Bill of Materials — coming soon!
 
 ---
