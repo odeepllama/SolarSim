@@ -152,7 +152,7 @@ This project is licensed under the **GNU General Public License v3.0** — see t
 
 ## 🙏 Acknowledgements
 
-Developed at [Akita International University](https://web.aiu.ac.jp/en/) with AI-assisted development using VS Code, GitHub Copilot, and Google Gemini.
+Developed at [Akita International University](https://web.aiu.ac.jp/en/) with AI-assisted coding in VS Code, GitHub Copilot Pro (Educational access), and Google Antigravity / Claude Opus 4.6 (Thinking).
 
 ---
 
