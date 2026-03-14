@@ -4177,12 +4177,25 @@ https://github.com/odeepllama/SolarSim/tree/main
       style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#856404;">✕</button>
   </div>
   <script>if (!('serial' in navigator)) document.getElementById('browserCompatBar').style.display = 'block';</script>
+  <!-- Demo mode banner -->
+  <div id="demoModeBanner"
+    style="display:none; background:#e3f2fd; color:#1565c0; padding:10px 16px; text-align:center; font-size:0.9rem; border-bottom:1px solid #90caf9; position:sticky; top:0; z-index:9999; transition: background 0.6s ease, color 0.6s ease, border-bottom-color 0.6s ease;">
+    🔄 <strong>Demo Mode</strong> — simulating your program. Connect a device to go live.
+    <button onclick="if(window.__demoEngine) window.__demoEngine.stop();"
+      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#1565c0;"
+      title="Stop demo">✕</button>
+  </div>
   <h1 id="appTitle"></h1>
   <div class="monitor-toggle-bar">
     <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" style="display:none"
       title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
     <span id="monitorConnBadge" class="pill red" title=""></span>
     <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
+    <button id="demoBtn" type="button" class="secondary"
+      style="background:#e3f2fd; color:#1565c0; border:1px solid #90caf9; font-weight:600;"
+      title="Run a simulated demo of your program without a connected device"
+      onclick="if(window.__demoEngine){if(window.__demoEngine.isRunning()){window.__demoEngine.stop();}else{window.__demoEngine.start();}}">▶
+      Demo</button>
     <button id="quickEditBtn" type="button" class="secondary"
       title="Connect, load profile, disconnect and jump to editor — or browse examples offline"></button>
     <button id="monitorRefreshBtn" type="button" class="secondary" title=""></button>
@@ -4469,6 +4482,19 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <p>The USB connection supports full status monitoring, command console, status tiles, solar arc,
                   and profile upload. The status badge shows "Connected" when active. If connection fails, try
                   unplugging/replugging the USB cable or pressing the RESET button on the device.</p>
+              </div>
+            </li>
+            <li><strong>Demo Mode</strong>: Click <strong>▶ Demo</strong> to simulate your program without hardware.
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>Demo mode plays through your program steps using an animated timeline playhead, so you can verify
+                  timing, speed changes, and day boundaries before connecting a device.</p>
+                <p><strong>Navigation:</strong> Use the <strong>Step</strong> and <strong>Day</strong> buttons
+                  (◀ / ▶) to jump between steps or days without waiting.</p>
+                <p><strong>Auto-restart:</strong> If you edit your program while demo is running, it automatically
+                  restarts with your updated steps — the banner briefly flashes green to confirm.</p>
+                <p><strong>Tip:</strong> Demo mode is ideal for first-time users to validate their program design
+                  before uploading to the device.</p>
               </div>
             </li>
           </ul>
@@ -4968,6 +4994,16 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <p>
                   USB接続では、ステータス監視、コマンドコンソール、ステータスタイル、太陽アーク、プロファイルアップロードのすべての機能を利用できます。ステータスバッジはアクティブ時に「接続済み」と表示されます。接続に失敗した場合は、ケーブルの抜き差しまたはデバイスのRESETボタンを押してお試しください。
                 </p>
+              </div>
+            </li>
+            <li><strong>デモモード</strong>: <strong>▶ デモ</strong>をクリックして、ハードウェアなしでプログラムをシミュレーションします。<button
+                class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>デモモードでは、アニメーションタイムラインプレイヘッドを使用してプログラムステップを再生し、デバイスに接続する前にタイミング、速度変更、日の区切りを確認できます。</p>
+                <p><strong>ナビゲーション：</strong><strong>ステップ</strong>と<strong>日</strong>のボタン（◀ /
+                  ▶）を使用して、待たずにステップや日の間をジャンプできます。</p>
+                <p><strong>自動再起動：</strong>デモ実行中にプログラムを編集すると、更新されたステップで自動的に再起動します。バナーが一瞬緑色に点滅して確認を示します。</p>
+                <p><strong>ヒント：</strong>デモモードは、デバイスにアップロードする前にプログラム設計を検証するのに最適です。初めてのユーザーに特にお勧めします。</p>
               </div>
             </li>
           </ul>
@@ -6161,8 +6197,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           understood: 'Understood',
           finish: 'Finish ✓',
           // Guide step translations
-          guideConnectDevice: 'Connect Your Device',
-          guideConnectDeviceDesc: 'Click the green <strong>🔌 Connect Device</strong> button to connect to your device via USB cable.',
+          guideConnectDevice: 'Connect or Demo',
+          guideConnectDeviceDesc: 'Click <strong>🔌 Connect Device</strong> to connect to your device via USB cable. <br><br><strong>No device?</strong> Click <strong>▶ Demo</strong> to simulate your program with an animated timeline playhead — perfect for validating timing, speed changes, and day boundaries before connecting hardware.',
           guideStatusTiles: 'Status Tiles',
           guideStatusTilesDesc: 'Key parameters at a glance — connection status, program state, time, intensity, and more. Live tiles appear black with white text when connected to a device; grey tiles indicate the data is not live. Tiles are always interactive: click any tile to quickly adjust its setting.',
           guideSolarArc: 'Solar Arc Simulation',
@@ -6291,8 +6327,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           maxStepsReachedTitle: '最大100ステップ数に到達',
           understood: '了解',
           // Guide step translations
-          guideConnectDevice: 'デバイスを接続',
-          guideConnectDeviceDesc: '緑色の<strong>🔌 USB接続</strong>ボタンをクリックして、USBケーブルでデバイスに接続してください。',
+          guideConnectDevice: '接続またはデモ',
+          guideConnectDeviceDesc: '緑色の<strong>🔌 USB接続</strong>ボタンをクリックして、USBケーブルでデバイスに接続してください。<br><br><strong>デバイスがない場合：</strong><strong>▶ デモ</strong>をクリックして、アニメーションタイムラインプレイヘッドでプログラムをシミュレーションできます。ハードウェア接続前にタイミング、速度変更、日の区切りを検証するのに最適です。',
           guideStatusTiles: 'ステータスタイル',
           guideStatusTilesDesc: '主要パラメータをひと目で確認 — 接続状態、プログラム状態、時刻、強度など。デバイス接続中のライブタイルは黒背景に白文字で表示され、グレーのタイルはデータがライブでないことを示します。タイルは常にインタラクティブで、クリックすると設定をすばやく調整できます。',
           guideSolarArc: 'ソーラーアークシミュレーション',
@@ -12206,7 +12242,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Get current step index (1-based, 0 = before program starts)
         const currentStep1 = window.__currentStepIndex || 0;
-        if (currentStep1 <= 0 || !_connected) {
+        if (currentStep1 <= 0 || (!_connected && !window.__demoRunning)) {
           // No active step or not connected — clear any stale playheads
           bars.forEach(bar => {
             const ex = bar.querySelector('.timeline-playhead');
@@ -12510,6 +12546,49 @@ https://github.com/odeepllama/SolarSim/tree/main
       let _timelineDebounceTimer = null;
       function renderTimelineStrip() {
         clearTimeout(_timelineDebounceTimer);
+        // Auto-restart demo when user edits the program (stale steps become invalid)
+        if (window.__demoRunning && window.__demoEngine && !window.__demoNavInProgress) {
+          window.__demoRestarting = true; // Prevent stop() from hiding banner
+          window.__demoEngine.stop();
+          // Debounce restart to batch rapid edits (e.g. deleting multiple steps)
+          clearTimeout(window.__demoRestartTimer);
+          window.__demoRestartTimer = setTimeout(() => {
+            window.__demoRestarting = false;
+            if (typeof programSteps !== 'undefined' && programSteps.length > 0) {
+              window.__demoEngine.start();
+              // Brief green flash to confirm restart (same layout, smooth fade back)
+              const banner = document.getElementById('demoModeBanner');
+              if (banner) {
+                // Save original text nodes and swap to "Program updated"
+                const origEmoji = banner.childNodes[0].textContent;
+                const origStrong = banner.querySelector('strong');
+                const origStrongText = origStrong ? origStrong.textContent : '';
+                const origDesc = banner.childNodes[2] ? banner.childNodes[2].textContent : '';
+                banner.childNodes[0].textContent = ' ♻️ ';
+                if (origStrong) origStrong.textContent = 'Program updated';
+                if (banner.childNodes[2]) banner.childNodes[2].textContent = ' — demo restarted with your changes. ';
+                // Flash green instantly (disable transition for the snap-on)
+                banner.style.transition = 'none';
+                banner.style.background = '#e8f5e9';
+                banner.style.color = '#2e7d32';
+                banner.style.borderBottomColor = '#81c784';
+                // Force reflow so the instant color is applied
+                void banner.offsetWidth;
+                // Re-enable transition and fade back to blue
+                banner.style.transition = 'background 0.8s ease, color 0.8s ease, border-bottom-color 0.8s ease';
+                setTimeout(() => {
+                  banner.style.background = '#e3f2fd';
+                  banner.style.color = '#1565c0';
+                  banner.style.borderBottomColor = '#90caf9';
+                  // Restore original text
+                  banner.childNodes[0].textContent = origEmoji;
+                  if (origStrong) origStrong.textContent = origStrongText;
+                  if (banner.childNodes[2]) banner.childNodes[2].textContent = origDesc;
+                }, 1500);
+              }
+            }
+          }, 300);
+        }
         _timelineDebounceTimer = setTimeout(_renderTimelineStripImmediate, 200);
       }
 
@@ -14369,7 +14448,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
         const hasActiveProgram = state.PROGRAM_ENABLED && programSteps.length > 0;
 
-        if (!hasConnection || (!hasLoadedProfile && !hasActiveProgram)) return;
+        if (!hasConnection && !window.__demoRunning) return;
+        if (!window.__demoRunning && !hasLoadedProfile && !hasActiveProgram) return;
 
         // Calculate playhead position as percentage
         const posPct = outOfRange ? 0 : ((interpolatedSimMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
@@ -14458,7 +14538,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           host.appendChild(playhead);
         }
       }
-
+      window.renderTimelinePlayhead = renderTimelinePlayhead;
       // --- Fast sim-time playhead interpolation loop ---
       // Repositions existing playhead elements at 100ms for smooth movement.
       // Does NOT create/remove DOM or rebuild the timeline — purely visual position update.
@@ -19768,6 +19848,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
         }
+        window.processIncoming = processIncoming; // expose for DemoEngine
         // Regex patterns for verbose text extraction
         const reSimTime = /sim(?:ulation)?\s*time\s*[:=]\s*(\d{1,2})[:h](\d{2})/i;
         // Simulation line that also includes a speed in parentheses e.g. "Simulation time: 07:54 (Speed: 100.0x)"
@@ -20879,8 +20960,12 @@ https://github.com/odeepllama/SolarSim/tree/main
             });
             return;
           }
-          state.transport = 'serial';
-          doSerialConnect();
+          if (!navigator.serial && window.__demoEngine) {
+            window.__demoEngine.start();
+          } else {
+            state.transport = 'serial';
+            doSerialConnect();
+          }
         });
         function doSerialConnect() {
           ensurePort().catch(e => {
@@ -22289,7 +22374,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const isDeviceConnected = !!(hasConnection && (hasLoadedProfile || hasActiveProgram));
 
         // Step navigation: show when device is connected and we have program steps
-        const shouldShowStepNav = (isDeviceConnected && totalSteps > 0);
+        const shouldShowStepNav = ((isDeviceConnected || window.__demoRunning) && totalSteps > 0);
         const stepNavHtml = shouldShowStepNav ?
           `<span class="playhead-step-nav" style="margin-left:12px; display:inline-flex; align-items:center;">
       <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
@@ -22304,7 +22389,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     </span>` : '';
 
         // Day navigation: show when device is connected AND program has multiple days
-        const shouldShowDayNav = (maxDay > 1 && isDeviceConnected);
+        const shouldShowDayNav = (maxDay > 1 && (isDeviceConnected || window.__demoRunning));
         const dayNavHtml = shouldShowDayNav ?
           `<span class="playhead-day-nav" style="margin-left:24px; display:inline-flex; align-items:center;">
       <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
@@ -22501,7 +22586,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Check periodically for device connection and update nav buttons (gated)
         setInterval(function () {
           const ns = window.__solarSimMonitorState;
-          if (!(ns && (ns.port || ns.transport === 'ble'))) return;
+          const hasMonitor = ns && (ns.port || ns.transport === 'ble');
+          // Also update during demo mode
+          if (!hasMonitor && !window.__demoRunning) return;
           checkAndAutoExpand();
           // Update nav button states
           updateDisplay();
@@ -22777,6 +22864,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         const _ss1 = window.__serialState || null;
         const isConnected = _ss1 && (_ss1.port || _ss1.bleDevice);
 
+        // Demo mode: jump to step on target day
+        if (window.__demoRunning && window.__demoEngine && targetStepIndex !== null) {
+          window.__playheadCurrentDay = targetDay;
+          window.__dayWrapCount = targetDay - 1;
+          window.__demoEngine.goToStep(targetStepIndex);
+          window.__demoNavInProgress = true;
+          if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+          window.__demoNavInProgress = false;
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
+          return;
+        }
+
         if (isConnected && targetStepIndex !== null) {
           const stepNumber = targetStepIndex + 1;
           window.__playheadCurrentDay = targetDay;
@@ -22881,7 +22981,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        if (!isConnected) return;
+        if (!isConnected && !window.__demoRunning) return;
+        // Demo mode: use DemoEngine
+        if (window.__demoRunning && window.__demoEngine) {
+          window.__demoEngine.goToPrevStep();
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          return;
+        }
 
         // Determine if we're already near the start of the current step
         let targetStep = currentStep; // Default: jump to start of current step
@@ -22935,7 +23041,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        if (!isConnected) return;
+        if (!isConnected && !window.__demoRunning) return;
+        // Demo mode: use DemoEngine
+        if (window.__demoRunning && window.__demoEngine) {
+          window.__demoEngine.goToNextStep();
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          return;
+        }
 
         window.__currentStepIndex = nextStep;
         const programIndex = nextStep - 1;
@@ -22972,6 +23084,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Check if device is connected
         const _ss4 = window.__serialState || null;
         const isConnected = _ss4 && (_ss4.port || _ss4.bleDevice);
+
+        // Demo mode: jump to step on target day
+        if (window.__demoRunning && window.__demoEngine && targetStepIndex !== null) {
+          window.__playheadCurrentDay = targetDay;
+          window.__dayWrapCount = targetDay - 1;
+          window.__demoEngine.goToStep(targetStepIndex);
+          window.__demoNavInProgress = true;
+          if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+          window.__demoNavInProgress = false;
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
+          return;
+        }
 
         if (isConnected && targetStepIndex !== null) {
           const stepNumber = targetStepIndex + 1;
@@ -23359,7 +23484,26 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Check for sim time updates every second (gated behind connection state)
         // (will only re-render when time actually changes, which is once per minute)
-        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) { updatePlayhead(); if (typeof window.renderClockTimePlayhead === 'function') window.renderClockTimePlayhead(); } }, 200);
+        setInterval(() => {
+          const ns = window.__solarSimMonitorState;
+          if ((ns && (ns.port || ns.transport === 'ble')) || window.__demoRunning) {
+            updatePlayhead();
+            if (typeof window.renderClockTimePlayhead === 'function') window.renderClockTimePlayhead();
+            // Also refresh speed-bar (sim-time) playheads on timeline strips
+            if (typeof window.renderTimelinePlayhead === 'function') {
+              document.querySelectorAll('.timeline-strip[data-window-start]').forEach(function (host) {
+                const ws = parseFloat(host.dataset.windowStart);
+                const we = parseFloat(host.dataset.windowEnd);
+                const wspan = parseFloat(host.dataset.windowSpan);
+                const dir = host.dataset.filterDirection || undefined;
+                if (!isNaN(ws) && !isNaN(we) && !isNaN(wspan)) {
+                  const dayNum = parseInt(host.getAttribute('data-day'), 10) || 1;
+                  window.renderTimelinePlayhead(host, { dayNumber: dayNum }, ws, we, wspan, dir);
+                }
+              });
+            }
+          }
+        }, 200);
       })();
 
       // Background Color Chooser Logic
@@ -23918,7 +24062,31 @@ https://github.com/odeepllama/SolarSim/tree/main
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
             allowInteraction: true,
-            adjustTarget: (el) => el
+            adjustTarget: (el) => {
+              // Wrap both Connect and Demo buttons together
+              const demoBtn = document.getElementById('demoBtn');
+              if (!demoBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const demoRect = demoBtn.getBoundingClientRect();
+
+              const top = Math.min(elRect.top, demoRect.top);
+              const left = Math.min(elRect.left, demoRect.left);
+              const right = Math.max(elRect.right, demoRect.right);
+              const bottom = Math.max(elRect.bottom, demoRect.bottom);
+
+              wrapper.style.top = top + window.scrollY + 'px';
+              wrapper.style.left = left + window.scrollX + 'px';
+              wrapper.style.width = (right - left) + 'px';
+              wrapper.style.height = (bottom - top) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '.mini-sect-title[data-section="monitor-status-tiles"]',
@@ -24054,7 +24222,31 @@ https://github.com/odeepllama/SolarSim/tree/main
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
             tooltipMinWidth: 500,
-            adjustTarget: (el) => el
+            adjustTarget: (el) => {
+              // Wrap both Connect and Demo buttons together
+              const demoBtn = document.getElementById('demoBtn');
+              if (!demoBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const demoRect = demoBtn.getBoundingClientRect();
+
+              const top = Math.min(elRect.top, demoRect.top);
+              const left = Math.min(elRect.left, demoRect.left);
+              const right = Math.max(elRect.right, demoRect.right);
+              const bottom = Math.max(elRect.bottom, demoRect.bottom);
+
+              wrapper.style.top = top + window.scrollY + 'px';
+              wrapper.style.left = left + window.scrollX + 'px';
+              wrapper.style.width = (right - left) + 'px';
+              wrapper.style.height = (bottom - top) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '.mini-sect-title[data-section="monitor-status-tiles"]',
@@ -25178,6 +25370,305 @@ https://github.com/odeepllama/SolarSim/tree/main
         } else {
           initFTUE();
         }
+
+      })();
+    </script>
+    <!-- ============================================================
+         DEMO MODE ENGINE — simulates device output from program steps
+         ============================================================ -->
+    <script>
+      (function () {
+        'use strict';
+
+        // ── DemoEngine ─────────────────────────────────────────────
+        // Steps through the user's PROGRAM_STEPS, feeds device-format
+        // text into processIncoming() so tiles/arc/playhead all work.
+
+        let running = false;
+        let timerId = null;
+        let lastTickMs = 0;
+        let simMinutes = 0;         // current sim time in minutes (0-1440)
+        let stepIdx = 0;            // 0-based index into steps
+        let holdElapsedMs = 0;      // elapsed ms during a speed=0 hold
+        let steps = [];
+        let formSnap = {};
+        const TICK_MS = 500;
+
+        function hhmm2min(hhmm) {
+          const n = parseInt(hhmm, 10); if (isNaN(n)) return 0;
+          return Math.floor(n / 100) * 60 + (n % 100);
+        }
+        function min2hhmm(m) {
+          m = ((m % 1440) + 1440) % 1440;
+          return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(Math.floor(m % 60)).padStart(2, '0');
+        }
+
+        function currentStep() { return steps[stepIdx] || {}; }
+        function totalSteps() { return steps.length; }
+
+        function emitLines() {
+          if (typeof processIncoming !== 'function') return;
+          const s = currentStep();
+          const speed = s.speed != null ? s.speed : (formSnap.TIME_SCALE ?? 1);
+          const intensity = s.intensity_scale != null ? s.intensity_scale : (formSnap.INTENSITY_SCALE ?? 1);
+          const day = s.day || 1;
+
+          // SimTime + Speed (matches reSimWithSpeed)
+          // Use signed speed so the speed tile reflects direction correctly.
+          // The 100ms interpolation loop reads the tile to decide which bar
+          // (forward vs reverse) gets the playhead — absSpeed would always say "forward".
+          processIncoming('Simulation time: ' + min2hhmm(simMinutes) + ' (Speed: ' + speed.toFixed(1) + 'x)\n');
+
+          // Step index (matches reProgramCurrentStep)
+          processIncoming('[PROGRAM] Step ' + (stepIdx + 1) + '/' + totalSteps() + '\n');
+
+          // Update banner step label
+          const bannerLabel = document.getElementById('demoBannerStepLabel');
+          if (bannerLabel) bannerLabel.textContent = 'Step ' + (stepIdx + 1) + '/' + totalSteps();
+
+          // Step applied with day (matches mStepApplied regex)
+          processIncoming('[PROGRAM] Step applied: step=' + (stepIdx + 1) + ' day=' + day + '\n');
+
+          // Intensity (matches reIntensity)
+          processIncoming('Intensity scale: ' + intensity + '\n');
+
+          // Sun color
+          if (s.sun_color_rgb && Array.isArray(s.sun_color_rgb)) {
+            processIncoming('Sun color mode: CUSTOM\n');
+            processIncoming('Sun color RGB: ' + s.sun_color_rgb.join(',') + '\n');
+          } else {
+            processIncoming('Sun color mode: ' + (formSnap.SUN_COLOR_MODE || 'BLUE') + '\n');
+          }
+
+          // Program enabled
+          processIncoming('Program enabled: True\n');
+
+          // Solar mode
+          processIncoming('Solar mode: ' + (formSnap.SOLAR_MODE || 'BASIC') + '\n');
+
+          // Dual sun
+          const dualSun = s.dual_sun != null ? s.dual_sun : (formSnap.DUAL_SUN_ENABLED || false);
+          processIncoming('Dual sun: ' + (dualSun ? 'True' : 'False') + '\n');
+        }
+
+        function advanceStep(newIdx) {
+          stepIdx = newIdx;
+          holdElapsedMs = 0;
+          const s = currentStep();
+          const targetMin = hhmm2min(s.sim_time_hhmm);
+
+          // Always snap simMinutes to the step's target time on any transition.
+          // Without this, RUN overshoot causes the next tick (with possibly
+          // reversed speed) to immediately cross another step boundary,
+          // creating a step-oscillation bug.
+          simMinutes = targetMin;
+
+          // Update playhead globals
+          window.__currentStepIndex = stepIdx + 1; // 1-based
+          if (s.day) {
+            window.__playheadCurrentDay = s.day;
+            window.__dayWrapCount = s.day - 1;
+          }
+        }
+
+        function tick() {
+          if (!running || steps.length === 0) return;
+          const now = performance.now();
+          const dtMs = Math.min(now - lastTickMs, 2000); // cap to avoid huge jumps
+          lastTickMs = now;
+
+          const s = currentStep();
+          const speed = s.speed != null ? s.speed : (formSnap.TIME_SCALE ?? 1);
+
+          if (speed === 0) {
+            // Hold mode: wait for hold_minutes (in real seconds for demo, accelerated 60x)
+            const holdMin = s.hold_minutes || 1;
+            holdElapsedMs += dtMs;
+            const holdTargetMs = holdMin * 1000; // 1 hold_minute = 1 real second in demo
+            if (holdElapsedMs >= holdTargetMs) {
+              // Move to next step
+              if (stepIdx + 1 < totalSteps()) {
+                advanceStep(stepIdx + 1);
+              } else {
+                advanceStep(0); // loop
+              }
+            }
+          } else {
+            // Advance sim time: speed minutes of sim per real second
+            const simDelta = speed * (dtMs / 60000); // speed=Nx means N sim-seconds per real second → /60 for minutes
+            simMinutes += simDelta;
+
+            // Wrap around midnight
+            simMinutes = ((simMinutes % 1440) + 1440) % 1440;
+
+            // Check if we've reached the next step's target time
+            if (stepIdx + 1 < totalSteps()) {
+              const nextTarget = hhmm2min(steps[stepIdx + 1].sim_time_hhmm);
+              const transition = String(steps[stepIdx + 1].transition || 'RUN').toUpperCase();
+
+              if (transition === 'JUMP') {
+                // For JUMP: advance when we'd naturally pass the next step's time
+                // Since JUMP means "skip to this time", trigger when current segment ends
+                // Use same logic as RUN for triggering, but JUMP will set time instantly
+                if (speed > 0 && simMinutes >= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                } else if (speed < 0 && simMinutes <= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                }
+              } else {
+                // RUN: time runs naturally to the target
+                if (speed > 0 && simMinutes >= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                } else if (speed < 0 && simMinutes <= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                }
+              }
+            } else {
+              // Last step: check if we should loop
+              // Loop after completing a full simulated day from the last step
+              const firstTarget = hhmm2min(steps[0].sim_time_hhmm);
+              if (speed > 0 && simMinutes >= firstTarget && simMinutes < firstTarget + 5) {
+                // Close to loop point
+              }
+              // Simple: loop after 30 real seconds on last step
+              holdElapsedMs += dtMs;
+              if (holdElapsedMs > 30000) {
+                advanceStep(0);
+              }
+            }
+          }
+
+          emitLines();
+        }
+
+        function start() {
+          if (running) return;
+
+          // Read program steps
+          const ps = window.programSteps || (window.__profileBuilderState && window.__profileBuilderState.PROGRAM_STEPS) || [];
+          if (ps.length === 0) {
+            // No program — just run with form defaults as single step
+            const fs = window.__profileBuilderState || {};
+            steps = [{
+              sim_time_hhmm: fs.START_TIME_HHMM || 600,
+              speed: fs.TIME_SCALE ?? 1,
+              intensity_scale: fs.INTENSITY_SCALE ?? 1,
+              transition: 'RUN',
+              day: 1
+            }];
+          } else {
+            steps = JSON.parse(JSON.stringify(ps));
+          }
+
+          formSnap = Object.assign({}, window.__profileBuilderState || {});
+          stepIdx = 0;
+          holdElapsedMs = 0;
+          simMinutes = hhmm2min(steps[0].sim_time_hhmm);
+          lastTickMs = performance.now();
+          running = true;
+          window.__demoRunning = true;
+
+          // Set initial step
+          window.__currentStepIndex = 1;
+          if (steps[0].day) {
+            window.__playheadCurrentDay = steps[0].day;
+            window.__dayWrapCount = (steps[0].day || 1) - 1;
+          }
+
+          // Show banner
+          const banner = document.getElementById('demoModeBanner');
+          if (banner) banner.style.display = 'block';
+
+          // Update Demo button to show "Stop"
+          const demoBtn = document.getElementById('demoBtn');
+          if (demoBtn) {
+            demoBtn.textContent = '■ Stop Demo';
+            demoBtn.style.background = '#ffebee';
+            demoBtn.style.color = '#c62828';
+            demoBtn.style.borderColor = '#ef9a9a';
+          }
+
+          // Remove offline (grey) tile style
+          if (typeof window.__removeOfflineTileStyle === 'function') {
+            window.__removeOfflineTileStyle();
+          }
+
+          // Log entry
+          if (typeof log === 'function') {
+            log('-- demo mode --');
+          }
+
+          // Initial emit
+          emitLines();
+
+          // Trigger nav button creation (step/day jump buttons)
+          if (typeof window.__updateProgramTitles === 'function') {
+            try { window.__updateProgramTitles(); } catch (e) { }
+          }
+
+          timerId = setInterval(tick, TICK_MS);
+        }
+
+        function stop() {
+          if (!running) return;
+          running = false;
+          window.__demoRunning = false;
+          if (timerId) { clearInterval(timerId); timerId = null; }
+
+          // Skip UI cleanup if restarting (prevents flicker)
+          if (window.__demoRestarting) return;
+
+          // Hide banner
+          const banner = document.getElementById('demoModeBanner');
+          if (banner) banner.style.display = 'none';
+
+          // Reset step index
+          window.__currentStepIndex = 0;
+
+          // Restore Demo button
+          const demoBtn = document.getElementById('demoBtn');
+          if (demoBtn) {
+            demoBtn.textContent = '▶ Demo';
+            demoBtn.style.background = '#e3f2fd';
+            demoBtn.style.color = '#1565c0';
+            demoBtn.style.borderColor = '#90caf9';
+          }
+        }
+
+        function isRunning() { return running; }
+
+        function goToNextStep() {
+          if (!running || steps.length === 0) return;
+          const nextIdx = (stepIdx + 1) % steps.length;
+          advanceStep(nextIdx);
+          emitLines();
+        }
+
+        function goToPrevStep() {
+          if (!running || steps.length === 0) return;
+          const prevIdx = stepIdx > 0 ? stepIdx - 1 : steps.length - 1;
+          advanceStep(prevIdx);
+          emitLines();
+        }
+
+        function goToStep(n) {
+          if (!running || steps.length === 0) return;
+          const idx = Math.max(0, Math.min(steps.length - 1, n));
+          advanceStep(idx);
+          emitLines();
+        }
+
+        // Expose globally
+        window.__demoEngine = { start, stop, isRunning, goToNextStep, goToPrevStep, goToStep };
+
+        // Auto-stop when real device connects (poll connection state)
+        setInterval(function () {
+          if (!running) return;
+          var ms = window.__solarSimMonitorState;
+          if (ms && (ms.port || ms.transport === 'ble')) {
+            stop();
+          }
+        }, 1000);
 
       })();
     </script>
