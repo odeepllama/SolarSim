@@ -1319,33 +1319,35 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-radius: 12px;
       max-width: 580px;
       width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      padding: 32px;
+      padding: 20px 28px;
       text-align: center;
     }
 
     #ftueWelcomeModal h2 {
-      font-size: 2rem;
-      margin: 0 0 12px;
+      font-size: 1.6rem;
+      margin: 0 0 6px;
       color: #1f2933;
     }
 
     #ftueWelcomeModal .subtitle {
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: #666;
-      margin: 0 0 32px;
-      line-height: 1.5;
+      margin: 0 0 16px;
+      line-height: 1.4;
     }
 
     #ftueWelcomeModal .role-buttons {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin-bottom: 24px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
 
     #ftueWelcomeModal .role-btn {
-      padding: 20px 24px;
+      padding: 14px 18px;
       border: 2px solid #ddd;
       border-radius: 8px;
       background: #f8f9fa;
@@ -1355,7 +1357,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-size: 1rem;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     #ftueWelcomeModal .role-btn:hover {
@@ -1366,7 +1368,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     #ftueWelcomeModal .role-btn .icon {
-      font-size: 3.6rem;
+      font-size: 2.4rem;
       flex-shrink: 0;
     }
 
@@ -1377,9 +1379,9 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     #ftueWelcomeModal .role-btn .desc {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #666;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     #ftueWelcomeModal .skip-link {
@@ -4289,6 +4291,18 @@ https://github.com/odeepllama/SolarSim/tree/main
         <h2 id="ftueWelcomeTitle">Welcome to SolaSim Studio! 🌞</h2>
         <p class="subtitle">Let's get you started with solar simulation</p>
         <div class="role-buttons">
+          <a class="role-btn" href="setup.html" onclick="if(location.hostname)this.href='setup/'"
+            style="border: 2px solid #3478f6; background: #f0f4ff; text-decoration: none; color: inherit;">
+            <span class="icon">🔧</span>
+            <div>
+              <div class="title">Setup Your Device <span
+                  style="background:#3478f6; color:#fff; padding:2px 8px; border-radius:12px; font-size:0.75em; margin-left:6px;">NEW
+                  USERS</span>
+              </div>
+              <div class="desc">First time? Use the Setup Wizard to flash firmware and deploy files to your RP2040 —
+                takes about 2 minutes</div>
+            </div>
+          </a>
           <button class="role-btn" data-path="quick" style="border: 2px solid #28a745; background: #f0fff4;">
             <span class="icon">🎯</span>
             <div>
@@ -5572,33 +5586,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             <h3>1. Prepare the Device</h3>
             <p>The Solar Simulator supports two hardware platforms:</p>
             <ul>
-              <li><strong>RP2040:bit</strong> (Raspberry Pi Pico-based): Install the custom firmware by dragging a
-                <code>.uf2</code> file onto the device in bootloader mode.
+              <li><strong>RP2040:bit</strong> (Raspberry Pi Pico-based): Use the
+                <a href="setup.html" onclick="if(location.hostname)this.href='setup/'"
+                  style="color: #3478f6; font-weight: 600;">Setup Wizard</a> to flash firmware
+                and deploy files automatically — no software installation needed.
               </li>
-              <li><strong>ESP32-S3</strong>: Flash the MicroPython firmware using <code>esptool</code>, then upload the
-                Solar Simulator Python files.</li>
+              <li><strong>ESP32-S3</strong> (advanced): Flash MicroPython using <code>esptool</code> and upload files
+                manually — see the <a href="https://github.com/odeepllama/SolarSim" target="_blank">GitHub
+                  repository</a> for instructions.</li>
             </ul>
-
-            <h4>RP2040:bit Firmware Installation</h4>
-            <ol>
-              <li><strong>Download the Firmware</strong>: Obtain the latest <code>SolarSimulator_YYYYMMDD.uf2</code>
-                file from the SolaSim GitHub repository.</li>
-              <li><strong>Enter Bootloader Mode</strong>:
-                <ul>
-                  <li>Hold down the <strong>BOOT</strong> button on the edge of the board.</li>
-                  <li>While holding <strong>BOOT</strong>, press the <strong>RESET</strong> button on the edge of the
-                    board.</li>
-                  <li>Release the button.</li>
-                </ul>
-              </li>
-              <li><strong>Install Firmware</strong>:
-                <ul>
-                  <li>A new drive named <code>RPI-RP2</code> will appear on your computer (like a USB stick).</li>
-                  <li>Drag and drop the <code>.uf2</code> file onto this drive.</li>
-                  <li>The device will automatically disconnect and reboot. The installation is complete!</li>
-                </ul>
-              </li>
-            </ol>
 
             <h3>2. Open SolaSim Studio</h3>
             <p>You do not need to install any software on your computer to control the device.</p>
@@ -5606,7 +5602,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><strong>Recommended</strong>: Open <a href="https://odeepllama.github.io/SolarSim/"
                   target="_blank">https://odeepllama.github.io/SolarSim/</a> in a compatible browser (Google Chrome,
                 Microsoft Edge, or Opera).</li>
-              <li><strong>Advanced/Offline</strong>: If you have the <code>ProfileBuilder.html</code> file locally, you
+              <li><strong>Advanced/Offline</strong>: If you have the <code>SolaSimStudio.html</code> file locally, you
                 can simply double-click it to open it in your browser.</li>
             </ul>
 
