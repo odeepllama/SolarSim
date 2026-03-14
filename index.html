@@ -22230,13 +22230,32 @@ https://github.com/odeepllama/SolarSim/tree/main
         let confirmEl = document.getElementById('tileConfirm'); if (!confirmEl) { confirmEl = document.createElement('div'); confirmEl.id = 'tileConfirm'; confirmEl.innerHTML = '<div class="txt"></div><div class="btn-row"><button class="btn yes">Yes</button><button class="btn no">No</button></div>'; document.body.appendChild(confirmEl); }
         let confirmOutside = null;
         function showConfirm(tileEl, msg, onYes) { const txt = confirmEl.querySelector('.txt'); const yes = confirmEl.querySelector('.yes'); const no = confirmEl.querySelector('.no'); txt.textContent = msg; const r = tileEl.getBoundingClientRect(); confirmEl.style.left = Math.round(r.left + window.scrollX) + 'px'; confirmEl.style.top = Math.round(r.bottom + window.scrollY + 6) + 'px'; confirmEl.style.display = 'block'; const cleanup = () => { confirmEl.style.display = 'none'; yes.onclick = null; no.onclick = null; if (confirmOutside) { document.removeEventListener('mousedown', confirmOutside); confirmOutside = null; } }; yes.onclick = () => { try { onYes && onYes(); } finally { cleanup(); } }; no.onclick = cleanup; confirmOutside = (e) => { if (!confirmEl.contains(e.target)) cleanup(); }; document.addEventListener('mousedown', confirmOutside); }
-        // Tooltips for discoverability
+        // Tooltips for discoverability — descriptive per-tile
+        const TILE_TOOLTIPS = {
+          sim: { connected: 'Simulated time of day (HHMM). Click to set.', disconnected: 'Simulated time of day. Click to edit, or use the form below.' },
+          speed: { connected: 'Time scale (negative = reverse, 0 = hold). Click to set.', disconnected: 'Simulation speed multiplier. Click to edit, or use the form below.' },
+          intensity: { connected: 'LED brightness (0.0\u20131.0). Click to set.', disconnected: 'LED brightness level. Click to edit, or use the form below.' },
+          sunColor: { connected: 'LED color mode (Natural, Blue, or Custom RGB). Click to change.', disconnected: 'LED color mode. Click to edit, or use the form below.' },
+          program: { connected: 'Multi-step program sequence. Click to toggle ON/OFF.', disconnected: 'Program status. Build a program in the steps table below.' },
+          solarMode: { connected: 'Solar calculation mode. Click to cycle: Basic \u2192 Scientific \u2192 Custom.', disconnected: 'Solar model type. Click to edit, or use the form below.' },
+          dualSun: { connected: 'Mirrored sun on opposite side of arc. Click to toggle ON/OFF.', disconnected: 'Dual sun mode. Click to edit, or use the form below.' },
+          rotation: { connected: '360\u00b0 turntable with camera trigger. Click to toggle ON/OFF.', disconnected: 'Rotation imaging. Configure in the form below.' },
+          servo2DayInt: { connected: 'Camera trigger interval during daytime (seconds). Click to set.', disconnected: 'Daytime camera interval. Click to edit, or use the form below.' },
+          servo2NightInt: { connected: 'Camera trigger interval at night (seconds). Click to set.', disconnected: 'Nighttime camera interval. Click to edit, or use the form below.' },
+        };
         function applyTooltips() {
-          const grid = document.getElementById('monitorStatusGrid'); if (!grid) return; const editOnly = ['sim', 'speed', 'intensity', 'sunColor', 'servo2DayInt', 'servo2NightInt']; const toggleKeys = ['program', 'rotation', 'dualSun', 'solarMode']; for (const [k, box] of (window.kvCache?.entries?.() || [])) { if (!box) continue; if (toggleKeys.includes(k)) box.title = 'Click to edit; Double-click to toggle'; else if (editOnly.includes(k)) box.title = 'Click to edit'; }
+          const grid = document.getElementById('monitorStatusGrid'); if (!grid) return;
+          const isConn = !!(window.__solarSimMonitorState && (window.__solarSimMonitorState.port || window.__solarSimMonitorState.transport === 'ble'));
+          const mode = isConn ? 'connected' : 'disconnected';
+          for (const [k, box] of (window.kvCache?.entries?.() || [])) {
+            if (!box) continue;
+            const tip = TILE_TOOLTIPS[k];
+            box.title = tip ? tip[mode] : (isConn ? 'Click to edit' : 'Connect a device to interact');
+          }
           // Fallback by scanning labels
-          grid.querySelectorAll('.mon-kv').forEach(box => { if (box.title) return; const key = keyFromBox(box); if (!key) return; if (toggleKeys.includes(key)) box.title = 'Click to edit; Double-click to toggle'; else box.title = 'Click to edit'; });
+          grid.querySelectorAll('.mon-kv').forEach(box => { if (box.title) return; const key = keyFromBox(box); if (!key) return; const tip = TILE_TOOLTIPS[key]; box.title = tip ? tip[mode] : (isConn ? 'Click to edit' : 'Connect a device to interact'); });
         }
-        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) applyTooltips(); }, 1200);
+        setInterval(() => { applyTooltips(); }, 1200);
         // Mutation observer to mark interactive tiles with pointer cursor whenever they appear
         (function observeGrid() {
           const grid = document.getElementById('monitorStatusGrid'); if (!grid || grid.__tilePopoverObserved) return; const mark = (node) => { if (!(node instanceof Element)) return; if (!node.classList.contains('mon-kv')) return; const k = keyFromBox(node); if (k) node.classList.add('interactive'); };
