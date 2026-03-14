@@ -3707,7 +3707,6 @@ https://github.com/odeepllama/SolarSim/tree/main
     #modeToggleContainer {
       display: flex;
       gap: 0;
-      margin-right: 10px;
     }
 
     /* Mode toggle buttons (radio style) */
@@ -3757,7 +3756,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-size: 1.43rem;
       border-radius: 4px;
       cursor: pointer;
-      margin-right: 10px;
+      margin-left: 0;
       transition: all 0.2s ease;
       line-height: 1;
       display: inline-flex;
@@ -4192,11 +4191,11 @@ https://github.com/odeepllama/SolarSim/tree/main
     <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title=""></button>
     <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title=""></button>
     <div id="bgColorChooser" style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-      <button id="modeConfigBtn" type="button" title="">⚙</button>
       <div id="modeToggleContainer">
         <button id="simpleModeBtn" type="button" class="mode-btn" data-mode="simple"></button>
         <button id="advancedModeBtn" type="button" class="mode-btn active" data-mode="advanced"></button>
       </div>
+      <button id="modeConfigBtn" type="button" title="">⚙</button>
       <div class="bg-swatch" data-color="#abbea6"
         style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;"
         title=""></div>
