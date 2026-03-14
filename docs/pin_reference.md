@@ -36,5 +36,5 @@ The [RP2040:bit board](https://spotpear.com/index/study/detail/id/943.html) by S
 
 ## Source Files
 
-- **RP2040**: [SolarSimulatorSun.py](../RP2040/SolarSimulatorSun.py) — lines 14–19 (header) and 213–227 (pin definitions)
+- **RP2040**: [SolarSimulator.py](../RP2040/SolarSimulator.py) — lines 14–19 (header) and 213–227 (pin definitions)
 - **ESP32-S3**: [hardware.py](../ESP32/hardware.py) — lines 28–36 (pin definitions)

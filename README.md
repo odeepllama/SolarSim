@@ -113,11 +113,11 @@ If you prefer to set up manually without the wizard:
 
 You can design and preview programs entirely in the browser. Open [SolaSim Studio](https://odeepllama.github.io/SolarSim/), build your program steps, then click **▶ Demo** to simulate the sequence with an animated timeline playhead. Use Step/Day navigation to jump through your program and verify timing before building hardware.
 
-> **💡 For developers:** `main_app.mpy` is pre-compiled from `SolarSimulatorSun.py` using [mpy-cross](https://pypi.org/project/mpy-cross/). If you modify the source, rebuild it with:
+> **💡 For developers:** `main_app.mpy` is pre-compiled from `SolarSimulator.py` using [mpy-cross](https://pypi.org/project/mpy-cross/). If you modify the source, rebuild it with:
 >
 > ```bash
 > pip install mpy-cross
-> mpy-cross SolarSimulatorSun.py -o main_app.mpy
+> mpy-cross SolarSimulator.py -o main_app.mpy
 > ```
 >
 > The `.mpy` bytecode format is required because the RP2040 has limited RAM and cannot compile the full `.py` file on-device without running out of memory.
