@@ -343,13 +343,28 @@ class SolarSimulator:
         self.serial_buffer = ""
 
     def output(self, text):
-        """Route output to print and optionally BLE."""
+        """Route output to print and optionally BLE.
+
+        Throttles BLE output to prevent notification flooding.
+        Status dumps use send_batch() directly and bypass this method.
+        """
         print(text)
         if self.ble and self.ble.connected and not self.ble.output_paused:
-            try:
-                self.ble.send_response(text + '\n')
-            except Exception:
-                pass
+            # Throttle: limit BLE sends to once per second for routine messages
+            now = ticks_ms()
+            if not hasattr(self, '_last_ble_output_ms'):
+                self._last_ble_output_ms = 0
+            # Always send command responses and important messages immediately
+            is_important = ('[SERIAL CMD]' in text or '[PROGRAM]' in text or
+                           '[BLE]' in text or 'Error' in text or
+                           'WRITE_OK' in text or 'PROGRAM_' in text or
+                           '--- ' in text)
+            if is_important or ticks_diff(now, self._last_ble_output_ms) > 1000:
+                try:
+                    self.ble.send_response(text + '\n')
+                    self._last_ble_output_ms = now
+                except Exception:
+                    pass
 
     def get_settings_dict(self):
         """Build dict of all saveable settings from current globals."""
@@ -581,7 +596,14 @@ class SolarSimulator:
 
             # === STATUS ===
             elif command == "status":
-                self.print_status()
+                now_cmd = ticks_ms()
+                # Reset debounce on fresh BLE connect so first status always works
+                if self.ble and getattr(self.ble, '_fresh_connect', False):
+                    self._last_status_ms = 0
+                    self.ble._fresh_connect = False
+                if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 3000:
+                    self._last_status_ms = now_cmd
+                    self.print_status()
 
             # === FILL PANEL ===
             elif command == "fillpanel" and len(parts) >= 4:
