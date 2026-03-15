@@ -16,3 +16,6 @@ workflow_overview.md
 
 # Old/prototype firmware files (not part of the public release)
 SolarSimulator_rtc.py
+
+# Internal brainstorming/development docs
+extra_Docs/
