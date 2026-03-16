@@ -1165,18 +1165,40 @@ class SolarSimulator:
         lines = self._wp_lines
         self._wp_lines = None
         self._wp_filename = None
+        has_ps_steps = hasattr(self, '_wp_steps') and self._wp_steps
         try:
-            # If individual PS: steps were sent, assemble them into PROGRAM_STEPS
-            if hasattr(self, '_wp_steps') and self._wp_steps:
-                steps_json = '[' + ','.join(self._wp_steps) + ']'
-                lines.append('PROGRAM_STEPS = ' + steps_json)
-                self._wp_steps = []
-            n_lines = len(lines)
+            n_lines = 0
+            self.output(f"[DEBUG] commit: {len(lines)} WP lines, {len(self._wp_steps) if has_ps_steps else 0} PS steps, file={fn}")
             with open(fn, 'w') as f:
                 for line in lines:
-                    f.write(line + '\n')
-            del lines
-            gc.collect()
+                    # Split any PROGRAM_STEPS = [...] into per-step lines
+                    # using brace-depth scanning (no json.loads, no large allocs)
+                    if line.startswith('PROGRAM_STEPS'):
+                        depth = 0
+                        start = 0
+                        for j in range(len(line)):
+                            c = line[j]
+                            if c == '{':
+                                if depth == 0:
+                                    start = j
+                                depth += 1
+                            elif c == '}':
+                                depth -= 1
+                                if depth == 0:
+                                    f.write('PROGRAM_STEP = ' + line[start:j+1] + '\n')
+                                    n_lines += 1
+                    else:
+                        f.write(line + '\n')
+                        n_lines += 1
+                del lines
+                gc.collect()
+                # Write individual PS: steps (from BLE upload) as PROGRAM_STEP lines
+                if has_ps_steps:
+                    for step in self._wp_steps:
+                        f.write('PROGRAM_STEP = ' + step + '\n')
+                        n_lines += 1
+                    self._wp_steps = []
+                    gc.collect()
             self.output(f"[SERIAL CMD] WRITE_OK {fn} {n_lines}")
             # Re-enable auto-load so this profile persists across reboots
             AUTO_LOAD_LATEST_PROFILE = True
@@ -1230,16 +1252,16 @@ class SolarSimulator:
                 import select
                 self._stdin_poller = select.poll()
                 self._stdin_poller.register(sys.stdin, select.POLLIN)
-                self._serial_buf_parts = []
+                self._serial_buf = bytearray()
             while self._stdin_poller.poll(0):
                 char = sys.stdin.read(1)
                 if char in ('\n', '\r'):
-                    if self._serial_buf_parts:
-                        cmd = ''.join(self._serial_buf_parts)
-                        self._serial_buf_parts = []
+                    if self._serial_buf:
+                        cmd = self._serial_buf.decode()
+                        self._serial_buf = bytearray()
                         self.handle_command(cmd)
                 elif char is not None:
-                    self._serial_buf_parts.append(char)
+                    self._serial_buf.extend(char.encode())
         except Exception:
             pass
     # ==========================================================

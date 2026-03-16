@@ -2129,6 +2129,74 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-color: #257b41 !important;
     }
 
+    /* Transport chooser popup */
+    .transport-chooser {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 6px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+      z-index: 9999;
+      min-width: 220px;
+      overflow: hidden;
+      animation: tcFadeIn 0.15s ease;
+    }
+
+    @keyframes tcFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .transport-chooser-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #333;
+      text-align: left;
+      transition: background 0.12s;
+    }
+
+    .transport-chooser-btn:hover {
+      background: #f0f7ff;
+    }
+
+    .transport-chooser-btn+.transport-chooser-btn {
+      border-top: 1px solid #eee;
+    }
+
+    .transport-chooser-btn .tc-icon {
+      font-size: 1.3rem;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .transport-chooser-btn .tc-label {
+      font-weight: 600;
+    }
+
+    .transport-chooser-btn .tc-desc {
+      font-size: 0.78rem;
+      color: #888;
+      font-weight: 400;
+    }
+
 
 
     /* Emoji sizing inside monitor toolbar connect buttons – 15% larger */
@@ -6092,7 +6160,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           appTitle: 'SolaSim Studio',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
-          connect: '<span class="btn-emoji">🔌</span> Connect Device',
+          connect: 'Connect',
           quickEdit: '✏️ Quick Edit / Examples',
           quickEditLoading: '⏳ Loading...',
           refresh: 'Refresh',
@@ -6259,7 +6327,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           appTitle: 'SolaSim Studio',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
-          connect: '<span class="btn-emoji">🔌</span> USB接続',
+          connect: '接続',
           quickEdit: '✏️ クイック編集 / 例',
           quickEditLoading: '⏳ 読込中...',
           refresh: 'リフレッシュ',
@@ -16167,8 +16235,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                   window.updateLoadCurrentButton();
                 }
 
-                // Automatically upload to device
-                if (typeof window.connectAndUpload === 'function') {
+                // Automatically upload to device (use BLE if connected)
+                const _ms = window.__solarSimMonitorState;
+                if (_ms && _ms.transport === 'ble' && _ms.bleRxChar) {
+                  setTimeout(() => window.uploadProfileViaWriteCommand(), 100);
+                } else if (typeof window.connectAndUpload === 'function') {
                   setTimeout(() => window.connectAndUpload(), 100);
                 }
               };
@@ -17712,6 +17783,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
       }
       window.connectAndUpload = connectAndUpload;
+      window.uploadProfileViaWriteCommand = uploadProfileViaWriteCommand;
 
       // -----------------------------
       // Profile Upload via writeprofile command (BLE or Serial)
@@ -17744,31 +17816,46 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (typeof log === 'function') log('📤 Uploading profile...', 'update');
 
           // 1. Begin write session
+
           await sendLine('writeprofile ' + fn, { silentEcho: true });
           await new Promise(r => setTimeout(r, 150));
+
 
           // 2. Send profile lines
           // Filter out empty trailing lines from split (trailing '\n' produces empty element)
           const lines = profileText.split('\n').filter((l, i, arr) => i < arr.length - 1 || l.length > 0);
           const totalLines = lines.length;
 
+
           for (let i = 0; i < totalLines; i++) {
             const fullLine = lines[i];
-            if (monitorTransport === 'ble') {
+            const psMatch = fullLine.match(/^PROGRAM_STEPS\s*=\s*(\[.*\])$/);
+            if (psMatch) {
+              // Send each step individually via PS: to avoid large allocations
+              // on ESP32. Safe for serial too — this WP: path is ESP32-only
+              // (RP2040 uses paste-mode upload, detected by USB vendor ID).
+              try {
+                const steps = JSON.parse(psMatch[1]);
+
+                for (let s = 0; s < steps.length; s++) {
+                  await sendLine('PS:' + JSON.stringify(steps[s]), { silentEcho: true });
+                  await new Promise(r => setTimeout(r, monitorTransport === 'ble' ? 50 : 80));
+                }
+
+              } catch (e) {
+                console.warn('[Upload] Failed to split PROGRAM_STEPS, sending as-is:', e);
+                await sendLine('WP:' + fullLine, { silentEcho: true });
+              }
+            } else if (monitorTransport === 'ble') {
               // BLE writeValue limit is ~509 bytes (512 MTU - 3 ATT header).
-              // Lines that exceed this (e.g. PROGRAM_STEPS JSON) must be split
-              // into a first chunk (WP:) + continuation chunks (WPC:) that the
-              // ESP32 reassembles by appending WPC: data to the previous line.
-              const MAX_CHUNK = 480; // conservative limit within 509 byte MTU
+              const MAX_CHUNK = 480;
               if (('WP:' + fullLine).length > MAX_CHUNK) {
-                // Send first chunk
-                const firstLen = MAX_CHUNK - 3; // subtract 'WP:' prefix
+                const firstLen = MAX_CHUNK - 3;
                 await sendLine('WP:' + fullLine.slice(0, firstLen), { silentEcho: true });
                 await new Promise(r => setTimeout(r, 50));
-                // Send continuation chunks
                 let offset = firstLen;
                 while (offset < fullLine.length) {
-                  const chunkLen = MAX_CHUNK - 4; // subtract 'WPC:' prefix
+                  const chunkLen = MAX_CHUNK - 4;
                   await sendLine('WPC:' + fullLine.slice(offset, offset + chunkLen), { silentEcho: true });
                   await new Promise(r => setTimeout(r, 50));
                   offset += chunkLen;
@@ -17778,28 +17865,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
               await new Promise(r => setTimeout(r, 50));
             } else {
-              // Serial: for PROGRAM_STEPS, send each step individually via PS:
-              // to avoid long-line corruption. All other lines are short enough
-              // to send as-is via WP:.
-              const psMatch = fullLine.match(/^PROGRAM_STEPS\s*=\s*(\[.*\])$/);
-              if (psMatch) {
-                try {
-                  const steps = JSON.parse(psMatch[1]);
-                  for (let s = 0; s < steps.length; s++) {
-                    await sendLine('PS:' + JSON.stringify(steps[s]), { silentEcho: true });
-                    await new Promise(r => setTimeout(r, 50));
-                  }
-                } catch (e) {
-                  // Fallback: send as single WP: line
-                  console.warn('[Upload] Failed to split PROGRAM_STEPS, sending as-is:', e);
-                  await sendLine('WP:' + fullLine, { silentEcho: true });
-                }
-              } else {
-                await sendLine('WP:' + fullLine, { silentEcho: true });
-              }
-              await new Promise(r => setTimeout(r, 30));
+              // Serial: non-PROGRAM_STEPS lines are short, send as WP:
+              await sendLine('WP:' + fullLine, { silentEcho: true });
+              await new Promise(r => setTimeout(r, 80));
             }
           }
+
 
 
           // 3. Set up WRITE_OK listener BEFORE sending commit
@@ -17817,7 +17888,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
 
           // 4. Commit — device writes file and loads profile in-place
-          await new Promise(r => setTimeout(r, 150));
+          // Extra delay before commit to let ESP32 drain serial buffer
+          await new Promise(r => setTimeout(r, monitorTransport === 'ble' ? 150 : 1500));
+
           await sendLine('writeprofile commit', { silentEcho: true });
 
           // 5. Wait for WRITE_OK confirmation from device
@@ -18073,7 +18146,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         uploadBtn.addEventListener('click', (e) => {
           if (uploadBtn.disabled) return;
           e.preventDefault();
-          connectAndUpload();
+          const ms = window.__solarSimMonitorState;
+          if (ms && ms.transport === 'ble' && ms.bleRxChar) {
+            uploadProfileViaWriteCommand();
+          } else if (ms && ms.transport === 'serial' && ms.port) {
+            uploadProfileToBoard();
+          } else {
+            connectAndUpload();
+          }
         });
         proceed.addEventListener('click', () => { if (dontAsk && dontAsk.checked) setSkip(true); close(); uploadProfileToBoard(); });
         cancel.addEventListener('click', close);
@@ -19191,6 +19271,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const NUS_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
         const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // write commands
         const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // notify responses
+        const NUS_STATUS = '6e400004-b5a3-f393-e0a9-e50e24dcca9e'; // notify status
 
         // Shared TextDecoder instance — reused across all serial/BLE reads to avoid GC pressure
         const sharedDecoder = new TextDecoder();
@@ -19217,7 +19298,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Serialize BLE writes — Web Bluetooth throws "GATT operation already
         // in progress" if a second writeValue starts before the first resolves.
         function bleWrite(char, data) {
-          const p = state._bleWriteQueue.then(() => char.writeValue(data));
+          const p = state._bleWriteQueue.then(() => char.writeValueWithoutResponse(data));
           // Always settle the queue so future writes aren't blocked by errors
           state._bleWriteQueue = p.catch(() => { });
           return p;
@@ -19607,29 +19688,49 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (state.bleDevice && state.bleServer && state.bleServer.connected) return;
           if (!navigator.bluetooth) { log('Web Bluetooth unsupported in this browser', 'error'); throw new Error('No navigator.bluetooth'); }
           badge('CONNECTING', 'amber');
+          let device, server;
           try {
-            const device = await navigator.bluetooth.requestDevice({
+            device = await navigator.bluetooth.requestDevice({
               filters: [{ namePrefix: 'SolarSim' }],
               optionalServices: [NUS_SERVICE]
             });
             device.addEventListener('gattserverdisconnected', () => {
               log('Bluetooth connection lost. Move closer to the device and try reconnecting.', 'error');
+              if (state._bleKeepalive) { clearInterval(state._bleKeepalive); state._bleKeepalive = null; }
               state.bleDevice = null; state.bleServer = null;
               state.bleRxChar = null; state.bleTxChar = null;
               state.transport = null;
               setConnected(false);
-              // Actively remove clock playhead on BLE disconnect
               try { if (typeof renderClockTimePlayhead === 'function') renderClockTimePlayhead(); } catch (_) { }
             });
-            const server = await device.gatt.connect();
-            const svc = await server.getPrimaryService(NUS_SERVICE);
-            const rxChar = await svc.getCharacteristic(NUS_RX);
-            const txChar = await svc.getCharacteristic(NUS_TX);
-            await txChar.startNotifications();
-            txChar.addEventListener('characteristicvaluechanged', (e) => {
-              const text = sharedDecoder.decode(e.target.value);
-              processIncoming(text);
-            });
+            server = await device.gatt.connect();
+
+            // Wrap GATT discovery in a timeout — Chrome BLE can hang
+            const gattSetup = (async () => {
+              const svc = await server.getPrimaryService(NUS_SERVICE);
+              const rxChar = await svc.getCharacteristic(NUS_RX);
+              const txChar = await svc.getCharacteristic(NUS_TX);
+              await txChar.startNotifications();
+              txChar.addEventListener('characteristicvaluechanged', (e) => {
+                const text = sharedDecoder.decode(e.target.value);
+                processIncoming(text);
+              });
+              // Status characteristic (optional)
+              try {
+                const statusChar = await svc.getCharacteristic(NUS_STATUS);
+                await statusChar.startNotifications();
+                statusChar.addEventListener('characteristicvaluechanged', (e) => {
+                  const text = sharedDecoder.decode(e.target.value);
+                  processIncoming(text);
+                });
+              } catch (_) { /* Status char not available */ }
+              return { rxChar, txChar };
+            })();
+            const gattTimeout = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('BLE setup timed out. Try again or power-cycle the ESP32.')), 10000)
+            );
+            const { rxChar, txChar } = await Promise.race([gattSetup, gattTimeout]);
+
             state.bleDevice = device;
             state.bleServer = server;
             state.bleRxChar = rxChar;
@@ -19638,7 +19739,32 @@ https://github.com/odeepllama/SolarSim/tree/main
             state.connStartTs = performance.now();
             setConnected(true);
             log('BLE connected to ' + device.name);
+            // Request initial status to populate tiles
+            setTimeout(() => { try { sendLine('status', { silentEcho: true }); } catch (_) { } }, 500);
+            setTimeout(() => { try { sendLine('status', { silentEcho: true }); } catch (_) { } }, 1500);
+            // BLE keepalive: GATT reads every 5s to prevent supervision timeout
+            if (state._bleKeepalive) clearInterval(state._bleKeepalive);
+            let _keepaliveFailCount = 0;
+            state._bleKeepalive = setInterval(async () => {
+              try {
+                if (state.transport === 'ble' && state.bleTxChar) {
+                  await state.bleTxChar.readValue();
+                  _keepaliveFailCount = 0; // Reset on success
+                } else {
+                  clearInterval(state._bleKeepalive);
+                  state._bleKeepalive = null;
+                }
+              } catch (_) {
+                _keepaliveFailCount++;
+                // Only stop after 3 consecutive failures (connection truly dead)
+                if (_keepaliveFailCount >= 3) {
+                  clearInterval(state._bleKeepalive);
+                  state._bleKeepalive = null;
+                }
+              }
+            }, 3000);
           } catch (e) {
+            try { if (server && server.connected) server.disconnect(); } catch (_) { }
             state.bleDevice = null; state.bleServer = null;
             state.bleRxChar = null; state.bleTxChar = null;
             state.transport = null;
@@ -19795,6 +19921,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             if (state.transport === 'ble' && state.bleRxChar) {
               await bleWrite(state.bleRxChar, new TextEncoder().encode(line + '\n'));
+            } else if (state.transport === 'ble') {
+              console.warn('[BLE] Write skipped: bleRxChar is null');
             } else {
               const w = await getWriter();
               await w.write(new TextEncoder().encode(line + '\n'));
@@ -20950,21 +21078,71 @@ https://github.com/odeepllama/SolarSim/tree/main
           state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 600));
           state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 1500));
         })();
-        connectBtn && connectBtn.addEventListener('click', () => {
-          // Save-first prompt if form has unsaved changes
-          if (window.__formDirty) {
-            showSaveFirstModal(() => {
-              // Proceed to connect after modal resolves
-              state.transport = 'serial';
-              doSerialConnect();
-            });
-            return;
+        connectBtn && connectBtn.addEventListener('click', (evt) => {
+          // Close any existing chooser
+          const existing = document.querySelector('.transport-chooser');
+          if (existing) { existing.remove(); return; }
+
+          function proceedWithTransport(transportType) {
+            // Remove chooser
+            const ch = document.querySelector('.transport-chooser');
+            if (ch) ch.remove();
+
+            function doConnect() {
+              if (transportType === 'ble') {
+                doBLEConnect();
+              } else {
+                state.transport = 'serial';
+                doSerialConnect();
+              }
+            }
+
+            // Show save-first prompt AFTER transport is chosen (so it doesn't overlap BLE picker)
+            if (window.__formDirty) {
+              showSaveFirstModal(doConnect);
+            } else {
+              doConnect();
+            }
           }
-          if (!navigator.serial && window.__demoEngine) {
+
+          function showChooser() {
+            const chooser = document.createElement('div');
+            chooser.className = 'transport-chooser';
+            const lang = document.documentElement.lang || 'en';
+            const isJa = lang === 'ja';
+            chooser.innerHTML = `
+              <button class="transport-chooser-btn" data-transport="serial">
+                <span class="tc-icon">🔌</span>
+                <span><span class="tc-label">${isJa ? 'USBケーブル' : 'USB Cable'}</span><br>
+                <span class="tc-desc">${isJa ? 'シリアル接続（Chrome/Edge）' : 'Serial connection (Chrome/Edge)'}</span></span>
+              </button>
+              <button class="transport-chooser-btn" data-transport="ble">
+                <span class="tc-icon">📶</span>
+                <span><span class="tc-label">${isJa ? 'Bluetooth' : 'Bluetooth'}</span><br>
+                <span class="tc-desc">${isJa ? 'ワイヤレス接続（Chrome/Bluefy）' : 'Wireless connection (Chrome/Bluefy)'}</span></span>
+              </button>
+            `;
+            chooser.querySelectorAll('.transport-chooser-btn').forEach(btn => {
+              btn.addEventListener('click', () => proceedWithTransport(btn.dataset.transport));
+            });
+            // Position relative to connect button
+            connectBtn.style.position = 'relative';
+            connectBtn.appendChild(chooser);
+            // Close on outside click
+            setTimeout(() => {
+              document.addEventListener('click', function onOutside(e) {
+                if (!chooser.contains(e.target) && e.target !== connectBtn) {
+                  chooser.remove();
+                  document.removeEventListener('click', onOutside);
+                }
+              });
+            }, 10);
+          }
+
+          if (!navigator.serial && !navigator.bluetooth && window.__demoEngine) {
             window.__demoEngine.start();
           } else {
-            state.transport = 'serial';
-            doSerialConnect();
+            showChooser();
           }
         });
         function doSerialConnect() {
@@ -20975,6 +21153,19 @@ https://github.com/odeepllama/SolarSim/tree/main
               msg = 'The device port is already in use. Close any other tabs or apps (like Thonny) that might be connected, then try again.';
             } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
               msg = 'No device found. Make sure the USB cable is plugged in and the board is powered on.';
+            }
+            state.transport = null;
+            log(msg, 'error');
+          });
+        }
+        function doBLEConnect() {
+          ensureBLE().catch(e => {
+            const fullErr = (e.message || '').toLowerCase();
+            let msg = 'Bluetooth connection failed';
+            if (fullErr.includes('cancelled') || fullErr.includes('canceled') || fullErr.includes('user cancelled')) {
+              return; // User cancelled the picker, no error to show
+            } else if (fullErr.includes('bluetooth')) {
+              msg = 'Web Bluetooth is not available. Use Chrome or Bluefy browser.';
             }
             state.transport = null;
             log(msg, 'error');
@@ -21387,7 +21578,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // === Adaptive Status Polling Interval ===
           // Polling interval (ms) based on number of program steps
           const STATUS_POLL_MIN_INTERVAL_MS = 2000;
-          const STATUS_POLL_MAX_INTERVAL_MS = 8000;
+          const STATUS_POLL_MAX_INTERVAL_MS = 20000;
           const STATUS_POLL_THRESHOLDS = [20, 30, 40];
           const STATUS_POLL_INTERVALS = [2000, 4000, 6000, 8000];
 
@@ -21410,6 +21601,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (state.__statusTimer) return;
             if (!state.port && state.transport !== 'ble') return;
             let interval = getStatusPollInterval(getCurrentStepCount());
+            // BLE has lower bandwidth — widen polling interval to avoid overwhelming ESP32
+            if (state.transport === 'ble') {
+              interval = Math.max(15000, interval * 4);
+            }
             interval = Math.max(STATUS_POLL_MIN_INTERVAL_MS, Math.min(STATUS_POLL_MAX_INTERVAL_MS, interval));
             state.__statusTimer = setInterval(() => { if ((state.port || state.transport === 'ble') && state.autoRefreshEnabled) sendStatusSilent(); }, interval);
             state.__lastStatusInterval = interval;
@@ -21419,6 +21614,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           function updateStatusIntervalIfNeeded() {
             if (!state.__statusTimer) return;
             let interval = getStatusPollInterval(getCurrentStepCount());
+            // BLE has lower bandwidth — widen polling interval to avoid overwhelming ESP32
+            if (state.transport === 'ble') {
+              interval = Math.max(15000, interval * 4);
+            }
             interval = Math.max(STATUS_POLL_MIN_INTERVAL_MS, Math.min(STATUS_POLL_MAX_INTERVAL_MS, interval));
             if (interval !== state.__lastStatusInterval) {
               clearInterval(state.__statusTimer);
