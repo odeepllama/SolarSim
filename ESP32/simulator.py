@@ -1168,7 +1168,6 @@ class SolarSimulator:
         has_ps_steps = hasattr(self, '_wp_steps') and self._wp_steps
         try:
             n_lines = 0
-            self.output(f"[DEBUG] commit: {len(lines)} WP lines, {len(self._wp_steps) if has_ps_steps else 0} PS steps, file={fn}")
             with open(fn, 'w') as f:
                 for line in lines:
                     # Split any PROGRAM_STEPS = [...] into per-step lines
