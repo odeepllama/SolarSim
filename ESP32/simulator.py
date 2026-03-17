@@ -343,13 +343,28 @@ class SolarSimulator:
         self.serial_buffer = ""
 
     def output(self, text):
-        """Route output to print and optionally BLE."""
+        """Route output to print and optionally BLE.
+
+        Throttles BLE output to prevent notification flooding.
+        Status dumps use send_batch() directly and bypass this method.
+        """
         print(text)
         if self.ble and self.ble.connected and not self.ble.output_paused:
-            try:
-                self.ble.send_response(text + '\n')
-            except Exception:
-                pass
+            # Throttle: limit BLE sends to once per second for routine messages
+            now = ticks_ms()
+            if not hasattr(self, '_last_ble_output_ms'):
+                self._last_ble_output_ms = 0
+            # Always send command responses and important messages immediately
+            is_important = ('[SERIAL CMD]' in text or '[PROGRAM]' in text or
+                           '[BLE]' in text or 'Error' in text or
+                           'WRITE_OK' in text or 'PROGRAM_' in text or
+                           '--- ' in text)
+            if is_important or ticks_diff(now, self._last_ble_output_ms) > 1000:
+                try:
+                    self.ble.send_response(text + '\n')
+                    self._last_ble_output_ms = now
+                except Exception:
+                    pass
 
     def get_settings_dict(self):
         """Build dict of all saveable settings from current globals."""
@@ -581,7 +596,14 @@ class SolarSimulator:
 
             # === STATUS ===
             elif command == "status":
-                self.print_status()
+                now_cmd = ticks_ms()
+                # Reset debounce on fresh BLE connect so first status always works
+                if self.ble and getattr(self.ble, '_fresh_connect', False):
+                    self._last_status_ms = 0
+                    self.ble._fresh_connect = False
+                if not hasattr(self, '_last_status_ms') or ticks_diff(now_cmd, self._last_status_ms) > 3000:
+                    self._last_status_ms = now_cmd
+                    self.print_status()
 
             # === FILL PANEL ===
             elif command == "fillpanel" and len(parts) >= 4:
@@ -1143,18 +1165,39 @@ class SolarSimulator:
         lines = self._wp_lines
         self._wp_lines = None
         self._wp_filename = None
+        has_ps_steps = hasattr(self, '_wp_steps') and self._wp_steps
         try:
-            # If individual PS: steps were sent, assemble them into PROGRAM_STEPS
-            if hasattr(self, '_wp_steps') and self._wp_steps:
-                steps_json = '[' + ','.join(self._wp_steps) + ']'
-                lines.append('PROGRAM_STEPS = ' + steps_json)
-                self._wp_steps = []
-            n_lines = len(lines)
+            n_lines = 0
             with open(fn, 'w') as f:
                 for line in lines:
-                    f.write(line + '\n')
-            del lines
-            gc.collect()
+                    # Split any PROGRAM_STEPS = [...] into per-step lines
+                    # using brace-depth scanning (no json.loads, no large allocs)
+                    if line.startswith('PROGRAM_STEPS'):
+                        depth = 0
+                        start = 0
+                        for j in range(len(line)):
+                            c = line[j]
+                            if c == '{':
+                                if depth == 0:
+                                    start = j
+                                depth += 1
+                            elif c == '}':
+                                depth -= 1
+                                if depth == 0:
+                                    f.write('PROGRAM_STEP = ' + line[start:j+1] + '\n')
+                                    n_lines += 1
+                    else:
+                        f.write(line + '\n')
+                        n_lines += 1
+                del lines
+                gc.collect()
+                # Write individual PS: steps (from BLE upload) as PROGRAM_STEP lines
+                if has_ps_steps:
+                    for step in self._wp_steps:
+                        f.write('PROGRAM_STEP = ' + step + '\n')
+                        n_lines += 1
+                    self._wp_steps = []
+                    gc.collect()
             self.output(f"[SERIAL CMD] WRITE_OK {fn} {n_lines}")
             # Re-enable auto-load so this profile persists across reboots
             AUTO_LOAD_LATEST_PROFILE = True
@@ -1208,16 +1251,16 @@ class SolarSimulator:
                 import select
                 self._stdin_poller = select.poll()
                 self._stdin_poller.register(sys.stdin, select.POLLIN)
-                self._serial_buf_parts = []
+                self._serial_buf = bytearray()
             while self._stdin_poller.poll(0):
                 char = sys.stdin.read(1)
                 if char in ('\n', '\r'):
-                    if self._serial_buf_parts:
-                        cmd = ''.join(self._serial_buf_parts)
-                        self._serial_buf_parts = []
+                    if self._serial_buf:
+                        cmd = self._serial_buf.decode()
+                        self._serial_buf = bytearray()
                         self.handle_command(cmd)
                 elif char is not None:
-                    self._serial_buf_parts.append(char)
+                    self._serial_buf.extend(char.encode())
         except Exception:
             pass
     # ==========================================================

@@ -14,6 +14,7 @@ MTU: 512 bytes (509 payload per notification after 3-byte ATT header)
 """
 
 import ubluetooth
+import gc
 from micropython import const
 from time import sleep_ms, ticks_ms, ticks_diff
 
@@ -45,10 +46,10 @@ STATUS_CHAR_UUID       = ubluetooth.UUID('6E400004-B5A3-F393-E0A9-E50E24DCCA9E')
 # ======================================================
 # MTU Configuration
 # ======================================================
-TARGET_MTU = 512          # Negotiated MTU target
+TARGET_MTU = 256          # Negotiated MTU target (reduced from 512 to avoid ENOMEM)
 ATT_HEADER_SIZE = 3       # ATT notification header
 DEFAULT_PAYLOAD = 20      # Conservative fallback payload
-CHUNK_DELAY_MS = 20       # Delay between chunked notifications
+CHUNK_DELAY_MS = 12       # Delay between chunked notifications
 
 
 class BLEComms:
@@ -102,7 +103,7 @@ class BLEComms:
 
         # Notification throttle: minimum ms between gatts_notify calls
         self._last_notify_ms = 0
-        self._notify_min_gap_ms = 15
+        self._notify_min_gap_ms = 8
 
         # Characteristic handles (set during registration)
         self._cmd_handle = None
@@ -177,6 +178,7 @@ class BLEComms:
             conn_handle, mtu = data
             self._mtu = mtu
             self._payload_size = mtu - ATT_HEADER_SIZE
+            print(f"[BLE] MTU exchanged: {mtu} (payload={self._payload_size})")
 
 
     def _handle_incoming_command(self):
@@ -305,6 +307,7 @@ class BLEComms:
         Includes inter-notification throttle and single retry on failure.
         """
         try:
+            gc.collect()  # Reclaim fragmented heap before allocating BLE buffers
             data = text.encode('utf-8')
             chunk_size = self._payload_size
 

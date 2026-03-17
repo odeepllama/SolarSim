@@ -619,7 +619,9 @@ class ProgramEngine:
                     f.write(f"NOTE = {note}\n")
                 for key, value in settings_dict.items():
                     if key == "PROGRAM_STEPS":
-                        f.write(f"PROGRAM_STEPS = {json.dumps(value)}\n")
+                        # Write each step on its own line to avoid large allocations
+                        for step_item in value:
+                            f.write('PROGRAM_STEP = ' + json.dumps(step_item) + '\n')
                     elif isinstance(value, str):
                         f.write(f'{key} = "{value}"\n')
                     elif isinstance(value, float):
@@ -663,7 +665,14 @@ class ProgramEngine:
                     if key in LEGACY_FIELDS:
                         continue
 
-                    if key == "PROGRAM_STEPS":
+                    if key == "PROGRAM_STEP":
+                        # New per-step format: one step per line
+                        if "PROGRAM_STEPS" not in validated:
+                            validated["PROGRAM_STEPS"] = []
+                        validated["PROGRAM_STEPS"].append(json.loads(value_str))
+                        gc.collect()
+                    elif key == "PROGRAM_STEPS":
+                        # Legacy single-line format (may fail on large programs)
                         validated[key] = json.loads(value_str)
                     elif key == "ROTATION_SPEED_PRESET":
                         preset = value_str.strip('"').lower()
