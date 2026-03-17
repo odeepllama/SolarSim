@@ -4,7 +4,7 @@ Complete pin assignments for both supported microcontroller platforms. The RP204
 
 ## Signal Pin Assignments
 
-| Function | RP2040 GPIO | Micro:bit Pin | Voltage | ESP32-S3 GPIO |
+| Function | RP2040 GPIO | micro:bit Pin | Voltage | ESP32-S3 GPIO |
 |----------|------------|---------------|---------|---------------|
 | **Servo 1** — Platform rotation | GP6 | Pin 3 | 3.3V | GPIO 1 |
 | **Servo 2** — Primary camera trigger (DSLR) | GP10 | Pin 13 | 5V | GPIO 2 |
@@ -20,7 +20,7 @@ Complete pin assignments for both supported microcontroller platforms. The RP204
 
 ### RP2040:bit
 
-![Micro:bit vs RP2040 board pinouts](microbit%20vs%20RP2040%20board%20pinouts.png)
+![micro:bit vs RP2040 board pinouts](microbit%20vs%20RP2040%20board%20pinouts.png)
 
 The [RP2040:bit board](https://spotpear.com/index/study/detail/id/943.html) by Spotpear is pin-compatible with the BBC micro:bit edge connector. This means standard micro:bit breakout boards can be used for convenient access to the GPIO pins listed above.
 

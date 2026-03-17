@@ -83,6 +83,7 @@ The web interface is hosted on GitHub Pages — no installation required:
 - **Servos**: For 360° rotation platform and camera triggering (metal gear servos recommended)
 - **OLED Display**: SSD1306 128×64 for on-device status with ESP32-S3 (optional)
 - **Camera Trigger**: Optional Bluetooth camera trigger for use with smartphones
+- **RTC Module**: Optional DS3231 real-time clock for automatic time sync (SDA → pin 20, SCL → pin 19 via a micro:bit breakout board)
 - **3D-Printed Parts**: Housing and mounting components ([Printable STL files](https://www.printables.com/model/1632518-solarsim-an-inexpensive-open-source-benchtop-solar))
 
 <p align="center">
@@ -91,7 +92,7 @@ The web interface is hosted on GitHub Pages — no installation required:
   </a>
 </p>
 
-> 📋 Full parts list: Bill of Materials — coming soon!
+> 📋 **[Full parts list (Bill of Materials)](https://shorturl.at/ypCK8)**
 
 ---
 
