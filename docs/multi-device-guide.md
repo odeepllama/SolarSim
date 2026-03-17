@@ -1,6 +1,6 @@
-# Connecting Multiple RP2040 Devices from One Laptop
+# Connecting Multiple SolaSim Devices from One Computer
 
-This guide covers how to control two or more SolaSim devices simultaneously from a single computer using SolaSimStudio.
+This guide covers how to control two or more SolaSim devices simultaneously from a single computer using SolaSimStudio. It applies to both RP2040 and ESP32-S3 based devices.
 
 ## Overview
 
@@ -8,7 +8,7 @@ Each browser tab runs an independent instance of SolaSimStudio with its own seri
 
 ## Setup
 
-1. **Plug in both RP2040 boards** via USB (directly or through a hub)
+1. **Plug in both boards** via USB (directly or through a hub)
 2. **Open SolaSimStudio** in your first browser tab
 3. **Click Connect** → the browser's port picker will appear showing all available devices
 4. **Select your first device** and connect
@@ -50,6 +50,15 @@ ls /dev/ttyACM*
 | **Linux** | `/dev/ttyACM0`, `/dev/ttyACM1` | Sequential; may change between reboots |
 
 > **Tip:** Port paths are generally deterministic per physical USB port. Label your hub ports or USB cables to keep track of which device is which.
+
+## ESP32-S3 Devices and BLE
+
+ESP32-S3 based SolaSim devices can connect via **USB serial** or **Bluetooth (BLE)**. This gives you more flexibility with multi-device setups:
+
+- **BLE connections are easier to identify** — each device advertises a name (e.g., "SolarSim-BT") in the Bluetooth picker, so you can tell them apart without memorising port numbers.
+- **You can mix transports** — connect one device via USB and another via BLE in separate tabs, avoiding serial port conflicts entirely.
+- **Two ESP32-S3s via USB** — works the same as two RP2040s. The browser's port picker will show both, with the already-claimed port grayed out.
+- **Two ESP32-S3s via BLE** — each tab can pair with a different device through the Bluetooth picker. No port conflicts.
 
 ## Troubleshooting
 
