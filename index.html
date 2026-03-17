@@ -19575,6 +19575,32 @@ https://github.com/odeepllama/SolarSim/tree/main
             });
             log('✓ Device connected', 'connection');
 
+            // Auto-label with device type (RP2040 / ESP32-S3) if user hasn't renamed
+            try {
+              let deviceType = '';
+              if (state.port) {
+                const info = state.port.getInfo && state.port.getInfo();
+                const vendorNames = { 0x303A: 'ESP32-S3', 0x1A86: 'ESP32' };
+                deviceType = vendorNames[info?.usbVendorId] || '';
+              } else if (state.bleDevice) {
+                deviceType = 'ESP32-S3';
+              }
+              if (deviceType) {
+                const span = document.getElementById('deviceIdText');
+                const currentLabel = span?.textContent || '';
+                // Only update if it's still the generic default (e.g. "Device 1")
+                if (span && /^Device\s+\d+$/i.test(currentLabel)) {
+                  const newLabel = deviceType + ' - ' + currentLabel;
+                  const oldTitle = document.title;
+                  if (oldTitle.startsWith(currentLabel + ' - ')) {
+                    document.title = newLabel + ' - ' + oldTitle.substring((currentLabel + ' - ').length);
+                  }
+                  span.textContent = newLabel;
+                  try { sessionStorage.setItem('profileBuilderDeviceId', newLabel); } catch (_) { }
+                }
+              }
+            } catch (_) { /* non-critical */ }
+
             // Dismiss disconnect notification if reconnecting
             dismissDisconnectNotification();
           } else if (!c && state.connectionHistory.lastConnectTime) {
