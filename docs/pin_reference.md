@@ -13,6 +13,8 @@ Complete pin assignments for both supported microcontroller platforms. The RP204
 | **Camera Shutter** — BT trigger (active LOW) | GP14 | Pin 6 | 3.3V | GPIO 5 |
 | **Button A** | GP0 | Pin 0 (P0) | — | GPIO 8 |
 | **Button B** | GP1 | Pin 1 (P1) | — | GPIO 9 |
+| **I2C1 SDA** — DS3231 RTC (RP2040 only, optional) | GP18 | Pin 20 | 3.3V | N/A |
+| **I2C1 SCL** — DS3231 RTC (RP2040 only, optional) | GP19 | Pin 19 | 3.3V | N/A |
 | **I2C SDA** — OLED display (ESP32-S3 only) | N/A | N/A | — | GPIO 6 |
 | **I2C SCL** — OLED display (ESP32-S3 only) | N/A | N/A | — | GPIO 7 |
 

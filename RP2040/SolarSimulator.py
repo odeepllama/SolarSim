@@ -298,8 +298,7 @@ def _sync_time_from_rtc():
 
 # Boot-time RTC sync: hold Button A during power-on to sync
 if button_a.value() == 0:
-    if not _sync_time_from_rtc():
-        START_TIME_HHMM = 1400
+    _sync_time_from_rtc()
 
 def check_button_a_long_press(duration_ms=1500):
     """Check for long press of Button A (~1.5s) to re-sync from RTC during operation."""
@@ -311,7 +310,16 @@ def check_button_a_long_press(duration_ms=1500):
                 if _sync_time_from_rtc():
                     start_real_time_ms = ticks_ms()
                 else:
-                    print("[RTC] No clock module connected")
+                    # No RTC — fall back to noon jump (original long press behavior)
+                    solar_noon_minutes = SOLAR_NOON_MINUTES if 'SOLAR_NOON_MINUTES' in globals() else 720
+                    now_ms = ticks_ms()
+                    if TIME_SCALE == 0:
+                        frozen_sim_time_minutes = solar_noon_minutes
+                    elif TIME_SCALE > 0:
+                        start_time_minutes = (START_TIME_HHMM // 100) * 60 + (START_TIME_HHMM % 100)
+                        minutes_diff = (solar_noon_minutes - start_time_minutes) % 1440
+                        start_real_time_ms = now_ms - int((minutes_diff * 60000) / TIME_SCALE)
+                    print(f"[BTN] No RTC — jumped to noon ({solar_noon_minutes//60:02d}:{solar_noon_minutes%60:02d})")
                 # Suppress the existing button A handler from also firing
                 button_a_long_press_detected = True
                 # Wait for button release
