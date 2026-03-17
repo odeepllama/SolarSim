@@ -22,3 +22,6 @@ extra_Docs/
 
 # ESP32-CAM test firmware (custom pin mappings, not for distribution)
 ESP32_CAM_test/
+
+# Self-Driving Plant experiment (separate project, not part of SolaSim release)
+SelfDrivingPlant/
