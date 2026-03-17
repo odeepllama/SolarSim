@@ -17824,10 +17824,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           // 2. Send profile lines
           // Filter out empty trailing lines from split (trailing '\n' produces empty element)
           const lines = profileText.split('\n').filter((l, i, arr) => i < arr.length - 1 || l.length > 0);
-          const totalLines = lines.length;
+          let totalLines = lines.length;
 
 
-          for (let i = 0; i < totalLines; i++) {
+          for (let i = 0; i < lines.length; i++) {
             const fullLine = lines[i];
             const psMatch = fullLine.match(/^PROGRAM_STEPS\s*=\s*(\[.*\])$/);
             if (psMatch) {
@@ -17841,6 +17841,8 @@ https://github.com/odeepllama/SolarSim/tree/main
                   await sendLine('PS:' + JSON.stringify(steps[s]), { silentEcho: true });
                   await new Promise(r => setTimeout(r, monitorTransport === 'ble' ? 50 : 80));
                 }
+                // Track expansion: 1 PROGRAM_STEPS line becomes N step lines on device
+                totalLines += (steps.length - 1);
 
               } catch (e) {
                 console.warn('[Upload] Failed to split PROGRAM_STEPS, sending as-is:', e);
@@ -19652,21 +19654,15 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (!navigator.serial) { log('This browser doesn\'t support device connections. Use Chrome or Edge to connect.', 'error'); throw new Error('No navigator.serial'); }
           badge('CONNECTING', 'amber');
           try {
-            // Try to reuse a previously-granted port (avoids re-prompting
-            // after disconnect → reconnect within the same page session)
-            const granted = await navigator.serial.getPorts();
+            // Always prompt the user to select a port via the browser picker.
+            // This ensures multi-device setups work: the picker shows which
+            // ports are available vs. already claimed by another tab.
             const filters = [
               { usbVendorId: 0x303A },  // Espressif (ESP32-S3 "Board in FS mode")
               { usbVendorId: 0x2E8A },  // Raspberry Pi (RP2040)
               { usbVendorId: 0x1A86 },  // WCH (CH340 "USB Single Serial")
             ];
-            const matching = granted.find(p => {
-              try {
-                const info = p.getInfo();
-                return filters.some(f => info.usbVendorId === f.usbVendorId);
-              } catch (_) { return false; }
-            });
-            state.port = matching || await navigator.serial.requestPort({ filters });
+            state.port = await navigator.serial.requestPort({ filters });
             await state.port.open({ baudRate: 115200 });
             state.connStartTs = performance.now();
             setConnected(true); startReader(); log('Port opened');
@@ -21141,6 +21137,22 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           if (!navigator.serial && !navigator.bluetooth && window.__demoEngine) {
             window.__demoEngine.start();
+          } else if (navigator.serial) {
+            // Check for a previously-granted RP2040 port — skip BT/USB chooser
+            // since RP2040 has no Bluetooth, so the BT option is meaningless.
+            navigator.serial.getPorts().then(ports => {
+              const rp2040Ports = ports.filter(p => {
+                try { const info = p.getInfo && p.getInfo(); return info && info.usbVendorId === 0x2E8A; }
+                catch (_) { return false; }
+              });
+              // Only auto-select serial if exactly one RP2040 is connected;
+              // if multiple exist, show the chooser so the user can pick.
+              if (rp2040Ports.length === 1) {
+                proceedWithTransport('serial');
+              } else {
+                showChooser();
+              }
+            }).catch(() => showChooser());
           } else {
             showChooser();
           }
@@ -21543,14 +21555,17 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (state.port) return;
             const ports = await navigator.serial.getPorts();
             if (!ports || ports.length === 0) return;
-            // Prefer a known vendor (e.g., Raspberry Pi Pico 0x2E8A) if present; otherwise use first
-            let chosen = ports[0];
-            for (const p of ports) {
+            // Filter to known SolaSim vendors
+            const knownVendors = [0x303A, 0x2E8A, 0x1A86];
+            const matchingPorts = ports.filter(p => {
               try {
                 const info = p.getInfo && p.getInfo();
-                if (info && info.usbVendorId === 0x2E8A) { chosen = p; break; }
-              } catch (_) { /* ignore */ }
-            }
+                return info && knownVendors.includes(info.usbVendorId);
+              } catch (_) { return false; }
+            });
+            // If multiple devices are granted, don't auto-connect — user must pick
+            if (matchingPorts.length !== 1) return;
+            const chosen = matchingPorts[0];
             // Open silently at default baud if possible
             await chosen.open({ baudRate: 115200 });
             state.port = chosen;
