@@ -280,6 +280,10 @@ class ProgramEngine:
             self.current_step += 1
 
             if self.current_step >= len(self.program_steps):
+                # Single-step program with repeats: stay on the step, don't loop
+                if len(self.program_steps) == 1:
+                    self.current_step = 0
+                    return result
                 if self.program_repeats == -1:
                     self.current_program_repeat += 1
                     self.current_step = 0

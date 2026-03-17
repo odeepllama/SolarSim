@@ -1,15 +1,18 @@
 """
 *** Solar Simulator for Phototropism Experiments ***
-Version: 1.6.4
+Version: 1.6.4-RTC
 
-This system simulates sun movement and controls imaging hardware
-for plant/algae phototropism experiments.
+RTC VARIANT: Adds DS3231 real-time clock sync on I2C1 (GP18/GP19).
+  - Hold Button A at boot to sync simulation time from RTC.
+  - Long press Button A (~1.5s) during operation to re-sync from RTC.
+  - If RTC not connected, runs normally without sync.
 
 Hardware: 
 RP2040:bit board microcontroller with 3 servos,
 1 NeoPixel panel,
 1 internal 5x5 display matrix.
 1 BT camera remote (mirrors servo2 triggers)
+1 DS3231 RTC module (optional, on I2C1)
 
 PINS: RP2040:bit board (microbit breakout)
 Servo 1: GP6  - Platform rotation servo.        (output pin 3 on Micro:bit breakout board - 3.3V)
@@ -17,6 +20,8 @@ Servo 2: GP10 - Primary camera trigger servo    (output pin 13 on Micro:bit brea
 Servo 3: GP11 - Secondary camera trigger servo  (output pin 15 on Micro:bit breakout board - 5V)
 NeoPixel: GP15                                  (output pin 7 on Micro:bit breakout board - 3.3V)
 Camera shutter trigger: GP14 (active LOW)       (output pin 6 on Micro:bit breakout board - 3.3V)
+I2C1 SDA: GP18                                  (pin 20 on Micro:bit breakout board - 3.3V)
+I2C1 SCL: GP19                                  (pin 19 on Micro:bit breakout board - 3.3V)
 """
 import gc, machine, math, neopixel, os, select, sys
 try:
@@ -227,6 +232,8 @@ CAMERA_SERVO_TRIGGER_ANGLE = 90 # Camera servo angle when triggered
 NEOPIXEL_PIN_NUM = 15 # GP15
 BUTTON_A_PIN_NUM = 0  # GP0 (Micro:bit Pin0 (P0))
 BUTTON_B_PIN_NUM = 1  # GP1 (Micro:bit Pin1 (P1))
+RTC_I2C_SDA_PIN = 18  # GP18 (Micro:bit breakout pin 20)
+RTC_I2C_SCL_PIN = 19  # GP19 (Micro:bit breakout pin 19)
 
 # Display timing parameters
 DIGIT_DISPLAY_DURATION_MS = 350  # Digit display time
@@ -243,6 +250,76 @@ pixels = neopixel.NeoPixel(np_pin, 448)
 # Configure Buttons
 button_a = machine.Pin(BUTTON_A_PIN_NUM, machine.Pin.IN, machine.Pin.PULL_UP)
 button_b = machine.Pin(BUTTON_B_PIN_NUM, machine.Pin.IN, machine.Pin.PULL_UP)
+
+# ======================================================
+# RTC SYNC — DS3231 on I2C1 (GP18 SDA, GP19 SCL)
+# ======================================================
+class DS3231:
+    """Minimal DS3231 RTC driver (inlined to keep single-file deployment)."""
+    def __init__(self, i2c, addr=0x68):
+        self._i2c = i2c
+        self._addr = addr
+    @staticmethod
+    def _bcd2dec(b): return (b >> 4) * 10 + (b & 0x0F)
+    @staticmethod
+    def _dec2bcd(d): return ((d // 10) << 4) + (d % 10)
+    def datetime(self):
+        buf = self._i2c.readfrom_mem(self._addr, 0x00, 7)
+        return (self._bcd2dec(buf[6]) + 2000, self._bcd2dec(buf[5] & 0x1F),
+                self._bcd2dec(buf[4]), buf[3],
+                self._bcd2dec(buf[2] & 0x3F), self._bcd2dec(buf[1]),
+                self._bcd2dec(buf[0] & 0x7F))
+    def set_datetime(self, year, month, day, weekday, hour, minute, second):
+        buf = bytearray(7)
+        buf[0] = self._dec2bcd(second); buf[1] = self._dec2bcd(minute)
+        buf[2] = self._dec2bcd(hour); buf[3] = weekday
+        buf[4] = self._dec2bcd(day); buf[5] = self._dec2bcd(month)
+        buf[6] = self._dec2bcd(year - 2000)
+        self._i2c.writeto_mem(self._addr, 0x00, buf)
+
+def _sync_time_from_rtc():
+    """Try to read time from DS3231 and set START_TIME_HHMM. Returns True on success, silent on failure."""
+    global START_TIME_HHMM
+    try:
+        i2c = machine.I2C(1, scl=machine.Pin(RTC_I2C_SCL_PIN), sda=machine.Pin(RTC_I2C_SDA_PIN))
+        if 0x68 not in i2c.scan():
+            return False
+        rtc = DS3231(i2c)
+        dt = rtc.datetime()
+        hour, minute = dt[4], dt[5]
+        if hour == 0 and minute == 0:
+            print("[RTC] Clock reads 00:00 — needs setting via HTML")
+            return False
+        START_TIME_HHMM = hour * 100 + minute
+        print(f"[RTC] Synced: {hour:02d}:{minute:02d}")
+        return True
+    except:
+        return False
+
+# Boot-time RTC sync: hold Button A during power-on to sync
+if button_a.value() == 0:
+    if not _sync_time_from_rtc():
+        START_TIME_HHMM = 1400
+
+def check_button_a_long_press(duration_ms=1500):
+    """Check for long press of Button A (~1.5s) to re-sync from RTC during operation."""
+    global start_real_time_ms, button_a_long_press_detected
+    if button_a.value() == 0:
+        press_start = ticks_ms()
+        while button_a.value() == 0:
+            if ticks_diff(ticks_ms(), press_start) > duration_ms:
+                if _sync_time_from_rtc():
+                    start_real_time_ms = ticks_ms()
+                else:
+                    print("[RTC] No clock module connected")
+                # Suppress the existing button A handler from also firing
+                button_a_long_press_detected = True
+                # Wait for button release
+                while button_a.value() == 0:
+                    sleep_ms(50)
+                return True
+            sleep_ms(10)
+    return False
 
 # Setup LED matrix pins
 led_pins = []
@@ -596,6 +673,10 @@ def advance_program():
         current_step_repeat = 0
         current_program_step += 1
         if current_program_step >= len(PROGRAM_STEPS):
+            # Single-step program with repeats: stay on the step, don't loop
+            if len(PROGRAM_STEPS) == 1:
+                current_program_step = 0
+                return
             if PROGRAM_REPEATS == -1:
                 current_program_repeat += 1
                 current_program_step = 0
@@ -2930,6 +3011,23 @@ def handle_command(command_str):
                 print(f"[SERIAL CMD] Error deleting profile: {e}")
             return
 
+        elif command == "syncrtc":
+            # syncrtc YYYYMMDD_HHMMSS  — set DS3231 clock from browser time (silent if no RTC)
+            if len(parts) >= 2:
+                try:
+                    dt_str = parts[1]
+                    date_part, time_part = dt_str.split("_")
+                    year, month, day = int(date_part[0:4]), int(date_part[4:6]), int(date_part[6:8])
+                    hour, minute, second = int(time_part[0:2]), int(time_part[2:4]), int(time_part[4:6])
+                    i2c = machine.I2C(1, scl=machine.Pin(RTC_I2C_SCL_PIN), sda=machine.Pin(RTC_I2C_SDA_PIN))
+                    if 0x68 in i2c.scan():
+                        rtc = DS3231(i2c)
+                        rtc.set_datetime(year, month, day, 0, hour, minute, second)
+                        print(f"[RTC] Clock set: {year}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}:{second:02d}")
+                except:
+                    pass  # Silent fail — no RTC is normal
+            return
+
         elif command == "restart":
             print("[SERIAL CMD] Restarting simulation logic...")
             init_solar_day()
@@ -3105,6 +3203,9 @@ def run_simulation():
         # If program is running, update its state
         if program_running:
             update_program_state(now_ms, time_of_day_minutes)
+
+        # Check for RTC re-sync via long press of Button A
+        check_button_a_long_press()
 
 
         # Time printing code

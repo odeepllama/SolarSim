@@ -19,3 +19,6 @@ SolarSimulator_rtc.py
 
 # Internal brainstorming/development docs
 extra_Docs/
+
+# ESP32-CAM test firmware (custom pin mappings, not for distribution)
+ESP32_CAM_test/

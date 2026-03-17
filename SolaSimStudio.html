@@ -19692,6 +19692,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             await state.port.open({ baudRate: 115200 });
             state.connStartTs = performance.now();
             setConnected(true); startReader(); log('Port opened');
+            // Sync browser time to RTC if device has one (command is silently ignored if no RTC)
+            setTimeout(() => { try { const d = new Date(); const rtcCmd = `syncrtc ${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`; sendLine(rtcCmd, { silentEcho: true }); } catch (_) { } }, 300);
             return state.port;
           } catch (e) {
             state.port = null;
@@ -19764,6 +19766,8 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Request initial status to populate tiles
             setTimeout(() => { try { sendLine('status', { silentEcho: true }); } catch (_) { } }, 500);
             setTimeout(() => { try { sendLine('status', { silentEcho: true }); } catch (_) { } }, 1500);
+            // Sync browser time to RTC if device has one
+            setTimeout(() => { try { const d = new Date(); const rtcCmd = `syncrtc ${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`; sendLine(rtcCmd, { silentEcho: true }); } catch (_) { } }, 300);
             // BLE keepalive: GATT reads every 5s to prevent supervision timeout
             if (state._bleKeepalive) clearInterval(state._bleKeepalive);
             let _keepaliveFailCount = 0;
