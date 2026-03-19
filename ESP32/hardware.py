@@ -86,7 +86,7 @@ class Display:
     All methods are safe no-ops if the display is unavailable.
     """
 
-    RESCAN_INTERVAL_MS = 10000  # Re-scan I2C every 10s when display unavailable
+    RESCAN_INTERVAL_MS = 10000  # Re-scan I2C every 10s when display was lost
 
     def __init__(self, i2c=None):
         self._available = False
@@ -95,6 +95,7 @@ class Display:
         self._last_update_ms = 0
         self._last_scan_ms = 0
         self._last_hash = 0
+        self._ever_connected = False  # Only rescan if display was found once then lost
         if i2c:
             self._try_connect()
 
@@ -109,6 +110,7 @@ class Display:
                 addr = 0x3C if 0x3C in devices else 0x3D
                 self._oled = SSD1306_I2C(128, 64, self._i2c, addr=addr)
                 self._available = True
+                self._ever_connected = True
                 print(f"[DISPLAY] SSD1306 found at 0x{addr:02X}")
                 self.show_message("Solar Sim", "Ready")
                 return True
@@ -153,11 +155,12 @@ class Display:
     def show_dashboard(self, h, m, speed, intensity, step_cur=0, step_total=0):
         """Update dashboard display. Throttled: max 1 update/sec, skip if unchanged."""
         if not self._available:
-            # Periodic re-scan for hot-plugged display
-            now = ticks_ms()
-            if self._i2c and ticks_diff(now, self._last_scan_ms) >= self.RESCAN_INTERVAL_MS:
-                self._last_scan_ms = now
-                self._try_connect()
+            # Only re-scan if display was previously found then lost (hot-unplug recovery)
+            if self._ever_connected:
+                now = ticks_ms()
+                if self._i2c and ticks_diff(now, self._last_scan_ms) >= self.RESCAN_INTERVAL_MS:
+                    self._last_scan_ms = now
+                    self._try_connect()
             return
         try:
             # Include seconds-parity so 0x flash toggles each update
