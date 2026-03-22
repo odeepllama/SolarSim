@@ -14419,9 +14419,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       function renderTimelinePlayhead(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN, filterDirection) {
         if (!host) return;
 
-        // Remove any existing playhead
+        // Reuse existing playhead to avoid DOM churn (memory optimization)
         const existingPlayhead = host.querySelector('.timeline-playhead');
-        if (existingPlayhead) existingPlayhead.remove();
 
         // Always store window bounds and direction on host for the fast interpolation loop
         host.dataset.windowStart = WINDOW_START_MIN;
@@ -14530,9 +14529,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const isActiveHold = holdState && holdState.dayNumber === currentPlayheadDay;
 
         if (isActiveHold && !initiallyHidden) {
-          // Remove any existing hold progress indicator
-          const existingHoldProgress = host.querySelector('.timeline-hold-progress');
-          if (existingHoldProgress) existingHoldProgress.remove();
+          // Reuse or create hold progress indicator (memory optimization)
+          let holdProgressEl = host.querySelector('.timeline-hold-progress');
 
           // Calculate hold progress (0 to 1)
           const elapsedMs = Date.now() - holdState.startTime;
@@ -14563,47 +14561,52 @@ https://github.com/odeepllama/SolarSim/tree/main
             const segStartPct = ((segStart - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
             const segWidthPct = ((segEnd - segStart) / WINDOW_SPAN) * 100;
 
-            // Create hold progress element with detailed tooltip
-            const holdProgress = document.createElement('div');
-            holdProgress.className = 'timeline-hold-progress';
-            holdProgress.style.left = segStartPct + '%';
-            holdProgress.style.width = (segWidthPct * progressFraction) + '%';
+            if (!holdProgressEl) {
+              holdProgressEl = document.createElement('div');
+              holdProgressEl.className = 'timeline-hold-progress';
+              holdProgressEl.style.pointerEvents = 'auto';
+              holdProgressEl.style.cursor = 'help';
+              host.appendChild(holdProgressEl);
+            }
+            holdProgressEl.style.left = segStartPct + '%';
+            holdProgressEl.style.width = (segWidthPct * progressFraction) + '%';
 
             // Detailed tooltip showing progress, elapsed, total, and remaining time
             const remaining = totalMinutes - elapsedMinutes;
             const segDuration = segEnd - segStart; // Actual segment duration in minutes
-            holdProgress.title = `HOLD Progress: ${(progressFraction * 100).toFixed(1)}%\nElapsed: ${elapsedMinutes.toFixed(1)} min\nTotal: ${totalMinutes.toFixed(1)} min\nRemaining: ${remaining.toFixed(1)} min\nSegment: ${formatHHMM(segStart)} → ${formatHHMM(segEnd)} (${segDuration} min)`;
-
-            // Make the progress bar interactive for tooltip (override pointer-events:none for tooltip)
-            holdProgress.style.pointerEvents = 'auto';
-            holdProgress.style.cursor = 'help';
-
-            host.appendChild(holdProgress);
+            holdProgressEl.title = `HOLD Progress: ${(progressFraction * 100).toFixed(1)}%\nElapsed: ${elapsedMinutes.toFixed(1)} min\nTotal: ${totalMinutes.toFixed(1)} min\nRemaining: ${remaining.toFixed(1)} min\nSegment: ${formatHHMM(segStart)} → ${formatHHMM(segEnd)} (${segDuration} min)`;
+          } else if (holdProgressEl) {
+            holdProgressEl.remove();
           }
 
-          // Playhead tooltip - simplified during HOLD (detailed info now on progress bar)
-          const playhead = document.createElement('div');
-          playhead.className = 'timeline-playhead';
+          // Reuse or create playhead (memory optimization)
+          let playhead = existingPlayhead;
+          if (!playhead) {
+            playhead = document.createElement('div');
+            playhead.className = 'timeline-playhead';
+            host.appendChild(playhead);
+          }
           playhead.style.left = posPct + '%';
+          playhead.style.display = '';
           playhead.style.cursor = 'default'; // Normal cursor - detailed info is on orange bar
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})\n[HOLD in progress - hover over orange bar for details]`;
-
-          host.appendChild(playhead);
         } else {
           // Normal playhead (not in HOLD, or hidden on inactive bar)
           // Remove any existing hold progress indicator if present
-          const existingHoldProgress = host.querySelector('.timeline-hold-progress');
-          if (existingHoldProgress) existingHoldProgress.remove();
+          const holdProgressEl = host.querySelector('.timeline-hold-progress');
+          if (holdProgressEl) holdProgressEl.remove();
 
-          // Create playhead element
-          const playhead = document.createElement('div');
-          playhead.className = 'timeline-playhead';
+          // Reuse or create playhead element (memory optimization)
+          let playhead = existingPlayhead;
+          if (!playhead) {
+            playhead = document.createElement('div');
+            playhead.className = 'timeline-playhead';
+            host.appendChild(playhead);
+          }
           playhead.style.left = posPct + '%';
-          if (initiallyHidden) playhead.style.display = 'none';
+          playhead.style.display = initiallyHidden ? 'none' : '';
           playhead.style.cursor = 'help'; // Help cursor for tooltip
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})`;
-
-          host.appendChild(playhead);
         }
       }
       window.renderTimelinePlayhead = renderTimelinePlayhead;
@@ -20373,125 +20376,155 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           let updated = false;
-          const mSimSpeed = line.match(reSimWithSpeed);
-          if (mSimSpeed) {
-            const h = parseInt(mSimSpeed[1], 10), m = parseInt(mSimSpeed[2], 10);
-            if (h >= 0 && h < 24 && m >= 0 && m < 60) {
-              setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'));
-              setKV('speed', 'Speed', mSimSpeed[3] + 'X');
-              updated = true;
-            }
-          } else {
-            const mSim = line.match(reSimTime); if (mSim) { const h = parseInt(mSim[1], 10), m = parseInt(mSim[2], 10); if (h >= 0 && h < 24 && m >= 0 && m < 60) { setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')); updated = true; } }
-          }
-          // Populate Speed tile from Time Scale lines in status output (immediate at startup)
-          const mSpeed = line.match(reSpeed);
-          if (mSpeed) {
-            const speedValue = mSpeed[1];
-            setKV('speed', 'Speed', speedValue.toUpperCase());
-            updated = true;
 
-            // Detect hold completion: if we had a hold state and speed changed from HOLD/0X to a non-zero speed
-            // Speed values during hold: "HOLD" or "0X"
-            // Speed values after hold: "1X", "2X", "3X", etc.
-            const isHoldSpeed = (speedValue === 'HOLD' || speedValue === '0X');
-            if (window.__holdState && !isHoldSpeed) {
-              clearHoldState();
-            }
-          }
-          if (reTimeScaleHold.test(line)) {
-            setKV('speed', 'Speed', 'HOLD');
-            updated = true;
-          }
-          const mScale = line.match(reTimeScale);
-          if (mScale) {
-            try {
-              const num = parseFloat(mScale[1]);
-              if (!isNaN(num)) {
-                const val = (num === 0) ? 'HOLD' : (mScale[1] + 'X');
-                setKV('speed', 'Speed', val);
+          // --- Early-exit keyword pre-checks (memory optimization P1) ---
+          // Instead of running 30+ regex patterns on every line, use cheap
+          // string checks to skip irrelevant groups.  Cuts per-line cost
+          // from ~30 regex matches to ~4 includes() + 5-8 targeted regexes.
+          const lower = line.toLowerCase();
+          const hasSim = lower.includes('sim') || lower.includes('time');
+          const hasSpeed = lower.includes('speed') || lower.includes('scale') || lower.includes('hold');
+          const hasSun = lower.includes('sun') || lower.includes('color') || lower.includes('custom');
+          const hasServo = lower.includes('servo') || lower.includes('rotation') || lower.includes('camera');
+          const hasProgram = lower.includes('program') || lower.includes('step') || lower.includes('jump');
+          const hasOther = lower.includes('intensity') || lower.includes('dual') || lower.includes('solar') || lower.includes('sunrise');
+
+          // SimTime + Speed group
+          if (hasSim || hasSpeed) {
+            const mSimSpeed = line.match(reSimWithSpeed);
+            if (mSimSpeed) {
+              const h = parseInt(mSimSpeed[1], 10), m = parseInt(mSimSpeed[2], 10);
+              if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+                setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'));
+                setKV('speed', 'Speed', mSimSpeed[3] + 'X');
                 updated = true;
-
-                // Detect hold completion: if we had a hold state and speed changed from 0 to non-zero
-                if (window.__holdState && num !== 0) {
-                  clearHoldState();
-                }
               }
-            } catch (_) { /* ignore parse edge cases */ }
-          }
-          const mRot = line.match(reRotState); if (mRot) { setKV('rotState', 'RotState', mRot[1]); updated = true; }
-          const mRotAng = line.match(reRotAng); if (mRotAng) { setKV('rotAng', 'RotAng', mRotAng[1]); updated = true; }
-          const mS2 = line.match(reServo2); if (mS2) { setKV('servo2', 'Servo2', mS2[1]); updated = true; }
-          const mS3 = line.match(reServo3); if (mS3) { setKV('servo3', 'Servo3', mS3[1]); updated = true; }
-          const mMem = line.match(reMem); if (mMem) { setKV('memFree', 'MemFree', mMem[1]); updated = true; }
-          const mSun = line.match(reSunColor); if (mSun) {
-            const rawVal = mSun[1]; const val = rawVal.toUpperCase(); const icon = '☀';
-            // If CUSTOM and we already have an RGB triplet, include it in the tile
-            if (val === 'CUSTOM') {
-              let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
-              // Don't fall back to form values — they may be stale/default.
-              // The actual RGB line arrives later in the status dump and will update the tile.
-              setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : icon + ' CUSTOM');
-            } else {
-              setKV('sunColor', 'SunColor', icon + ' ' + val);
+            } else if (hasSim) {
+              const mSim = line.match(reSimTime); if (mSim) { const h = parseInt(mSim[1], 10), m = parseInt(mSim[2], 10); if (h >= 0 && h < 24 && m >= 0 && m < 60) { setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')); updated = true; } }
             }
-            const sunEl = kvCache && kvCache.get ? kvCache.get('sunColor') : null;
-            if (sunEl) { sunEl.classList.remove('sun-blue', 'sun-natural', 'sun-custom'); if (val === 'BLUE') sunEl.classList.add('sun-blue'); else if (val === 'NATURAL') sunEl.classList.add('sun-natural'); else if (val === 'CUSTOM') sunEl.classList.add('sun-custom'); }
-            updated = true;
           }
-          // Capture CUSTOM RGB values when present and reflect in tile
-          const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus) || line.match(reSunColorProgram);
-          if (mCust) {
-            try {
-              let r = parseInt(mCust[1], 10), g = parseInt(mCust[2], 10), b = parseInt(mCust[3], 10);
-              const clamp = v => Math.max(0, Math.min(255, isFinite(v) ? v : 0));
-              r = clamp(r); g = clamp(g); b = clamp(b);
-              // Stash for visualizer
-              try { const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {}); st.__sunCustomRGB = [r, g, b]; } catch (_) { }
-              // If SunColor tile exists or after mode is CUSTOM, show numbers
-              setKV('sunColor', 'SunColor', `☀ CUSTOM<br>${r},${g},${b}`);
+          if (hasSpeed) {
+            // Populate Speed tile from Time Scale lines in status output (immediate at startup)
+            const mSpeed = line.match(reSpeed);
+            if (mSpeed) {
+              const speedValue = mSpeed[1];
+              setKV('speed', 'Speed', speedValue.toUpperCase());
               updated = true;
-            } catch (_) { }
-          }
-          const mSolar = line.match(reSolarMode); if (mSolar) {
-            let modeVal = mSolar[1];
-            if (modeVal.toUpperCase() === 'CUSTOM') {
-              let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
-              setKV('solarMode', 'SolarMode', rgb ? `CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : 'CUSTOM');
-            } else {
-              setKV('solarMode', 'SolarMode', modeVal);
+
+              // Detect hold completion: if we had a hold state and speed changed from HOLD/0X to a non-zero speed
+              const isHoldSpeed = (speedValue === 'HOLD' || speedValue === '0X');
+              if (window.__holdState && !isHoldSpeed) {
+                clearHoldState();
+              }
             }
-            updated = true;
+            if (reTimeScaleHold.test(line)) {
+              setKV('speed', 'Speed', 'HOLD');
+              updated = true;
+            }
+            const mScale = line.match(reTimeScale);
+            if (mScale) {
+              try {
+                const num = parseFloat(mScale[1]);
+                if (!isNaN(num)) {
+                  const val = (num === 0) ? 'HOLD' : (mScale[1] + 'X');
+                  setKV('speed', 'Speed', val);
+                  updated = true;
+
+                  // Detect hold completion: if we had a hold state and speed changed from 0 to non-zero
+                  if (window.__holdState && num !== 0) {
+                    clearHoldState();
+                  }
+                }
+              } catch (_) { /* ignore parse edge cases */ }
+            }
           }
-          const mProg = line.match(reProgramEnabled); if (mProg) { setKV('program', 'Program', mProg[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mRotEn = line.match(reRotationEnabled); if (mRotEn) { setKV('rotation', 'RotationImaging', mRotEn[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mRotToggle = line.match(reRotationToggle); if (mRotToggle) { setKV('rotation', 'RotationImaging', mRotToggle[1] === 'True' ? 'ON' : 'OFF'); updated = true; }
-          let mInt = line.match(reIntensity);
-          if (!mInt) mInt = line.match(reIntensitySerial);
-          if (!mInt) mInt = line.match(reIntensityCmdEcho);
-          if (mInt) { setKV('intensity', 'Intensity', mInt[1]); updated = true; }
-          const mDual = line.match(reDualSun); if (mDual) { setKV('dualSun', 'DualSun', mDual[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mDualCmd = line.match(reDualSunCmd); if (mDualCmd) { setKV('dualSun', 'DualSun', mDualCmd[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mS2DayInt = line.match(reServo2DayInterval);
-          if (mS2DayInt) {
-            const val = mS2DayInt[1] === 'disabled' ? '0s' : mS2DayInt[1];
-            setKV('servo2DayInt', 'Servo2DayInt', val);
-            updated = true;
+          // Servo / Rotation / Camera group
+          if (hasServo) {
+            const mRot = line.match(reRotState); if (mRot) { setKV('rotState', 'RotState', mRot[1]); updated = true; }
+            const mRotAng = line.match(reRotAng); if (mRotAng) { setKV('rotAng', 'RotAng', mRotAng[1]); updated = true; }
+            const mS2 = line.match(reServo2); if (mS2) { setKV('servo2', 'Servo2', mS2[1]); updated = true; }
+            const mS3 = line.match(reServo3); if (mS3) { setKV('servo3', 'Servo3', mS3[1]); updated = true; }
+            const mRotEn = line.match(reRotationEnabled); if (mRotEn) { setKV('rotation', 'RotationImaging', mRotEn[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+            const mRotToggle = line.match(reRotationToggle); if (mRotToggle) { setKV('rotation', 'RotationImaging', mRotToggle[1] === 'True' ? 'ON' : 'OFF'); updated = true; }
+            const mS2DayInt = line.match(reServo2DayInterval);
+            if (mS2DayInt) {
+              const val = mS2DayInt[1] === 'disabled' ? '0s' : mS2DayInt[1];
+              setKV('servo2DayInt', 'Servo2DayInt', val);
+              updated = true;
+            }
+            const mS2NightInt = line.match(reServo2NightInterval);
+            if (mS2NightInt) {
+              const val = mS2NightInt[1] === 'disabled' ? '0s' : mS2NightInt[1];
+              setKV('servo2NightInt', 'Servo2NightInt', val);
+              updated = true;
+            }
           }
-          const mS2NightInt = line.match(reServo2NightInterval);
-          if (mS2NightInt) {
-            const val = mS2NightInt[1] === 'disabled' ? '0s' : mS2NightInt[1];
-            setKV('servo2NightInt', 'Servo2NightInt', val);
-            updated = true;
+          // Memory
+          if (lower.includes('mem')) {
+            const mMem = line.match(reMem); if (mMem) { setKV('memFree', 'MemFree', mMem[1]); updated = true; }
           }
-          const mRiseSet = line.match(reSunriseSunset); if (mRiseSet) {
-            try {
-              const riseH = parseInt(mRiseSet[1], 10), riseM = parseInt(mRiseSet[2], 10), setH = parseInt(mRiseSet[3], 10), setM = parseInt(mRiseSet[4], 10);
-              const sunriseMinutes = riseH * 60 + riseM; const sunsetMinutes = setH * 60 + setM;
-              const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {});
-              st.__sunArcSunrise = sunriseMinutes; st.__sunArcSunset = sunsetMinutes;
-              if (st.__sunArc && st.__sunArc.refresh) { st.__sunArc.refresh(); }
-            } catch (_) { }
+          // Sun Color group
+          if (hasSun) {
+            const mSun = line.match(reSunColor); if (mSun) {
+              const rawVal = mSun[1]; const val = rawVal.toUpperCase(); const icon = '☀';
+              // If CUSTOM and we already have an RGB triplet, include it in the tile
+              if (val === 'CUSTOM') {
+                let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
+                setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : icon + ' CUSTOM');
+              } else {
+                setKV('sunColor', 'SunColor', icon + ' ' + val);
+              }
+              const sunEl = kvCache && kvCache.get ? kvCache.get('sunColor') : null;
+              if (sunEl) { sunEl.classList.remove('sun-blue', 'sun-natural', 'sun-custom'); if (val === 'BLUE') sunEl.classList.add('sun-blue'); else if (val === 'NATURAL') sunEl.classList.add('sun-natural'); else if (val === 'CUSTOM') sunEl.classList.add('sun-custom'); }
+              updated = true;
+            }
+            // Capture CUSTOM RGB values when present and reflect in tile
+            const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus) || line.match(reSunColorProgram);
+            if (mCust) {
+              try {
+                let r = parseInt(mCust[1], 10), g = parseInt(mCust[2], 10), b = parseInt(mCust[3], 10);
+                const clamp = v => Math.max(0, Math.min(255, isFinite(v) ? v : 0));
+                r = clamp(r); g = clamp(g); b = clamp(b);
+                // Stash for visualizer
+                try { const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {}); st.__sunCustomRGB = [r, g, b]; } catch (_) { }
+                // If SunColor tile exists or after mode is CUSTOM, show numbers
+                setKV('sunColor', 'SunColor', `☀ CUSTOM<br>${r},${g},${b}`);
+                updated = true;
+              } catch (_) { }
+            }
+          }
+          // Intensity / DualSun / SolarMode / Sunrise group
+          if (hasOther || hasSun) {
+            const mSolar = line.match(reSolarMode); if (mSolar) {
+              let modeVal = mSolar[1];
+              if (modeVal.toUpperCase() === 'CUSTOM') {
+                let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
+                setKV('solarMode', 'SolarMode', rgb ? `CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : 'CUSTOM');
+              } else {
+                setKV('solarMode', 'SolarMode', modeVal);
+              }
+              updated = true;
+            }
+          }
+          if (hasProgram) {
+            const mProg = line.match(reProgramEnabled); if (mProg) { setKV('program', 'Program', mProg[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+          }
+          if (hasOther) {
+            let mInt = line.match(reIntensity);
+            if (!mInt) mInt = line.match(reIntensitySerial);
+            if (!mInt) mInt = line.match(reIntensityCmdEcho);
+            if (mInt) { setKV('intensity', 'Intensity', mInt[1]); updated = true; }
+            const mDual = line.match(reDualSun); if (mDual) { setKV('dualSun', 'DualSun', mDual[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+            const mDualCmd = line.match(reDualSunCmd); if (mDualCmd) { setKV('dualSun', 'DualSun', mDualCmd[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+            const mRiseSet = line.match(reSunriseSunset); if (mRiseSet) {
+              try {
+                const riseH = parseInt(mRiseSet[1], 10), riseM = parseInt(mRiseSet[2], 10), setH = parseInt(mRiseSet[3], 10), setM = parseInt(mRiseSet[4], 10);
+                const sunriseMinutes = riseH * 60 + riseM; const sunsetMinutes = setH * 60 + setM;
+                const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {});
+                st.__sunArcSunrise = sunriseMinutes; st.__sunArcSunset = sunsetMinutes;
+                if (st.__sunArc && st.__sunArc.refresh) { st.__sunArc.refresh(); }
+              } catch (_) { }
+            }
           }
 
           // === Parse fields for device config tracking (always runs for diff highlighting) ===
@@ -20890,6 +20923,40 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         // Make setKV and reorderTiles accessible for visualization wrappers
         try { window.setKV = setKV; window.reorderTiles = reorderTiles; } catch (_) { }
+
+        // --- setKV subscriber pattern (memory optimization P3) ---
+        // Instead of wrapping setKV() multiple times (which creates nested
+        // closure chains and extra `arguments` objects per call), modules
+        // register lightweight callbacks via window.onSetKV().
+        const _setKVSubscribers = [];
+        window.onSetKV = function (fn) { _setKVSubscribers.push(fn); };
+        // Patch setKV to notify subscribers after each update
+        const _origSetKV = setKV;
+        window.setKV = function (k, label, val) {
+          _origSetKV(k, label, val);
+          for (let i = 0; i < _setKVSubscribers.length; i++) {
+            try { _setKVSubscribers[i](k, label, val); } catch (_) { }
+          }
+        };
+
+        // --- Shared activity gate (memory optimization P2) ---
+        // Returns true when the page is actively in use (connected, demo,
+        // or user interacted with form/timeline in the last 60s).
+        window.__lastFormInteraction = 0;
+        window.isMonitorActive = function () {
+          const ns = window.__solarSimMonitorState;
+          const connected = ns && (ns.port || ns.transport === 'ble');
+          const demo = !!window.__demoRunning;
+          const recentInteraction = (Date.now() - (window.__lastFormInteraction || 0)) < 60000;
+          return connected || demo || recentInteraction;
+        };
+        // Stamp form interaction on any user input inside the profile builder form or timeline area
+        document.addEventListener('input', function () { window.__lastFormInteraction = Date.now(); }, true);
+        document.addEventListener('change', function () { window.__lastFormInteraction = Date.now(); }, true);
+        // Also stamp on mousedown in timeline strips (for drag operations)
+        document.addEventListener('mousedown', function (e) {
+          if (e.target && e.target.closest && e.target.closest('.timeline-strip')) window.__lastFormInteraction = Date.now();
+        }, true);
 
         // ============================================================================
         // OFFLINE (GREY) TILES — show form state when no device is connected
@@ -22216,17 +22283,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         ns.__sunArc.updateVisibility = updateVisibility;
-        setInterval(() => { updateVisibility(); if (wrapper.style.display !== 'none') draw(); }, 1500);
+        setInterval(() => { if (!window.isMonitorActive || window.isMonitorActive()) { updateVisibility(); if (wrapper.style.display !== 'none') draw(); } }, 1500);
         window.addEventListener('resize', () => { if (wrapper.style.display !== 'none') draw(); });
-        // Hook into setKV to trigger redraw on relevant changes
-        if (typeof window.setKV === 'function' && !window.setKV.__sunArcWrapped) {
-          const orig = window.setKV; window.setKV = function (k, label, val) {
-            const r = orig.apply(this, arguments);
+        // Subscribe to setKV changes instead of wrapping (memory optimization P3)
+        if (typeof window.onSetKV === 'function') {
+          window.onSetKV(function (k) {
             if (k === 'sim' || k === 'solarMode' || k === 'dualSun' || k === 'intensity' || k === 'sunColor') {
               ns.__sunArc.refresh(); ns.__sunArc.updateVisibility();
             }
-            return r;
-          }; window.setKV.__sunArcWrapped = true;
+          });
         }
         // Initial attempt after slight delay
         setTimeout(() => { updateVisibility(); draw(); }, 600);
@@ -22584,7 +22649,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Fallback by scanning labels
           grid.querySelectorAll('.mon-kv').forEach(box => { if (box.title) return; const key = keyFromBox(box); if (!key) return; const tip = TILE_TOOLTIPS[key]; box.title = tip ? tip[mode] : (isConn ? 'Click to edit' : 'Connect a device to interact'); });
         }
-        setInterval(() => { applyTooltips(); }, 1200);
+        setInterval(() => { if (!window.isMonitorActive || window.isMonitorActive()) applyTooltips(); }, 1200);
         // Mutation observer to mark interactive tiles with pointer cursor whenever they appear
         (function observeGrid() {
           const grid = document.getElementById('monitorStatusGrid'); if (!grid || grid.__tilePopoverObserved) return; const mark = (node) => { if (!(node instanceof Element)) return; if (!node.classList.contains('mon-kv')) return; const k = keyFromBox(node); if (k) node.classList.add('interactive'); };
@@ -22594,8 +22659,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           grid.querySelectorAll('.mon-kv').forEach(mark);
           grid.__tilePopoverObserved = true;
         })();
-        // Wrap setKV if available to bind future tiles
-        if (typeof window.setKV === 'function' && !window.setKV.__tilePopoverWrappedGlobal) { const orig = window.setKV; window.setKV = function (k, l, v) { const r = orig.apply(this, arguments); try { if (k === 'sim' || k === 'speed' || k === 'intensity' || k === 'servo2DayInt' || k === 'servo2NightInt') bind(); } catch (_) { } return r; }; window.setKV.__tilePopoverWrappedGlobal = true; }
+        // Subscribe to setKV changes instead of wrapping (memory optimization P3)
+        if (typeof window.onSetKV === 'function') {
+          window.onSetKV(function (k) {
+            if (k === 'sim' || k === 'speed' || k === 'intensity' || k === 'servo2DayInt' || k === 'servo2NightInt') {
+              try { bind(); } catch (_) { }
+            }
+          });
+        }
         // Close on Esc/resize
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
         window.addEventListener('resize', hide);
@@ -23726,26 +23797,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
 
-        // Check for sim time updates every second (gated behind connection state)
-        // (will only re-render when time actually changes, which is once per minute)
+        // Check for sim time updates (gated behind connection state)
+        // Day-change and step-change detection runs at 200ms.
+        // Playhead DOM recreation removed — the 100ms interpolation loop at
+        // startPlayheadInterpolationLoop() already handles smooth CSS-only
+        // position updates.  This eliminates ~5 DOM create/destroy cycles
+        // per strip per second (major memory-leak vector over multi-day runs).
         setInterval(() => {
           const ns = window.__solarSimMonitorState;
           if ((ns && (ns.port || ns.transport === 'ble')) || window.__demoRunning) {
             updatePlayhead();
             if (typeof window.renderClockTimePlayhead === 'function') window.renderClockTimePlayhead();
-            // Also refresh speed-bar (sim-time) playheads on timeline strips
-            if (typeof window.renderTimelinePlayhead === 'function') {
-              document.querySelectorAll('.timeline-strip[data-window-start]').forEach(function (host) {
-                const ws = parseFloat(host.dataset.windowStart);
-                const we = parseFloat(host.dataset.windowEnd);
-                const wspan = parseFloat(host.dataset.windowSpan);
-                const dir = host.dataset.filterDirection || undefined;
-                if (!isNaN(ws) && !isNaN(we) && !isNaN(wspan)) {
-                  const dayNum = parseInt(host.getAttribute('data-day'), 10) || 1;
-                  window.renderTimelinePlayhead(host, { dayNumber: dayNum }, ws, we, wspan, dir);
-                }
-              });
-            }
+            // NOTE: renderTimelinePlayhead calls removed here.
+            // Playhead position is now managed purely via CSS in the
+            // 100ms startPlayheadInterpolationLoop (line ~14614).
           }
         }, 200);
       })();
