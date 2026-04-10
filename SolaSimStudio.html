@@ -12560,6 +12560,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           return;
         }
 
+        // Abort previously registered drag listeners to prevent memory leak
+        if (window.__timelineDragAbortController) {
+          window.__timelineDragAbortController.abort();
+        }
+        window.__timelineDragAbortController = new AbortController();
+
         container.innerHTML = '';
         window.__hasTimelineOverlap = false; // Reset overlap flag for this render cycle
 
@@ -14863,7 +14869,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           timeLabel.style.left = leftPct + '%';
 
           e.preventDefault();
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
@@ -14876,7 +14882,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const newMinutes = xPosToMinutes(e.clientX);
           finishDrag(newMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // --- Touch Events ---
 
@@ -14940,7 +14946,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           timeLabel.style.left = leftPct + '%';
 
           if (e.cancelable) e.preventDefault();
-        }, { passive: false });
+        }, { passive: false, signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('touchend', (e) => {
           if (!isDragging) return;
@@ -14952,7 +14958,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const newMinutes = xPosToMinutes(e.changedTouches[0].clientX);
           finishDrag(newMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // Shared finish logic
         function finishDrag(newMinutes) {
@@ -15098,7 +15104,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const currentMouseMinutes = xPosToMinutes(e.clientX);
           updateDrag(currentMouseMinutes);
           e.preventDefault();
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
@@ -15111,7 +15117,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const currentMouseMinutes = xPosToMinutes(e.clientX);
           finishDrag(currentMouseMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // --- Touch Events ---
 
@@ -15165,7 +15171,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const currentMouseMinutes = xPosToMinutes(e.touches[0].clientX);
           updateDrag(currentMouseMinutes);
           if (e.cancelable) e.preventDefault();
-        }, { passive: false });
+        }, { passive: false, signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('touchend', (e) => {
           if (!isDragging) return;
@@ -15177,7 +15183,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const currentMouseMinutes = xPosToMinutes(e.changedTouches[0].clientX);
           finishDrag(currentMouseMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // Shared update logic
         function updateDrag(currentMouseMinutes) {
