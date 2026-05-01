@@ -1,8 +1,3 @@
 {
-  "pythonVersion": "3.13",
-  "venvPath": "SelfDrivingPlant/OpenCVTapo",
-  "venv": ".venv_mac",
-  "extraPaths": [
-    "SelfDrivingPlant/OpenCVTapo/.venv_mac/lib/python3.13/site-packages"
-  ]
+  "pythonVersion": "3.13"
 }
