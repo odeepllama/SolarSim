@@ -20,7 +20,7 @@ Servo 2: GP10 - Primary camera trigger servo    (edge pin P13 on Micro:bit break
 Servo 3: GP11 - Secondary camera trigger servo  (edge pin P14 on Micro:bit breakout - 5V servo header)
 NeoPixel: GP15                                  (edge pin P7  on Micro:bit breakout - 3.3V)
 Camera shutter trigger: GP14 (active LOW)       (edge pin P6  on Micro:bit breakout - 3.3V)
-FR LED DIM: GP13                                (edge pin P16 on Micro:bit breakout - 3.3V native; LDD-700H DIM accepts 0.3-5V)
+FR LED DIM: GP16                                (edge pin P8  on Micro:bit breakout - 3.3V native; LDD-700H DIM accepts 0.3-5V)
 I2C1 SDA: GP18                                  (edge pin P20 on Micro:bit breakout - 3.3V)
 I2C1 SCL: GP19                                  (edge pin P19 on Micro:bit breakout - 3.3V)
 """
@@ -246,7 +246,7 @@ BUTTON_A_PIN_NUM = 0  # GP0 (Micro:bit Pin0 (P0))
 BUTTON_B_PIN_NUM = 1  # GP1 (Micro:bit Pin1 (P1))
 RTC_I2C_SDA_PIN = 18  # GP18 (Micro:bit breakout pin 20)
 RTC_I2C_SCL_PIN = 19  # GP19 (Micro:bit breakout pin 19)
-FR_LED_PIN_NUM = 13   # GP13 (micro:bit edge P16) -> MeanWell LDD-700H DIM pin (3.3V HIGH = FR LEDs on)
+FR_LED_PIN_NUM = 16   # GP16 (micro:bit edge P8) -> MeanWell LDD-700H DIM pin (3.3V HIGH = FR LEDs on)
 
 # Display timing parameters
 DIGIT_DISPLAY_DURATION_MS = 350  # Digit display time

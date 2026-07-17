@@ -19761,7 +19761,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             state.port = await navigator.serial.requestPort({ filters });
             await state.port.open({ baudRate: 115200 });
             state.connStartTs = performance.now();
-            setConnected(true); startReader(); log('Port opened');
+            // Infer device type from USB vendor ID so upload routing knows whether to use paste-mode (RP2040) or WP:/PS: line stream (ESP32).
+            try { state.deviceType = getDeviceType(state.port); } catch (_) { state.deviceType = 'unknown'; }
+            setConnected(true); startReader(); log('Port opened' + (state.deviceType && state.deviceType !== 'unknown' ? ' (' + state.deviceType.toUpperCase() + ')' : ''));
             // Sync browser time to RTC if device has one (command is silently ignored if no RTC)
             setTimeout(() => { try { const d = new Date(); const rtcCmd = `syncrtc ${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`; sendLine(rtcCmd, { silentEcho: true }); } catch (_) { } }, 300);
             return state.port;
@@ -21737,9 +21739,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             await chosen.open({ baudRate: 115200 });
             state.port = chosen;
             state.connStartTs = performance.now();
+            try { state.deviceType = getDeviceType(state.port); } catch (_) { state.deviceType = 'unknown'; }
             setConnected(true);
             startReader();
-            log('Reconnected to previously granted serial port');
+            log('Reconnected to previously granted serial port' + (state.deviceType && state.deviceType !== 'unknown' ? ' (' + state.deviceType.toUpperCase() + ')' : ''));
           } catch (e) {
             // Don’t surface as error—just skip if not available/blocked
             console.warn('Auto-reconnect skipped:', e);
