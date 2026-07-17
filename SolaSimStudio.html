@@ -4307,8 +4307,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         <div class="mini-sect-title">Log</div>
         <div id="monitorLog" aria-label="Monitor log" role="log"></div>
         <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
+        <div style="margin-top:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <span style="font-size:0.85em; color:#666;">Far Red LEDs:</span>
+          <button type="button" class="secondary" title="Turn Far-Red array on for 5 minutes then auto-off"
+            onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR Pulse 5m</button>
+          <button type="button" class="secondary" title="Turn Far-Red array on indefinitely (use FR Off to stop)"
+            onclick="if(window.__sendLine) window.__sendLine('fr on');">FR On</button>
+          <button type="button" class="secondary" title="Turn Far-Red array off"
+            onclick="if(window.__sendLine) window.__sendLine('fr off');">FR Off</button>
+        </div>
         <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-          <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)"
+          <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger, fr)"
             autocomplete="off" autocapitalize="off" style="flex:1;" />
           <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
           <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
@@ -4734,6 +4743,21 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <p>Errors are shown inline in red; exports are disabled until resolved. Dual Sun with high intensity is
                   blocked to prevent overheating. Intensity above 1.0 is not permitted. Recommended ranges for research:
                   intensity 0.8–1.0, speed 1x–4x.</p>
+              </div>
+            </li>
+            <li><strong>Far-Red (FR) Pre-Exposure</strong>: Optional 730 nm pulse in darkness before program step 1.
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>Drives phytochrome from Pfr to Pr, priming plants for phototropism experiments. When enabled, the sun
+                  panel stays dark, rotation and camera servos pause, and the Far Red LED array runs for the configured
+                  duration (default 5 min) before the program begins. Defaults to <strong>ON</strong> — uncheck if you
+                  don't have the Far Red LED array installed (otherwise you will sit through a 5-minute dark wait every
+                  run).</p>
+                <p><strong>Manual control</strong> via the FR Pulse / FR On / FR Off buttons above the command console,
+                  or the commands <code>fr on</code>, <code>fr off</code>, <code>fr pulse &lt;minutes&gt;</code>.</p>
+                <p>Requires the Far Red LED array wired to <strong>GP13</strong> on the RP2040:bit
+                  (micro:bit edge pin <strong>P16</strong> on a Keyestudio KS0360 or similar sensor shield;
+                  see the <code>PlantSense/FR_Wiring_5LED_12V.md</code> build doc).</p>
               </div>
             </li>
           </ul>
@@ -5198,6 +5222,18 @@ https://github.com/odeepllama/SolarSim/tree/main
               <div class="help-detail" style="display:none;">
                 <p>エラーはインラインで赤色表示され、解決するまでエクスポートが無効になります。高強度でのDual
                   Sunは過熱防止のためブロックされます。強度1.0以上は許可されません。研究での推奨範囲：強度0.8～1.0、速度1x～4x。</p>
+              </div>
+            </li>
+            <li><strong>Far-Red (FR) 事前照射</strong>: プログラム開始前に暗黒下で730 nm光をパルス照射（任意）。
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>フィトクロムをPfrからPrに変換し、光屈性実験のために植物を準備します。有効化すると、太陽パネルは消灯し、回転およびカメラサーボは一時停止し、Far Red LEDアレイが設定時間（デフォルト5分）動作した後にプログラムが開始されます。
+                  デフォルトは<strong>ON</strong>です — Far Red LEDアレイが未接続の場合はチェックを外してください（そうしないと実験ごとに5分間の暗闇待機が発生します）。</p>
+                <p><strong>手動操作</strong>：コマンドコンソール上部の FR Pulse / FR On / FR Off ボタン、または
+                  <code>fr on</code>、<code>fr off</code>、<code>fr pulse &lt;分&gt;</code> コマンドを使用します。</p>
+                <p>Far Red LEDアレイをRP2040:bitの<strong>GP13</strong>（Keyestudio KS0360等のセンサーシールドで
+                  micro:bit エッジピン<strong>P16</strong>）に配線する必要があります
+                  （配線ドキュメント <code>PlantSense/FR_Wiring_5LED_12V.md</code> を参照）。</p>
               </div>
             </li>
           </ul>
@@ -6738,11 +6774,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // FIELD METADATA
       // ============================================================================
       const ORDERED_KEYS = [
-        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE'
+        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE', 'FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'
       ];
 
       const FIELD_GROUPS = [
         { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
+        { name: 'Pre-Exposure', i18nKey: 'sectionPreExposure', keys: ['FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'], collapsible: true },
         { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
         { name: 'Imaging Servos & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
@@ -6788,7 +6825,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         CUSTOM_SUN_B: { label: 'Custom Sun Blue', tooltip: 'Custom blue channel (0-255).', type: 'number', min: 0, max: 255, default: 0 },
         PROGRAM_ENABLED: { label: 'Program Enabled', tooltip: 'Enable scripted program steps block.', type: 'checkbox', default: true },
         PROGRAM_REPEATS: { label: 'Program Repeats (-1 = ∞)', tooltip: 'How many passes; -1 loops forever.', type: 'number', default: -1, showIf: s => s.PROGRAM_ENABLED },
-        PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED }
+        PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED },
+        FR_PREEXPOSURE_ENABLED: { label: 'FR Pre-Exposure Enabled', tooltip: 'Run a 730nm far-red pulse in darkness before program step 1 (drives Pfr→Pr photoconversion). Default ON.', type: 'checkbox', default: true },
+        FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure Duration (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_ENABLED }
       };
 
       // Keys to highlight (commonly changed)
@@ -7032,6 +7071,16 @@ https://github.com/odeepllama/SolarSim/tree/main
             group.keys.forEach(k => { grid.appendChild(createInput(k)); });
             fs.appendChild(legend);
             fs.appendChild(grid);
+
+            // FR pre-exposure: append an always-visible dark-period warning banner
+            if (group.name === 'Pre-Exposure') {
+              const banner = document.createElement('div');
+              banner.id = 'frPreExposureWarning';
+              banner.textContent = '⚠ Sun panel will be dark for the pre-exposure duration before each program starts. Uncheck if you don\'t have the Far Red LED array installed.';
+              banner.style.cssText = 'grid-column: 1 / -1; margin-top: 6px; padding: 6px 10px; background: #fff4d6; border: 1px solid #e0b040; border-radius: 4px; font-size: 0.85em; color: #6a4a00;';
+              banner.style.display = state.FR_PREEXPOSURE_ENABLED ? 'block' : 'none';
+              grid.appendChild(banner);
+            }
           } else {
             // Regular sections (no collapsible behavior)
             legend.textContent = getSectionTitle(group.i18nKey, group.name);
@@ -7111,6 +7160,13 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (sunsetField) {
           sunsetField.style.display = showCustomTimes ? '' : 'none';
         }
+
+        // FR Pre-Exposure: banner + duration field visibility follow the checkbox
+        const showFR = !!state.FR_PREEXPOSURE_ENABLED;
+        const frMinutesField = document.getElementById('FR_PREEXPOSURE_MINUTES')?.closest('.field');
+        if (frMinutesField) frMinutesField.style.display = showFR ? '' : 'none';
+        const frBanner = document.getElementById('frPreExposureWarning');
+        if (frBanner) frBanner.style.display = showFR ? 'block' : 'none';
       }
 
       /**
@@ -7146,6 +7202,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (key === 'IMAGES_PER_ROTATION') { recomputeDegreesPerImage(); document.getElementById('DEGREES_PER_IMAGE').value = state.DEGREES_PER_IMAGE; }
         if (key === 'PROGRAM_ENABLED') { refreshConditionalVisibility(); if (typeof window.__updateFieldsetVisibility === 'function') window.__updateFieldsetVisibility(); }
         if (key === 'SOLAR_MODE') { refreshConditionalVisibility(); }
+        if (key === 'FR_PREEXPOSURE_ENABLED') { refreshConditionalVisibility(); }
         if (key === 'TIME_SCALE') {
           handleTimeScaleModeChange(value);
         }
@@ -18294,6 +18351,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           'trigger servo3',
           'trigger rotation',
           'program status',
+          // Far-Red LED
+          'fr on',
+          'fr off',
+          'fr pulse <minutes>',
           // Utility
           'status',
           'listprofiles',
@@ -21527,6 +21588,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             {
               group: 'Utility Commands', commands: [
                 'fillpanel <r> <g> <b> [sec]       - Fill panel with RGB color for specified seconds',
+                'fr on                             - Turn Far-Red LED array on indefinitely',
+                'fr off                            - Turn Far-Red LED array off',
+                'fr pulse <minutes>                - Timed Far-Red pulse (auto-off after N minutes, max 60)',
                 'help all                          - Display this command summary',
                 'light camera <on|off>             - Turn camera lighting on or off',
                 'light rotation <on|off>           - Turn rotation lighting on or off',

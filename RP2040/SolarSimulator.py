@@ -14,14 +14,15 @@ RP2040:bit board microcontroller with 3 servos,
 1 BT camera remote (mirrors servo2 triggers)
 1 DS3231 RTC module (optional, on I2C1)
 
-PINS: RP2040:bit board (microbit breakout)
-Servo 1: GP6  - Platform rotation servo.        (output pin 3 on Micro:bit breakout board - 3.3V)
-Servo 2: GP10 - Primary camera trigger servo    (output pin 13 on Micro:bit breakout board - 5V)
-Servo 3: GP11 - Secondary camera trigger servo  (output pin 15 on Micro:bit breakout board - 5V)
-NeoPixel: GP15                                  (output pin 7 on Micro:bit breakout board - 3.3V)
-Camera shutter trigger: GP14 (active LOW)       (output pin 6 on Micro:bit breakout board - 3.3V)
-I2C1 SDA: GP18                                  (pin 20 on Micro:bit breakout board - 3.3V)
-I2C1 SCL: GP19                                  (pin 19 on Micro:bit breakout board - 3.3V)
+PINS: RP2040:bit board (microbit breakout via Keyestudio KS0360 sensor shield)
+Servo 1: GP6  - Platform rotation servo.        (edge pin P3  on Micro:bit breakout - 3.3V)
+Servo 2: GP10 - Primary camera trigger servo    (edge pin P13 on Micro:bit breakout - 5V servo header)
+Servo 3: GP11 - Secondary camera trigger servo  (edge pin P14 on Micro:bit breakout - 5V servo header)
+NeoPixel: GP15                                  (edge pin P7  on Micro:bit breakout - 3.3V)
+Camera shutter trigger: GP14 (active LOW)       (edge pin P6  on Micro:bit breakout - 3.3V)
+FR LED DIM: GP13                                (edge pin P16 on Micro:bit breakout - 3.3V native; LDD-700H DIM accepts 0.3-5V)
+I2C1 SDA: GP18                                  (edge pin P20 on Micro:bit breakout - 3.3V)
+I2C1 SCL: GP19                                  (edge pin P19 on Micro:bit breakout - 3.3V)
 """
 import gc, machine, math, neopixel, os, select, sys
 try:
@@ -108,6 +109,10 @@ ROTATION_LIGHT_R = 30              # Red component (0-255) for rotation lighting
 ROTATION_LIGHT_G = 30              # Green component (0-255) for rotation lighting
 ROTATION_LIGHT_B = 30              # Blue component (0-255) for rotation lighting
 
+# --- Far-Red (FR) Pre-Exposure ---
+FR_PREEXPOSURE_ENABLED = True      # Default ON: run FR pulse in darkness before program step 1
+FR_PREEXPOSURE_MINUTES = 5         # Duration of pre-exposure pulse (standard phytochrome depletion)
+
 # This option allows unwanted reflections to be minimized.
 # ======================================================
 # III. ROTATION SYSTEM CONFIGURATION
@@ -161,7 +166,7 @@ PRINT_INTERVAL_REAL_MS = 1000  # Minimum interval in milliseconds between simula
 # ======================================================
 # --- Runtime State Tracking ---
 start_real_time_ms = 0                # Will be set at startup
-panel_buffer = [(0, 0, 0)] * 448      # State buffer for NeoPixel delta updates
+panel_buffer: list = [(0, 0, 0)] * 448  # State buffer for NeoPixel delta updates (widen type so Pylance accepts arbitrary RGB tuples)
 
 # --- Decoupling of NeoPixel/sun updates from matrix refresh ---
 SUN_UPDATE_INTERVAL_MS = 1000  # Update NeoPixels/sun every 1 sec (adjust as needed)
@@ -211,6 +216,13 @@ last_servo3_trigger_ms = -999999      # Last time servo3 was triggered
 servo3_trigger_start_ms = 0           # When current servo3 trigger started
 servo3_using_lighting = False         # Track if servo3 is using lighting
 
+# --- Far-Red LED State Variables ---
+fr_led_state = 'IDLE'                 # 'IDLE' or 'ACTIVE'
+fr_led_start_ms = 0                   # When the current FR activation started
+fr_led_duration_ms = 0                # 0 = indefinite (manual on); >0 = auto-off after N ms
+fr_preexposure_active = False         # True while pre-exposure blocks program start
+fr_preexposure_saved_time_scale = 1   # Saved TIME_SCALE to restore after pre-exposure ends
+
 # ======================================================
 # VI. HARDWARE CONFIGURATION
 # ======================================================
@@ -234,6 +246,7 @@ BUTTON_A_PIN_NUM = 0  # GP0 (Micro:bit Pin0 (P0))
 BUTTON_B_PIN_NUM = 1  # GP1 (Micro:bit Pin1 (P1))
 RTC_I2C_SDA_PIN = 18  # GP18 (Micro:bit breakout pin 20)
 RTC_I2C_SCL_PIN = 19  # GP19 (Micro:bit breakout pin 19)
+FR_LED_PIN_NUM = 13   # GP13 (micro:bit edge P16) -> MeanWell LDD-700H DIM pin (3.3V HIGH = FR LEDs on)
 
 # Display timing parameters
 DIGIT_DISPLAY_DURATION_MS = 350  # Digit display time
@@ -353,6 +366,9 @@ matrix_display_rows = [led_pins[5], led_pins[6], led_pins[7], led_pins[8], led_p
 CAMERA_SHUTTER_PIN_NUM = 14 # corresponds to pin 6 on the Micro:bit breakout board
 camera_shutter_pin = machine.Pin(CAMERA_SHUTTER_PIN_NUM, machine.Pin.OUT)
 camera_shutter_pin.high()
+
+# Far-Red LED control pin (GP12) - active HIGH into LDD-700H DIM
+fr_led_pin = machine.Pin(FR_LED_PIN_NUM, machine.Pin.OUT, value=0)
 
 # 5x5 display buffers (5 rows, 5 columns)
 # Front buffer: read by POV refresh (never written directly during display)
@@ -590,15 +606,48 @@ def update_rotation_parameters():
 
 update_rotation_parameters()
 
-def start_program():
-    """Start or restart the program execution."""
+# --- Far-Red LED helpers ---
+def fr_led_on(duration_ms=0):
+    """Turn the Far-Red LED array on. duration_ms=0 means indefinite ('fr off' to stop)."""
+    global fr_led_state, fr_led_start_ms, fr_led_duration_ms
+    fr_led_pin.on()
+    fr_led_state = 'ACTIVE'
+    fr_led_start_ms = ticks_ms()
+    fr_led_duration_ms = duration_ms
+
+def fr_led_off():
+    """Turn the Far-Red LED array off and clear pre-exposure gating.
+    If pre-exposure was aborted mid-way (e.g. manual 'fr off'), also restores TIME_SCALE."""
+    global fr_led_state, fr_led_duration_ms, fr_preexposure_active
+    global TIME_SCALE, start_real_time_ms
+    fr_led_pin.off()
+    fr_led_state = 'IDLE'
+    fr_led_duration_ms = 0
+    if fr_preexposure_active:
+        # Manual abort during pre-exposure: restore time scale so the sim doesn't stay frozen
+        restore_scale = fr_preexposure_saved_time_scale if fr_preexposure_saved_time_scale != 0 else 1
+        TIME_SCALE = restore_scale
+        start_real_time_ms = _reanchor_start_time(frozen_sim_time_minutes, TIME_SCALE, ticks_ms(), START_TIME_HHMM, start_real_time_ms)
+        update_speed_indicator(TIME_SCALE)
+        print(f"[FR] Pre-exposure aborted — time scale restored to {restore_scale}x")
+    fr_preexposure_active = False
+
+def update_fr_led(now_ms):
+    """Auto-off timer for FR LED. Called each main-loop iteration."""
+    if fr_led_state == 'ACTIVE' and fr_led_duration_ms > 0:
+        if ticks_diff(now_ms, fr_led_start_ms) >= fr_led_duration_ms:
+            was_preexposure = fr_preexposure_active
+            fr_led_off()   # also restores TIME_SCALE if we were pre-exposing
+            print("[FR] Pulse complete")
+            if was_preexposure:
+                _start_program_body()
+                print("[PROGRAM] FR pre-exposure complete — program starting")
+
+def _start_program_body():
+    """Actual program-start bookkeeping (extracted so pre-exposure hook can defer it)."""
     global program_running, current_program_step, current_step_repeat
-    global current_program_repeat, program_step_start_sim_time, hold_step_start_ms
-    global last_printed_minute, cross_day_has_left
-    
-    if not PROGRAM_STEPS:
-        print("[PROGRAM] No program steps defined — cannot start")
-        return
+    global current_program_repeat, program_step_start_sim_time
+    global last_printed_minute, cross_day_has_left, cross_day_prev_sim
     program_running = True
     current_program_step = 0
     current_step_repeat = 0
@@ -607,14 +656,43 @@ def start_program():
     last_printed_minute = 0
     cross_day_has_left = False
     cross_day_prev_sim = -1
-
     print("[PROGRAM] Started")
 
+def start_program():
+    """Start the program. If FR pre-exposure is enabled, run it first (in darkness, sim time frozen)."""
+    global fr_preexposure_active, fr_preexposure_saved_time_scale
+    global TIME_SCALE, frozen_sim_time_minutes, frozen_abs_sim_time
+    if not PROGRAM_STEPS:
+        print("[PROGRAM] No program steps defined — cannot start")
+        return
+    if FR_PREEXPOSURE_ENABLED and FR_PREEXPOSURE_MINUTES > 0 and not fr_preexposure_active:
+        # Blank the sun panel — pre-exposure must be delivered in darkness
+        pixels.fill((0, 0, 0))
+        pixels.write()
+        # Freeze sim time so step 1 starts at its intended sim_time_hhmm, not (start + pre-exposure duration)
+        now_ms = ticks_ms()
+        abs_sim_time, current_time_minutes = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)
+        fr_preexposure_saved_time_scale = TIME_SCALE if TIME_SCALE != 0 else 1
+        if TIME_SCALE != 0:
+            frozen_sim_time_minutes = current_time_minutes
+            frozen_abs_sim_time = abs_sim_time
+            TIME_SCALE = 0
+            update_speed_indicator(TIME_SCALE)
+        fr_preexposure_active = True
+        duration_ms = int(FR_PREEXPOSURE_MINUTES * 60000)
+        fr_led_on(duration_ms=duration_ms)
+        print(f"[PROGRAM] FR pre-exposure started ({FR_PREEXPOSURE_MINUTES} min, sun panel dark, sim time HELD, servos paused)")
+        return
+    _start_program_body()
+
 def stop_program():
-    """Stop the program execution."""
+    """Stop the program execution. Also aborts any in-progress FR pre-exposure (which restores time scale)."""
     global program_running
-    
+
     program_running = False
+    if fr_preexposure_active:
+        fr_led_off()   # handles time scale restore + prints its own status
+        print("[PROGRAM] FR pre-exposure aborted by stop_program")
     print("[PROGRAM] Stopped")
 
 def apply_step_settings(step_arg):
@@ -1134,6 +1212,10 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
     # Skip rotation updates if rotation is disabled and we're not in the middle of a cycle
     if not ROTATION_ENABLED and rotation_state == 'IDLE' and not manual_rotation_triggered:
         return
+
+    # Skip during FR pre-exposure — plant must stay still & in darkness
+    if fr_preexposure_active and rotation_state == 'IDLE':
+        return
     
 
     
@@ -1368,6 +1450,10 @@ def update_standalone_servo2(now_ms):
     if servo2_controlled_by_rotation:
         return
 
+    # Skip during FR pre-exposure — plant must stay in darkness
+    if fr_preexposure_active:
+        return
+
     # Determine if sun is currently visible on the display
     current_time = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)[1]
     sun_x, _, sun_size, _, _, _ = get_sun_position(current_time)
@@ -1412,6 +1498,10 @@ def update_standalone_servo3(now_ms):
     This function operates independently of the rotation cycle and servo2."""
     global servo3_state, last_servo3_trigger_ms, servo3_trigger_start_ms
     global servo3_using_lighting, camera_lighting_active, servo2_using_lighting, camera_light_hold_until_ms, rotation_lighting_active
+
+    # Skip during FR pre-exposure — plant must stay in darkness
+    if fr_preexposure_active:
+        return
 
     # Determine if it's nighttime
     current_time = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)[1]
@@ -2490,6 +2580,28 @@ def handle_command(command_str):
                 else:
                     print(f"[SERIAL CMD] Error: Unknown toggle target '{target}'.")
 
+        elif command == "fr" and len(parts) >= 2:
+            action = parts[1]
+            if action == "on":
+                fr_led_on(duration_ms=0)
+                print("[SERIAL CMD] FR LED ON (indefinite)")
+            elif action == "off":
+                fr_led_off()
+                print("[SERIAL CMD] FR LED OFF")
+            elif action == "pulse" and len(parts) >= 3:
+                try:
+                    mins = float(parts[2])
+                    if 0 < mins <= 60:
+                        fr_led_on(duration_ms=int(mins * 60000))
+                        print(f"[SERIAL CMD] FR LED pulse started ({mins} min)")
+                    else:
+                        print("[SERIAL CMD] Error: fr pulse duration must be >0 and <=60 minutes")
+                except ValueError:
+                    print("[SERIAL CMD] Error: fr pulse requires numeric minutes")
+            else:
+                print("[SERIAL CMD] Usage: fr on | fr off | fr pulse <minutes>")
+            return
+
         elif command == "program" and len(parts) == 2 and parts[1] == "status":
             print(f"PROGRAM_ENABLED: {PROGRAM_ENABLED}")
             print(f"PROGRAM_REPEATS: {PROGRAM_REPEATS}")
@@ -2591,6 +2703,8 @@ def handle_command(command_str):
                             f.write(f"ROTATION_INCREMENT_DEGREES = {ROTATION_INCREMENT_DEGREES}\n")
                             f.write(f"ROTATION_STEP_INTERVAL_MS = {ROTATION_STEP_INTERVAL_MS}\n")
                             f.write(f"ROTATION_AT_NIGHT = {ROTATION_AT_NIGHT}\n")
+                            f.write(f"FR_PREEXPOSURE_ENABLED = {FR_PREEXPOSURE_ENABLED}\n")
+                            f.write(f"FR_PREEXPOSURE_MINUTES = {FR_PREEXPOSURE_MINUTES}\n")
                             f.write("-" * 20 + "\n\n")
                         print(f"[SERIAL CMD] Settings appended to log {filename}")
                     except Exception as e:
@@ -2650,6 +2764,8 @@ def handle_command(command_str):
                         f.write(f"ROTATION_LIGHT_R = {ROTATION_LIGHT_R}\n")
                         f.write(f"ROTATION_LIGHT_G = {ROTATION_LIGHT_G}\n")
                         f.write(f"ROTATION_LIGHT_B = {ROTATION_LIGHT_B}\n")
+                        f.write(f"FR_PREEXPOSURE_ENABLED = {FR_PREEXPOSURE_ENABLED}\n")
+                        f.write(f"FR_PREEXPOSURE_MINUTES = {FR_PREEXPOSURE_MINUTES}\n")
                         # Save program state (always include steps for profile completeness)
                         import ujson as json
                         f.write(f"PROGRAM_ENABLED = {PROGRAM_ENABLED}\n")
@@ -2707,9 +2823,13 @@ def handle_command(command_str):
                                 if not (0 <= v <= 2359 and v % 100 < 60):
                                     raise ValueError("invalid HHMM format")
                                 validated_settings[key] = v
-                            elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD"):
+                            elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD", "FR_PREEXPOSURE_ENABLED"):
                                 if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
                                 validated_settings[key] = value_str.lower() == 'true'
+                            elif key == "FR_PREEXPOSURE_MINUTES":
+                                v = float(value_str)
+                                if not (0 < v <= 60): raise ValueError("FR_PREEXPOSURE_MINUTES must be >0 and <=60")
+                                validated_settings[key] = v
                             elif key == "ROTATION_CYCLE_INTERVAL_MINUTES":
                                 v = int(value_str);
                                 if v <= 0: raise ValueError("must be positive")
@@ -2863,6 +2983,9 @@ def handle_command(command_str):
                 speed_name = "Unknown"
             print(f"  Speed Name: {speed_name}")
             print(f"  Program Enabled: {PROGRAM_ENABLED}")
+            print(f"  FR Pre-Exposure Enabled: {FR_PREEXPOSURE_ENABLED}")
+            print(f"  FR Pre-Exposure Minutes: {FR_PREEXPOSURE_MINUTES}")
+            print(f"  FR LED State: {fr_led_state}")
             print(f"  Restart After Profile Load: {RESTART_AFTER_LOAD}")
             print(f"  Auto-Load Latest Profile: {AUTO_LOAD_LATEST_PROFILE}")
             print(f"  Loaded Profile: {LOADED_PROFILE_NAME if LOADED_PROFILE_NAME else '(none - using defaults)'}")
@@ -3200,7 +3323,8 @@ def run_simulation():
 
         # --- PROGRAM ACTIVATION AND STATE UPDATE ---
         # Activate program when sim time reaches first step
-        if PROGRAM_ENABLED and not program_running and not program_has_completed_all_repeats and TIME_SCALE > 0:
+        # Skip while FR pre-exposure is already in progress (start_program was already called)
+        if PROGRAM_ENABLED and not program_running and not program_has_completed_all_repeats and TIME_SCALE > 0 and not fr_preexposure_active:
             sim_hour_check = int(time_of_day_minutes // 60)
             sim_minute_check = int(time_of_day_minutes % 60)
             current_sim_hhmm_check = (sim_hour_check * 100) + sim_minute_check
@@ -3244,8 +3368,8 @@ def run_simulation():
                 manual_panel_override_active = False
                 print("[INFO] fillpanel override ended, resuming normal display.")
 
-            # Only update sun display if no special lighting is active
-            if not camera_lighting_active and not rotation_lighting_active and not manual_panel_override_active:
+            # Only update sun display if no special lighting is active (and not during FR pre-exposure)
+            if not camera_lighting_active and not rotation_lighting_active and not manual_panel_override_active and not fr_preexposure_active:
                 # Update sun display using the new flicker-free method
                 update_sun_display(time_of_day_minutes)
     
@@ -3315,6 +3439,9 @@ def run_simulation():
         
         # Update the standalone servo3 (second camera trigger) at regular intervals
         update_standalone_servo3(now_ms)
+
+        # Update FR LED auto-off timer (and trigger deferred program start when pre-exposure completes)
+        update_fr_led(now_ms)
 
         # Centralized check for camera lighting hold time
         if camera_light_hold_until_ms > 0 and now_ms >= camera_light_hold_until_ms:
