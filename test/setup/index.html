@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+SolaSim Setup Wizard — Browser-Based Device Installer
+================================================================================
+
+Copyright (C) 2026 Andy Crofts
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+================================================================================
+-->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SolaSim Setup Wizard</title>
+  <meta name="description"
+    content="Browser-based setup wizard for the SolaSim solar simulator. Flash firmware and deploy files to the RP2040:bit board with no software installation required.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================================
+   BASE & THEME  —  Matches SolaSimStudio.html light sage green
+   ============================================================================ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #abbea6;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8faf7;
+      --border-card: rgba(0, 0, 0, 0.08);
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.10);
+      --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.13);
+      --accent: #2e7d32;
+      --accent-light: #4caf50;
+      --accent-bg: rgba(46, 125, 50, 0.08);
+      --accent-border: rgba(46, 125, 50, 0.25);
+      --text: #111;
+      --text-secondary: #555;
+      --text-muted: #888;
+      --warning: #e65100;
+      --warning-bg: rgba(230, 81, 0, 0.08);
+      --warning-border: rgba(230, 81, 0, 0.22);
+      --danger: #c62828;
+      --danger-bg: rgba(198, 40, 40, 0.07);
+      --danger-border: rgba(198, 40, 40, 0.2);
+      --success: #2e7d32;
+      --success-bg: rgba(46, 125, 50, 0.08);
+      --success-border: rgba(46, 125, 50, 0.22);
+      --info: #1565c0;
+      --info-bg: rgba(21, 101, 192, 0.07);
+      --info-border: rgba(21, 101, 192, 0.2);
+      --radius: 10px;
+      --radius-sm: 6px;
+      --transition: 0.3s ease;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* ============================================================================
+   LAYOUT
+   ============================================================================ */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 2rem;
+    }
+
+    /* ============================================================================
+   HEADER
+   ============================================================================ */
+    .header {
+      text-align: center;
+      padding: 1.5rem 0 1rem;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      box-shadow: var(--shadow-card);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.15em;
+    }
+
+    .header h1 .logo-img {
+      height: 1.67em;
+      width: auto;
+      vertical-align: middle;
+      margin-top: -0.11em;
+      margin-bottom: -0.11em;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1.5;
+      margin-top: 0.5rem;
+    }
+
+    /* ============================================================================
+   PROGRESS STEPPER
+   ============================================================================ */
+    .stepper {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin: 1.25rem 0 1.5rem;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 1rem 0.5rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .stepper-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stepper-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 17px;
+      left: calc(50% + 17px);
+      width: calc(100% - 34px);
+      height: 3px;
+      background: #ddd;
+      border-radius: 2px;
+      transition: background var(--transition);
+    }
+
+    .stepper-step.done:not(:last-child)::after {
+      background: var(--accent-light);
+    }
+
+    .step-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: 2.5px solid #ddd;
+      background: #fff;
+      color: var(--text-muted);
+      transition: all var(--transition);
+    }
+
+    .stepper-step.active .step-circle {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-bg);
+      box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.12);
+    }
+
+    .stepper-step.done .step-circle {
+      border-color: var(--accent-light);
+      background: var(--accent-light);
+      color: #fff;
+    }
+
+    .step-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+      text-align: center;
+      font-weight: 600;
+      transition: color var(--transition);
+      max-width: 80px;
+    }
+
+    .stepper-step.active .step-label {
+      color: var(--accent);
+    }
+
+    .stepper-step.done .step-label {
+      color: var(--text-secondary);
+    }
+
+    /* ============================================================================
+   WIZARD CARDS
+   ============================================================================ */
+    .wizard-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-card);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      display: none;
+      animation: cardIn 0.4s ease forwards;
+    }
+
+    .wizard-card.active {
+      display: block;
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text);
+    }
+
+    .card-title .icon {
+      font-size: 1.5rem;
+    }
+
+    .card-desc {
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+      font-size: 0.95rem;
+    }
+
+    /* ============================================================================
+   BOARD IMAGE
+   ============================================================================ */
+    .board-image-container {
+      position: relative;
+      display: inline-block;
+      margin: 0.75rem 0;
+      width: 100%;
+      text-align: center;
+    }
+
+    .board-image-container img {
+      max-width: 100%;
+      width: 400px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-card);
+      box-shadow: var(--shadow-card);
+    }
+
+    /* BOOT button highlight overlay */
+    .boot-highlight {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--warning);
+      border-radius: 50%;
+      animation: pulseRing 2s ease-in-out infinite;
+      top: 3%;
+      right: 11%;
+      pointer-events: none;
+    }
+
+    .boot-label {
+      position: absolute;
+      top: 0%;
+      right: 27%;
+      background: var(--warning);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+    }
+
+    @keyframes pulseRing {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.35);
+      }
+
+      50% {
+        transform: scale(1.12);
+        opacity: 0.8;
+        box-shadow: 0 0 18px 4px rgba(230, 81, 0, 0.15);
+      }
+    }
+
+    /* USB port highlight */
+    .usb-highlight {
+      position: absolute;
+      width: 30px;
+      height: 18px;
+      border: 2.5px solid var(--info);
+      border-radius: 4px;
+      top: 1%;
+      left: 39%;
+      pointer-events: none;
+      animation: pulseRing2 2s ease-in-out infinite;
+    }
+
+    .usb-label {
+      position: absolute;
+      top: -4%;
+      left: 45%;
+      background: var(--info);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    @keyframes pulseRing2 {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(21, 101, 192, 0.35);
+      }
+
+      50% {
+        box-shadow: 0 0 12px 3px rgba(21, 101, 192, 0.15);
+      }
+    }
+
+    /* ============================================================================
+   INSTRUCTION STEPS (numbered list within cards)
+   ============================================================================ */
+    .instruction-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.75rem 0;
+    }
+
+    .instruction-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .instruction-list li:last-child {
+      border-bottom: none;
+    }
+
+    .inst-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent-bg);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 2px;
+      border: 1.5px solid var(--accent-border);
+    }
+
+    .inst-text {
+      flex: 1;
+    }
+
+    .inst-text strong {
+      color: var(--text);
+    }
+
+    .inst-text code {
+      background: #f0f4e8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: var(--accent);
+      border: 1px solid #d5e0c8;
+    }
+
+    /* ============================================================================
+   BUTTONS
+   ============================================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+      text-decoration: none;
+      line-height: 1;
+    }
+
+    .btn-primary {
+      background: #3478f6;
+      color: #fff;
+      border-color: #2d6cdf;
+      box-shadow: 0 2px 6px rgba(52, 120, 246, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: #4a8cf8;
+      box-shadow: 0 3px 10px rgba(52, 120, 246, 0.3);
+    }
+
+    .btn-primary:active {
+      background: #2d6cdf;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: #333;
+      border-color: #aaa;
+    }
+
+    .btn-secondary:hover {
+      background: #f5f5f5;
+      border-color: #888;
+    }
+
+    .btn-download {
+      background: var(--info);
+      color: #fff;
+      border-color: #0d47a1;
+      box-shadow: 0 2px 6px rgba(21, 101, 192, 0.25);
+    }
+
+    .btn-download:hover {
+      background: #1976d2;
+      box-shadow: 0 3px 10px rgba(21, 101, 192, 0.3);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    /* ============================================================================
+   STATUS & ALERTS  —  Matching SolaSimStudio fieldset style
+   ============================================================================ */
+    .alert {
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      border: 1px solid;
+    }
+
+    .alert-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    .alert-success {
+      background: var(--success-bg);
+      border-color: var(--success-border);
+      color: var(--success);
+    }
+
+    .alert-warning {
+      background: var(--warning-bg);
+      border-color: var(--warning-border);
+      color: var(--warning);
+    }
+
+    .alert-error {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger);
+    }
+
+    .alert-info {
+      background: var(--info-bg);
+      border-color: var(--info-border);
+      color: var(--info);
+    }
+
+    /* ============================================================================
+   FILE LIST (Step 4)
+   ============================================================================ */
+    .file-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.75rem 0;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      background: #fafbf9;
+      border: 1px solid #e5e8e0;
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.4rem;
+      transition: all var(--transition);
+    }
+
+    .file-item.transferring {
+      border-color: var(--info);
+      background: var(--info-bg);
+    }
+
+    .file-item.done {
+      border-color: var(--success);
+      background: var(--success-bg);
+    }
+
+    .file-item.error {
+      border-color: var(--danger);
+      background: var(--danger-bg);
+    }
+
+    .file-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .file-info {
+      flex: 1;
+    }
+
+    .file-name {
+      font-weight: 600;
+      font-size: 0.93rem;
+    }
+
+    .file-size {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .file-status {
+      font-size: 0.78rem;
+      font-weight: 600;
+      flex-shrink: 0;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================================
+   PROGRESS BAR
+   ============================================================================ */
+    .progress-container {
+      margin: 1rem 0;
+      display: none;
+    }
+
+    .progress-container.visible {
+      display: block;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #e8ece5;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-light), var(--accent));
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 0.4rem;
+      text-align: center;
+    }
+
+    /* ============================================================================
+   LOG AREA
+   ============================================================================ */
+    .log-area {
+      background: #1e272e;
+      border: 1px solid #ccc;
+      border-radius: var(--radius-sm);
+      padding: 0.85rem;
+      margin: 0.75rem 0;
+      max-height: 170px;
+      overflow-y: auto;
+      font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.76rem;
+      line-height: 1.6;
+      color: #aab;
+      display: none;
+    }
+
+    .log-area.visible {
+      display: block;
+    }
+
+    .log-area .log-success {
+      color: #6dcd59;
+    }
+
+    .log-area .log-error {
+      color: #e74c3c;
+    }
+
+    .log-area .log-info {
+      color: #64b5f6;
+    }
+
+    /* ============================================================================
+   CELEBRATION (Step 5)
+   ============================================================================ */
+    .celebration {
+      text-align: center;
+      padding: 0.5rem 0;
+    }
+
+    .celebration .big-check {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+      font-size: 2.2rem;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+
+    @keyframes bounceIn {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.15);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .celebration h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+      color: var(--accent);
+    }
+
+    .celebration p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 0.6rem;
+    }
+
+    /* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem 0.75rem 3rem;
+      }
+
+      .header h1 {
+        font-size: 1.4rem;
+      }
+
+      .wizard-card {
+        padding: 1.25rem;
+      }
+
+      .card-title {
+        font-size: 1.15rem;
+      }
+
+      .btn {
+        padding: 0.65rem 1rem;
+        font-size: 0.88rem;
+      }
+
+      .step-label {
+        font-size: 0.6rem;
+        max-width: 60px;
+      }
+
+      .board-image-container img {
+        width: 100%;
+      }
+    }
+
+    /* ============================================================================
+   CONFETTI
+   ============================================================================ */
+    .confetti-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      top: -10px;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      to {
+        top: 110vh;
+        transform: rotate(720deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- ====== HEADER ====== -->
+    <header class="header">
+      <h1><img class="logo-img" src="SolaSim%20logo.png" alt="SolaSim"> Setup Wizard</h1>
+      <p>Get your SolarSim's RP2040 up and running quickly — no software installation needed.</p>
+    </header>
+
+    <!-- ====== PROGRESS STEPPER ====== -->
+    <nav class="stepper" id="stepper">
+      <div class="stepper-step active" data-step="1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Welcome</div>
+      </div>
+      <div class="stepper-step" data-step="2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Firmware</div>
+      </div>
+      <div class="stepper-step" data-step="3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Connect</div>
+      </div>
+      <div class="stepper-step" data-step="4">
+        <div class="step-circle">4</div>
+        <div class="step-label">Deploy</div>
+      </div>
+      <div class="stepper-step" data-step="5">
+        <div class="step-circle">5</div>
+        <div class="step-label">Done!</div>
+      </div>
+    </nav>
+
+    <!-- ====== STEP 1: WELCOME ====== -->
+    <section class="wizard-card active" id="step1">
+      <div class="card-title"><span class="icon">👋</span> Welcome</div>
+      <p class="card-desc">
+        This wizard will guide you through setting up your <strong>RP2040:bit</strong> board
+        to run the SolaSim solar simulator firmware. The whole process takes about 5 minutes.
+      </p>
+
+      <div id="browserCheck"></div>
+
+      <div class="board-image-container">
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg"
+          style="max-width:400px;width:100%;border-radius:var(--radius);border:1px solid var(--border-card);box-shadow:var(--shadow-card);">
+          <!-- Board body -->
+          <rect x="30" y="30" width="340" height="260" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1.5" />
+          <!-- Edge connector (gold teeth) -->
+          <rect x="80" y="280" width="240" height="15" rx="2" fill="#2a2a3e" />
+          <rect x="95" y="283" width="14" height="12" rx="1" fill="#d4a732" /><text x="102" y="293" font-size="7"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">0</text>
+          <rect x="118" y="283" width="14" height="12" rx="1" fill="#d4a732" /><text x="125" y="293" font-size="7"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">1</text>
+          <rect x="141" y="283" width="14" height="12" rx="1" fill="#d4a732" /><text x="148" y="293" font-size="7"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">2</text>
+          <rect x="235" y="283" width="18" height="12" rx="1" fill="#d4a732" /><text x="244" y="293" font-size="6"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">3V</text>
+          <rect x="262" y="283" width="22" height="12" rx="1" fill="#d4a732" /><text x="273" y="293" font-size="6"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">GND</text>
+          <!-- USB port -->
+          <rect x="175" y="25" width="50" height="18" rx="3" fill="#888" stroke="#666" stroke-width="1" />
+          <text x="200" y="38" font-size="7" fill="#fff" text-anchor="middle" font-weight="600">USB</text>
+          <!-- Buttons -->
+          <circle cx="80" cy="200" r="14" fill="#333" stroke="#555" stroke-width="1" /><text x="80" y="204"
+            font-size="8" fill="#999" text-anchor="middle" font-weight="600">A</text>
+          <circle cx="320" cy="200" r="14" fill="#333" stroke="#555" stroke-width="1" /><text x="320" y="204"
+            font-size="8" fill="#999" text-anchor="middle" font-weight="600">B</text>
+          <!-- BOOT button -->
+          <rect x="310" y="50" width="40" height="16" rx="3" fill="#444" stroke="#666" stroke-width="1" />
+          <text x="330" y="62" font-size="7" fill="#aaa" text-anchor="middle" font-weight="600">BOOT</text>
+          <!-- RESET button -->
+          <rect x="260" y="50" width="40" height="16" rx="3" fill="#444" stroke="#666" stroke-width="1" />
+          <text x="280" y="62" font-size="7" fill="#aaa" text-anchor="middle" font-weight="600">RESET</text>
+          <!-- Chip -->
+          <rect x="140" y="100" width="80" height="80" rx="4" fill="#222" stroke="#444" stroke-width="1" />
+          <text x="180" y="138" font-size="9" fill="#777" text-anchor="middle" font-weight="700">RP2040</text>
+          <text x="180" y="152" font-size="7" fill="#555" text-anchor="middle">Dual Core</text>
+          <!-- LEDs -->
+          <circle cx="60" cy="80" r="5" fill="#4caf50" opacity="0.7" />
+          <circle cx="80" cy="80" r="5" fill="#f44336" opacity="0.5" />
+          <!-- Board label -->
+          <text x="200" y="265" font-size="11" fill="#556" text-anchor="middle" font-weight="600">RP2040:bit
+            Board</text>
+        </svg>
+      </div>
+
+      <p style="color: var(--text-muted); font-size:0.82rem; text-align:center; margin-top:0.4rem;">
+        The RP2040:bit board — your SolaSim controller
+      </p>
+
+      <div class="alert alert-info" style="margin-top:1rem;">
+        <span class="alert-icon">ℹ️</span>
+        <div>
+          <strong>What you'll need:</strong> A USB cable (micro-USB), a Chromium-based browser
+          (Chrome, Edge, or Opera), and your RP2040:bit board.
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="goToStep(2)" id="startBtn">
+          Let's Get Started →
+        </button>
+      </div>
+    </section>
+
+    <!-- ====== STEP 2: FLASH FIRMWARE ====== -->
+    <section class="wizard-card" id="step2">
+      <div class="card-title"><span class="icon">⚡</span> Flash MicroPython Firmware</div>
+      <p class="card-desc">
+        First, we need to install the MicroPython runtime on your board. This is a one-time process
+        that prepares your RP2040 to run the SolaSim software.
+      </p>
+
+      <ol class="instruction-list">
+        <li>
+          <span class="inst-num">1</span>
+          <div class="inst-text">
+            <strong>Unplug</strong> the USB cable from your board if it's currently connected.
+          </div>
+        </li>
+        <li>
+          <span class="inst-num">2</span>
+          <div class="inst-text">
+            <strong>Hold down the BOOT button</strong> on your board (see the highlighted button below),
+            then <strong>plug in the USB cable</strong> while still holding the button.
+          </div>
+        </li>
+        <li>
+          <span class="inst-num">3</span>
+          <div class="inst-text">
+            A new drive called <code>RPI-RP2</code> will appear on your computer (like a USB flash drive). Release the
+            BOOT button.
+          </div>
+        </li>
+        <li>
+          <span class="inst-num">4</span>
+          <div class="inst-text">
+            Download the firmware file below, then <strong>drag and drop</strong> it onto the <code>RPI-RP2</code>
+            drive.
+            The board will reboot automatically.
+          </div>
+        </li>
+      </ol>
+
+      <div class="board-image-container">
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg"
+          style="max-width:400px;width:100%;border-radius:var(--radius);border:1px solid var(--border-card);box-shadow:var(--shadow-card);">
+          <!-- Board body -->
+          <rect x="30" y="30" width="340" height="260" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1.5" />
+          <!-- Edge connector -->
+          <rect x="80" y="280" width="240" height="15" rx="2" fill="#2a2a3e" />
+          <rect x="95" y="283" width="14" height="12" rx="1" fill="#d4a732" /><text x="102" y="293" font-size="7"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">0</text>
+          <rect x="118" y="283" width="14" height="12" rx="1" fill="#d4a732" /><text x="125" y="293" font-size="7"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">1</text>
+          <rect x="141" y="283" width="14" height="12" rx="1" fill="#d4a732" /><text x="148" y="293" font-size="7"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">2</text>
+          <rect x="235" y="283" width="18" height="12" rx="1" fill="#d4a732" /><text x="244" y="293" font-size="6"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">3V</text>
+          <rect x="262" y="283" width="22" height="12" rx="1" fill="#d4a732" /><text x="273" y="293" font-size="6"
+            fill="#1a1a2e" text-anchor="middle" font-weight="700">GND</text>
+          <!-- USB port — highlighted -->
+          <rect x="175" y="25" width="50" height="18" rx="3" fill="#888" stroke="#1565c0" stroke-width="2.5" />
+          <text x="200" y="38" font-size="7" fill="#fff" text-anchor="middle" font-weight="600">USB</text>
+          <!-- USB label -->
+          <rect x="230" y="20" width="62" height="18" rx="4" fill="#1565c0" />
+          <text x="261" y="33" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">USB Port ↑</text>
+          <!-- Buttons -->
+          <circle cx="80" cy="200" r="14" fill="#333" stroke="#555" stroke-width="1" /><text x="80" y="204"
+            font-size="8" fill="#999" text-anchor="middle" font-weight="600">A</text>
+          <circle cx="320" cy="200" r="14" fill="#333" stroke="#555" stroke-width="1" /><text x="320" y="204"
+            font-size="8" fill="#999" text-anchor="middle" font-weight="600">B</text>
+          <!-- BOOT button — highlighted with pulse -->
+          <rect x="310" y="50" width="40" height="16" rx="3" fill="#e65100" stroke="#ff6d00" stroke-width="2" />
+          <text x="330" y="62" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">BOOT</text>
+          <circle cx="330" cy="58" r="22" fill="none" stroke="#e65100" stroke-width="2.5" opacity="0.8">
+            <animate attributeName="r" values="22;26;22" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <!-- BOOT label -->
+          <rect x="230" y="44" width="72" height="18" rx="4" fill="#e65100" />
+          <text x="266" y="57" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">← HOLD THIS</text>
+          <!-- RESET button -->
+          <rect x="260" y="78" width="40" height="16" rx="3" fill="#444" stroke="#666" stroke-width="1" />
+          <text x="280" y="90" font-size="7" fill="#aaa" text-anchor="middle" font-weight="600">RESET</text>
+          <!-- Chip -->
+          <rect x="140" y="100" width="80" height="80" rx="4" fill="#222" stroke="#444" stroke-width="1" />
+          <text x="180" y="138" font-size="9" fill="#777" text-anchor="middle" font-weight="700">RP2040</text>
+          <text x="180" y="152" font-size="7" fill="#555" text-anchor="middle">Dual Core</text>
+          <!-- LEDs -->
+          <circle cx="60" cy="80" r="5" fill="#4caf50" opacity="0.7" />
+          <circle cx="80" cy="80" r="5" fill="#f44336" opacity="0.5" />
+          <!-- Board label -->
+          <text x="200" y="265" font-size="11" fill="#556" text-anchor="middle" font-weight="600">RP2040:bit
+            Board</text>
+        </svg>
+      </div>
+
+      <div class="btn-group" style="margin-top:0.75rem;">
+        <a class="btn btn-download" href="RP2040/RPI_PICO-20251209-v1.27.0.uf2" download id="downloadFwBtn">
+          ⬇ Download Firmware (.uf2)
+        </a>
+      </div>
+
+      <div class="alert alert-warning" style="margin-top:1rem;">
+        <span class="alert-icon">💡</span>
+        <div>
+          <strong>Tip:</strong> After dragging the file, the <code>RPI-RP2</code> drive will disappear
+          and the board will reboot. This is normal! Once rebooted, you can proceed to the next step.
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goToStep(3)">
+          I've Flashed the Firmware →
+        </button>
+      </div>
+    </section>
+
+    <!-- ====== STEP 3: CONNECT ====== -->
+    <section class="wizard-card" id="step3">
+      <div class="card-title"><span class="icon">🔌</span> Connect to Your Device</div>
+      <p class="card-desc">
+        Now let's establish a serial connection to your board. Make sure the USB cable is plugged in
+        (without holding any buttons this time).
+      </p>
+
+      <ol class="instruction-list">
+        <li>
+          <span class="inst-num">1</span>
+          <div class="inst-text">
+            If the board is still plugged in from the firmware step, <strong>unplug it and plug it back in</strong>
+            (no buttons — just a normal USB connection).
+          </div>
+        </li>
+        <li>
+          <span class="inst-num">2</span>
+          <div class="inst-text">
+            Click the <strong>Connect</strong> button below. Your browser will show a popup asking you to
+            choose a serial port — select the one labelled <strong>"Board in FS mode"</strong> or similar.
+          </div>
+        </li>
+      </ol>
+
+      <div id="connectStatus"></div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+        <button class="btn btn-primary" onclick="connectDevice()" id="connectBtn">
+          🔌 Connect to Device
+        </button>
+      </div>
+    </section>
+
+    <!-- ====== STEP 4: DEPLOY FILES ====== -->
+    <section class="wizard-card" id="step4">
+      <div class="card-title"><span class="icon">📦</span> Deploy SolaSim Files</div>
+      <p class="card-desc">
+        Everything is ready! Click the button below to transfer the SolaSim software to your board.
+        This takes about 15–30 seconds.
+      </p>
+
+      <ul class="file-list" id="fileList">
+        <li class="file-item" data-file="main.py">
+          <span class="file-icon">📄</span>
+          <div class="file-info">
+            <div class="file-name">main.py</div>
+            <div class="file-size">Boot loader — 16 bytes</div>
+          </div>
+          <span class="file-status" id="status-main-py">Waiting</span>
+        </li>
+        <li class="file-item" data-file="main_app.mpy">
+          <span class="file-icon">⚙️</span>
+          <div class="file-info">
+            <div class="file-name">main_app.mpy</div>
+            <div class="file-size">SolaSim firmware — 47 KB</div>
+          </div>
+          <span class="file-status" id="status-main-app-mpy">Waiting</span>
+        </li>
+        <li class="file-item" data-file="rainbow_demo.txt">
+          <span class="file-icon">🌈</span>
+          <div class="file-info">
+            <div class="file-name">rainbow_demo.txt</div>
+            <div class="file-size">Demo profile — 13 KB</div>
+          </div>
+          <span class="file-status" id="status-rainbow-demo-txt">Waiting</span>
+        </li>
+      </ul>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-label" id="progressLabel">Preparing...</div>
+      </div>
+
+      <div class="log-area" id="logArea"></div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="goToStep(3)">← Back</button>
+        <button class="btn btn-primary" onclick="deployFiles()" id="deployBtn">
+          🚀 Install Files
+        </button>
+        <button class="btn btn-secondary" onclick="toggleLog()" id="logToggle" style="margin-left:auto;">
+          📋 Show Log
+        </button>
+      </div>
+    </section>
+
+    <!-- ====== STEP 5: SUCCESS ====== -->
+    <section class="wizard-card" id="step5">
+      <div class="celebration">
+        <div class="big-check">✓</div>
+        <h2>You're All Set! 🎉</h2>
+        <p>
+          Your RP2040 is ready to go. The firmware has been installed
+          and the demo profile is loaded.
+        </p>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">
+          Your device will reboot automatically. Open <a href="SolaSimStudio.html"
+            onclick="if(location.hostname)this.href='../'" style="color: var(--primary); font-weight: 600;">SolaSim
+            Studio</a> to connect
+          and start building solar simulation programs.
+        </p>
+      </div>
+
+      <div class="btn-group" style="justify-content: center; gap: 0.75rem;">
+        <a class="btn btn-primary" href="SolaSimStudio.html" onclick="if(location.hostname)this.href='../'"
+          style="font-size:1.05rem; padding: 0.85rem 1.75rem;">
+          🌞 Open SolaSim Studio
+        </a>
+      </div>
+
+      <div class="alert alert-info" style="margin-top: 1.25rem;">
+        <span class="alert-icon">💡</span>
+        <div>
+          <strong>Next steps:</strong> In <a href="SolaSimStudio.html" onclick="if(location.hostname)this.href='../'"
+            style="color: inherit; font-weight: 600;">SolaSim
+            Studio</a>, click <strong>Connect to Device</strong>
+          and choose the serial port. You can try the Rainbow Demo profile right away, or create your own!
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ====== CONFETTI CONTAINER ====== -->
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <script>
+    // @ts-nocheck
+    // ============================================================================
+    //   EMBEDDED FILE DATA
+    // ============================================================================
+
+    // main.py (plain text)
+    const MAIN_PY_CONTENT = `import main_app`;
+
+    // main_app.mpy (base64-encoded binary)
+    const MAIN_APP_MPY_B64 = `TQYAH4NHgnyBci9Vc2Vycy9hbmR5L0xpYnJhcnkvQ2xvdWRTdG9yYWdlL0dvb2dsZURyaXZlLWFjcm9mdHNAYWl1LmFjLmpwL015IERyaXZlL0NvZGluZy9Tb2xhclNpbXVsYXRvci9SUDIwNDAvU29sYXJTaW11bGF0b3JTdW4ucHkADwRnYwAObWFjaGluZQAIbWF0aAAQbmVvcGl4ZWwABG9zAAxzZWxlY3QABnN5cwAKdWpzb24ACGpzb24ABlBXTQAQdGlja3NfbXMAEHNsZWVwX21zABBzbGVlcF91cwAUdGlja3NfZGlmZgAIdGltZQADCnNwZWVkABBkdWFsX3N1bgAKQkFTSUMACEJMVUUAEHByb2ZpbGVfAAZBTEwADFNUSUxMUwAIZmFzdAAIc2xvdwAMbWVkaXVtAAhJRExFAAZQaW4ABk9VVAAQTmVvUGl4ZWwABElOAA5QVUxMX1VQAHkIaGlnaAAIZnJlcQACMAACMQACMgACMwACNAACNQACNgACNwACOAACOQACOgAOY29sbGVjdAAQbWVtX2ZyZWUAEm1lbV9hbGxvYwCBKR5wcmludF9leGNlcHRpb24AFDxsaXN0Y29tcD4AJnN3YXBfbWF0cml4X2J1ZmZlcnMAHnNldF9zZXJ2b19hbmdsZQAQZHV0eV91MTYAMmdldF9zZXJ2bzFfY2FsaWJyYXRlZF9wd20AgVUgc2V0X3NlcnZvMV9hbmdsZQAuZ2V0X3JvdGF0aW9uX2NhbWVyYV9wd20ANHJlZnJlc2hfcG92X21hdHJpeF9kaXNwbGF5AAZsb3cANmNsZWFyX21hdHJpeF9kaXNwbGF5X2J1ZmZlcgAmZGlzcGxheV9zaW5nbGVfY2hhcgAwdXBkYXRlX2Rpc3BsYXlfY2hhcmFjdGVyADR1cGRhdGVfcm90YXRpb25fcGFyYW1ldGVycwCBLRpzdGFydF9wcm9ncmFtABhzdG9wX3Byb2dyYW0AJmFwcGx5X3N0ZXBfc2V0dGluZ3MABmRheQACPwAOZGVmYXVsdAAMQ1VTVE9NAA5zdW5yaXNlAAxzdW5zZXQAHmFkdmFuY2VfcHJvZ3JhbQAMcmVwZWF0ACRfc3luY19zdGVwX3RvX3RpbWUAKHByaW50X3Byb2dyYW1fc3RhdHVzAAZOL0EAFHRyYW5zaXRpb24ABlJVTgAOezouMGZ9JQAUIHwgRGF5OiB7fQAodXBkYXRlX3Byb2dyYW1fc3RhdGUACEpVTVAACmNsYW1wADBnZXRfY2FtZXJhX3BhbmVsX2luZGljZXMADk1JRERMRTUADk1JRERMRTMADE9VVEVSMgAMT1VURVI0ACx1cGRhdGVfc3BlZWRfaW5kaWNhdG9yACp1cGRhdGVfbW9kZV9pbmRpY2F0b3IAFFNDSUVOVElGSUMAKnVwZGF0ZV9ob2xkX2luZGljYXRvcgAydXBkYXRlX2F1dG9sb2FkX2luZGljYXRvcgAqdXBkYXRlX3JvdGF0aW9uX2N5Y2xlABBST1RBVElORwAKVklERU8ACkRXRUxMABJSRVRVUk5JTkcAMHVwZGF0ZV9zdGFuZGFsb25lX3NlcnZvMgASVFJJR0dFUkVEAApuaWdodAAwdXBkYXRlX3N0YW5kYWxvbmVfc2Vydm8zACRkYXRlX3RvX2RheV9udW1iZXIAKmNhbGN1bGF0ZV9kZWNsaW5hdGlvbgAGc2luAA5yYWRpYW5zACBlcXVhdGlvbl9vZl90aW1lAAZjb3MAHGluaXRfc29sYXJfZGF5AAZ0YW4ACGFjb3MADmRlZ3JlZXMAGGdldF9zaW1fdGltZQAsdHJpZ2dlcl9jYW1lcmFfc2h1dHRlcgAqdGltZV90b19kaXNwbGF5X2NoYXJzABZ4eV90b19pbmRleAAUZmlsbF9wYW5lbAAIZmlsbACCSSRfZHJhd19zdW5fdG9fcGFuZWwAJHVwZGF0ZV9zdW5fZGlzcGxheQAyY2FsY3VsYXRlX3NvbGFyX2VsZXZhdGlvbgAIYXNpbgAgZ2V0X3N1bl9wb3NpdGlvbgA2Z2V0X3NjaWVudGlmaWNfc3VuX3Bvc2l0aW9uAIF1BmV4cAAsZ2V0X2Jhc2ljX3N1bl9wb3NpdGlvbgAqYXBwbHlfY2FtZXJhX2xpZ2h0aW5nADRkZWFjdGl2YXRlX2NhbWVyYV9saWdodGluZwAuYXBwbHlfcm90YXRpb25fbGlnaHRpbmcAOGRlYWN0aXZhdGVfcm90YXRpb25fbGlnaHRpbmcAHGhhbmRsZV9jb21tYW5kAIFfgjGCI4IZEnJvdF9zcGVlZACCQRBhdXRvbG9hZAACdwASc3RhcnR0aW1lABJpbnRlbnNpdHkAEGRpc2FibGVkAAZ7fXMAEHN1bmNvbG9yAAxjdXN0b20ACGRhdGUAEGxhdGl0dWRlABJzb2xhcm1vZGUACGp1bXAAEG5leHRzdGVwAIIrDHRvZ2dsZQAOZHVhbHN1bgAOcHJvZ3JhbQAQcm90YXRpb24AEjF0bzFyYXRpbwAMc3RhdHVzAA50cmlnZ2VyAAxzZXJ2bzIADHNlcnZvMwAOc2F2ZWxvZwCBQQJhAAItAAQKCgAJgVEMe30udHh0ABROT1RFID0ge30KAApkdW1wcwAIc3RhdAACcgCCJwIjAAI9AB5TVEFSVF9USU1FX0hITU0AFFRJTUVfU0NBTEUAHklOVEVOU0lUWV9TQ0FMRQAeU0lNVUxBVElPTl9EQVRFABBMQVRJVFVERQACIgAIdHJ1ZQA+Uk9UQVRJT05fQ1lDTEVfSU5URVJWQUxfTUlOVVRFUwA2U1RJTExTX0lNQUdJTkdfSU5URVJWQUxfU0VDACpST1RBVElPTl9DQU1FUkFfU0VSVk8ALENBTUVSQV9UUklHR0VSX0hPTERfTVMANFJPVEFUSU9OX0lOQ1JFTUVOVF9ERUdSRUVTADJST1RBVElPTl9TVEVQX0lOVEVSVkFMX01TACpST1RBVElPTl9TUEVFRF9QUkVTRVQAJklNQUdFU19QRVJfUk9UQVRJT04AIkRFR1JFRVNfUEVSX0lNQUdFAB5QUk9HUkFNX0VOQUJMRUQAHlBST0dSQU1fUkVQRUFUUwAaUFJPR1JBTV9TVEVQUwAKbG9hZHMAGENVU1RPTV9TVU5fUgAYQ1VTVE9NX1NVTl9HABhDVVNUT01fU1VOX0IAIlJPVEFUSU9OX0FUX05JR0hUACxDQU1FUkFfTElHSFRJTkdfUEFORUxTAIFNJkNVU1RPTV9TVU5SSVNFX0hITU0AJENVU1RPTV9TVU5TRVRfSEhNTQAOVW5rbm93bgAGREFZAApOSUdIVAASZmlsbHBhbmVsAApsaWdodAAMY2FtZXJhAARvbgAGb2ZmAA5saXN0ZGlyAIF/DE5PVEUgPQASICB7fSAtIHt9AAggIHt9AIEfCC50eHQAggEOcmVzdGFydAAKcmVzZXQACGhlbHAAdRRzYWZlX3ByaW50AAxzdGRvdXQACmZsdXNoAChwcm9jZXNzX3NlcmlhbF9pbnB1dAAKc3RkaW4AgXscZ2V0X3NwZWVkX25hbWUACEhPTEQAElJlYWwgVGltZQAQNnggU3BlZWQAEjEgTWluL1NlYwAUMTAgTWluL1NlYwAMQ3VzdG9tABRSZXZlcnNlIHt9ACJzaHV0ZG93bl9oYXJkd2FyZQAMZGVpbml0AChfcmVhbmNob3Jfc3RhcnRfdGltZQAccnVuX3NpbXVsYXRpb24AEkhPVVJfVEVOUwAKUEFVU0UAEkhPVVJfT05FUwAKQ09MT04AgkUkU09MQVJfTk9PTl9NSU5VVEVTAChfZmluZF9sYXRlc3RfcHJvZmlsZQARIl9hdHRlbXB0X2F1dG9sb2FkACZfbG9hZF9hdXRvbG9hZF9wcmVmAE0qc2VyaWFsX2NvbW1hbmRfYnVmZmVyACJDVVNUT01fVElNRV9TQ0FMRQA6U1RPUF9TSU1VTEFUSU9OX0FGVEVSX1BST0dSQU0AFFNPTEFSX01PREUAHFNVTl9DT0xPUl9NT0RFACBEVUFMX1NVTl9FTkFCTEVEACBSRURfU0hJRlRfRkFDVE9SABxNQVhfQlJJR0hUTkVTUwASTE9OR0lUVURFACBUSU1FX1pPTkVfT0ZGU0VUACRSRVNUQVJUX0FGVEVSX0xPQUQAMEFVVE9fTE9BRF9MQVRFU1RfUFJPRklMRQAwQVVUT19MT0FEX1BST0ZJTEVfUFJFRklYACZMT0FERURfUFJPRklMRV9OQU1FAC5DQU1FUkFfTElHSFRJTkdfRU5BQkxFRAAuU0VSVk8zX0xJR0hUSU5HX0VOQUJMRUQAHENBTUVSQV9MSUdIVF9SABxDQU1FUkFfTElHSFRfRwAcQ0FNRVJBX0xJR0hUX0IAKENBTUVSQV9MSUdIVF9IT0xEX01TADJST1RBVElPTl9MSUdIVElOR19FTkFCTEVEACBST1RBVElPTl9MSUdIVF9SACBST1RBVElPTl9MSUdIVF9HACBST1RBVElPTl9MSUdIVF9CACBST1RBVElPTl9FTkFCTEVEAC5ST1RBVElPTl9DQU1FUkFfRU5BQkxFRAAgU0VSVk9fMVRPMV9SQVRJTwAuU0VSVk8yX0lOVEVSVkFMX0RBWV9TRUMAMlNFUlZPMl9JTlRFUlZBTF9OSUdIVF9TRUMALFNFUlZPMl9UUklHR0VSX0hPTERfTVMALlNFUlZPM19JTlRFUlZBTF9EQVlfU0VDADJTRVJWTzNfSU5URVJWQUxfTklHSFRfU0VDACxTRVJWTzNfVFJJR0dFUl9IT0xEX01TACpST1RBVElPTl9DQVBUVVJFX01PREUAJlJFVFVSTl9TVEVQX0RFR1JFRVMALlJFVFVSTl9TVEVQX0lOVEVSVkFMX01TABpEV0VMTF9USU1FX01TADZST1RBVElPTl9TUEVFRF9QUkVTRVRfVEFCTEUAPkZJTkVfUk9UQVRJT05fSU5DUkVNRU5UX0RFR1JFRVMARE1JTl9GSU5FX1JPVEFUSU9OX1NURVBfSU5URVJWQUxfTVMAPEZJTkVfUk9UQVRJT05fU1RFUF9JTlRFUlZBTF9NUwAsUFJJTlRfSU5URVJWQUxfUkVBTF9NUwAkc3RhcnRfcmVhbF90aW1lX21zABhwYW5lbF9idWZmZXIALFNVTl9VUERBVEVfSU5URVJWQUxfTVMAJGxhc3Rfc3VuX3VwZGF0ZV9tcwAecHJvZ3JhbV9ydW5uaW5nAChjdXJyZW50X3Byb2dyYW1fc3RlcAAmY3VycmVudF9zdGVwX3JlcGVhdAAsY3VycmVudF9wcm9ncmFtX3JlcGVhdAA2cHJvZ3JhbV9zdGVwX3N0YXJ0X3NpbV90aW1lADhsYXN0X3Byb2dyYW1fc3RhdHVzX3NpbV90aW1lACRob2xkX3N0ZXBfc3RhcnRfbXMAJmxhc3RfcHJpbnRlZF9taW51dGUAQnByb2dyYW1faGFzX2NvbXBsZXRlZF9hbGxfcmVwZWF0cwAkY3Jvc3NfZGF5X2hhc19sZWZ0ACRjcm9zc19kYXlfcHJldl9zaW0AMHJvdGF0aW9uX2xpZ2h0aW5nX2FjdGl2ZQAsY2FtZXJhX2xpZ2h0aW5nX2FjdGl2ZQA4bWFudWFsX3BhbmVsX292ZXJyaWRlX2FjdGl2ZQA8bWFudWFsX3BhbmVsX292ZXJyaWRlX3VudGlsX21zADRjYW1lcmFfbGlnaHRfaG9sZF91bnRpbF9tcwAocm90YXRpb25faW5fcHJvZ3Jlc3MAHHJvdGF0aW9uX3N0YXRlACxjdXJyZW50X3JvdGF0aW9uX2FuZ2xlADRsYXN0X3JvdGF0aW9uX3N0ZXBfdGltZV9tcwA2bGFzdF9yb3RhdGlvbl9hYnNvbHV0ZV90aW1lADJjYW1lcmFfdHJpZ2dlcl9zdGFydGVkX21zABhyZXR1cm5fYW5nbGUALGxhc3Rfc3RpbGxzX3RyaWdnZXJfbXMAMm1hbnVhbF9yb3RhdGlvbl90cmlnZ2VyZWQAGHNlcnZvMl9zdGF0ZQAsbGFzdF9zZXJ2bzJfdHJpZ2dlcl9tcwAuc2Vydm8yX3RyaWdnZXJfc3RhcnRfbXMAOnNlcnZvMl9jb250cm9sbGVkX2J5X3JvdGF0aW9uACpzZXJ2bzJfdXNpbmdfbGlnaHRpbmcAGHNlcnZvM19zdGF0ZQAsbGFzdF9zZXJ2bzNfdHJpZ2dlcl9tcwAuc2Vydm8zX3RyaWdnZXJfc3RhcnRfbXMAKnNlcnZvM191c2luZ19saWdodGluZwAeU0VSVk9fMV9QSU5fTlVNAB5TRVJWT18yX1BJTl9OVU0AHlNFUlZPXzNfUElOX05VTQAQUFdNX0ZSRVEAEE1JTl9EVVRZABBNQVhfRFVUWQAiU0VSVk9fQU5HTEVfUkFOR0UALlRBQkxFX1NFUlZPX1NUQVJUX0FOR0xFAC5DQU1FUkFfU0VSVk9fUkVTVF9BTkdMRQA0Q0FNRVJBX1NFUlZPX1RSSUdHRVJfQU5HTEUAIE5FT1BJWEVMX1BJTl9OVU0AIEJVVFRPTl9BX1BJTl9OVU0AIEJVVFRPTl9CX1BJTl9OVU0AMkRJR0lUX0RJU1BMQVlfRFVSQVRJT05fTVMAMkRJU1BMQVlfUEFVU0VfRFVSQVRJT05fTVMADmxlZF9Db2wADG5wX3BpbgAMcGl4ZWxzABBidXR0b25fYQAQYnV0dG9uX2IAEGxlZF9waW5zAA5waW5fbnVtACRtYXRyaXhfY29sdW1uX3BpbnMAOGluZGljYXRvcl9yb3dfcGluc19ib3R0b21fdXAAKGluZGljYXRvcl9jb2x1bW5fcGluACxtYXRyaXhfZGlzcGxheV9jb2x1bW5zACZtYXRyaXhfZGlzcGxheV9yb3dzACxDQU1FUkFfU0hVVFRFUl9QSU5fTlVNACRjYW1lcmFfc2h1dHRlcl9waW4AgXkabWF0cml4X2J1ZmZlcgAkbWF0cml4X2J1ZmZlcl9iYWNrACBQT1ZfQ09MX0RFTEFZX1VTABZzZXJ2b19waW5fMQAWc2Vydm9fcHdtXzEAFnNlcnZvX3Bpbl8yABZzZXJ2b19wd21fMgAWc2Vydm9fcGluXzMAFnNlcnZvX3B3bV8zADZTRVJWTzFfUFdNX0NBTElCUkFUSU9OXzNUTzQANlNFUlZPMV9QV01fQ0FMSUJSQVRJT05fMVRPMQAIRk9OVAAYU1VOUklTRV9USU1FABZTVU5TRVRfVElNRQAUREFZX0xFTkdUSAAuZnJvemVuX3NpbV90aW1lX21pbnV0ZXMAJmZyb3plbl9hYnNfc2ltX3RpbWUALmZyb3plbl90aW1lX2luaXRpYWxpemVkABBmcmVlX21lbQASYWxsb2NfbWVtABJ0b3RhbF9tZW0AgXdVSQJlAAsOcHdtX29iagAKYW5nbGUABm1heAAGbWluAIE9giGBVxJlbnVtZXJhdGUAHmNoYXJfdG9fZGlzcGxheQAQc3RlcF9hcmcAfYFDgVkYdGltZV9taW51dGVzAAxub3dfbXMAIHNpbV90aW1lX21pbnV0ZXMAcw5taW5fdmFsAA5tYXhfdmFsABZzcGVlZF9zY2FsZQAIbW9kZQAYaXNfaG9sZF9tb2RlABhhYnNfc2ltX3RpbWUAHHNpbV90aW1lX3NjYWxlABpkYXRlX3l5eXltbWRkAIIzFmRheV9vZl95ZWFyAB5zdGFydF90aW1lX2hobW0AGHJlYWxfdGltZV9tcwAUdGltZV9zY2FsZQAObWludXRlcwCCLwJ4AAJ5AAJnAAJiABhkdXJhdGlvbl9zZWMADGJ1ZmZlcgAIc2l6ZQAabWludXRlX29mX2RheQAKZmxvYXQAgg0WY29tbWFuZF9zdHIAb1GBbYJLYYExDm1lc3NhZ2UACnNjYWxlACJwcmVzZXJ2ZWRfbWludXRlcwASbmV3X3NjYWxlACpjdXJyZW50X3N0YXJ0X3JlYWxfbXMAKmJ1dHRvbl9iX3ByZXNzZWRfbGFzdAAqYnV0dG9uX2FfcHJlc3NlZF9sYXN0ADhidXR0b25fYV9sb25nX3ByZXNzX2RldGVjdGVkADhidXR0b25fYl9sb25nX3ByZXNzX2RldGVjdGVkAAxwcmVmaXgACAMxLjIFDXNpbV90aW1lX2hobW0ACAMxLjAFD2ludGVuc2l0eV9zY2FsZQAIAzAuNAgEMTMuNQgDMC4zCAUzNjAuMAgFMTgwLjAIBDYwLjAIAzcuMAoDBwEwBwEwBwEwCAUyNzMuMAUbTWVtb3J5IHV0aWxpemF0aW9uOiB7Oi4xZn0lAAVQU29sYXIgU2ltdWxhdG9yIFN0YXJ0aW5nISAgICAgICoqKiogICBUeXBlICJoZWxwIiBmb3IgYXZhaWxhYmxlIGNvbW1hbmRzLiAgICoqKioABRtTaW11bGF0aW9uIHN0b3BwZWQgYnkgdXNlci4ABRVBbiBlcnJvciBvY2N1cnJlZDoge30ABR1FcnJvciBzZXR0aW5nIHNlcnZvIGFuZ2xlOiB7fQAFHEVycm9yIHNldHRpbmcgc2Vydm8xIFBXTToge30ACAYxMDAwLjAFM1tQUk9HUkFNXSBObyBwcm9ncmFtIHN0ZXBzIGRlZmluZWQg4oCUIGNhbm5vdCBzdGFydAAFEVtQUk9HUkFNXSBTdGFydGVkAAURW1BST0dSQU1dIFN0b3BwZWQABQ1zdW5fY29sb3JfcmdiAAUvW1BST0dSQU1dIFN0ZXAgYXBwbGllZDogc3RlcD17fSBkYXk9e30gY29sb3I9e30ABSBbUFJPR1JBTV0gUmVwZWF0aW5nIHN0ZXAgKHt9L3t9KQAFJltQUk9HUkFNXSBSZXBlYXRpbmcgcHJvZ3JhbSAoY3ljbGUge30pAAUjW1BST0dSQU1dIFJlcGVhdGluZyBwcm9ncmFtICh7fS97fSkABTBbUFJPR1JBTV0gQ29tcGxldGUgLSBob2xkaW5nIGZpbmFsIGNvbmZpZ3VyYXRpb24ABTpbU0VSSUFMIENNRF0gUHJvZ3JhbSBzeW5jZWQgdG8gc3RlcCB7fSAoZGF5IHt9LCBzcGVlZCB7fXgpAAUNezowMmR9Ons6MDJkfQAFDGhvbGRfbWludXRlcwAFeltQUk9HUkFNXSBTdGVwIHt9L3t9IChSZXAge30ve30pIHwgVGFyZ2V0OiB7fSB8IEhPTEQgfCBJbnRlbnNpdHk6IHs6LjJmfSB8IFJlbWFpbmluZzoge30gbWludXRlcyB8IFNpbSBUaW1lOiB7OjAyZH06ezowMmR9AAVuW1BST0dSQU1dIFN0ZXAge30ve30gKFJlcCB7fS97fSl7fSB8IFRhcmdldDoge30gfCBTcGVlZDoge31YIHwgSW50ZW5zaXR5OiB7Oi4yZn0gfCBQcm9ncmVzczoge30gfCBTaW0gVGltZToge30ABTFbUFJPR1JBTV0gSG9sZGluZyBhdCB7OjAyZH06ezowMmR9IGZvciB7fSBtaW51dGVzAAgGMC4wMDAxBRBbUFJPR1JBTV0gRGF5IHt9AAgDMC4yCAMzLjAFQlNraXBwaW5nIHJvdGF0aW9uIGN5Y2xlIC0gbmlnaHR0aW1lIGFuZCBST1RBVElPTl9BVF9OSUdIVCBpcyBGYWxzZQAFMFN0YXJ0aW5nIG5ldyAzNjDCsCBpbWFnaW5nIGN5Y2xlIGF0IHNpbSB0aW1lIHt9bQAFFklOSVRJQUxfQ0FNRVJBX1RSSUdHRVIABSBJbml0aWFsIGNhbWVyYSB0cmlnZ2VyIGF0IHt9IGRlZwAFK1N0YXJ0aW5nIHJvdGF0aW9uIChjYW1lcmEgdHJpZ2dlciBkaXNhYmxlZCkABR9Jbml0aWFsIGNhbWVyYSB0cmlnZ2VyIHJlbGVhc2VkAAgFMWUtMDYFNlJvdGF0aW5nIHRhYmxlIHRvIHs6LjFmfSBkZWcgKHNlcnZvIGFuZ2xlOiB7Oi4xZn0gZGVnKQAFF1JPVEFUSU9OX0NBTUVSQV9UUklHR0VSAAUpU1RJTExTIG1vZGU6IENhbWVyYSB0cmlnZ2VyIGF0IHs6LjFmfSBkZWcABRRGSU5BTF9DQU1FUkFfVFJJR0dFUgAFLlJvdGF0aW9uIGNvbXBsZXRlLCB0cmlnZ2VyaW5nIGNhbWVyYSBhdCB7fSBkZWcABShSb3RhdGlvbiBjb21wbGV0ZSwgbW92aW5nIHRvIGR3ZWxsIHN0YXRlAAUkU1RJTExTIG1vZGU6IENhbWVyYSB0cmlnZ2VyIHJlbGVhc2VkAAUyRmluYWwgY2FtZXJhIHRyaWdnZXIgcmVsZWFzZWQsIHJldHVybmluZyB0byB7fSBkZWcABTVTdGFydGluZyBncmFkdWFsIHJldHVybiB0byBzdGFydCBwb3NpdGlvbiBmcm9tIHt9IGRlZwAFM1JldHVybmluZyB0YWJsZSB0byB7fSBkZWcgKHNlcnZvIGFuZ2xlOiB7Oi4xZn0gZGVnKQAFQUltYWdpbmcgY3ljbGUgY29tcGxldGUsIHRhYmxlIHNtb290aGx5IHJldHVybmVkIHRvIHN0YXJ0IHBvc2l0aW9uAAVGU3RhbmRhbG9uZSBjYW1lcmEgb24gc2Vydm8yIHRyaWdnZXIgYWN0aXZhdGVkICh1c2luZyB7fSBpbnRlcnZhbDoge31zKQAFQlNlY29uZCBjYW1lcmEgb24gc2Vydm8zIHRyaWdnZXIgYWN0aXZhdGVkICh1c2luZyB7fSBpbnRlcnZhbDoge31zKQAIBTIzLjQ1CBEzLjE0MTU5MjY1MzU4OTc5MwgGMjI5LjE4CAc3LjVlLTA1CAgwLjAwMTg2OAgIMC4wMzIwNzcICDAuMDE0NjE1CAgwLjA0MDg0OQUjU0NJRU5USUZJQyBtb2RlbDogRGF0ZToge30sIERheToge30ABShTdW4gc2l6ZSB2YXJpZXMgYmFzZWQgb24gZWxldmF0aW9uIGFuZ2xlAAVGQ1VTVE9NIG1vZGVsOiBVc2VyLWRlZmluZWQgc3VucmlzZSB7OjAyZH06ezowMmR9LCBzdW5zZXQgezowMmR9Ons6MDJkfQAFI0NvbnN0YW50IDh4OCBzdW4gc2l6ZSAoQkFTSUMgc3R5bGUpAAU+QkFTSUMgbW9kZWw6IEZpeGVkIHN1bnJpc2Uvc3Vuc2V0IHRpbWVzLCBjb25zdGFudCA4eDggc3VuIHNpemUABRJTdW4gY29sb3IgbW9kZToge30ABS1TdW5yaXNlOiB7OjAyZH06ezowMmR9LCBTdW5zZXQ6IHs6MDJkfTp7OjAyZH0ABRNEYXkgbGVuZ3RoOiB7fWgge31tAAgDMC41CAQwLjI1CgIHAy0xMAcBNAgHMC41MDU3MggHNi4wNzk5NQgHLTEuNjM2NAgEMC4yMQoCBwMtMTAHATAFNUNhbWVyYSBsaWdodGluZyBhY3RpdmF0ZWQgb24gcGFuZWxzIHt9OiBSR0Ioe30se30se30pAAU3Um90YXRpb24gbGlnaHRpbmcgYWN0aXZhdGVkIG9uIHBhbmVscyB7fTogUkdCKHt9LHt9LHt9KQAFD3JvdGF0aW9uYXRuaWdodAAKAwUEdHJ1ZQAFAm9uAAUBMQAFKltTRVJJQUwgQ01EXSBST1RBVElPTl9BVF9OSUdIVCBzZXQgdG8gVHJ1ZQAKAwUFZmFsc2UABQNvZmYABQEwAAUrW1NFUklBTCBDTURdIFJPVEFUSU9OX0FUX05JR0hUIHNldCB0byBGYWxzZQAFRVtTRVJJQUwgQ01EXSBFcnJvcjogcm90YXRpb25hdG5pZ2h0IG11c3QgYmUgdHJ1ZS9vbi8xIG9yIGZhbHNlL29mZi8wLgAFE3JvdGF0aW9uY2FtZXJhc2Vydm8ACgIFATIABQEzAAUvW1NFUklBTCBDTURdIFJvdGF0aW9uIGltYWdpbmcgd2lsbCB1c2Ugc2Vydm8ge30ABTdbU0VSSUFMIENNRF0gRXJyb3I6IHJvdGF0aW9uY2FtZXJhc2Vydm8gbXVzdCBiZSAyIG9yIDMuAAU+W1NFUklBTCBDTURdIFJvdGF0aW9uIHNwZWVkIHByZXNldCBzZXQgdG8gJ3t9JyAoe31zIHBlciAzNjDCsCkABUdbU0VSSUFMIENNRF0gRXJyb3I6IEludmFsaWQgcm90X3NwZWVkLiBVc2UgJ3Nsb3cnLCAnbWVkaXVtJywgb3IgJ2Zhc3QnLgAFE2ltYWdlc19wZXJfcm90YXRpb24ABTtbU0VSSUFMIENNRF0gSW1hZ2VzIHBlciByb3RhdGlvbiBzZXQgdG8ge30gKGV2ZXJ5IHs6LjJmfcKwKQAFNltTRVJJQUwgQ01EXSBFcnJvcjogaW1hZ2VzX3Blcl9yb3RhdGlvbiBtdXN0IGJlIDItMzYwLgAFRltTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCBpbWFnZXNfcGVyX3JvdGF0aW9uICd7fScuIE11c3QgYmUgaW50ZWdlci4ABRFkZWdyZWVzX3Blcl9pbWFnZQAFR1tTRVJJQUwgQ01EXSBEZWdyZWVzIHBlciBpbWFnZSBzZXQgdG8gezouMmZ9wrAgKHt9IGltYWdlcyBwZXIgcm90YXRpb24pAAU7W1NFUklBTCBDTURdIEVycm9yOiBkZWdyZWVzX3Blcl9pbWFnZSBtdXN0IGJlID4wIGFuZCA8PTE4MC4ABUJbU0VSSUFMIENNRF0gRXJyb3I6IEludmFsaWQgZGVncmVlc19wZXJfaW1hZ2UgJ3t9Jy4gTXVzdCBiZSBmbG9hdC4ABRRjYW1lcmFsaWdodGluZ3BhbmVscwAFLVtTRVJJQUwgQ01EXSBDYW1lcmEgbGlnaHRpbmcgcGFuZWxzIHNldCB0byB7fQAFOltTRVJJQUwgQ01EXSBFcnJvcjogY2FtZXJhbGlnaHRpbmdwYW5lbHMgbXVzdCBiZSBvbmUgb2Yge30ABQ5jYW1lcmFsaWdodHJnYgAFMVtTRVJJQUwgQ01EXSBDYW1lcmEgbGlnaHQgUkdCIHNldCB0byAoe30sIHt9LCB7fSkABURbU0VSSUFMIENNRF0gRXJyb3I6IGNhbWVyYWxpZ2h0cmdiIHJlcXVpcmVzIDMgaW50ZWdlciB2YWx1ZXMgKDAtMjU1KQAFEHJvdGF0aW9ubGlnaHRyZ2IABTNbU0VSSUFMIENNRF0gUm90YXRpb24gbGlnaHQgUkdCIHNldCB0byAoe30sIHt9LCB7fSkABUZbU0VSSUFMIENNRF0gRXJyb3I6IHJvdGF0aW9ubGlnaHRyZ2IgcmVxdWlyZXMgMyBpbnRlZ2VyIHZhbHVlcyAoMC0yNTUpAAUhW1NFUklBTCBDTURdIFRpbWUgc2NhbGUgc2V0IHRvIHt9AAoDBQJvbgAFBHRydWUABQExAAoDBQNvZmYABQVmYWxzZQAFATAABTpbU0VSSUFMIENNRF0gRXJyb3I6IGF1dG9sb2FkIG11c3QgYmUgb24vb2ZmL3RydWUvZmFsc2UvMS8wAAUMYXV0b2xvYWQuY2ZnAAU8W1NFUklBTCBDTURdIEF1dG8tbG9hZCBsYXRlc3QgcHJvZmlsZSBzZXQgdG86IHt9IChwZXJzaXN0ZWQpAAVEW1NFUklBTCBDTURdIEF1dG8tbG9hZCBsYXRlc3QgcHJvZmlsZSBzZXQgdG86IHt9IChOT1QgcGVyc2lzdGVkOiB7fSkABUBbU0VSSUFMIENNRF0gRXJyb3I6IEludmFsaWQgdGltZS4gTXVzdCBiZSBiZXR3ZWVuIDAwMDAgYW5kIDIzNTkuAAUxW1NFUklBTCBDTURdIEhPTEQgbW9kZTogVGltZSBzZXQgdG8gezowMmR9Ons6MDJkfQAFKVtTRVJJQUwgQ01EXSBUaW1lIGp1bXBlZCB0byB7OjAyZH06ezowMmR9AAVCW1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIHRpbWUgdmFsdWUgJ3t9Jy4gTXVzdCBiZSBpbnRlZ2VyIEhITU0uAAUsW1NFUklBTCBDTURdIFN0YXJ0IHRpbWUgYW5jaG9yIHNldCB0byB7OjA0ZH0ABUNbU0VSSUFMIENNRF0gVGltZSBhbmNob3IgcmVzZXQgdG8gcHJlc2VydmUgY3VycmVudCBzaW11bGF0aW9uIHRpbWUuAAVPW1NFUklBTCBDTURdIEluIEhPTEQgbW9kZS4gTmV3IHN0YXJ0IHRpbWUgd2lsbCBiZSB1c2VkIHdoZW4gc2ltdWxhdGlvbiByZXN1bWVzLgAFS1tTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCBzdGFydCB0aW1lIHZhbHVlICd7fScuIE11c3QgYmUgYW4gaW50ZWdlciBISE1NLgAFLVtTRVJJQUwgQ01EXSBHbG9iYWwgaW50ZW5zaXR5IHNjYWxlIHNldCB0byB7fQAFPFtTRVJJQUwgQ01EXSBFcnJvcjogSW50ZW5zaXR5IG11c3QgYmUgYSBub24tbmVnYXRpdmUgbnVtYmVyLgAFQ1tTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCBpbnRlbnNpdHkgdmFsdWUgJ3t9Jy4gTXVzdCBiZSBhIG51bWJlci4ABRFzZXJ2bzJkYXlpbnRlcnZhbAAFL1tTRVJJQUwgQ01EXSBTZXJ2byAyIGRheXRpbWUgaW50ZXJ2YWwgc2V0IHRvIHt9AAU5W1NFUklBTCBDTURdIEVycm9yOiBJbnRlcnZhbCBtdXN0IGJlID49IDAgKDAgPSBkaXNhYmxlZCkuAAVEW1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIGludGVydmFsIHZhbHVlICd7fScuIE11c3QgYmUgYW4gaW50ZWdlci4ABRNzZXJ2bzJuaWdodGludGVydmFsAAUxW1NFUklBTCBDTURdIFNlcnZvIDIgbmlnaHR0aW1lIGludGVydmFsIHNldCB0byB7fQAFEXNlcnZvM2RheWludGVydmFsAAUvW1NFUklBTCBDTURdIFNlcnZvIDMgZGF5dGltZSBpbnRlcnZhbCBzZXQgdG8ge30ABRNzZXJ2bzNuaWdodGludGVydmFsAAUxW1NFUklBTCBDTURdIFNlcnZvIDMgbmlnaHR0aW1lIGludGVydmFsIHNldCB0byB7fQAFEHJvdGF0aW9uaW50ZXJ2YWwABTpbU0VSSUFMIENNRF0gUm90YXRpb24gY3ljbGUgaW50ZXJ2YWwgc2V0IHRvIHt9IHNpbSBtaW51dGVzAAU3W1NFUklBTCBDTURdIEVycm9yOiBJbnRlcnZhbCBtdXN0IGJlIGEgcG9zaXRpdmUgbnVtYmVyLgAKAgUHbmF0dXJhbAAFBGJsdWUABSVbU0VSSUFMIENNRF0gU3VuIGNvbG9yIG1vZGUgc2V0IHRvIHt9AAoDBQFSAAUBRwAFAUIABUFbU0VSSUFMIENNRF0gV2FybmluZzoge30gdmFsdWUge30gb3V0IG9mIHJhbmdlLCBjbGFtcGVkIHRvIDAtMjU1LgAFOFtTRVJJQUwgQ01EXSBTdW4gY29sb3IgbW9kZSBzZXQgdG8gQ1VTVE9NOiBSR0Ioe30se30se30pAAU8W1NFUklBTCBDTURdIEVycm9yOiBVc2FnZSBpcyBzZXQgc3VuY29sb3IgY3VzdG9tIDxyPiA8Zz4gPGI+AAVVW1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIHN1bmNvbG9yLiBVc2UgJ25hdHVyYWwnLCAnYmx1ZScsIG9yICdjdXN0b20gPHI+IDxnPiA8Yj4nLgAFDHJvdGF0aW9ubW9kZQAKAgUGc3RpbGxzAAUFdmlkZW8ABSxbU0VSSUFMIENNRF0gUm90YXRpb24gY2FwdHVyZSBtb2RlIHNldCB0byB7fQAFQltTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCByb3RhdGlvbm1vZGUuIFVzZSAnc3RpbGxzJyBvciAndmlkZW8nLgAFJltTRVJJQUwgQ01EXSBTaW11bGF0aW9uIGRhdGUgc2V0IHRvIHt9AAU2W1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIGRhdGUgZm9ybWF0LiBVc2UgWVlZWU1NREQuAAU+W1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIGRhdGUgdmFsdWUgJ3t9Jy4gTXVzdCBiZSBhIG51bWJlci4ABSdbU0VSSUFMIENNRF0gTGF0aXR1ZGUgc2V0IHRvIHt9IGRlZ3JlZXMABThbU0VSSUFMIENNRF0gRXJyb3I6IExhdGl0dWRlIG11c3QgYmUgYmV0d2VlbiAtOTAgYW5kIDkwLgAFQltTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCBsYXRpdHVkZSB2YWx1ZSAne30nLiBNdXN0IGJlIGEgbnVtYmVyLgAKAwUFYmFzaWMABQpzY2llbnRpZmljAAUGY3VzdG9tAAUhW1NFUklBTCBDTURdIFNvbGFyIG1vZGUgc2V0IHRvIHt9AAVPW1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIHNvbGFyIG1vZGUuIFVzZSAnYmFzaWMnLCAnc2NpZW50aWZpYycsIG9yICdjdXN0b20nLgAFKVtTRVJJQUwgQ01EXSBDdXN0b20gc3VucmlzZSBzZXQgdG8gezowNGR9AAU/W1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIEhITU0gZm9ybWF0LiBNaW51dGVzIG11c3QgYmUgMDAtNTkuAAVFW1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIHN1bnJpc2UgdmFsdWUgJ3t9Jy4gTXVzdCBiZSBISE1NIGludGVnZXIuAAUoW1NFUklBTCBDTURdIEN1c3RvbSBzdW5zZXQgc2V0IHRvIHs6MDRkfQAFRFtTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCBzdW5zZXQgdmFsdWUgJ3t9Jy4gTXVzdCBiZSBISE1NIGludGVnZXIuAAUPcm90X3N0aWxsc19pbnR2AAUyW1NFUklBTCBDTURdIFNUSUxMUyBpbWFnaW5nIGludGVydmFsIHNldCB0byB7fSBzZWMABSlbU0VSSUFMIENNRF0gRXJyb3I6IEludGVydmFsIG11c3QgYmUgPiAwLgAFOFtTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCB2YWx1ZSAne30nLiBNdXN0IGJlIGEgZmxvYXQuAAUNcm90X3RyaWdfaG9sZAAFLVtTRVJJQUwgQ01EXSBDYW1lcmEgdHJpZ2dlciBob2xkIHNldCB0byB7fSBtcwAFKltTRVJJQUwgQ01EXSBFcnJvcjogSG9sZCB0aW1lIG11c3QgYmUgPiAwLgAFO1tTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCB2YWx1ZSAne30nLiBNdXN0IGJlIGFuIGludGVnZXIuAAULcm90X2luY19kZWcABS1bU0VSSUFMIENNRF0gUm90YXRpb24gaW5jcmVtZW50IHNldCB0byB7fSBkZWcABSpbU0VSSUFMIENNRF0gRXJyb3I6IEluY3JlbWVudCBtdXN0IGJlID4gMC4ABQ1yb3Rfc3RlcF9pbnR2AAUwW1NFUklBTCBDTURdIFJvdGF0aW9uIHN0ZXAgaW50ZXJ2YWwgc2V0IHRvIHt9IG1zAAUuW1NFUklBTCBDTURdIEVycm9yOiBTdGVwIGludGVydmFsIG11c3QgYmUgPiAwLgAFPVtTRVJJQUwgQ01EXSBFcnJvcjogVW5rbm93biBwYXJhbWV0ZXIgJ3t9JyBmb3IgJ3NldCcgY29tbWFuZC4ABThbU0VSSUFMIENNRF0gRXJyb3I6IENhbm5vdCBqdW1wLCBwcm9ncmFtIGlzIG5vdCBydW5uaW5nLgAFMltTRVJJQUwgQ01EXSBKdW1waW5nIHByb2dyYW0gdG8gc3RlcCB7fSBhdCB7OjA0ZH0uAAVCW1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIHN0ZXAgbnVtYmVyLiBNdXN0IGJlIGJldHdlZW4gMSBhbmQge30uAAVBW1NFUklBTCBDTURdIEVycm9yOiBJbnZhbGlkIHN0ZXAgbnVtYmVyICd7fScuIE11c3QgYmUgYW4gaW50ZWdlci4ABVFbU0VSSUFMIENNRF0gRXJyb3I6IFVua25vd24ganVtcCBjb21tYW5kLiBVc2UgJ2p1bXAgbmV4dHN0ZXAnIG9yICdqdW1wIHN0ZXAgPG4+Jy4ABSVbU0VSSUFMIENNRF0gRHVhbCBzdW4gbW9kZSBzZXQgdG86IHt9AAUpW1NFUklBTCBDTURdIFByb2dyYW0gZXhlY3V0aW9uIHNldCB0bzoge30ABSZbU0VSSUFMIENNRF0gUm90YXRpb24gY3ljbGUgc2V0IHRvOiB7fQAFEHJlc3RhcnRhZnRlcmxvYWQABSpbU0VSSUFMIENNRF0gUmVzdGFydCBhZnRlciBsb2FkIHNldCB0bzoge30ABTBbU0VSSUFMIENNRF0gU2Vydm8tdG8tdGFibGUgMToxIHJhdGlvIHNldCB0bzoge30ABUlbU0VSSUFMIENNRF0gRXJyb3I6ICd0b2dnbGUgYXV0b2xvYWQnIHJlbW92ZWQuIFVzZSAnc2V0IGF1dG9sb2FkIG9ufG9mZicuAAUvW1NFUklBTCBDTURdIEVycm9yOiBVbmtub3duIHRvZ2dsZSB0YXJnZXQgJ3t9Jy4ABRNQUk9HUkFNX0VOQUJMRUQ6IHt9AAUTUFJPR1JBTV9SRVBFQVRTOiB7fQAFDlBST0dSQU1fU1RFUFM6AAUNICBTdGVwIHt9OiB7fQAFLltTRVJJQUwgQ01EXSBFcnJvcjogU2Vydm8gMiBpcyBjdXJyZW50bHkgYnVzeS4ABTRbU0VSSUFMIENNRF0gTWFudWFsbHkgdHJpZ2dlcmluZyBwaG90byB3aXRoIFNlcnZvIDIuAAUuW1NFUklBTCBDTURdIEVycm9yOiBTZXJ2byAzIGlzIGN1cnJlbnRseSBidXN5LgAFNFtTRVJJQUwgQ01EXSBNYW51YWxseSB0cmlnZ2VyaW5nIHBob3RvIHdpdGggU2Vydm8gMy4ABTpbU0VSSUFMIENNRF0gRXJyb3I6IFJvdGF0aW9uIGN5Y2xlIGlzIGFscmVhZHkgaW4gcHJvZ3Jlc3MuAAU1W1NFUklBTCBDTURdIE1hbnVhbCByb3RhdGlvbiBpbWFnaW5nIGN5Y2xlIHRyaWdnZXJlZC4ABU9bU0VSSUFMIENNRF0gRXJyb3I6IFVua25vd24gdGFyZ2V0ICd7fScuIFVzZSAnc2Vydm8yJywgJ3NlcnZvMycsIG9yICdyb3RhdGlvbicuAAUPc2V0dGluZ3Nfe30udHh0AAU4LS0tIFNldHRpbmdzIExvZ2dlZCBvbiB7fSBhdCBzaW0gdGltZSB7OjAyZH06ezowMmR9IC0tLQoABRVTVEFSVF9USU1FX0hITU0gPSB7fQoABRBUSU1FX1NDQUxFID0ge30KAAUVSU5URU5TSVRZX1NDQUxFID0ge30KAAUVU0lNVUxBVElPTl9EQVRFID0ge30KAAUOTEFUSVRVREUgPSB7fQoABRJTT0xBUl9NT0RFID0gInt9IgoABRlDVVNUT01fU1VOUklTRV9ISE1NID0ge30KAAUYQ1VTVE9NX1NVTlNFVF9ISE1NID0ge30KAAUWU1VOX0NPTE9SX01PREUgPSAie30iCgAFFkRVQUxfU1VOX0VOQUJMRUQgPSB7fQoABRVQUk9HUkFNX0VOQUJMRUQgPSB7fQoABRZST1RBVElPTl9FTkFCTEVEID0ge30KAAUdUk9UQVRJT05fQ0FQVFVSRV9NT0RFID0gInt9IgoABSVST1RBVElPTl9DWUNMRV9JTlRFUlZBTF9NSU5VVEVTID0ge30KAAUdU0VSVk8yX0lOVEVSVkFMX0RBWV9TRUMgPSB7fQoABR9TRVJWTzJfSU5URVJWQUxfTklHSFRfU0VDID0ge30KAAUdU0VSVk8zX0lOVEVSVkFMX0RBWV9TRUMgPSB7fQoABR9TRVJWTzNfSU5URVJWQUxfTklHSFRfU0VDID0ge30KAAUbUk9UQVRJT05fQ0FNRVJBX1NFUlZPID0ge30KAAUYUkVTVEFSVF9BRlRFUl9MT0FEID0ge30KAAUhU1RJTExTX0lNQUdJTkdfSU5URVJWQUxfU0VDID0ge30KAAUcQ0FNRVJBX1RSSUdHRVJfSE9MRF9NUyA9IHt9CgAFHVJPVEFUSU9OX1NQRUVEX1BSRVNFVCA9ICJ7fSIKAAUZSU1BR0VTX1BFUl9ST1RBVElPTiA9IHt9CgAFG0RFR1JFRVNfUEVSX0lNQUdFID0gezouMmZ9CgAFIFJPVEFUSU9OX0lOQ1JFTUVOVF9ERUdSRUVTID0ge30KAAUfUk9UQVRJT05fU1RFUF9JTlRFUlZBTF9NUyA9IHt9CgAFF1JPVEFUSU9OX0FUX05JR0hUID0ge30KAAUoW1NFUklBTCBDTURdIFNldHRpbmdzIGFwcGVuZGVkIHRvIGxvZyB7fQAFOltTRVJJQUwgQ01EXSBFcnJvcjogSW52YWxpZCBkYXRlY29kZSBmb3JtYXQuIFVzZSBZWVlZTU1ERC4ABSZbU0VSSUFMIENNRF0gVXNhZ2U6IHNhdmVsb2cgPHl5eXltbWRkPgAFC3NhdmVwcm9maWxlAAU1W1NFUklBTCBDTURdIFNhdmluZyBjdXJyZW50IHNldHRpbmdzIHRvIHByb2ZpbGUge30uLi4ABRJDVVNUT01fU1VOX1IgPSB7fQoABRJDVVNUT01fU1VOX0cgPSB7fQoABRJDVVNUT01fU1VOX0IgPSB7fQoABR5DQU1FUkFfTElHSFRJTkdfUEFORUxTID0gInt9IgoABRRDQU1FUkFfTElHSFRfUiA9IHt9CgAFFENBTUVSQV9MSUdIVF9HID0ge30KAAUUQ0FNRVJBX0xJR0hUX0IgPSB7fQoABRZST1RBVElPTl9MSUdIVF9SID0ge30KAAUWUk9UQVRJT05fTElHSFRfRyA9IHt9CgAFFlJPVEFUSU9OX0xJR0hUX0IgPSB7fQoABRVQUk9HUkFNX1JFUEVBVFMgPSB7fQoABRNQUk9HUkFNX1NURVBTID0ge30KAAUtW1NFUklBTCBDTURdIFByb2ZpbGUgJ3t9JyBzYXZlZCBzdWNjZXNzZnVsbHkuAAUlW1NFUklBTCBDTURdIEVycm9yIHNhdmluZyBwcm9maWxlOiB7fQAFPVtTRVJJQUwgQ01EXSBVc2FnZTogc2F2ZXByb2ZpbGUgPHByb2ZpbGVuYW1lPiBbb3B0aW9uYWwgbm90ZV0ABQtsb2FkcHJvZmlsZQAFK1tTRVJJQUwgQ01EXSBFcnJvcjogUHJvZmlsZSAne30nIG5vdCBmb3VuZC4ABRNpbnZhbGlkIEhITU0gZm9ybWF0AAUUbXVzdCBiZSBub24tbmVnYXRpdmUABQxvdXQgb2YgcmFuZ2UABRFtdXN0IGJlIC05MCB0byA5MAAKAwUKU09MQVJfTU9ERQAFDlNVTl9DT0xPUl9NT0RFAAUVUk9UQVRJT05fQ0FQVFVSRV9NT0RFAAoCBRNDVVNUT01fU1VOUklTRV9ISE1NAAUSQ1VTVE9NX1NVTlNFVF9ISE1NAAoEBRBEVUFMX1NVTl9FTkFCTEVEAAUPUFJPR1JBTV9FTkFCTEVEAAUQUk9UQVRJT05fRU5BQkxFRAAFElJFU1RBUlRfQUZURVJfTE9BRAAKAgUEdHJ1ZQAFBWZhbHNlAAUVbXVzdCBiZSBUcnVlIG9yIEZhbHNlAAUQbXVzdCBiZSBwb3NpdGl2ZQAKBAUXU0VSVk8yX0lOVEVSVkFMX0RBWV9TRUMABRlTRVJWTzJfSU5URVJWQUxfTklHSFRfU0VDAAUXU0VSVk8zX0lOVEVSVkFMX0RBWV9TRUMABRlTRVJWTzNfSU5URVJWQUxfTklHSFRfU0VDAAUbbXVzdCBiZSA+PSAwICgwID0gZGlzYWJsZWQpAAULbXVzdCBiZSA+IDAACgIHATIHATMFJFJPVEFUSU9OX0NBTUVSQV9TRVJWTyBtdXN0IGJlIDIgb3IgMwAFHWludmFsaWQgUk9UQVRJT05fU1BFRURfUFJFU0VUAAUhSU1BR0VTX1BFUl9ST1RBVElPTiBtdXN0IGJlIDItMzYwAAUmREVHUkVFU19QRVJfSU1BR0UgbXVzdCBiZSA+MCBhbmQgPD0xODAABSdST1RBVElPTl9BVF9OSUdIVCBtdXN0IGJlIFRydWUgb3IgRmFsc2UACgYFDkNBTUVSQV9MSUdIVF9SAAUOQ0FNRVJBX0xJR0hUX0cABQ5DQU1FUkFfTElHSFRfQgAFEFJPVEFUSU9OX0xJR0hUX1IABRBST1RBVElPTl9MSUdIVF9HAAUQUk9UQVRJT05fTElHSFRfQgAKBwUOSU1BR0VfQVRfTklHSFQABRlTRVJWTzJfU1RBTkRBTE9ORV9FTkFCTEVEAAUZU0VSVk8zX1NUQU5EQUxPTkVfRU5BQkxFRAAFE1NFUlZPMl9JTlRFUlZBTF9TRUMABRNTRVJWTzNfSU5URVJWQUxfU0VDAAURREVHUkVFU19QRVJfSU1BR0UABQROT1RFAAUuW1NFUklBTCBDTURdIExvYWQgY2FuY2VsbGVkLiBFcnJvciBpbiAne30nOiB7fQAFOVtTRVJJQUwgQ01EXSBQcm9maWxlICd7fScgdmFsaWRhdGVkLiBBcHBseWluZyBzZXR0aW5ncy4uLgAFHltTRVJJQUwgQ01EXSBTZXR0aW5ncyBhcHBsaWVkLgAFK1tTRVJJQUwgQ01EXSBSZXN0YXJ0aW5nIHNpbXVsYXRpb24gbG9naWMuLi4ABTVbU0VSSUFMIENNRF0gU2ltdWxhdGlvbiByZXN0YXJ0ZWQuIFRpbWUgYW5jaG9yIHJlc2V0LgAFR1tTRVJJQUwgQ01EXSBSRVNUQVJUX0FGVEVSX0xPQUQgaXMgRmFsc2UuIE1hbnVhbCByZXN0YXJ0IG1heSBiZSBuZWVkZWQuAAUtW1NFUklBTCBDTURdIFVzYWdlOiBsb2FkcHJvZmlsZSA8cHJvZmlsZW5hbWU+AAUVLS0tIFN5c3RlbSBTdGF0dXMgLS0tAAUXLS0gU2ltdWxhdGlvbiAmIFRpbWUgLS0ABRggIChSZSlTdGFydCBUaW1lOiB7OjA0ZH0ABRkgIFNpbSBUaW1lOiB7OjAyZH06ezowMmR9AAURICBUaW1lIFNjYWxlOiB7fXgABRAgIFNwZWVkIE5hbWU6IHt9AAUVICBQcm9ncmFtIEVuYWJsZWQ6IHt9AAUgICBSZXN0YXJ0IEFmdGVyIFByb2ZpbGUgTG9hZDoge30ABR4gIEF1dG8tTG9hZCBMYXRlc3QgUHJvZmlsZToge30ABRQgIExvYWRlZCBQcm9maWxlOiB7fQAFFyhub25lIC0gdXNpbmcgZGVmYXVsdHMpAAUXLS0gRW52aXJvbm1lbnQgJiBTdW4gLS0ABRAgIFNvbGFyIE1vZGU6IHt9AAUYICBDdXN0b20gU3VucmlzZTogezowNGR9AAUXICBDdXN0b20gU3Vuc2V0OiB7OjA0ZH0ABRUgIEludGVuc2l0eSBTY2FsZToge30ABRQgIFN1biBDb2xvciBNb2RlOiB7fQAFFiAgRHVhbCBTdW4gRW5hYmxlZDoge30ABR4gIEN1c3RvbSBTdW4gUkdCOiAoe30sIHt9LCB7fSkABRgtLSBIYXJkd2FyZSAmIEltYWdpbmcgLS0ABSggIFNlcnZvIDI6IERheSB7fSB8IE5pZ2h0IHt9IFt7fSBBQ1RJVkVdAAUoICBTZXJ2byAzOiBEYXkge30gfCBOaWdodCB7fSBbe30gQUNUSVZFXQAFFy0tIC0tIC0tIC0tIC0tIC0tIC0tIC0tAAUWICBSb3RhdGlvbiBFbmFibGVkOiB7fQAFHCAgUm90YXRpb24gSW1hZ2luZyBTZXJ2bzoge30ABSAgIFJvdGF0aW9uIEludGVydmFsOiB7fSByZWFsIG1pbgAFGSAgSW1hZ2VzIHBlciBSb3RhdGlvbjoge30ABR0gIERlZ3JlZXMgcGVyIEltYWdlOiB7Oi4yZn3CsAAFFyAgUm90YXRpb24gYXQgTmlnaHQ6IHt9AAUoICBSb3RhdGlvbiBTcGVlZCBQcmVzZXQ6IHt9ICh7fXMvMzYwZGVnKQAFGyAgUm90YXRpb24gSW1hZ2luZyBNb2RlOiB7fQAFHCAgQ2FtZXJhIExpZ2h0aW5nIFBhbmVsczoge30ABSAgIENhbWVyYSBMaWdodCBSR0I6ICh7fSwge30sIHt9KQAFIiAgUm90YXRpb24gTGlnaHQgUkdCOiAoe30sIHt9LCB7fSkABSggIDE6MSBTZXJ2by10by1zYW1wbGUgcm90YXRpb24gcmF0aW86IHt9AAUeICBSb3RhdGlvbiBUcmlnZ2VyIEhvbGQ6IHt9IG1zAAUXLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0ABRstLSBQcm9ncmFtIENvbmZpZ3VyYXRpb24gLS0ABRUgIFByb2dyYW0gUmVwZWF0czoge30ABRUgIE51bWJlciBvZiBTdGVwczoge30ABRsgIFByb2dyYW0gU3RlcHMgKHt9LXt9KToge30ABSogIFByb2dyYW0gU3RlcHM6IChub25lIC0gcHJvZ3JhbSBkaXNhYmxlZCkABTRbU0VSSUFMIENNRF0gUGFuZWwgZmlsbGVkIHdpdGggUkdCKHt9LHt9LHt9KSBmb3Ige31zAAUWW1NFUklBTCBDTURdIEVycm9yOiB7fQAFJ1tTRVJJQUwgQ01EXSBDYW1lcmEgbGlnaHRpbmcgdHVybmVkIE9OLgAFKFtTRVJJQUwgQ01EXSBDYW1lcmEgbGlnaHRpbmcgdHVybmVkIE9GRi4ABSZbU0VSSUFMIENNRF0gRXJyb3I6IFVzZSAnb24nIG9yICdvZmYnLgAFKVtTRVJJQUwgQ01EXSBSb3RhdGlvbiBsaWdodGluZyB0dXJuZWQgT04uAAUqW1NFUklBTCBDTURdIFJvdGF0aW9uIGxpZ2h0aW5nIHR1cm5lZCBPRkYuAAVFW1NFUklBTCBDTURdIEVycm9yOiBVbmtub3duIGxpZ2h0IHRhcmdldC4gVXNlICdjYW1lcmEnIG9yICdyb3RhdGlvbicuAAUMbGlzdHByb2ZpbGVzAAUgW1NFUklBTCBDTURdIEF2YWlsYWJsZSBwcm9maWxlczoABSRbU0VSSUFMIENNRF0gTm8gcHJvZmlsZSBmaWxlcyBmb3VuZC4ABSdbU0VSSUFMIENNRF0gRXJyb3IgbGlzdGluZyBwcm9maWxlczoge30ABQ1wcm9maWxlZGVsZXRlAAUsW1NFUklBTCBDTURdIFVzYWdlOiBwcm9maWxlZGVsZXRlIDxmaWxlbmFtZT4ABS9bU0VSSUFMIENNRF0gUHJvZmlsZSAne30nIGRlbGV0ZWQgc3VjY2Vzc2Z1bGx5LgAFJ1tTRVJJQUwgQ01EXSBFcnJvciBkZWxldGluZyBwcm9maWxlOiB7fQAFNVtTRVJJQUwgQ01EXSBQZXJmb3JtaW5nIGhhcmQgcmVzZXQgb2YgUlAyMDQwIGJvYXJkLi4uAAUXLS0tIENvbW1hbmQgU3VtbWFyeSAtLS0ABYYZU2V0OiB0aW1lIDxoaG1tPiwgYXV0b2xvYWQgPG9ufG9mZnx0cnVlfGZhbHNlfDF8MD4sIGNhbWVyYWxpZ2h0aW5ncGFuZWxzIDxBTEx8TUlERExFNXxNSURETEUzfE9VVEVSMnxPVVRFUjQ+LCBjYW1lcmFsaWdodHJnYiA8cj4gPGc+IDxiPiwgZGF0ZSA8eXl5eW1tZGQ+LCBkZWdyZWVzX3Blcl9pbWFnZSA8ZmxvYXQ+LCBpbWFnZXNfcGVyX3JvdGF0aW9uIDxudW0+LCBpbnRlbnNpdHkgPDAuMC0xLjA+LCBsYXRpdHVkZSA8ZGVncmVlcz4sIHByb2dyYW1lbmFibGVkIDxvbnxvZmY+LCBwcm9ncmFtcmVwZWF0cyA8bj4sIHJvdGF0aW9uYXRuaWdodCA8dHJ1ZXxmYWxzZXxvbnxvZmZ8MXwwPiwgcm90YXRpb25jYW1lcmFzZXJ2byA8MnwzPiwgcm90YXRpb25pbnRlcnZhbCA8bWludXRlcz4sIHJvdGF0aW9ubGlnaHRyZ2IgPHI+IDxnPiA8Yj4sIHJvdGF0aW9ubW9kZSA8c3RpbGxzfHZpZGVvPiwgcm90X2luY19kZWcgPGZsb2F0Piwgcm90X3NwZWVkIDxzbG93fG1lZGl1bXxmYXN0Piwgcm90X3N0ZXBfaW50diA8aW50Piwgcm90X3N0aWxsc19pbnR2IDxmbG9hdD4sIHJvdF90cmlnX2hvbGQgPGludD4sIHNhdmVsb2cgPHl5eXltbWRkPiwgc2Vydm8yZGF5aW50ZXJ2YWwgPHNlYz4sIHNlcnZvMm5pZ2h0aW50ZXJ2YWwgPHNlYz4sIHNlcnZvM2RheWludGVydmFsIDxzZWM+LCBzZXJ2bzNuaWdodGludGVydmFsIDxzZWM+LCBzb2xhcm1vZGUgPGJhc2ljfHNjaWVudGlmaWM+LCBzcGVlZCA8c2NhbGU+LCBzdGFydHRpbWUgPGhobW0+LCBzdW5jb2xvciA8bmF0dXJhbHxibHVlfGN1c3RvbT4gW3IgZyBiXQAFP1RvZ2dsZTogZHVhbHN1biwgcHJvZ3JhbSwgcm90YXRpb24sIHJlc3RhcnRhZnRlcmxvYWQsIDF0bzFyYXRpbwAFgWJQcm9ncmFtL01hbnVhbDoganVtcCBuZXh0c3RlcCwganVtcCBzdGVwIDxuPiwgbGlzdHByb2ZpbGVzLCBsb2FkcHJvZmlsZSA8cHJvZmlsZW5hbWU+LCBzYXZlcHJvZmlsZSA8cHJvZmlsZW5hbWU+IFtub3RlXSwgcHJvZmlsZWRlbGV0ZSA8cHJvZmlsZW5hbWU+LCBzYXZlbG9nIDx5eXl5bW1kZD4sIHN0YXR1cywgdHJpZ2dlciBzZXJ2bzIsIHRyaWdnZXIgc2Vydm8zLCB0cmlnZ2VyIHJvdGF0aW9uAAVzVXRpbGl0eTogZmlsbHBhbmVsIDxyPiA8Zz4gPGI+IFtkdXJhdGlvbl0sIGxpZ2h0IGNhbWVyYSA8b258b2ZmPiwgbGlnaHQgcm90YXRpb24gPG9ufG9mZj4sIHJlc2V0LCByZXN0YXJ0LCBoZWxwIGFsbAAFKFtTRVJJQUwgQ01EXSBFcnJvcjogVW5rbm93biBjb21tYW5kICd7fScABS5bU0VSSUFMIENNRF0gRXJyb3IgcHJvY2Vzc2luZyBjb21tYW5kICd7fSc6IHt9AAoCBQEKAAUBDQAFQFtQUk9HUkFNXSBGaXJzdCBwcm9ncmFtIHN0ZXAgYWN0aXZhdGVkIGF0IHNpbSB0aW1lIHs6MDJkfTp7OjAyZH0ABR5mcm96ZW5fc2ltX3RpbWVfbWludXRlcyAoSE9MRCkABRl0aW1lX29mX2RheV9taW51dGVzIChSVU4pAAUrU2ltdWxhdGlvbiB0aW1lOiB7OjAyZH06ezowMmR9IChTcGVlZDoge314KQAFOVtJTkZPXSBmaWxscGFuZWwgb3ZlcnJpZGUgZW5kZWQsIHJlc3VtaW5nIG5vcm1hbCBkaXNwbGF5LgAFC01JTlVURV9URU5TAAULTUlOVVRFX09ORVMABUxCdXR0b24gQSBsb25nIHByZXNzOiBIT0xEIG1vZGUgLSBmcm96ZW4gdGltZSBzZXQgdG8gc29sYXIgbm9vbiAoezowMn06ezowMn0pAAVEQnV0dG9uIEEgbG9uZyBwcmVzczogU2ltdWxhdGlvbiB0aW1lIHNldCB0byBzb2xhciBub29uICh7OjAyfTp7OjAyfSkABS5CdXR0b24gQSBzaG9ydCBwcmVzczogU29sYXIgbW9kZSBjaGFuZ2VkIHRvIHt9AAVOQnV0dG9uIEIgbG9uZyBwcmVzczogSE9MRCBtb2RlIC0gZnJvemVuIHRpbWUgc2V0IHRvIHN0YXJ0IHRpbWUgKHs6MDJkfTp7OjAyZH0pAAVIQnV0dG9uIEIgbG9uZyBwcmVzczogU2ltdWxhdGlvbiB0aW1lIHJlc2V0IHRvIHN0YXJ0IHRpbWUgKHs6MDJkfTp7OjAyZH0pAAUdVGltZSBmcm96ZW4gYXQ6IHs6MDJkfTp7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`;
+
+    // rainbow_demo.txt (plain text)
+    const RAINBOW_DEMO_CONTENT = `START_TIME_HHMM = 600
+TIME_SCALE = 1
+INTENSITY_SCALE = 1
+SOLAR_MODE = "BASIC"
+SUN_COLOR_MODE = "BLUE"
+CUSTOM_SUN_R = 255
+CUSTOM_SUN_G = 255
+CUSTOM_SUN_B = 0
+ROTATION_ENABLED = False
+ROTATION_CAMERA_SERVO = 2
+ROTATION_CAPTURE_MODE = "STILLS"
+ROTATION_CYCLE_INTERVAL_MINUTES = 3
+ROTATION_AT_NIGHT = False
+CAMERA_TRIGGER_HOLD_MS = 1000
+ROTATION_SPEED_PRESET = "fast"
+IMAGES_PER_ROTATION = 4
+ROTATION_INCREMENT_DEGREES = 0.3
+ROTATION_STEP_INTERVAL_MS = 90
+CAMERA_LIGHTING_PANELS = "ALL"
+CAMERA_LIGHT_R = 30
+CAMERA_LIGHT_G = 30
+CAMERA_LIGHT_B = 30
+ROTATION_LIGHT_R = 30
+ROTATION_LIGHT_G = 30
+ROTATION_LIGHT_B = 30
+DUAL_SUN_ENABLED = False
+SIMULATION_DATE = 20250320
+LATITUDE = 0
+PROGRAM_ENABLED = True
+PROGRAM_REPEATS = -1
+PROGRAM_STEPS = [{"sim_time_hhmm":600,"speed":600,"intensity_scale":0.05,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 0, 0],"sunrise":600,"sunset":1800,"day":1},{"sim_time_hhmm":615,"speed":600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 13, 0],"day":1},{"sim_time_hhmm":630,"speed":600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 27, 0],"day":1},{"sim_time_hhmm":645,"speed":600,"intensity_scale":0.17,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 40, 0],"day":1},{"sim_time_hhmm":700,"speed":600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 54, 0],"day":1},{"sim_time_hhmm":715,"speed":600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 67, 0],"day":1},{"sim_time_hhmm":730,"speed":600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 81, 0],"day":1},{"sim_time_hhmm":745,"speed":600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 94, 0],"day":1},{"sim_time_hhmm":800,"speed":600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 108, 0],"day":1},{"sim_time_hhmm":815,"speed":600,"intensity_scale":0.39,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 121, 0],"day":1},{"sim_time_hhmm":830,"speed":600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[238, 135, 0],"day":1},{"sim_time_hhmm":845,"speed":600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[211, 148, 0],"day":1},{"sim_time_hhmm":900,"speed":600,"intensity_scale":0.5,"dual_sun":false,"transition":"RUN","sun_color_rgb":[184, 162, 0],"day":1},{"sim_time_hhmm":915,"speed":600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[157, 176, 0],"day":1},{"sim_time_hhmm":930,"speed":600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[130, 189, 0],"day":1},{"sim_time_hhmm":945,"speed":600,"intensity_scale":0.39,"dual_sun":false,"transition":"RUN","sun_color_rgb":[103, 203, 0],"day":1},{"sim_time_hhmm":1000,"speed":600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[75, 216, 0],"day":1},{"sim_time_hhmm":1015,"speed":600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[48, 230, 0],"day":1},{"sim_time_hhmm":1030,"speed":600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[21, 244, 0],"day":1},{"sim_time_hhmm":1045,"speed":600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 249, 5],"day":1},{"sim_time_hhmm":1100,"speed":600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 222, 32],"day":1},{"sim_time_hhmm":1115,"speed":600,"intensity_scale":0.17,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 195, 59],"day":1},{"sim_time_hhmm":1130,"speed":600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 168, 86],"day":1},{"sim_time_hhmm":1145,"speed":600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 141, 113],"day":1},{"sim_time_hhmm":1200,"speed":600,"intensity_scale":0.05,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 113, 141],"day":1},{"sim_time_hhmm":1215,"speed":600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 86, 168],"day":1},{"sim_time_hhmm":1230,"speed":600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 59, 195],"day":1},{"sim_time_hhmm":1245,"speed":600,"intensity_scale":0.17,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 32, 222],"day":1},{"sim_time_hhmm":1300,"speed":600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 5, 249],"day":1},{"sim_time_hhmm":1315,"speed":600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[6, 0, 244],"day":1},{"sim_time_hhmm":1330,"speed":600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[14, 0, 231],"day":1},{"sim_time_hhmm":1345,"speed":600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[22, 0, 217],"day":1},{"sim_time_hhmm":1400,"speed":600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[30, 0, 204],"day":1},{"sim_time_hhmm":1415,"speed":600,"intensity_scale":0.39,"dual_sun":false,"transition":"RUN","sun_color_rgb":[38, 0, 191],"day":1},{"sim_time_hhmm":1430,"speed":600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[46, 0, 177],"day":1},{"sim_time_hhmm":1445,"speed":600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[54, 0, 164],"day":1},{"sim_time_hhmm":1500,"speed":600,"intensity_scale":0.5,"dual_sun":false,"transition":"RUN","sun_color_rgb":[62, 0, 151],"day":1},{"sim_time_hhmm":1515,"speed":600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[70, 0, 137],"day":1},{"sim_time_hhmm":1530,"speed":600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[78, 0, 133],"day":1},{"sim_time_hhmm":1545,"speed":600,"intensity_scale":0.39,"dual_sun":false,"transition":"RUN","sun_color_rgb":[85, 0, 142],"day":1},{"sim_time_hhmm":1600,"speed":600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[93, 0, 150],"day":1},{"sim_time_hhmm":1615,"speed":600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[101, 0, 159],"day":1},{"sim_time_hhmm":1630,"speed":600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[109, 0, 167],"day":1},{"sim_time_hhmm":1645,"speed":600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[116, 0, 176],"day":1},{"sim_time_hhmm":1700,"speed":600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[124, 0, 185],"day":1},{"sim_time_hhmm":1715,"speed":600,"intensity_scale":0.17,"dual_sun":false,"transition":"RUN","sun_color_rgb":[132, 0, 193],"day":1},{"sim_time_hhmm":1730,"speed":600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[140, 0, 202],"day":1},{"sim_time_hhmm":1745,"speed":600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[148, 0, 211],"day":1},{"sim_time_hhmm":1800,"speed":-600,"intensity_scale":0.5,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 0, 0],"day":1},{"sim_time_hhmm":1745,"speed":-600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 0, 0],"day":1},{"sim_time_hhmm":1730,"speed":-600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 13, 0],"day":1},{"sim_time_hhmm":1715,"speed":-600,"intensity_scale":0.38,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 27, 0],"day":1},{"sim_time_hhmm":1700,"speed":-600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 40, 0],"day":1},{"sim_time_hhmm":1645,"speed":-600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 54, 0],"day":1},{"sim_time_hhmm":1630,"speed":-600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 67, 0],"day":1},{"sim_time_hhmm":1615,"speed":-600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 81, 0],"day":1},{"sim_time_hhmm":1600,"speed":-600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 94, 0],"day":1},{"sim_time_hhmm":1545,"speed":-600,"intensity_scale":0.16,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 108, 0],"day":1},{"sim_time_hhmm":1530,"speed":-600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[255, 121, 0],"day":1},{"sim_time_hhmm":1515,"speed":-600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[238, 135, 0],"day":1},{"sim_time_hhmm":1500,"speed":-600,"intensity_scale":0.05,"dual_sun":false,"transition":"RUN","sun_color_rgb":[211, 148, 0],"day":1},{"sim_time_hhmm":1445,"speed":-600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[184, 162, 0],"day":1},{"sim_time_hhmm":1430,"speed":-600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[157, 176, 0],"day":1},{"sim_time_hhmm":1415,"speed":-600,"intensity_scale":0.16,"dual_sun":false,"transition":"RUN","sun_color_rgb":[130, 189, 0],"day":1},{"sim_time_hhmm":1400,"speed":-600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[103, 203, 0],"day":1},{"sim_time_hhmm":1345,"speed":-600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[75, 216, 0],"day":1},{"sim_time_hhmm":1330,"speed":-600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[48, 230, 0],"day":1},{"sim_time_hhmm":1315,"speed":-600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[21, 244, 0],"day":1},{"sim_time_hhmm":1300,"speed":-600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 249, 5],"day":1},{"sim_time_hhmm":1245,"speed":-600,"intensity_scale":0.38,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 222, 32],"day":1},{"sim_time_hhmm":1230,"speed":-600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 195, 59],"day":1},{"sim_time_hhmm":1215,"speed":-600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 168, 86],"day":1},{"sim_time_hhmm":1200,"speed":-600,"intensity_scale":0.5,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 141, 113],"day":1},{"sim_time_hhmm":1145,"speed":-600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 113, 141],"day":1},{"sim_time_hhmm":1130,"speed":-600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 86, 168],"day":1},{"sim_time_hhmm":1115,"speed":-600,"intensity_scale":0.38,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 59, 195],"day":1},{"sim_time_hhmm":1100,"speed":-600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 32, 222],"day":1},{"sim_time_hhmm":1045,"speed":-600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[0, 5, 249],"day":1},{"sim_time_hhmm":1030,"speed":-600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[6, 0, 244],"day":1},{"sim_time_hhmm":1015,"speed":-600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[14, 0, 231],"day":1},{"sim_time_hhmm":1000,"speed":-600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[22, 0, 217],"day":1},{"sim_time_hhmm":945,"speed":-600,"intensity_scale":0.16,"dual_sun":false,"transition":"RUN","sun_color_rgb":[30, 0, 204],"day":1},{"sim_time_hhmm":930,"speed":-600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[38, 0, 191],"day":1},{"sim_time_hhmm":915,"speed":-600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[46, 0, 177],"day":1},{"sim_time_hhmm":900,"speed":-600,"intensity_scale":0.05,"dual_sun":false,"transition":"RUN","sun_color_rgb":[54, 0, 164],"day":1},{"sim_time_hhmm":845,"speed":-600,"intensity_scale":0.09,"dual_sun":false,"transition":"RUN","sun_color_rgb":[62, 0, 151],"day":1},{"sim_time_hhmm":830,"speed":-600,"intensity_scale":0.12,"dual_sun":false,"transition":"RUN","sun_color_rgb":[70, 0, 137],"day":1},{"sim_time_hhmm":815,"speed":-600,"intensity_scale":0.16,"dual_sun":false,"transition":"RUN","sun_color_rgb":[78, 0, 133],"day":1},{"sim_time_hhmm":800,"speed":-600,"intensity_scale":0.2,"dual_sun":false,"transition":"RUN","sun_color_rgb":[85, 0, 142],"day":1},{"sim_time_hhmm":745,"speed":-600,"intensity_scale":0.24,"dual_sun":false,"transition":"RUN","sun_color_rgb":[93, 0, 150],"day":1},{"sim_time_hhmm":730,"speed":-600,"intensity_scale":0.28,"dual_sun":false,"transition":"RUN","sun_color_rgb":[101, 0, 159],"day":1},{"sim_time_hhmm":715,"speed":-600,"intensity_scale":0.31,"dual_sun":false,"transition":"RUN","sun_color_rgb":[109, 0, 167],"day":1},{"sim_time_hhmm":700,"speed":-600,"intensity_scale":0.35,"dual_sun":false,"transition":"RUN","sun_color_rgb":[116, 0, 176],"day":1},{"sim_time_hhmm":645,"speed":-600,"intensity_scale":0.38,"dual_sun":false,"transition":"RUN","sun_color_rgb":[124, 0, 185],"day":1},{"sim_time_hhmm":630,"speed":-600,"intensity_scale":0.43,"dual_sun":false,"transition":"RUN","sun_color_rgb":[132, 0, 193],"day":1},{"sim_time_hhmm":615,"speed":-600,"intensity_scale":0.46,"dual_sun":false,"transition":"RUN","sun_color_rgb":[140, 0, 202],"day":1},{"sim_time_hhmm":600,"speed":-600,"intensity_scale":0.5,"dual_sun":false,"transition":"RUN","sun_color_rgb":[148, 0, 211],"day":1}]`;
+
+    // ============================================================================
+    //   STATE
+    // ============================================================================
+    let currentStep = 1;
+    let serialPort = null;
+    let serialWriter = null;
+    let serialReader = null;
+
+    // ============================================================================
+    //   BROWSER CHECK
+    // ============================================================================
+    (function checkBrowser() {
+      const el = document.getElementById('browserCheck');
+      if ('serial' in navigator) {
+        el.innerHTML = `
+        <div class="alert alert-success">
+          <span class="alert-icon">✅</span>
+          <div><strong>Browser compatible!</strong> Web Serial is supported. You're good to go.</div>
+        </div>`;
+      } else {
+        el.innerHTML = `
+        <div class="alert alert-error">
+          <span class="alert-icon">⚠️</span>
+          <div>
+            <strong>Browser not supported.</strong> Web Serial requires
+            <strong>Chrome</strong>, <strong>Edge</strong>, or <strong>Opera</strong>.
+            Please open this page in one of those browsers.
+          </div>
+        </div>`;
+        const startBtn = document.getElementById('startBtn');
+        if (startBtn) startBtn.disabled = true;
+      }
+    })();
+
+    // ============================================================================
+    //   NAVIGATION
+    // ============================================================================
+    function goToStep(n) {
+      document.getElementById('step' + currentStep).classList.remove('active');
+      const steps = document.querySelectorAll('.stepper-step');
+      steps.forEach(s => {
+        const sn = parseInt(s.dataset.step);
+        s.classList.remove('active', 'done');
+        if (sn < n) s.classList.add('done');
+        else if (sn === n) {
+          s.classList.add('active');
+          if (n === 5) s.classList.add('done');  // final step: fill green
+        }
+      });
+      currentStep = n;
+      const card = document.getElementById('step' + n);
+      card.classList.remove('active');
+      void card.offsetWidth;
+      card.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ============================================================================
+    //   SERIAL CONNECTION
+    // ============================================================================
+    async function connectDevice() {
+      const btn = document.getElementById('connectBtn');
+      const statusEl = document.getElementById('connectStatus');
+      btn.disabled = true;
+      btn.textContent = '⏳ Connecting...';
+      statusEl.innerHTML = '';
+
+      try {
+        if (!navigator.serial) throw new Error('Web Serial not supported');
+
+        // Clean up any previous connection
+        if (serialPort) {
+          try { if (serialReader) serialReader.releaseLock(); } catch (_) { }
+          try { if (serialWriter) serialWriter.releaseLock(); } catch (_) { }
+          try { await serialPort.close(); } catch (_) { }
+          serialPort = null; serialReader = null; serialWriter = null;
+        }
+
+        serialPort = await navigator.serial.requestPort({
+          filters: [
+            { usbVendorId: 0x2E8A },  // Raspberry Pi (RP2040)
+            { usbVendorId: 0x1A86 },  // WCH (CH340)
+          ]
+        });
+
+        // Open with timeout so it doesn't hang forever
+        await Promise.race([
+          serialPort.open({ baudRate: 115200 }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Port open timed out. Close other browser tabs that may be using this port, unplug the board, and try again.')), 10000))
+        ]);
+
+        statusEl.innerHTML = `
+        <div class="alert alert-success">
+          <span class="alert-icon">✅</span>
+          <div><strong>Connected!</strong> Your RP2040 device is ready. Proceeding to next step...</div>
+        </div>`;
+        btn.textContent = '✅ Connected';
+
+        setTimeout(() => goToStep(4), 1200);
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = '🔌 Connect to Device';
+        const msg = err.message || '';
+        if (msg.includes('No port selected') || err.name === 'NotFoundError') {
+          statusEl.innerHTML = `
+          <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>No device was selected. Make sure your board is plugged in via USB, then try again.</div>
+          </div>`;
+        } else if (msg.includes('already') || msg.includes('in use') || err.name === 'InvalidStateError') {
+          statusEl.innerHTML = `
+          <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>
+              <strong>Port may be in use.</strong> Close any other apps that might be connected to the board
+              (Thonny, another browser tab, etc.) and try again.
+            </div>
+          </div>`;
+        } else {
+          statusEl.innerHTML = `
+          <div class="alert alert-error">
+            <span class="alert-icon">❌</span>
+            <div><strong>Connection failed:</strong> ${msg}</div>
+          </div>`;
+        }
+      }
+    }
+
+    // ============================================================================
+    //   FILE DEPLOYMENT
+    // ============================================================================
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    function logMsg(text, cls = '') {
+      const area = document.getElementById('logArea');
+      const line = document.createElement('div');
+      if (cls) line.className = 'log-' + cls;
+      line.textContent = text;
+      area.appendChild(line);
+      area.scrollTop = area.scrollHeight;
+    }
+
+    function toggleLog() {
+      const area = document.getElementById('logArea');
+      area.classList.toggle('visible');
+      const btn = document.getElementById('logToggle');
+      btn.textContent = area.classList.contains('visible') ? '📋 Hide Log' : '📋 Show Log';
+    }
+
+    function setFileStatus(fileKey, status, state) {
+      const id = 'status-' + fileKey.replace(/\./g, '-');
+      const el = document.getElementById(id);
+      const item = el?.closest('.file-item');
+      if (el) el.textContent = status;
+      if (item) {
+        item.classList.remove('transferring', 'done', 'error');
+        if (state) item.classList.add(state);
+      }
+    }
+
+    function setProgress(pct, label) {
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = label;
+    }
+
+    async function sendBytes(bytes) {
+      await serialWriter.write(bytes);
+    }
+
+    async function sendText(text) {
+      await serialWriter.write(encoder.encode(text));
+    }
+
+    async function sendCtrl(code) {
+      await sendBytes(Uint8Array.from([code]));
+    }
+
+    async function readUntil(matchFn, timeoutMs = 8000) {
+      const start = performance.now();
+      let buf = '';
+      while (performance.now() - start < timeoutMs) {
+        try {
+          const { value, done } = await Promise.race([
+            serialReader.read(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('read_timeout')), timeoutMs - (performance.now() - start) + 100))
+          ]);
+          if (done) break;
+          if (value) {
+            buf += decoder.decode(value);
+            if (matchFn(buf)) return buf;
+          }
+        } catch (e) {
+          if (e.message === 'read_timeout')
+            throw e;
+        }
+      }
+      return buf;
+    }
+
+    // Helper: drain serial buffer between operations (silently swallows timeouts)
+    async function drainBuffer(ms = 300) {
+      await new Promise(r => setTimeout(r, ms));
+      await sendCtrl(3);
+      await new Promise(r => setTimeout(r, 200));
+      try {
+        await Promise.race([
+          readUntil(() => false, 200),
+          new Promise(r => setTimeout(r, 300))
+        ]);
+      } catch (_) { /* expected timeout — ignore */ }
+    }
+
+    async function writeTextFile(path, content) {
+      await sendCtrl(5);
+      await new Promise(r => setTimeout(r, 80));
+
+      let py = "import os\n";
+      const safe = content.replace(/"/g, '\\"');
+      py += `f=open('${path}','w')\n`;
+      py += `f.write(\"\"\"\"${safe}\"\"\"\")\n`;
+      py += "f.close()\n";
+      py += "print('WRITE_OK')\n";
+
+      await sendText(py);
+      await sendCtrl(4);
+      const out = await readUntil(b => b.includes('WRITE_OK'), 10000);
+      if (!out.includes('WRITE_OK')) {
+        throw new Error('File write did not confirm for ' + path + '. Output: ' + out.slice(-300));
+      }
+      return true;
+    }
+
+    async function writeBinaryFileB64(path, b64Data) {
+      // Decode full binary from base64
+      const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+      const CHUNK_SIZE = 1024;  // bytes per write transaction
+      const totalChunks = Math.ceil(raw.length / CHUNK_SIZE);
+
+      for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+        const offset = chunkIdx * CHUNK_SIZE;
+        const slice = raw.subarray(offset, Math.min(offset + CHUNK_SIZE, raw.length));
+
+        // Re-encode this slice as base64
+        let binStr = '';
+        for (let j = 0; j < slice.length; j++) binStr += String.fromCharCode(slice[j]);
+        const chunkB64 = btoa(binStr);
+
+        // Build a small Python script for this chunk
+        const mode = chunkIdx === 0 ? 'wb' : 'ab';  // first chunk: create; rest: append
+        let py = "import ubinascii\n";
+        py += `f=open('${path}','${mode}')\n`;
+        py += `f.write(ubinascii.a2b_base64(b'${chunkB64}'))\n`;
+        py += "f.close()\n";
+        py += "print('CHUNK_OK')\n";
+
+        // Send via paste mode
+        await sendCtrl(5);  // Enter paste mode
+        await new Promise(r => setTimeout(r, 50));
+        await sendText(py);
+        await sendCtrl(4);  // Execute
+
+        const out = await readUntil(b => b.includes('CHUNK_OK'), 15000);
+        if (!out.includes('CHUNK_OK')) {
+          throw new Error(`Binary write chunk ${chunkIdx + 1}/${totalChunks} failed for ${path}. Output: ${out.slice(-200)}`);
+        }
+
+        // Update progress within the binary write
+        const pct = 30 + Math.round((chunkIdx / totalChunks) * 45);
+        setProgress(pct, `Writing main_app.mpy... ${chunkIdx + 1}/${totalChunks} chunks`);
+      }
+
+      return true;
+    }
+
+    async function deployFiles() {
+      const deployBtn = document.getElementById('deployBtn');
+      deployBtn.disabled = true;
+      deployBtn.textContent = '⏳ Installing...';
+
+      const progressContainer = document.getElementById('progressContainer');
+      progressContainer.classList.add('visible');
+
+      try {
+        if (!serialPort || !serialPort.writable) {
+          throw new Error('Not connected to device. Go back and reconnect.');
+        }
+
+        serialWriter = serialPort.writable.getWriter();
+        serialReader = serialPort.readable.getReader();
+
+        // 1. Interrupt any running program
+        logMsg('Interrupting running program...', 'info');
+        setProgress(5, 'Preparing device...');
+        await sendCtrl(3); await sendCtrl(3);
+        try {
+          await new Promise(r => setTimeout(r, 300));
+          await Promise.race([
+            readUntil(() => false, 400),
+            new Promise(r => setTimeout(r, 400))
+          ]);
+        } catch (_) { /* expected timeout */ }
+
+        // 2. Write main.py
+        logMsg('Writing main.py...', 'info');
+        setFileStatus('main.py', 'Transferring...', 'transferring');
+        setProgress(15, 'Writing main.py...');
+        await writeTextFile('main.py', MAIN_PY_CONTENT);
+        setFileStatus('main.py', '✓ Done', 'done');
+        logMsg('✓ main.py written successfully', 'success');
+
+        await drainBuffer();
+
+        // 3. Write main_app.mpy (big binary file)
+        logMsg('Writing main_app.mpy (47 KB)... this may take a moment', 'info');
+        setFileStatus('main_app.mpy', 'Transferring...', 'transferring');
+        setProgress(30, 'Writing main_app.mpy (47 KB)...');
+        await writeBinaryFileB64('main_app.mpy', MAIN_APP_MPY_B64);
+        setFileStatus('main_app.mpy', '✓ Done', 'done');
+        logMsg('✓ main_app.mpy written successfully', 'success');
+        setProgress(75, 'Almost there...');
+
+        await drainBuffer();
+
+        // 4. Create profiles dir and write rainbow_demo.txt
+        logMsg('Creating profiles directory...', 'info');
+        await sendCtrl(5);
+        await new Promise(r => setTimeout(r, 80));
+        await sendText("import os\ntry:\n os.mkdir('profiles')\nexcept:\n pass\nprint('DIR_OK')\n");
+        await sendCtrl(4);
+        await readUntil(b => b.includes('DIR_OK'), 5000);
+
+        await drainBuffer(200);
+
+        logMsg('Writing rainbow_demo.txt...', 'info');
+        setFileStatus('rainbow_demo.txt', 'Transferring...', 'transferring');
+        setProgress(80, 'Writing rainbow_demo.txt...');
+        await writeTextFile('profiles/rainbow_demo.txt', RAINBOW_DEMO_CONTENT);
+        setFileStatus('rainbow_demo.txt', '✓ Done', 'done');
+        logMsg('✓ rainbow_demo.txt written successfully', 'success');
+
+        setProgress(95, 'Rebooting device...');
+
+        // 5. Soft reboot
+        await new Promise(r => setTimeout(r, 300));
+        await sendCtrl(3);
+        await new Promise(r => setTimeout(r, 200));
+        await sendCtrl(4);
+        logMsg('Device rebooting...', 'info');
+
+        try { serialReader.releaseLock(); } catch (_) { }
+        try { serialWriter.releaseLock(); } catch (_) { }
+        try { await serialPort.close(); } catch (_) { }
+        serialPort = null;
+        serialReader = null;
+        serialWriter = null;
+
+        setProgress(100, 'Complete!');
+        logMsg('🎉 All files installed successfully!', 'success');
+
+        setTimeout(() => {
+          goToStep(5);
+          launchConfetti();
+        }, 1500);
+
+      } catch (err) {
+        logMsg('ERROR: ' + err.message, 'error');
+        setProgress(0, 'Installation failed');
+        deployBtn.disabled = false;
+        deployBtn.textContent = '🔄 Retry Installation';
+
+        try { if (serialReader) serialReader.releaseLock(); } catch (_) { }
+        try { if (serialWriter) serialWriter.releaseLock(); } catch (_) { }
+        serialReader = null;
+        serialWriter = null;
+
+        const fileList = document.getElementById('fileList');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-error';
+        errorDiv.innerHTML = `
+        <span class="alert-icon">❌</span>
+        <div>
+          <strong>Installation failed:</strong> ${err.message}<br>
+          <span style="font-size:0.8em; opacity:0.7;">Try clicking "Retry Installation". If the problem persists,
+          unplug the board, plug it back in, and go back to the Connect step.</span>
+        </div>`;
+        fileList.after(errorDiv);
+      }
+    }
+
+    // ============================================================================
+    //   CONFETTI 🎊
+    // ============================================================================
+    function launchConfetti() {
+      const container = document.getElementById('confettiContainer');
+      const colors = ['#4caf50', '#8bc34a', '#3478f6', '#f5a623', '#e74c3c', '#9c27b0', '#00bcd4', '#ffeb3b'];
+      for (let i = 0; i < 80; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = Math.random() * 100 + '%';
+        el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        el.style.width = (Math.random() * 8 + 5) + 'px';
+        el.style.height = (Math.random() * 8 + 5) + 'px';
+        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        el.style.animationDelay = (Math.random() * 1.5) + 's';
+        el.style.opacity = Math.random() * 0.6 + 0.4;
+        container.appendChild(el);
+      }
+      setTimeout(() => { container.innerHTML = ''; }, 5000);
+    }
+  </script>
+
+</body>
+
+</html>

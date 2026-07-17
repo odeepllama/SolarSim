@@ -1319,33 +1319,35 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-radius: 12px;
       max-width: 580px;
       width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      padding: 32px;
+      padding: 20px 28px;
       text-align: center;
     }
 
     #ftueWelcomeModal h2 {
-      font-size: 2rem;
-      margin: 0 0 12px;
+      font-size: 1.6rem;
+      margin: 0 0 6px;
       color: #1f2933;
     }
 
     #ftueWelcomeModal .subtitle {
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: #666;
-      margin: 0 0 32px;
-      line-height: 1.5;
+      margin: 0 0 16px;
+      line-height: 1.4;
     }
 
     #ftueWelcomeModal .role-buttons {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin-bottom: 24px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
 
     #ftueWelcomeModal .role-btn {
-      padding: 20px 24px;
+      padding: 14px 18px;
       border: 2px solid #ddd;
       border-radius: 8px;
       background: #f8f9fa;
@@ -1355,7 +1357,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-size: 1rem;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     #ftueWelcomeModal .role-btn:hover {
@@ -1366,7 +1368,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     #ftueWelcomeModal .role-btn .icon {
-      font-size: 3.6rem;
+      font-size: 2.4rem;
       flex-shrink: 0;
     }
 
@@ -1377,9 +1379,9 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     #ftueWelcomeModal .role-btn .desc {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #666;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     #ftueWelcomeModal .skip-link {
@@ -2125,6 +2127,74 @@ https://github.com/odeepllama/SolarSim/tree/main
     #monitorConnectBtn:hover:not(:disabled) {
       background: #44b366 !important;
       border-color: #257b41 !important;
+    }
+
+    /* Transport chooser popup */
+    .transport-chooser {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 6px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+      z-index: 9999;
+      min-width: 220px;
+      overflow: hidden;
+      animation: tcFadeIn 0.15s ease;
+    }
+
+    @keyframes tcFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .transport-chooser-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #333;
+      text-align: left;
+      transition: background 0.12s;
+    }
+
+    .transport-chooser-btn:hover {
+      background: #f0f7ff;
+    }
+
+    .transport-chooser-btn+.transport-chooser-btn {
+      border-top: 1px solid #eee;
+    }
+
+    .transport-chooser-btn .tc-icon {
+      font-size: 1.3rem;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .transport-chooser-btn .tc-label {
+      font-weight: 600;
+    }
+
+    .transport-chooser-btn .tc-desc {
+      font-size: 0.78rem;
+      color: #888;
+      font-weight: 400;
     }
 
 
@@ -3705,7 +3775,6 @@ https://github.com/odeepllama/SolarSim/tree/main
     #modeToggleContainer {
       display: flex;
       gap: 0;
-      margin-right: 10px;
     }
 
     /* Mode toggle buttons (radio style) */
@@ -3755,7 +3824,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-size: 1.43rem;
       border-radius: 4px;
       cursor: pointer;
-      margin-right: 10px;
+      margin-left: 0;
       transition: all 0.2s ease;
       line-height: 1;
       display: inline-flex;
@@ -4167,12 +4236,34 @@ https://github.com/odeepllama/SolarSim/tree/main
 </head>
 
 <body>
+  <!-- Browser compatibility info bar (non-blocking) -->
+  <div id="browserCompatBar"
+    style="display:none; background:#fff3cd; color:#856404; padding:10px 16px; text-align:center; font-size:0.9rem; border-bottom:1px solid #ffc107; position:relative; z-index:9999;">
+    ⚠️ Device connection requires <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>. You can still
+    explore settings and build programs in this browser.
+    <button onclick="this.parentElement.style.display='none'"
+      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#856404;">✕</button>
+  </div>
+  <script>if (!('serial' in navigator)) document.getElementById('browserCompatBar').style.display = 'block';</script>
+  <!-- Demo mode banner -->
+  <div id="demoModeBanner"
+    style="display:none; background:#e3f2fd; color:#1565c0; padding:10px 16px; text-align:center; font-size:0.9rem; border-bottom:1px solid #90caf9; position:sticky; top:0; z-index:9999; transition: background 0.6s ease, color 0.6s ease, border-bottom-color 0.6s ease;">
+    🔄 <strong>Demo Mode</strong> — simulating your program. Connect a device to go live.
+    <button onclick="if(window.__demoEngine) window.__demoEngine.stop();"
+      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#1565c0;"
+      title="Stop demo">✕</button>
+  </div>
   <h1 id="appTitle"></h1>
   <div class="monitor-toggle-bar">
     <button id="toggleMonitorBtn" type="button" class="secondary monitor-toggle-fixed" style="display:none"
       title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
     <span id="monitorConnBadge" class="pill red" title=""></span>
     <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
+    <button id="demoBtn" type="button" class="secondary"
+      style="background:#e3f2fd; color:#1565c0; border:1px solid #90caf9; font-weight:600;"
+      title="Run a simulated demo of your program without a connected device"
+      onclick="if(window.__demoEngine){if(window.__demoEngine.isRunning()){window.__demoEngine.stop();}else{window.__demoEngine.start();}}">▶
+      Demo</button>
     <button id="quickEditBtn" type="button" class="secondary"
       title="Connect, load profile, disconnect and jump to editor — or browse examples offline"></button>
     <button id="monitorRefreshBtn" type="button" class="secondary" title=""></button>
@@ -4181,11 +4272,11 @@ https://github.com/odeepllama/SolarSim/tree/main
     <button id="monitorCmdHelpBtn" type="button" class="secondary hidden-collapsed" title=""></button>
     <button id="monitorShowStatusBtn" type="button" class="secondary hidden-collapsed" disabled title=""></button>
     <div id="bgColorChooser" style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-      <button id="modeConfigBtn" type="button" title="">⚙</button>
       <div id="modeToggleContainer">
         <button id="simpleModeBtn" type="button" class="mode-btn" data-mode="simple"></button>
         <button id="advancedModeBtn" type="button" class="mode-btn active" data-mode="advanced"></button>
       </div>
+      <button id="modeConfigBtn" type="button" title="">⚙</button>
       <div class="bg-swatch" data-color="#abbea6"
         style="background:#abbea6; width:30px; height:30px; border:1px solid #555; box-shadow:0 2px 4px rgba(0,0,0,0.25); cursor:pointer; border-radius:4px;"
         title=""></div>
@@ -4216,8 +4307,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         <div class="mini-sect-title">Log</div>
         <div id="monitorLog" aria-label="Monitor log" role="log"></div>
         <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
+        <div style="margin-top:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <span style="font-size:0.85em; color:#666;">Far Red LEDs:</span>
+          <button type="button" class="secondary" title="Turn Far-Red array on for 5 minutes then auto-off"
+            onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR Pulse 5m</button>
+          <button type="button" class="secondary" title="Turn Far-Red array on indefinitely (use FR Off to stop)"
+            onclick="if(window.__sendLine) window.__sendLine('fr on');">FR On</button>
+          <button type="button" class="secondary" title="Turn Far-Red array off"
+            onclick="if(window.__sendLine) window.__sendLine('fr off');">FR Off</button>
+        </div>
         <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-          <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)"
+          <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger, fr)"
             autocomplete="off" autocapitalize="off" style="flex:1;" />
           <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
           <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
@@ -4289,6 +4389,18 @@ https://github.com/odeepllama/SolarSim/tree/main
         <h2 id="ftueWelcomeTitle">Welcome to SolaSim Studio! 🌞</h2>
         <p class="subtitle">Let's get you started with solar simulation</p>
         <div class="role-buttons">
+          <a class="role-btn" href="setup.html" onclick="if(location.hostname)this.href='setup/'"
+            style="border: 2px solid #3478f6; background: #f0f4ff; text-decoration: none; color: inherit;">
+            <span class="icon">🔧</span>
+            <div>
+              <div class="title">Setup Your Device <span
+                  style="background:#3478f6; color:#fff; padding:2px 8px; border-radius:12px; font-size:0.75em; margin-left:6px;">NEW
+                  USERS</span>
+              </div>
+              <div class="desc">First time? Use the Setup Wizard to flash firmware and deploy files to your RP2040 —
+                takes about 2 minutes</div>
+            </div>
+          </a>
           <button class="role-btn" data-path="quick" style="border: 2px solid #28a745; background: #f0fff4;">
             <span class="icon">🎯</span>
             <div>
@@ -4447,6 +4559,19 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <p>The USB connection supports full status monitoring, command console, status tiles, solar arc,
                   and profile upload. The status badge shows "Connected" when active. If connection fails, try
                   unplugging/replugging the USB cable or pressing the RESET button on the device.</p>
+              </div>
+            </li>
+            <li><strong>Demo Mode</strong>: Click <strong>▶ Demo</strong> to simulate your program without hardware.
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>Demo mode plays through your program steps using an animated timeline playhead, so you can verify
+                  timing, speed changes, and day boundaries before connecting a device.</p>
+                <p><strong>Navigation:</strong> Use the <strong>Step</strong> and <strong>Day</strong> buttons
+                  (◀ / ▶) to jump between steps or days without waiting.</p>
+                <p><strong>Auto-restart:</strong> If you edit your program while demo is running, it automatically
+                  restarts with your updated steps — the banner briefly flashes green to confirm.</p>
+                <p><strong>Tip:</strong> Demo mode is ideal for first-time users to validate their program design
+                  before uploading to the device.</p>
               </div>
             </li>
           </ul>
@@ -4620,11 +4745,28 @@ https://github.com/odeepllama/SolarSim/tree/main
                   intensity 0.8–1.0, speed 1x–4x.</p>
               </div>
             </li>
+            <li><strong>Far-Red (FR) Pre-Exposure</strong>: Optional 730 nm pulse in darkness before program step 1.
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>Drives phytochrome from Pfr to Pr, priming plants for phototropism experiments. When enabled, the sun
+                  panel stays dark, rotation and camera servos pause, and the Far Red LED array runs for the configured
+                  duration (default 5 min) before the program begins. Defaults to <strong>ON</strong> — uncheck if you
+                  don't have the Far Red LED array installed (otherwise you will sit through a 5-minute dark wait every
+                  run).</p>
+                <p><strong>Manual control</strong> via the FR Pulse / FR On / FR Off buttons above the command console,
+                  or the commands <code>fr on</code>, <code>fr off</code>, <code>fr pulse &lt;minutes&gt;</code>.</p>
+                <p>Requires the Far Red LED array wired to <strong>GP13</strong> on the RP2040:bit
+                  (micro:bit edge pin <strong>P16</strong> on a Keyestudio KS0360 or similar sensor shield;
+                  see the <code>PlantSense/FR_Wiring_5LED_12V.md</code> build doc).</p>
+              </div>
+            </li>
           </ul>
 
           <h4>Program Steps</h4>
-          <p>Define a sequence of timed sun position and light intensity changes. <button class="help-expand-btn"
-              onclick="toggleHelpDetail(this)">Learn more ▼</button></p>
+          <p>Define a sequence of timed sun position and light intensity changes. Click the
+            <strong>Examples…</strong> button below the step table to load ready-made program templates and
+            learn by example. <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+          </p>
           <div class="help-detail" style="display:none;">
             <p>Program steps allow you to automate sun simulation and device actions over time. Each row in the table
               represents a step with specific parameters:</p>
@@ -4946,6 +5088,16 @@ https://github.com/odeepllama/SolarSim/tree/main
                 </p>
               </div>
             </li>
+            <li><strong>デモモード</strong>: <strong>▶ デモ</strong>をクリックして、ハードウェアなしでプログラムをシミュレーションします。<button
+                class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>デモモードでは、アニメーションタイムラインプレイヘッドを使用してプログラムステップを再生し、デバイスに接続する前にタイミング、速度変更、日の区切りを確認できます。</p>
+                <p><strong>ナビゲーション：</strong><strong>ステップ</strong>と<strong>日</strong>のボタン（◀ /
+                  ▶）を使用して、待たずにステップや日の間をジャンプできます。</p>
+                <p><strong>自動再起動：</strong>デモ実行中にプログラムを編集すると、更新されたステップで自動的に再起動します。バナーが一瞬緑色に点滅して確認を示します。</p>
+                <p><strong>ヒント：</strong>デモモードは、デバイスにアップロードする前にプログラム設計を検証するのに最適です。初めてのユーザーに特にお勧めします。</p>
+              </div>
+            </li>
           </ul>
 
           <h4>プロファイル管理</h4>
@@ -5070,6 +5222,18 @@ https://github.com/odeepllama/SolarSim/tree/main
               <div class="help-detail" style="display:none;">
                 <p>エラーはインラインで赤色表示され、解決するまでエクスポートが無効になります。高強度でのDual
                   Sunは過熱防止のためブロックされます。強度1.0以上は許可されません。研究での推奨範囲：強度0.8～1.0、速度1x～4x。</p>
+              </div>
+            </li>
+            <li><strong>Far-Red (FR) 事前照射</strong>: プログラム開始前に暗黒下で730 nm光をパルス照射（任意）。
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>フィトクロムをPfrからPrに変換し、光屈性実験のために植物を準備します。有効化すると、太陽パネルは消灯し、回転およびカメラサーボは一時停止し、Far Red LEDアレイが設定時間（デフォルト5分）動作した後にプログラムが開始されます。
+                  デフォルトは<strong>ON</strong>です — Far Red LEDアレイが未接続の場合はチェックを外してください（そうしないと実験ごとに5分間の暗闇待機が発生します）。</p>
+                <p><strong>手動操作</strong>：コマンドコンソール上部の FR Pulse / FR On / FR Off ボタン、または
+                  <code>fr on</code>、<code>fr off</code>、<code>fr pulse &lt;分&gt;</code> コマンドを使用します。</p>
+                <p>Far Red LEDアレイをRP2040:bitの<strong>GP13</strong>（Keyestudio KS0360等のセンサーシールドで
+                  micro:bit エッジピン<strong>P16</strong>）に配線する必要があります
+                  （配線ドキュメント <code>PlantSense/FR_Wiring_5LED_12V.md</code> を参照）。</p>
               </div>
             </li>
           </ul>
@@ -5572,33 +5736,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             <h3>1. Prepare the Device</h3>
             <p>The Solar Simulator supports two hardware platforms:</p>
             <ul>
-              <li><strong>RP2040:bit</strong> (Raspberry Pi Pico-based): Install the custom firmware by dragging a
-                <code>.uf2</code> file onto the device in bootloader mode.
+              <li><strong>RP2040:bit</strong> (Raspberry Pi Pico-based): Use the
+                <a href="setup.html" onclick="if(location.hostname)this.href='setup/'"
+                  style="color: #3478f6; font-weight: 600;">Setup Wizard</a> to flash firmware
+                and deploy files automatically — no software installation needed.
               </li>
-              <li><strong>ESP32-S3</strong>: Flash the MicroPython firmware using <code>esptool</code>, then upload the
-                Solar Simulator Python files.</li>
+              <li><strong>ESP32-S3</strong> (advanced): Flash MicroPython using <code>esptool</code> and upload files
+                manually — see the <a href="https://github.com/odeepllama/SolarSim" target="_blank">GitHub
+                  repository</a> for instructions.</li>
             </ul>
-
-            <h4>RP2040:bit Firmware Installation</h4>
-            <ol>
-              <li><strong>Download the Firmware</strong>: Obtain the latest <code>SolarSimulator_YYYYMMDD.uf2</code>
-                file from the SolaSim GitHub repository.</li>
-              <li><strong>Enter Bootloader Mode</strong>:
-                <ul>
-                  <li>Hold down the <strong>BOOT</strong> button on the edge of the board.</li>
-                  <li>While holding <strong>BOOT</strong>, press the <strong>RESET</strong> button on the edge of the
-                    board.</li>
-                  <li>Release the button.</li>
-                </ul>
-              </li>
-              <li><strong>Install Firmware</strong>:
-                <ul>
-                  <li>A new drive named <code>RPI-RP2</code> will appear on your computer (like a USB stick).</li>
-                  <li>Drag and drop the <code>.uf2</code> file onto this drive.</li>
-                  <li>The device will automatically disconnect and reboot. The installation is complete!</li>
-                </ul>
-              </li>
-            </ol>
 
             <h3>2. Open SolaSim Studio</h3>
             <p>You do not need to install any software on your computer to control the device.</p>
@@ -5606,7 +5752,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               <li><strong>Recommended</strong>: Open <a href="https://odeepllama.github.io/SolarSim/"
                   target="_blank">https://odeepllama.github.io/SolarSim/</a> in a compatible browser (Google Chrome,
                 Microsoft Edge, or Opera).</li>
-              <li><strong>Advanced/Offline</strong>: If you have the <code>ProfileBuilder.html</code> file locally, you
+              <li><strong>Advanced/Offline</strong>: If you have the <code>SolaSimStudio.html</code> file locally, you
                 can simply double-click it to open it in your browser.</li>
             </ul>
 
@@ -5703,7 +5849,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               hour"), use the <strong>Program Steps</strong> section.</p>
             <ol>
               <li>Ensure <strong>Program Enabled</strong> is checked.</li>
-              <li>Click <strong>Add Step</strong> to create a new sequence.</li>
+              <li>Click <strong>Add Step</strong> to create a new sequence — or click the <strong>Examples…</strong>
+                button to load a ready-made template program.</li>
               <li>For each step, define:
                 <ul>
                   <li><strong>Sim Time</strong>: When this step targets (e.g., <code>1200</code>). This is the simulated
@@ -6049,7 +6196,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           appTitle: 'SolaSim Studio',
           monitorInteract: 'Monitor / Interact',
           disconnected: 'DISCONNECTED',
-          connect: '<span class="btn-emoji">🔌</span> Connect Device',
+          connect: 'Connect',
           quickEdit: '✏️ Quick Edit / Examples',
           quickEditLoading: '⏳ Loading...',
           refresh: 'Refresh',
@@ -6154,8 +6301,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           understood: 'Understood',
           finish: 'Finish ✓',
           // Guide step translations
-          guideConnectDevice: 'Connect Your Device',
-          guideConnectDeviceDesc: 'Click the green <strong>🔌 Connect Device</strong> button to connect to your device via USB cable.',
+          guideConnectDevice: 'Connect or Demo',
+          guideConnectDeviceDesc: 'Click <strong>🔌 Connect Device</strong> to connect to your device via USB cable. <br><br><strong>No device?</strong> Click <strong>▶ Demo</strong> to simulate your program with an animated timeline playhead — perfect for validating timing, speed changes, and day boundaries before connecting hardware.',
           guideStatusTiles: 'Status Tiles',
           guideStatusTilesDesc: 'Key parameters at a glance — connection status, program state, time, intensity, and more. Live tiles appear black with white text when connected to a device; grey tiles indicate the data is not live. Tiles are always interactive: click any tile to quickly adjust its setting.',
           guideSolarArc: 'Solar Arc Simulation',
@@ -6216,7 +6363,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           appTitle: 'SolaSim Studio',
           monitorInteract: 'モニター / 操作',
           disconnected: '未接続',
-          connect: '<span class="btn-emoji">🔌</span> USB接続',
+          connect: '接続',
           quickEdit: '✏️ クイック編集 / 例',
           quickEditLoading: '⏳ 読込中...',
           refresh: 'リフレッシュ',
@@ -6284,8 +6431,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           maxStepsReachedTitle: '最大100ステップ数に到達',
           understood: '了解',
           // Guide step translations
-          guideConnectDevice: 'デバイスを接続',
-          guideConnectDeviceDesc: '緑色の<strong>🔌 USB接続</strong>ボタンをクリックして、USBケーブルでデバイスに接続してください。',
+          guideConnectDevice: '接続またはデモ',
+          guideConnectDeviceDesc: '緑色の<strong>🔌 USB接続</strong>ボタンをクリックして、USBケーブルでデバイスに接続してください。<br><br><strong>デバイスがない場合：</strong><strong>▶ デモ</strong>をクリックして、アニメーションタイムラインプレイヘッドでプログラムをシミュレーションできます。ハードウェア接続前にタイミング、速度変更、日の区切りを検証するのに最適です。',
           guideStatusTiles: 'ステータスタイル',
           guideStatusTilesDesc: '主要パラメータをひと目で確認 — 接続状態、プログラム状態、時刻、強度など。デバイス接続中のライブタイルは黒背景に白文字で表示され、グレーのタイルはデータがライブでないことを示します。タイルは常にインタラクティブで、クリックすると設定をすばやく調整できます。',
           guideSolarArc: 'ソーラーアークシミュレーション',
@@ -6627,11 +6774,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // FIELD METADATA
       // ============================================================================
       const ORDERED_KEYS = [
-        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE'
+        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE', 'FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'
       ];
 
       const FIELD_GROUPS = [
         { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
+        { name: 'Pre-Exposure', i18nKey: 'sectionPreExposure', keys: ['FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'], collapsible: true },
         { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
         { name: 'Imaging Servos & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
@@ -6677,7 +6825,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         CUSTOM_SUN_B: { label: 'Custom Sun Blue', tooltip: 'Custom blue channel (0-255).', type: 'number', min: 0, max: 255, default: 0 },
         PROGRAM_ENABLED: { label: 'Program Enabled', tooltip: 'Enable scripted program steps block.', type: 'checkbox', default: true },
         PROGRAM_REPEATS: { label: 'Program Repeats (-1 = ∞)', tooltip: 'How many passes; -1 loops forever.', type: 'number', default: -1, showIf: s => s.PROGRAM_ENABLED },
-        PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED }
+        PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED },
+        FR_PREEXPOSURE_ENABLED: { label: 'FR Pre-Exposure Enabled', tooltip: 'Run a 730nm far-red pulse in darkness before program step 1 (drives Pfr→Pr photoconversion). Default ON.', type: 'checkbox', default: true },
+        FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure Duration (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_ENABLED }
       };
 
       // Keys to highlight (commonly changed)
@@ -6921,6 +7071,16 @@ https://github.com/odeepllama/SolarSim/tree/main
             group.keys.forEach(k => { grid.appendChild(createInput(k)); });
             fs.appendChild(legend);
             fs.appendChild(grid);
+
+            // FR pre-exposure: append an always-visible dark-period warning banner
+            if (group.name === 'Pre-Exposure') {
+              const banner = document.createElement('div');
+              banner.id = 'frPreExposureWarning';
+              banner.textContent = '⚠ Sun panel will be dark for the pre-exposure duration before each program starts. Uncheck if you don\'t have the Far Red LED array installed.';
+              banner.style.cssText = 'grid-column: 1 / -1; margin-top: 6px; padding: 6px 10px; background: #fff4d6; border: 1px solid #e0b040; border-radius: 4px; font-size: 0.85em; color: #6a4a00;';
+              banner.style.display = state.FR_PREEXPOSURE_ENABLED ? 'block' : 'none';
+              grid.appendChild(banner);
+            }
           } else {
             // Regular sections (no collapsible behavior)
             legend.textContent = getSectionTitle(group.i18nKey, group.name);
@@ -7000,6 +7160,13 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (sunsetField) {
           sunsetField.style.display = showCustomTimes ? '' : 'none';
         }
+
+        // FR Pre-Exposure: banner + duration field visibility follow the checkbox
+        const showFR = !!state.FR_PREEXPOSURE_ENABLED;
+        const frMinutesField = document.getElementById('FR_PREEXPOSURE_MINUTES')?.closest('.field');
+        if (frMinutesField) frMinutesField.style.display = showFR ? '' : 'none';
+        const frBanner = document.getElementById('frPreExposureWarning');
+        if (frBanner) frBanner.style.display = showFR ? 'block' : 'none';
       }
 
       /**
@@ -7035,6 +7202,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (key === 'IMAGES_PER_ROTATION') { recomputeDegreesPerImage(); document.getElementById('DEGREES_PER_IMAGE').value = state.DEGREES_PER_IMAGE; }
         if (key === 'PROGRAM_ENABLED') { refreshConditionalVisibility(); if (typeof window.__updateFieldsetVisibility === 'function') window.__updateFieldsetVisibility(); }
         if (key === 'SOLAR_MODE') { refreshConditionalVisibility(); }
+        if (key === 'FR_PREEXPOSURE_ENABLED') { refreshConditionalVisibility(); }
         if (key === 'TIME_SCALE') {
           handleTimeScaleModeChange(value);
         }
@@ -10119,7 +10287,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           try {
             const parsed = window.__parseProfileText(text);
             if (!parsed) {
-              alert('❌ Failed to parse text: The text does not appear to be a valid profile format.\n\nPlease ensure it contains settings like:\nSTART_TIME_HHMM = 600\nTIME_SCALE = 1\nPROGRAM_STEPS = [...]');
+              alert('This doesn\'t look like a SolaSim profile.\n\nA valid profile starts with settings like:\nSTART_TIME_HHMM = 600\nTIME_SCALE = 1\nPROGRAM_STEPS = [...]');
               return;
             }
             window.__applyProfileObject(parsed);
@@ -10151,7 +10319,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.log('✓ Text loaded into form successfully', 'success');
             }
           } catch (e) {
-            alert('❌ Failed to parse text: ' + e.message);
+            alert('Could not read this profile — it may be incomplete or in an unexpected format.\n\nDetails: ' + e.message);
             console.error('Parse error:', e);
           }
         }
@@ -12199,7 +12367,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Get current step index (1-based, 0 = before program starts)
         const currentStep1 = window.__currentStepIndex || 0;
-        if (currentStep1 <= 0 || !_connected) {
+        if (currentStep1 <= 0 || (!_connected && !window.__demoRunning)) {
           // No active step or not connected — clear any stale playheads
           bars.forEach(bar => {
             const ex = bar.querySelector('.timeline-playhead');
@@ -12449,6 +12617,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           return;
         }
 
+        // Abort previously registered drag listeners to prevent memory leak
+        if (window.__timelineDragAbortController) {
+          window.__timelineDragAbortController.abort();
+        }
+        window.__timelineDragAbortController = new AbortController();
+
         container.innerHTML = '';
         window.__hasTimelineOverlap = false; // Reset overlap flag for this render cycle
 
@@ -12503,6 +12677,49 @@ https://github.com/odeepllama/SolarSim/tree/main
       let _timelineDebounceTimer = null;
       function renderTimelineStrip() {
         clearTimeout(_timelineDebounceTimer);
+        // Auto-restart demo when user edits the program (stale steps become invalid)
+        if (window.__demoRunning && window.__demoEngine && !window.__demoNavInProgress) {
+          window.__demoRestarting = true; // Prevent stop() from hiding banner
+          window.__demoEngine.stop();
+          // Debounce restart to batch rapid edits (e.g. deleting multiple steps)
+          clearTimeout(window.__demoRestartTimer);
+          window.__demoRestartTimer = setTimeout(() => {
+            window.__demoRestarting = false;
+            if (typeof programSteps !== 'undefined' && programSteps.length > 0) {
+              window.__demoEngine.start();
+              // Brief green flash to confirm restart (same layout, smooth fade back)
+              const banner = document.getElementById('demoModeBanner');
+              if (banner) {
+                // Save original text nodes and swap to "Program updated"
+                const origEmoji = banner.childNodes[0].textContent;
+                const origStrong = banner.querySelector('strong');
+                const origStrongText = origStrong ? origStrong.textContent : '';
+                const origDesc = banner.childNodes[2] ? banner.childNodes[2].textContent : '';
+                banner.childNodes[0].textContent = ' ♻️ ';
+                if (origStrong) origStrong.textContent = 'Program updated';
+                if (banner.childNodes[2]) banner.childNodes[2].textContent = ' — demo restarted with your changes. ';
+                // Flash green instantly (disable transition for the snap-on)
+                banner.style.transition = 'none';
+                banner.style.background = '#e8f5e9';
+                banner.style.color = '#2e7d32';
+                banner.style.borderBottomColor = '#81c784';
+                // Force reflow so the instant color is applied
+                void banner.offsetWidth;
+                // Re-enable transition and fade back to blue
+                banner.style.transition = 'background 0.8s ease, color 0.8s ease, border-bottom-color 0.8s ease';
+                setTimeout(() => {
+                  banner.style.background = '#e3f2fd';
+                  banner.style.color = '#1565c0';
+                  banner.style.borderBottomColor = '#90caf9';
+                  // Restore original text
+                  banner.childNodes[0].textContent = origEmoji;
+                  if (origStrong) origStrong.textContent = origStrongText;
+                  if (banner.childNodes[2]) banner.childNodes[2].textContent = origDesc;
+                }, 1500);
+              }
+            }
+          }, 300);
+        }
         _timelineDebounceTimer = setTimeout(_renderTimelineStripImmediate, 200);
       }
 
@@ -14265,9 +14482,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       function renderTimelinePlayhead(host, dayInfo, WINDOW_START_MIN, WINDOW_END_MIN, WINDOW_SPAN, filterDirection) {
         if (!host) return;
 
-        // Remove any existing playhead
+        // Reuse existing playhead to avoid DOM churn (memory optimization)
         const existingPlayhead = host.querySelector('.timeline-playhead');
-        if (existingPlayhead) existingPlayhead.remove();
 
         // Always store window bounds and direction on host for the fast interpolation loop
         host.dataset.windowStart = WINDOW_START_MIN;
@@ -14362,7 +14578,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const hasLoadedProfile = window.__deviceProfile || window.__loadedProfile;
         const hasActiveProgram = state.PROGRAM_ENABLED && programSteps.length > 0;
 
-        if (!hasConnection || (!hasLoadedProfile && !hasActiveProgram)) return;
+        if (!hasConnection && !window.__demoRunning) return;
+        if (!window.__demoRunning && !hasLoadedProfile && !hasActiveProgram) return;
 
         // Calculate playhead position as percentage
         const posPct = outOfRange ? 0 : ((interpolatedSimMinutes - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
@@ -14375,9 +14592,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         const isActiveHold = holdState && holdState.dayNumber === currentPlayheadDay;
 
         if (isActiveHold && !initiallyHidden) {
-          // Remove any existing hold progress indicator
-          const existingHoldProgress = host.querySelector('.timeline-hold-progress');
-          if (existingHoldProgress) existingHoldProgress.remove();
+          // Reuse or create hold progress indicator (memory optimization)
+          let holdProgressEl = host.querySelector('.timeline-hold-progress');
 
           // Calculate hold progress (0 to 1)
           const elapsedMs = Date.now() - holdState.startTime;
@@ -14408,50 +14624,55 @@ https://github.com/odeepllama/SolarSim/tree/main
             const segStartPct = ((segStart - WINDOW_START_MIN) / WINDOW_SPAN) * 100;
             const segWidthPct = ((segEnd - segStart) / WINDOW_SPAN) * 100;
 
-            // Create hold progress element with detailed tooltip
-            const holdProgress = document.createElement('div');
-            holdProgress.className = 'timeline-hold-progress';
-            holdProgress.style.left = segStartPct + '%';
-            holdProgress.style.width = (segWidthPct * progressFraction) + '%';
+            if (!holdProgressEl) {
+              holdProgressEl = document.createElement('div');
+              holdProgressEl.className = 'timeline-hold-progress';
+              holdProgressEl.style.pointerEvents = 'auto';
+              holdProgressEl.style.cursor = 'help';
+              host.appendChild(holdProgressEl);
+            }
+            holdProgressEl.style.left = segStartPct + '%';
+            holdProgressEl.style.width = (segWidthPct * progressFraction) + '%';
 
             // Detailed tooltip showing progress, elapsed, total, and remaining time
             const remaining = totalMinutes - elapsedMinutes;
             const segDuration = segEnd - segStart; // Actual segment duration in minutes
-            holdProgress.title = `HOLD Progress: ${(progressFraction * 100).toFixed(1)}%\nElapsed: ${elapsedMinutes.toFixed(1)} min\nTotal: ${totalMinutes.toFixed(1)} min\nRemaining: ${remaining.toFixed(1)} min\nSegment: ${formatHHMM(segStart)} → ${formatHHMM(segEnd)} (${segDuration} min)`;
-
-            // Make the progress bar interactive for tooltip (override pointer-events:none for tooltip)
-            holdProgress.style.pointerEvents = 'auto';
-            holdProgress.style.cursor = 'help';
-
-            host.appendChild(holdProgress);
+            holdProgressEl.title = `HOLD Progress: ${(progressFraction * 100).toFixed(1)}%\nElapsed: ${elapsedMinutes.toFixed(1)} min\nTotal: ${totalMinutes.toFixed(1)} min\nRemaining: ${remaining.toFixed(1)} min\nSegment: ${formatHHMM(segStart)} → ${formatHHMM(segEnd)} (${segDuration} min)`;
+          } else if (holdProgressEl) {
+            holdProgressEl.remove();
           }
 
-          // Playhead tooltip - simplified during HOLD (detailed info now on progress bar)
-          const playhead = document.createElement('div');
-          playhead.className = 'timeline-playhead';
+          // Reuse or create playhead (memory optimization)
+          let playhead = existingPlayhead;
+          if (!playhead) {
+            playhead = document.createElement('div');
+            playhead.className = 'timeline-playhead';
+            host.appendChild(playhead);
+          }
           playhead.style.left = posPct + '%';
+          playhead.style.display = '';
           playhead.style.cursor = 'default'; // Normal cursor - detailed info is on orange bar
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})\n[HOLD in progress - hover over orange bar for details]`;
-
-          host.appendChild(playhead);
         } else {
           // Normal playhead (not in HOLD, or hidden on inactive bar)
           // Remove any existing hold progress indicator if present
-          const existingHoldProgress = host.querySelector('.timeline-hold-progress');
-          if (existingHoldProgress) existingHoldProgress.remove();
+          const holdProgressEl = host.querySelector('.timeline-hold-progress');
+          if (holdProgressEl) holdProgressEl.remove();
 
-          // Create playhead element
-          const playhead = document.createElement('div');
-          playhead.className = 'timeline-playhead';
+          // Reuse or create playhead element (memory optimization)
+          let playhead = existingPlayhead;
+          if (!playhead) {
+            playhead = document.createElement('div');
+            playhead.className = 'timeline-playhead';
+            host.appendChild(playhead);
+          }
           playhead.style.left = posPct + '%';
-          if (initiallyHidden) playhead.style.display = 'none';
+          playhead.style.display = initiallyHidden ? 'none' : '';
           playhead.style.cursor = 'help'; // Help cursor for tooltip
           playhead.title = `Current SimTime: ${simTimeStr} (Day ${currentPlayheadDay})`;
-
-          host.appendChild(playhead);
         }
       }
-
+      window.renderTimelinePlayhead = renderTimelinePlayhead;
       // --- Fast sim-time playhead interpolation loop ---
       // Repositions existing playhead elements at 100ms for smooth movement.
       // Does NOT create/remove DOM or rebuild the timeline — purely visual position update.
@@ -14705,7 +14926,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           timeLabel.style.left = leftPct + '%';
 
           e.preventDefault();
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
@@ -14718,7 +14939,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const newMinutes = xPosToMinutes(e.clientX);
           finishDrag(newMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // --- Touch Events ---
 
@@ -14782,7 +15003,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           timeLabel.style.left = leftPct + '%';
 
           if (e.cancelable) e.preventDefault();
-        }, { passive: false });
+        }, { passive: false, signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('touchend', (e) => {
           if (!isDragging) return;
@@ -14794,7 +15015,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const newMinutes = xPosToMinutes(e.changedTouches[0].clientX);
           finishDrag(newMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // Shared finish logic
         function finishDrag(newMinutes) {
@@ -14940,7 +15161,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const currentMouseMinutes = xPosToMinutes(e.clientX);
           updateDrag(currentMouseMinutes);
           e.preventDefault();
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
@@ -14953,7 +15174,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const currentMouseMinutes = xPosToMinutes(e.clientX);
           finishDrag(currentMouseMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // --- Touch Events ---
 
@@ -15007,7 +15228,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           const currentMouseMinutes = xPosToMinutes(e.touches[0].clientX);
           updateDrag(currentMouseMinutes);
           if (e.cancelable) e.preventDefault();
-        }, { passive: false });
+        }, { passive: false, signal: window.__timelineDragAbortController.signal });
 
         document.addEventListener('touchend', (e) => {
           if (!isDragging) return;
@@ -15019,7 +15240,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           const currentMouseMinutes = xPosToMinutes(e.changedTouches[0].clientX);
           finishDrag(currentMouseMinutes);
-        });
+        }, { signal: window.__timelineDragAbortController.signal });
 
         // Shared update logic
         function updateDrag(currentMouseMinutes) {
@@ -16080,8 +16301,11 @@ https://github.com/odeepllama/SolarSim/tree/main
                   window.updateLoadCurrentButton();
                 }
 
-                // Automatically upload to device
-                if (typeof window.connectAndUpload === 'function') {
+                // Automatically upload to device (use BLE if connected)
+                const _ms = window.__solarSimMonitorState;
+                if (_ms && _ms.transport === 'ble' && _ms.bleRxChar) {
+                  setTimeout(() => window.uploadProfileViaWriteCommand(), 100);
+                } else if (typeof window.connectAndUpload === 'function') {
                   setTimeout(() => window.connectAndUpload(), 100);
                 }
               };
@@ -16199,7 +16423,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
             updateButtons();
             $save.title = 'Default saved';
-          } catch (e) { console.warn('Save default failed', e); alert('Could not save default (storage error).'); }
+          } catch (e) { console.warn('Save default failed', e); alert('Couldn\'t save — your browser\'s storage may be full. Try clearing old data or using a different browser.'); }
         }
         function applyDefault() {
           try {
@@ -16220,7 +16444,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               renderProgramSteps(); updatePreview(true);
             }
             $apply.title = 'Applied default';
-          } catch (e) { console.warn('Apply default failed', e); alert('Could not apply default (corrupt data).'); }
+          } catch (e) { console.warn('Apply default failed', e); alert('The saved default appears to be damaged. You can reset it and save a new one.'); }
         }
 
         // Default starter program: one step at 06:00 sunrise, speed 1, blue sun, full intensity
@@ -16687,7 +16911,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               }, 1600);
             } catch (e) {
               console.warn('Failed to clear load skip pref', e);
-              alert('Could not reset (storage error).');
+              alert('Couldn\'t reset — your browser\'s storage may be full or restricted.');
             }
           });
         }
@@ -17428,11 +17652,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (monitorState && monitorState.transport === 'serial' && deviceType !== 'rp2040') {
           return uploadProfileViaWriteCommand(options);
         }
-        if (!('serial' in navigator)) { alert('Web Serial not supported in this browser. Use recent Chrome / Edge desktop.'); return; }
+        if (!('serial' in navigator)) { alert('Device connection requires Google Chrome or Microsoft Edge.\n\nYou can still explore and build programs in this browser, but uploading to a device is not available.'); return; }
         // Force-refresh the export preview so it reflects current state (including PROGRAM_STEPS)
         if (typeof updatePreview === 'function') updatePreview(true);
         const profileText = document.getElementById('exportPreview').value;
-        if (!profileText) { alert('No profile text to upload.'); return; }
+        if (!profileText) { alert('Nothing to upload — create or load a profile first.'); return; }
         let fn = document.getElementById('filename_preview').value || 'profile.txt';
         fn = fn.replace(/[^a-zA-Z0-9_.-]/g, '_');
         if (!fn.toLowerCase().endsWith('.txt')) fn += '.txt';
@@ -17625,6 +17849,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
       }
       window.connectAndUpload = connectAndUpload;
+      window.uploadProfileViaWriteCommand = uploadProfileViaWriteCommand;
 
       // -----------------------------
       // Profile Upload via writeprofile command (BLE or Serial)
@@ -17657,31 +17882,48 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (typeof log === 'function') log('📤 Uploading profile...', 'update');
 
           // 1. Begin write session
+
           await sendLine('writeprofile ' + fn, { silentEcho: true });
           await new Promise(r => setTimeout(r, 150));
+
 
           // 2. Send profile lines
           // Filter out empty trailing lines from split (trailing '\n' produces empty element)
           const lines = profileText.split('\n').filter((l, i, arr) => i < arr.length - 1 || l.length > 0);
-          const totalLines = lines.length;
+          let totalLines = lines.length;
 
-          for (let i = 0; i < totalLines; i++) {
+
+          for (let i = 0; i < lines.length; i++) {
             const fullLine = lines[i];
-            if (monitorTransport === 'ble') {
+            const psMatch = fullLine.match(/^PROGRAM_STEPS\s*=\s*(\[.*\])$/);
+            if (psMatch) {
+              // Send each step individually via PS: to avoid large allocations
+              // on ESP32. Safe for serial too — this WP: path is ESP32-only
+              // (RP2040 uses paste-mode upload, detected by USB vendor ID).
+              try {
+                const steps = JSON.parse(psMatch[1]);
+
+                for (let s = 0; s < steps.length; s++) {
+                  await sendLine('PS:' + JSON.stringify(steps[s]), { silentEcho: true });
+                  await new Promise(r => setTimeout(r, monitorTransport === 'ble' ? 50 : 80));
+                }
+                // Track expansion: 1 PROGRAM_STEPS line becomes N step lines on device
+                totalLines += (steps.length - 1);
+
+              } catch (e) {
+                console.warn('[Upload] Failed to split PROGRAM_STEPS, sending as-is:', e);
+                await sendLine('WP:' + fullLine, { silentEcho: true });
+              }
+            } else if (monitorTransport === 'ble') {
               // BLE writeValue limit is ~509 bytes (512 MTU - 3 ATT header).
-              // Lines that exceed this (e.g. PROGRAM_STEPS JSON) must be split
-              // into a first chunk (WP:) + continuation chunks (WPC:) that the
-              // ESP32 reassembles by appending WPC: data to the previous line.
-              const MAX_CHUNK = 480; // conservative limit within 509 byte MTU
+              const MAX_CHUNK = 480;
               if (('WP:' + fullLine).length > MAX_CHUNK) {
-                // Send first chunk
-                const firstLen = MAX_CHUNK - 3; // subtract 'WP:' prefix
+                const firstLen = MAX_CHUNK - 3;
                 await sendLine('WP:' + fullLine.slice(0, firstLen), { silentEcho: true });
                 await new Promise(r => setTimeout(r, 50));
-                // Send continuation chunks
                 let offset = firstLen;
                 while (offset < fullLine.length) {
-                  const chunkLen = MAX_CHUNK - 4; // subtract 'WPC:' prefix
+                  const chunkLen = MAX_CHUNK - 4;
                   await sendLine('WPC:' + fullLine.slice(offset, offset + chunkLen), { silentEcho: true });
                   await new Promise(r => setTimeout(r, 50));
                   offset += chunkLen;
@@ -17691,28 +17933,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               }
               await new Promise(r => setTimeout(r, 50));
             } else {
-              // Serial: for PROGRAM_STEPS, send each step individually via PS:
-              // to avoid long-line corruption. All other lines are short enough
-              // to send as-is via WP:.
-              const psMatch = fullLine.match(/^PROGRAM_STEPS\s*=\s*(\[.*\])$/);
-              if (psMatch) {
-                try {
-                  const steps = JSON.parse(psMatch[1]);
-                  for (let s = 0; s < steps.length; s++) {
-                    await sendLine('PS:' + JSON.stringify(steps[s]), { silentEcho: true });
-                    await new Promise(r => setTimeout(r, 50));
-                  }
-                } catch (e) {
-                  // Fallback: send as single WP: line
-                  console.warn('[Upload] Failed to split PROGRAM_STEPS, sending as-is:', e);
-                  await sendLine('WP:' + fullLine, { silentEcho: true });
-                }
-              } else {
-                await sendLine('WP:' + fullLine, { silentEcho: true });
-              }
-              await new Promise(r => setTimeout(r, 30));
+              // Serial: non-PROGRAM_STEPS lines are short, send as WP:
+              await sendLine('WP:' + fullLine, { silentEcho: true });
+              await new Promise(r => setTimeout(r, 80));
             }
           }
+
 
 
           // 3. Set up WRITE_OK listener BEFORE sending commit
@@ -17730,7 +17956,9 @@ https://github.com/odeepllama/SolarSim/tree/main
           });
 
           // 4. Commit — device writes file and loads profile in-place
-          await new Promise(r => setTimeout(r, 150));
+          // Extra delay before commit to let ESP32 drain serial buffer
+          await new Promise(r => setTimeout(r, monitorTransport === 'ble' ? 150 : 1500));
+
           await sendLine('writeprofile commit', { silentEcho: true });
 
           // 5. Wait for WRITE_OK confirmation from device
@@ -17975,7 +18203,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               setTimeout(() => { resetUploadConfirmBtn.textContent = 'Reset upload confirm'; }, 1600);
             } catch (e) {
               console.warn('Failed to clear upload skip pref', e);
-              alert('Could not reset (storage error).');
+              alert('Couldn\'t reset \u2014 your browser\'s storage may be full or restricted.');
             }
           });
         }
@@ -17986,7 +18214,14 @@ https://github.com/odeepllama/SolarSim/tree/main
         uploadBtn.addEventListener('click', (e) => {
           if (uploadBtn.disabled) return;
           e.preventDefault();
-          connectAndUpload();
+          const ms = window.__solarSimMonitorState;
+          if (ms && ms.transport === 'ble' && ms.bleRxChar) {
+            uploadProfileViaWriteCommand();
+          } else if (ms && ms.transport === 'serial' && ms.port) {
+            uploadProfileToBoard();
+          } else {
+            connectAndUpload();
+          }
         });
         proceed.addEventListener('click', () => { if (dontAsk && dontAsk.checked) setSkip(true); close(); uploadProfileToBoard(); });
         cancel.addEventListener('click', close);
@@ -18116,6 +18351,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           'trigger servo3',
           'trigger rotation',
           'program status',
+          // Far-Red LED
+          'fr on',
+          'fr off',
+          'fr pulse <minutes>',
           // Utility
           'status',
           'listprofiles',
@@ -19104,6 +19343,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const NUS_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
         const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // write commands
         const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // notify responses
+        const NUS_STATUS = '6e400004-b5a3-f393-e0a9-e50e24dcca9e'; // notify status
 
         // Shared TextDecoder instance — reused across all serial/BLE reads to avoid GC pressure
         const sharedDecoder = new TextDecoder();
@@ -19130,7 +19370,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Serialize BLE writes — Web Bluetooth throws "GATT operation already
         // in progress" if a second writeValue starts before the first resolves.
         function bleWrite(char, data) {
-          const p = state._bleWriteQueue.then(() => char.writeValue(data));
+          const p = state._bleWriteQueue.then(() => char.writeValueWithoutResponse(data));
           // Always settle the queue so future writes aren't blocked by errors
           state._bleWriteQueue = p.catch(() => { });
           return p;
@@ -19405,6 +19645,32 @@ https://github.com/odeepllama/SolarSim/tree/main
             });
             log('✓ Device connected', 'connection');
 
+            // Auto-label with device type (RP2040 / ESP32-S3) if user hasn't renamed
+            try {
+              let deviceType = '';
+              if (state.port) {
+                const info = state.port.getInfo && state.port.getInfo();
+                const vendorNames = { 0x303A: 'ESP32-S3', 0x1A86: 'ESP32' };
+                deviceType = vendorNames[info?.usbVendorId] || '';
+              } else if (state.bleDevice) {
+                deviceType = 'ESP32-S3';
+              }
+              if (deviceType) {
+                const span = document.getElementById('deviceIdText');
+                const currentLabel = span?.textContent || '';
+                // Only update if it's still the generic default (e.g. "Device 1")
+                if (span && /^Device\s+\d+$/i.test(currentLabel)) {
+                  const newLabel = deviceType + ' - ' + currentLabel;
+                  const oldTitle = document.title;
+                  if (oldTitle.startsWith(currentLabel + ' - ')) {
+                    document.title = newLabel + ' - ' + oldTitle.substring((currentLabel + ' - ').length);
+                  }
+                  span.textContent = newLabel;
+                  try { sessionStorage.setItem('profileBuilderDeviceId', newLabel); } catch (_) { }
+                }
+              }
+            } catch (_) { /* non-critical */ }
+
             // Dismiss disconnect notification if reconnecting
             dismissDisconnectNotification();
           } else if (!c && state.connectionHistory.lastConnectTime) {
@@ -19481,27 +19747,23 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
         async function ensurePort() {
           if (state.port) return state.port;
-          if (!navigator.serial) { log('Web Serial unsupported in this browser', 'error'); throw new Error('No navigator.serial'); }
+          if (!navigator.serial) { log('This browser doesn\'t support device connections. Use Chrome or Edge to connect.', 'error'); throw new Error('No navigator.serial'); }
           badge('CONNECTING', 'amber');
           try {
-            // Try to reuse a previously-granted port (avoids re-prompting
-            // after disconnect → reconnect within the same page session)
-            const granted = await navigator.serial.getPorts();
+            // Always prompt the user to select a port via the browser picker.
+            // This ensures multi-device setups work: the picker shows which
+            // ports are available vs. already claimed by another tab.
             const filters = [
               { usbVendorId: 0x303A },  // Espressif (ESP32-S3 "Board in FS mode")
               { usbVendorId: 0x2E8A },  // Raspberry Pi (RP2040)
               { usbVendorId: 0x1A86 },  // WCH (CH340 "USB Single Serial")
             ];
-            const matching = granted.find(p => {
-              try {
-                const info = p.getInfo();
-                return filters.some(f => info.usbVendorId === f.usbVendorId);
-              } catch (_) { return false; }
-            });
-            state.port = matching || await navigator.serial.requestPort({ filters });
+            state.port = await navigator.serial.requestPort({ filters });
             await state.port.open({ baudRate: 115200 });
             state.connStartTs = performance.now();
             setConnected(true); startReader(); log('Port opened');
+            // Sync browser time to RTC if device has one (command is silently ignored if no RTC)
+            setTimeout(() => { try { const d = new Date(); const rtcCmd = `syncrtc ${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`; sendLine(rtcCmd, { silentEcho: true }); } catch (_) { } }, 300);
             return state.port;
           } catch (e) {
             state.port = null;
@@ -19520,29 +19782,49 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (state.bleDevice && state.bleServer && state.bleServer.connected) return;
           if (!navigator.bluetooth) { log('Web Bluetooth unsupported in this browser', 'error'); throw new Error('No navigator.bluetooth'); }
           badge('CONNECTING', 'amber');
+          let device, server;
           try {
-            const device = await navigator.bluetooth.requestDevice({
+            device = await navigator.bluetooth.requestDevice({
               filters: [{ namePrefix: 'SolarSim' }],
               optionalServices: [NUS_SERVICE]
             });
             device.addEventListener('gattserverdisconnected', () => {
-              log('BLE device disconnected', 'error');
+              log('Bluetooth connection lost. Move closer to the device and try reconnecting.', 'error');
+              if (state._bleKeepalive) { clearInterval(state._bleKeepalive); state._bleKeepalive = null; }
               state.bleDevice = null; state.bleServer = null;
               state.bleRxChar = null; state.bleTxChar = null;
               state.transport = null;
               setConnected(false);
-              // Actively remove clock playhead on BLE disconnect
               try { if (typeof renderClockTimePlayhead === 'function') renderClockTimePlayhead(); } catch (_) { }
             });
-            const server = await device.gatt.connect();
-            const svc = await server.getPrimaryService(NUS_SERVICE);
-            const rxChar = await svc.getCharacteristic(NUS_RX);
-            const txChar = await svc.getCharacteristic(NUS_TX);
-            await txChar.startNotifications();
-            txChar.addEventListener('characteristicvaluechanged', (e) => {
-              const text = sharedDecoder.decode(e.target.value);
-              processIncoming(text);
-            });
+            server = await device.gatt.connect();
+
+            // Wrap GATT discovery in a timeout — Chrome BLE can hang
+            const gattSetup = (async () => {
+              const svc = await server.getPrimaryService(NUS_SERVICE);
+              const rxChar = await svc.getCharacteristic(NUS_RX);
+              const txChar = await svc.getCharacteristic(NUS_TX);
+              await txChar.startNotifications();
+              txChar.addEventListener('characteristicvaluechanged', (e) => {
+                const text = sharedDecoder.decode(e.target.value);
+                processIncoming(text);
+              });
+              // Status characteristic (optional)
+              try {
+                const statusChar = await svc.getCharacteristic(NUS_STATUS);
+                await statusChar.startNotifications();
+                statusChar.addEventListener('characteristicvaluechanged', (e) => {
+                  const text = sharedDecoder.decode(e.target.value);
+                  processIncoming(text);
+                });
+              } catch (_) { /* Status char not available */ }
+              return { rxChar, txChar };
+            })();
+            const gattTimeout = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('BLE setup timed out. Try again or power-cycle the ESP32.')), 10000)
+            );
+            const { rxChar, txChar } = await Promise.race([gattSetup, gattTimeout]);
+
             state.bleDevice = device;
             state.bleServer = server;
             state.bleRxChar = rxChar;
@@ -19551,7 +19833,34 @@ https://github.com/odeepllama/SolarSim/tree/main
             state.connStartTs = performance.now();
             setConnected(true);
             log('BLE connected to ' + device.name);
+            // Request initial status to populate tiles
+            setTimeout(() => { try { sendLine('status', { silentEcho: true }); } catch (_) { } }, 500);
+            setTimeout(() => { try { sendLine('status', { silentEcho: true }); } catch (_) { } }, 1500);
+            // Sync browser time to RTC if device has one
+            setTimeout(() => { try { const d = new Date(); const rtcCmd = `syncrtc ${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`; sendLine(rtcCmd, { silentEcho: true }); } catch (_) { } }, 300);
+            // BLE keepalive: GATT reads every 5s to prevent supervision timeout
+            if (state._bleKeepalive) clearInterval(state._bleKeepalive);
+            let _keepaliveFailCount = 0;
+            state._bleKeepalive = setInterval(async () => {
+              try {
+                if (state.transport === 'ble' && state.bleTxChar) {
+                  await state.bleTxChar.readValue();
+                  _keepaliveFailCount = 0; // Reset on success
+                } else {
+                  clearInterval(state._bleKeepalive);
+                  state._bleKeepalive = null;
+                }
+              } catch (_) {
+                _keepaliveFailCount++;
+                // Only stop after 3 consecutive failures (connection truly dead)
+                if (_keepaliveFailCount >= 3) {
+                  clearInterval(state._bleKeepalive);
+                  state._bleKeepalive = null;
+                }
+              }
+            }, 3000);
           } catch (e) {
+            try { if (server && server.connected) server.disconnect(); } catch (_) { }
             state.bleDevice = null; state.bleServer = null;
             state.bleRxChar = null; state.bleTxChar = null;
             state.transport = null;
@@ -19708,6 +20017,8 @@ https://github.com/odeepllama/SolarSim/tree/main
 
             if (state.transport === 'ble' && state.bleRxChar) {
               await bleWrite(state.bleRxChar, new TextEncoder().encode(line + '\n'));
+            } else if (state.transport === 'ble') {
+              console.warn('[BLE] Write skipped: bleRxChar is null');
             } else {
               const w = await getWriter();
               await w.write(new TextEncoder().encode(line + '\n'));
@@ -19761,6 +20072,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             }
           }
         }
+        window.processIncoming = processIncoming; // expose for DemoEngine
         // Regex patterns for verbose text extraction
         const reSimTime = /sim(?:ulation)?\s*time\s*[:=]\s*(\d{1,2})[:h](\d{2})/i;
         // Simulation line that also includes a speed in parentheses e.g. "Simulation time: 07:54 (Speed: 100.0x)"
@@ -20131,125 +20443,155 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
 
           let updated = false;
-          const mSimSpeed = line.match(reSimWithSpeed);
-          if (mSimSpeed) {
-            const h = parseInt(mSimSpeed[1], 10), m = parseInt(mSimSpeed[2], 10);
-            if (h >= 0 && h < 24 && m >= 0 && m < 60) {
-              setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'));
-              setKV('speed', 'Speed', mSimSpeed[3] + 'X');
-              updated = true;
-            }
-          } else {
-            const mSim = line.match(reSimTime); if (mSim) { const h = parseInt(mSim[1], 10), m = parseInt(mSim[2], 10); if (h >= 0 && h < 24 && m >= 0 && m < 60) { setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')); updated = true; } }
-          }
-          // Populate Speed tile from Time Scale lines in status output (immediate at startup)
-          const mSpeed = line.match(reSpeed);
-          if (mSpeed) {
-            const speedValue = mSpeed[1];
-            setKV('speed', 'Speed', speedValue.toUpperCase());
-            updated = true;
 
-            // Detect hold completion: if we had a hold state and speed changed from HOLD/0X to a non-zero speed
-            // Speed values during hold: "HOLD" or "0X"
-            // Speed values after hold: "1X", "2X", "3X", etc.
-            const isHoldSpeed = (speedValue === 'HOLD' || speedValue === '0X');
-            if (window.__holdState && !isHoldSpeed) {
-              clearHoldState();
-            }
-          }
-          if (reTimeScaleHold.test(line)) {
-            setKV('speed', 'Speed', 'HOLD');
-            updated = true;
-          }
-          const mScale = line.match(reTimeScale);
-          if (mScale) {
-            try {
-              const num = parseFloat(mScale[1]);
-              if (!isNaN(num)) {
-                const val = (num === 0) ? 'HOLD' : (mScale[1] + 'X');
-                setKV('speed', 'Speed', val);
+          // --- Early-exit keyword pre-checks (memory optimization P1) ---
+          // Instead of running 30+ regex patterns on every line, use cheap
+          // string checks to skip irrelevant groups.  Cuts per-line cost
+          // from ~30 regex matches to ~4 includes() + 5-8 targeted regexes.
+          const lower = line.toLowerCase();
+          const hasSim = lower.includes('sim') || lower.includes('time');
+          const hasSpeed = lower.includes('speed') || lower.includes('scale') || lower.includes('hold');
+          const hasSun = lower.includes('sun') || lower.includes('color') || lower.includes('custom');
+          const hasServo = lower.includes('servo') || lower.includes('rotation') || lower.includes('camera');
+          const hasProgram = lower.includes('program') || lower.includes('step') || lower.includes('jump');
+          const hasOther = lower.includes('intensity') || lower.includes('dual') || lower.includes('solar') || lower.includes('sunrise');
+
+          // SimTime + Speed group
+          if (hasSim || hasSpeed) {
+            const mSimSpeed = line.match(reSimWithSpeed);
+            if (mSimSpeed) {
+              const h = parseInt(mSimSpeed[1], 10), m = parseInt(mSimSpeed[2], 10);
+              if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+                setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'));
+                setKV('speed', 'Speed', mSimSpeed[3] + 'X');
                 updated = true;
-
-                // Detect hold completion: if we had a hold state and speed changed from 0 to non-zero
-                if (window.__holdState && num !== 0) {
-                  clearHoldState();
-                }
               }
-            } catch (_) { /* ignore parse edge cases */ }
-          }
-          const mRot = line.match(reRotState); if (mRot) { setKV('rotState', 'RotState', mRot[1]); updated = true; }
-          const mRotAng = line.match(reRotAng); if (mRotAng) { setKV('rotAng', 'RotAng', mRotAng[1]); updated = true; }
-          const mS2 = line.match(reServo2); if (mS2) { setKV('servo2', 'Servo2', mS2[1]); updated = true; }
-          const mS3 = line.match(reServo3); if (mS3) { setKV('servo3', 'Servo3', mS3[1]); updated = true; }
-          const mMem = line.match(reMem); if (mMem) { setKV('memFree', 'MemFree', mMem[1]); updated = true; }
-          const mSun = line.match(reSunColor); if (mSun) {
-            const rawVal = mSun[1]; const val = rawVal.toUpperCase(); const icon = '☀';
-            // If CUSTOM and we already have an RGB triplet, include it in the tile
-            if (val === 'CUSTOM') {
-              let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
-              // Don't fall back to form values — they may be stale/default.
-              // The actual RGB line arrives later in the status dump and will update the tile.
-              setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : icon + ' CUSTOM');
-            } else {
-              setKV('sunColor', 'SunColor', icon + ' ' + val);
+            } else if (hasSim) {
+              const mSim = line.match(reSimTime); if (mSim) { const h = parseInt(mSim[1], 10), m = parseInt(mSim[2], 10); if (h >= 0 && h < 24 && m >= 0 && m < 60) { setKV('sim', 'SimTime', String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')); updated = true; } }
             }
-            const sunEl = kvCache && kvCache.get ? kvCache.get('sunColor') : null;
-            if (sunEl) { sunEl.classList.remove('sun-blue', 'sun-natural', 'sun-custom'); if (val === 'BLUE') sunEl.classList.add('sun-blue'); else if (val === 'NATURAL') sunEl.classList.add('sun-natural'); else if (val === 'CUSTOM') sunEl.classList.add('sun-custom'); }
-            updated = true;
           }
-          // Capture CUSTOM RGB values when present and reflect in tile
-          const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus) || line.match(reSunColorProgram);
-          if (mCust) {
-            try {
-              let r = parseInt(mCust[1], 10), g = parseInt(mCust[2], 10), b = parseInt(mCust[3], 10);
-              const clamp = v => Math.max(0, Math.min(255, isFinite(v) ? v : 0));
-              r = clamp(r); g = clamp(g); b = clamp(b);
-              // Stash for visualizer
-              try { const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {}); st.__sunCustomRGB = [r, g, b]; } catch (_) { }
-              // If SunColor tile exists or after mode is CUSTOM, show numbers
-              setKV('sunColor', 'SunColor', `☀ CUSTOM<br>${r},${g},${b}`);
+          if (hasSpeed) {
+            // Populate Speed tile from Time Scale lines in status output (immediate at startup)
+            const mSpeed = line.match(reSpeed);
+            if (mSpeed) {
+              const speedValue = mSpeed[1];
+              setKV('speed', 'Speed', speedValue.toUpperCase());
               updated = true;
-            } catch (_) { }
-          }
-          const mSolar = line.match(reSolarMode); if (mSolar) {
-            let modeVal = mSolar[1];
-            if (modeVal.toUpperCase() === 'CUSTOM') {
-              let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
-              setKV('solarMode', 'SolarMode', rgb ? `CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : 'CUSTOM');
-            } else {
-              setKV('solarMode', 'SolarMode', modeVal);
+
+              // Detect hold completion: if we had a hold state and speed changed from HOLD/0X to a non-zero speed
+              const isHoldSpeed = (speedValue === 'HOLD' || speedValue === '0X');
+              if (window.__holdState && !isHoldSpeed) {
+                clearHoldState();
+              }
             }
-            updated = true;
+            if (reTimeScaleHold.test(line)) {
+              setKV('speed', 'Speed', 'HOLD');
+              updated = true;
+            }
+            const mScale = line.match(reTimeScale);
+            if (mScale) {
+              try {
+                const num = parseFloat(mScale[1]);
+                if (!isNaN(num)) {
+                  const val = (num === 0) ? 'HOLD' : (mScale[1] + 'X');
+                  setKV('speed', 'Speed', val);
+                  updated = true;
+
+                  // Detect hold completion: if we had a hold state and speed changed from 0 to non-zero
+                  if (window.__holdState && num !== 0) {
+                    clearHoldState();
+                  }
+                }
+              } catch (_) { /* ignore parse edge cases */ }
+            }
           }
-          const mProg = line.match(reProgramEnabled); if (mProg) { setKV('program', 'Program', mProg[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mRotEn = line.match(reRotationEnabled); if (mRotEn) { setKV('rotation', 'RotationImaging', mRotEn[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mRotToggle = line.match(reRotationToggle); if (mRotToggle) { setKV('rotation', 'RotationImaging', mRotToggle[1] === 'True' ? 'ON' : 'OFF'); updated = true; }
-          let mInt = line.match(reIntensity);
-          if (!mInt) mInt = line.match(reIntensitySerial);
-          if (!mInt) mInt = line.match(reIntensityCmdEcho);
-          if (mInt) { setKV('intensity', 'Intensity', mInt[1]); updated = true; }
-          const mDual = line.match(reDualSun); if (mDual) { setKV('dualSun', 'DualSun', mDual[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mDualCmd = line.match(reDualSunCmd); if (mDualCmd) { setKV('dualSun', 'DualSun', mDualCmd[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
-          const mS2DayInt = line.match(reServo2DayInterval);
-          if (mS2DayInt) {
-            const val = mS2DayInt[1] === 'disabled' ? '0s' : mS2DayInt[1];
-            setKV('servo2DayInt', 'Servo2DayInt', val);
-            updated = true;
+          // Servo / Rotation / Camera group
+          if (hasServo) {
+            const mRot = line.match(reRotState); if (mRot) { setKV('rotState', 'RotState', mRot[1]); updated = true; }
+            const mRotAng = line.match(reRotAng); if (mRotAng) { setKV('rotAng', 'RotAng', mRotAng[1]); updated = true; }
+            const mS2 = line.match(reServo2); if (mS2) { setKV('servo2', 'Servo2', mS2[1]); updated = true; }
+            const mS3 = line.match(reServo3); if (mS3) { setKV('servo3', 'Servo3', mS3[1]); updated = true; }
+            const mRotEn = line.match(reRotationEnabled); if (mRotEn) { setKV('rotation', 'RotationImaging', mRotEn[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+            const mRotToggle = line.match(reRotationToggle); if (mRotToggle) { setKV('rotation', 'RotationImaging', mRotToggle[1] === 'True' ? 'ON' : 'OFF'); updated = true; }
+            const mS2DayInt = line.match(reServo2DayInterval);
+            if (mS2DayInt) {
+              const val = mS2DayInt[1] === 'disabled' ? '0s' : mS2DayInt[1];
+              setKV('servo2DayInt', 'Servo2DayInt', val);
+              updated = true;
+            }
+            const mS2NightInt = line.match(reServo2NightInterval);
+            if (mS2NightInt) {
+              const val = mS2NightInt[1] === 'disabled' ? '0s' : mS2NightInt[1];
+              setKV('servo2NightInt', 'Servo2NightInt', val);
+              updated = true;
+            }
           }
-          const mS2NightInt = line.match(reServo2NightInterval);
-          if (mS2NightInt) {
-            const val = mS2NightInt[1] === 'disabled' ? '0s' : mS2NightInt[1];
-            setKV('servo2NightInt', 'Servo2NightInt', val);
-            updated = true;
+          // Memory
+          if (lower.includes('mem')) {
+            const mMem = line.match(reMem); if (mMem) { setKV('memFree', 'MemFree', mMem[1]); updated = true; }
           }
-          const mRiseSet = line.match(reSunriseSunset); if (mRiseSet) {
-            try {
-              const riseH = parseInt(mRiseSet[1], 10), riseM = parseInt(mRiseSet[2], 10), setH = parseInt(mRiseSet[3], 10), setM = parseInt(mRiseSet[4], 10);
-              const sunriseMinutes = riseH * 60 + riseM; const sunsetMinutes = setH * 60 + setM;
-              const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {});
-              st.__sunArcSunrise = sunriseMinutes; st.__sunArcSunset = sunsetMinutes;
-              if (st.__sunArc && st.__sunArc.refresh) { st.__sunArc.refresh(); }
-            } catch (_) { }
+          // Sun Color group
+          if (hasSun) {
+            const mSun = line.match(reSunColor); if (mSun) {
+              const rawVal = mSun[1]; const val = rawVal.toUpperCase(); const icon = '☀';
+              // If CUSTOM and we already have an RGB triplet, include it in the tile
+              if (val === 'CUSTOM') {
+                let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
+                setKV('sunColor', 'SunColor', rgb ? `${icon} CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : icon + ' CUSTOM');
+              } else {
+                setKV('sunColor', 'SunColor', icon + ' ' + val);
+              }
+              const sunEl = kvCache && kvCache.get ? kvCache.get('sunColor') : null;
+              if (sunEl) { sunEl.classList.remove('sun-blue', 'sun-natural', 'sun-custom'); if (val === 'BLUE') sunEl.classList.add('sun-blue'); else if (val === 'NATURAL') sunEl.classList.add('sun-natural'); else if (val === 'CUSTOM') sunEl.classList.add('sun-custom'); }
+              updated = true;
+            }
+            // Capture CUSTOM RGB values when present and reflect in tile
+            const mCust = line.match(reSunColorCustomCmd) || line.match(reSunColorCustomSerial) || line.match(reSunColorCustomStatus) || line.match(reSunColorProgram);
+            if (mCust) {
+              try {
+                let r = parseInt(mCust[1], 10), g = parseInt(mCust[2], 10), b = parseInt(mCust[3], 10);
+                const clamp = v => Math.max(0, Math.min(255, isFinite(v) ? v : 0));
+                r = clamp(r); g = clamp(g); b = clamp(b);
+                // Stash for visualizer
+                try { const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {}); st.__sunCustomRGB = [r, g, b]; } catch (_) { }
+                // If SunColor tile exists or after mode is CUSTOM, show numbers
+                setKV('sunColor', 'SunColor', `☀ CUSTOM<br>${r},${g},${b}`);
+                updated = true;
+              } catch (_) { }
+            }
+          }
+          // Intensity / DualSun / SolarMode / Sunrise group
+          if (hasOther || hasSun) {
+            const mSolar = line.match(reSolarMode); if (mSolar) {
+              let modeVal = mSolar[1];
+              if (modeVal.toUpperCase() === 'CUSTOM') {
+                let rgb = null; try { const st = window.__solarSimMonitorState; if (st && Array.isArray(st.__sunCustomRGB)) rgb = st.__sunCustomRGB; } catch (_) { }
+                setKV('solarMode', 'SolarMode', rgb ? `CUSTOM<br>${rgb[0]},${rgb[1]},${rgb[2]}` : 'CUSTOM');
+              } else {
+                setKV('solarMode', 'SolarMode', modeVal);
+              }
+              updated = true;
+            }
+          }
+          if (hasProgram) {
+            const mProg = line.match(reProgramEnabled); if (mProg) { setKV('program', 'Program', mProg[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+          }
+          if (hasOther) {
+            let mInt = line.match(reIntensity);
+            if (!mInt) mInt = line.match(reIntensitySerial);
+            if (!mInt) mInt = line.match(reIntensityCmdEcho);
+            if (mInt) { setKV('intensity', 'Intensity', mInt[1]); updated = true; }
+            const mDual = line.match(reDualSun); if (mDual) { setKV('dualSun', 'DualSun', mDual[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+            const mDualCmd = line.match(reDualSunCmd); if (mDualCmd) { setKV('dualSun', 'DualSun', mDualCmd[1].toLowerCase() === 'true' ? 'ON' : 'OFF'); updated = true; }
+            const mRiseSet = line.match(reSunriseSunset); if (mRiseSet) {
+              try {
+                const riseH = parseInt(mRiseSet[1], 10), riseM = parseInt(mRiseSet[2], 10), setH = parseInt(mRiseSet[3], 10), setM = parseInt(mRiseSet[4], 10);
+                const sunriseMinutes = riseH * 60 + riseM; const sunsetMinutes = setH * 60 + setM;
+                const st = window.__solarSimMonitorState || (window.__solarSimMonitorState = {});
+                st.__sunArcSunrise = sunriseMinutes; st.__sunArcSunset = sunsetMinutes;
+                if (st.__sunArc && st.__sunArc.refresh) { st.__sunArc.refresh(); }
+              } catch (_) { }
+            }
           }
 
           // === Parse fields for device config tracking (always runs for diff highlighting) ===
@@ -20649,6 +20991,40 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Make setKV and reorderTiles accessible for visualization wrappers
         try { window.setKV = setKV; window.reorderTiles = reorderTiles; } catch (_) { }
 
+        // --- setKV subscriber pattern (memory optimization P3) ---
+        // Instead of wrapping setKV() multiple times (which creates nested
+        // closure chains and extra `arguments` objects per call), modules
+        // register lightweight callbacks via window.onSetKV().
+        const _setKVSubscribers = [];
+        window.onSetKV = function (fn) { _setKVSubscribers.push(fn); };
+        // Patch setKV to notify subscribers after each update
+        const _origSetKV = setKV;
+        window.setKV = function (k, label, val) {
+          _origSetKV(k, label, val);
+          for (let i = 0; i < _setKVSubscribers.length; i++) {
+            try { _setKVSubscribers[i](k, label, val); } catch (_) { }
+          }
+        };
+
+        // --- Shared activity gate (memory optimization P2) ---
+        // Returns true when the page is actively in use (connected, demo,
+        // or user interacted with form/timeline in the last 60s).
+        window.__lastFormInteraction = 0;
+        window.isMonitorActive = function () {
+          const ns = window.__solarSimMonitorState;
+          const connected = ns && (ns.port || ns.transport === 'ble');
+          const demo = !!window.__demoRunning;
+          const recentInteraction = (Date.now() - (window.__lastFormInteraction || 0)) < 60000;
+          return connected || demo || recentInteraction;
+        };
+        // Stamp form interaction on any user input inside the profile builder form or timeline area
+        document.addEventListener('input', function () { window.__lastFormInteraction = Date.now(); }, true);
+        document.addEventListener('change', function () { window.__lastFormInteraction = Date.now(); }, true);
+        // Also stamp on mousedown in timeline strips (for drag operations)
+        document.addEventListener('mousedown', function (e) {
+          if (e.target && e.target.closest && e.target.closest('.timeline-strip')) window.__lastFormInteraction = Date.now();
+        }, true);
+
         // ============================================================================
         // OFFLINE (GREY) TILES — show form state when no device is connected
         // ============================================================================
@@ -20862,27 +21238,110 @@ https://github.com/odeepllama/SolarSim/tree/main
           state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 600));
           state.__statusRetryTimers.push(setTimeout(() => { if (panel.classList.contains('open') && !state.__statusPrimed) sendStatusSilent(); }, 1500));
         })();
-        connectBtn && connectBtn.addEventListener('click', () => {
-          // Save-first prompt if form has unsaved changes
-          if (window.__formDirty) {
-            showSaveFirstModal(() => {
-              // Proceed to connect after modal resolves
-              state.transport = 'serial';
-              doSerialConnect();
-            });
-            return;
+        connectBtn && connectBtn.addEventListener('click', (evt) => {
+          // Close any existing chooser
+          const existing = document.querySelector('.transport-chooser');
+          if (existing) { existing.remove(); return; }
+
+          function proceedWithTransport(transportType) {
+            // Remove chooser
+            const ch = document.querySelector('.transport-chooser');
+            if (ch) ch.remove();
+
+            function doConnect() {
+              if (transportType === 'ble') {
+                doBLEConnect();
+              } else {
+                state.transport = 'serial';
+                doSerialConnect();
+              }
+            }
+
+            // Show save-first prompt AFTER transport is chosen (so it doesn't overlap BLE picker)
+            if (window.__formDirty) {
+              showSaveFirstModal(doConnect);
+            } else {
+              doConnect();
+            }
           }
-          state.transport = 'serial';
-          doSerialConnect();
+
+          function showChooser() {
+            const chooser = document.createElement('div');
+            chooser.className = 'transport-chooser';
+            const lang = document.documentElement.lang || 'en';
+            const isJa = lang === 'ja';
+            chooser.innerHTML = `
+              <button class="transport-chooser-btn" data-transport="serial">
+                <span class="tc-icon">🔌</span>
+                <span><span class="tc-label">${isJa ? 'USBケーブル' : 'USB Cable'}</span><br>
+                <span class="tc-desc">${isJa ? 'シリアル接続（Chrome/Edge）' : 'Serial connection (Chrome/Edge)'}</span></span>
+              </button>
+              <button class="transport-chooser-btn" data-transport="ble">
+                <span class="tc-icon">📶</span>
+                <span><span class="tc-label">${isJa ? 'Bluetooth' : 'Bluetooth'}</span><br>
+                <span class="tc-desc">${isJa ? 'ワイヤレス接続（Chrome/Bluefy）' : 'Wireless connection (Chrome/Bluefy)'}</span></span>
+              </button>
+            `;
+            chooser.querySelectorAll('.transport-chooser-btn').forEach(btn => {
+              btn.addEventListener('click', () => proceedWithTransport(btn.dataset.transport));
+            });
+            // Position relative to connect button
+            connectBtn.style.position = 'relative';
+            connectBtn.appendChild(chooser);
+            // Close on outside click
+            setTimeout(() => {
+              document.addEventListener('click', function onOutside(e) {
+                if (!chooser.contains(e.target) && e.target !== connectBtn) {
+                  chooser.remove();
+                  document.removeEventListener('click', onOutside);
+                }
+              });
+            }, 10);
+          }
+
+          if (!navigator.serial && !navigator.bluetooth && window.__demoEngine) {
+            window.__demoEngine.start();
+          } else if (navigator.serial) {
+            // Check for a previously-granted RP2040 port — skip BT/USB chooser
+            // since RP2040 has no Bluetooth, so the BT option is meaningless.
+            navigator.serial.getPorts().then(ports => {
+              const rp2040Ports = ports.filter(p => {
+                try { const info = p.getInfo && p.getInfo(); return info && info.usbVendorId === 0x2E8A; }
+                catch (_) { return false; }
+              });
+              // Only auto-select serial if exactly one RP2040 is connected;
+              // if multiple exist, show the chooser so the user can pick.
+              if (rp2040Ports.length === 1) {
+                proceedWithTransport('serial');
+              } else {
+                showChooser();
+              }
+            }).catch(() => showChooser());
+          } else {
+            showChooser();
+          }
         });
         function doSerialConnect() {
           ensurePort().catch(e => {
             const fullErr = (e.message || '').toLowerCase();
             let msg = 'Connection failure';
             if (fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
-              msg = 'Connection failure - port already open';
+              msg = 'The device port is already in use. Close any other tabs or apps (like Thonny) that might be connected, then try again.';
             } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
-              msg = 'Connection failure - no device found';
+              msg = 'No device found. Make sure the USB cable is plugged in and the board is powered on.';
+            }
+            state.transport = null;
+            log(msg, 'error');
+          });
+        }
+        function doBLEConnect() {
+          ensureBLE().catch(e => {
+            const fullErr = (e.message || '').toLowerCase();
+            let msg = 'Bluetooth connection failed';
+            if (fullErr.includes('cancelled') || fullErr.includes('canceled') || fullErr.includes('user cancelled')) {
+              return; // User cancelled the picker, no error to show
+            } else if (fullErr.includes('bluetooth')) {
+              msg = 'Web Bluetooth is not available. Use Chrome or Bluefy browser.';
             }
             state.transport = null;
             log(msg, 'error');
@@ -21129,6 +21588,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             {
               group: 'Utility Commands', commands: [
                 'fillpanel <r> <g> <b> [sec]       - Fill panel with RGB color for specified seconds',
+                'fr on                             - Turn Far-Red LED array on indefinitely',
+                'fr off                            - Turn Far-Red LED array off',
+                'fr pulse <minutes>                - Timed Far-Red pulse (auto-off after N minutes, max 60)',
                 'help all                          - Display this command summary',
                 'light camera <on|off>             - Turn camera lighting on or off',
                 'light rotation <on|off>           - Turn rotation lighting on or off',
@@ -21260,14 +21722,17 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (state.port) return;
             const ports = await navigator.serial.getPorts();
             if (!ports || ports.length === 0) return;
-            // Prefer a known vendor (e.g., Raspberry Pi Pico 0x2E8A) if present; otherwise use first
-            let chosen = ports[0];
-            for (const p of ports) {
+            // Filter to known SolaSim vendors
+            const knownVendors = [0x303A, 0x2E8A, 0x1A86];
+            const matchingPorts = ports.filter(p => {
               try {
                 const info = p.getInfo && p.getInfo();
-                if (info && info.usbVendorId === 0x2E8A) { chosen = p; break; }
-              } catch (_) { /* ignore */ }
-            }
+                return info && knownVendors.includes(info.usbVendorId);
+              } catch (_) { return false; }
+            });
+            // If multiple devices are granted, don't auto-connect — user must pick
+            if (matchingPorts.length !== 1) return;
+            const chosen = matchingPorts[0];
             // Open silently at default baud if possible
             await chosen.open({ baudRate: 115200 });
             state.port = chosen;
@@ -21295,7 +21760,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // === Adaptive Status Polling Interval ===
           // Polling interval (ms) based on number of program steps
           const STATUS_POLL_MIN_INTERVAL_MS = 2000;
-          const STATUS_POLL_MAX_INTERVAL_MS = 8000;
+          const STATUS_POLL_MAX_INTERVAL_MS = 20000;
           const STATUS_POLL_THRESHOLDS = [20, 30, 40];
           const STATUS_POLL_INTERVALS = [2000, 4000, 6000, 8000];
 
@@ -21318,6 +21783,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (state.__statusTimer) return;
             if (!state.port && state.transport !== 'ble') return;
             let interval = getStatusPollInterval(getCurrentStepCount());
+            // BLE has lower bandwidth — widen polling interval to avoid overwhelming ESP32
+            if (state.transport === 'ble') {
+              interval = Math.max(15000, interval * 4);
+            }
             interval = Math.max(STATUS_POLL_MIN_INTERVAL_MS, Math.min(STATUS_POLL_MAX_INTERVAL_MS, interval));
             state.__statusTimer = setInterval(() => { if ((state.port || state.transport === 'ble') && state.autoRefreshEnabled) sendStatusSilent(); }, interval);
             state.__lastStatusInterval = interval;
@@ -21327,6 +21796,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           function updateStatusIntervalIfNeeded() {
             if (!state.__statusTimer) return;
             let interval = getStatusPollInterval(getCurrentStepCount());
+            // BLE has lower bandwidth — widen polling interval to avoid overwhelming ESP32
+            if (state.transport === 'ble') {
+              interval = Math.max(15000, interval * 4);
+            }
             interval = Math.max(STATUS_POLL_MIN_INTERVAL_MS, Math.min(STATUS_POLL_MAX_INTERVAL_MS, interval));
             if (interval !== state.__lastStatusInterval) {
               clearInterval(state.__statusTimer);
@@ -21443,7 +21916,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         // Load plant images (daytime and nighttime)
         const plantImage = new Image();
-        plantImage.src = 'planty.svg';
+        plantImage.src = 'docs/planty.svg';
         let plantImageLoaded = false;
         plantImage.onload = function () {
           plantImageLoaded = true;
@@ -21455,7 +21928,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         };
 
         const plantImageNight = new Image();
-        plantImageNight.src = 'planty_b&w.svg';
+        plantImageNight.src = 'docs/planty_b&w.svg';
         let plantImageNightLoaded = false;
         plantImageNight.onload = function () {
           plantImageNightLoaded = true;
@@ -21880,17 +22353,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         }
 
         ns.__sunArc.updateVisibility = updateVisibility;
-        setInterval(() => { updateVisibility(); if (wrapper.style.display !== 'none') draw(); }, 1500);
+        setInterval(() => { if (!window.isMonitorActive || window.isMonitorActive()) { updateVisibility(); if (wrapper.style.display !== 'none') draw(); } }, 1500);
         window.addEventListener('resize', () => { if (wrapper.style.display !== 'none') draw(); });
-        // Hook into setKV to trigger redraw on relevant changes
-        if (typeof window.setKV === 'function' && !window.setKV.__sunArcWrapped) {
-          const orig = window.setKV; window.setKV = function (k, label, val) {
-            const r = orig.apply(this, arguments);
+        // Subscribe to setKV changes instead of wrapping (memory optimization P3)
+        if (typeof window.onSetKV === 'function') {
+          window.onSetKV(function (k) {
             if (k === 'sim' || k === 'solarMode' || k === 'dualSun' || k === 'intensity' || k === 'sunColor') {
               ns.__sunArc.refresh(); ns.__sunArc.updateVisibility();
             }
-            return r;
-          }; window.setKV.__sunArcWrapped = true;
+          });
         }
         // Initial attempt after slight delay
         setTimeout(() => { updateVisibility(); draw(); }, 600);
@@ -22223,13 +22694,32 @@ https://github.com/odeepllama/SolarSim/tree/main
         let confirmEl = document.getElementById('tileConfirm'); if (!confirmEl) { confirmEl = document.createElement('div'); confirmEl.id = 'tileConfirm'; confirmEl.innerHTML = '<div class="txt"></div><div class="btn-row"><button class="btn yes">Yes</button><button class="btn no">No</button></div>'; document.body.appendChild(confirmEl); }
         let confirmOutside = null;
         function showConfirm(tileEl, msg, onYes) { const txt = confirmEl.querySelector('.txt'); const yes = confirmEl.querySelector('.yes'); const no = confirmEl.querySelector('.no'); txt.textContent = msg; const r = tileEl.getBoundingClientRect(); confirmEl.style.left = Math.round(r.left + window.scrollX) + 'px'; confirmEl.style.top = Math.round(r.bottom + window.scrollY + 6) + 'px'; confirmEl.style.display = 'block'; const cleanup = () => { confirmEl.style.display = 'none'; yes.onclick = null; no.onclick = null; if (confirmOutside) { document.removeEventListener('mousedown', confirmOutside); confirmOutside = null; } }; yes.onclick = () => { try { onYes && onYes(); } finally { cleanup(); } }; no.onclick = cleanup; confirmOutside = (e) => { if (!confirmEl.contains(e.target)) cleanup(); }; document.addEventListener('mousedown', confirmOutside); }
-        // Tooltips for discoverability
+        // Tooltips for discoverability — descriptive per-tile
+        const TILE_TOOLTIPS = {
+          sim: { connected: 'Simulated time of day (HHMM). Click to set.', disconnected: 'Simulated time of day. Click to edit, or use the form below.' },
+          speed: { connected: 'Time scale (negative = reverse, 0 = hold). Click to set.', disconnected: 'Simulation speed multiplier. Click to edit, or use the form below.' },
+          intensity: { connected: 'LED brightness (0.0\u20131.0). Click to set.', disconnected: 'LED brightness level. Click to edit, or use the form below.' },
+          sunColor: { connected: 'LED color mode (Natural, Blue, or Custom RGB). Click to change.', disconnected: 'LED color mode. Click to edit, or use the form below.' },
+          program: { connected: 'Multi-step program sequence. Click to toggle ON/OFF.', disconnected: 'Program status. Build a program in the steps table below.' },
+          solarMode: { connected: 'Solar calculation mode. Click to cycle: Basic \u2192 Scientific \u2192 Custom.', disconnected: 'Solar model type. Click to edit, or use the form below.' },
+          dualSun: { connected: 'Mirrored sun on opposite side of arc. Click to toggle ON/OFF.', disconnected: 'Dual sun mode. Click to edit, or use the form below.' },
+          rotation: { connected: '360\u00b0 turntable with camera trigger. Click to toggle ON/OFF.', disconnected: 'Rotation imaging. Configure in the form below.' },
+          servo2DayInt: { connected: 'Camera trigger interval during daytime (seconds). Click to set.', disconnected: 'Daytime camera interval. Click to edit, or use the form below.' },
+          servo2NightInt: { connected: 'Camera trigger interval at night (seconds). Click to set.', disconnected: 'Nighttime camera interval. Click to edit, or use the form below.' },
+        };
         function applyTooltips() {
-          const grid = document.getElementById('monitorStatusGrid'); if (!grid) return; const editOnly = ['sim', 'speed', 'intensity', 'sunColor', 'servo2DayInt', 'servo2NightInt']; const toggleKeys = ['program', 'rotation', 'dualSun', 'solarMode']; for (const [k, box] of (window.kvCache?.entries?.() || [])) { if (!box) continue; if (toggleKeys.includes(k)) box.title = 'Click to edit; Double-click to toggle'; else if (editOnly.includes(k)) box.title = 'Click to edit'; }
+          const grid = document.getElementById('monitorStatusGrid'); if (!grid) return;
+          const isConn = !!(window.__solarSimMonitorState && (window.__solarSimMonitorState.port || window.__solarSimMonitorState.transport === 'ble'));
+          const mode = isConn ? 'connected' : 'disconnected';
+          for (const [k, box] of (window.kvCache?.entries?.() || [])) {
+            if (!box) continue;
+            const tip = TILE_TOOLTIPS[k];
+            box.title = tip ? tip[mode] : (isConn ? 'Click to edit' : 'Connect a device to interact');
+          }
           // Fallback by scanning labels
-          grid.querySelectorAll('.mon-kv').forEach(box => { if (box.title) return; const key = keyFromBox(box); if (!key) return; if (toggleKeys.includes(key)) box.title = 'Click to edit; Double-click to toggle'; else box.title = 'Click to edit'; });
+          grid.querySelectorAll('.mon-kv').forEach(box => { if (box.title) return; const key = keyFromBox(box); if (!key) return; const tip = TILE_TOOLTIPS[key]; box.title = tip ? tip[mode] : (isConn ? 'Click to edit' : 'Connect a device to interact'); });
         }
-        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) applyTooltips(); }, 1200);
+        setInterval(() => { if (!window.isMonitorActive || window.isMonitorActive()) applyTooltips(); }, 1200);
         // Mutation observer to mark interactive tiles with pointer cursor whenever they appear
         (function observeGrid() {
           const grid = document.getElementById('monitorStatusGrid'); if (!grid || grid.__tilePopoverObserved) return; const mark = (node) => { if (!(node instanceof Element)) return; if (!node.classList.contains('mon-kv')) return; const k = keyFromBox(node); if (k) node.classList.add('interactive'); };
@@ -22239,8 +22729,14 @@ https://github.com/odeepllama/SolarSim/tree/main
           grid.querySelectorAll('.mon-kv').forEach(mark);
           grid.__tilePopoverObserved = true;
         })();
-        // Wrap setKV if available to bind future tiles
-        if (typeof window.setKV === 'function' && !window.setKV.__tilePopoverWrappedGlobal) { const orig = window.setKV; window.setKV = function (k, l, v) { const r = orig.apply(this, arguments); try { if (k === 'sim' || k === 'speed' || k === 'intensity' || k === 'servo2DayInt' || k === 'servo2NightInt') bind(); } catch (_) { } return r; }; window.setKV.__tilePopoverWrappedGlobal = true; }
+        // Subscribe to setKV changes instead of wrapping (memory optimization P3)
+        if (typeof window.onSetKV === 'function') {
+          window.onSetKV(function (k) {
+            if (k === 'sim' || k === 'speed' || k === 'intensity' || k === 'servo2DayInt' || k === 'servo2NightInt') {
+              try { bind(); } catch (_) { }
+            }
+          });
+        }
         // Close on Esc/resize
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
         window.addEventListener('resize', hide);
@@ -22263,7 +22759,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         const isDeviceConnected = !!(hasConnection && (hasLoadedProfile || hasActiveProgram));
 
         // Step navigation: show when device is connected and we have program steps
-        const shouldShowStepNav = (isDeviceConnected && totalSteps > 0);
+        const shouldShowStepNav = ((isDeviceConnected || window.__demoRunning) && totalSteps > 0);
         const stepNavHtml = shouldShowStepNav ?
           `<span class="playhead-step-nav" style="margin-left:12px; display:inline-flex; align-items:center;">
       <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
@@ -22278,7 +22774,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     </span>` : '';
 
         // Day navigation: show when device is connected AND program has multiple days
-        const shouldShowDayNav = (maxDay > 1 && isDeviceConnected);
+        const shouldShowDayNav = (maxDay > 1 && (isDeviceConnected || window.__demoRunning));
         const dayNavHtml = shouldShowDayNav ?
           `<span class="playhead-day-nav" style="margin-left:24px; display:inline-flex; align-items:center;">
       <button class="playhead-nav-btn nav-prev" style="font-size:0.8rem; padding:4px 8px; margin-right:2.4px;"
@@ -22475,7 +22971,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Check periodically for device connection and update nav buttons (gated)
         setInterval(function () {
           const ns = window.__solarSimMonitorState;
-          if (!(ns && (ns.port || ns.transport === 'ble'))) return;
+          const hasMonitor = ns && (ns.port || ns.transport === 'ble');
+          // Also update during demo mode
+          if (!hasMonitor && !window.__demoRunning) return;
           checkAndAutoExpand();
           // Update nav button states
           updateDisplay();
@@ -22751,6 +23249,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         const _ss1 = window.__serialState || null;
         const isConnected = _ss1 && (_ss1.port || _ss1.bleDevice);
 
+        // Demo mode: jump to step on target day
+        if (window.__demoRunning && window.__demoEngine && targetStepIndex !== null) {
+          window.__playheadCurrentDay = targetDay;
+          window.__dayWrapCount = targetDay - 1;
+          window.__demoEngine.goToStep(targetStepIndex);
+          window.__demoNavInProgress = true;
+          if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+          window.__demoNavInProgress = false;
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
+          return;
+        }
+
         if (isConnected && targetStepIndex !== null) {
           const stepNumber = targetStepIndex + 1;
           window.__playheadCurrentDay = targetDay;
@@ -22855,7 +23366,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        if (!isConnected) return;
+        if (!isConnected && !window.__demoRunning) return;
+        // Demo mode: use DemoEngine
+        if (window.__demoRunning && window.__demoEngine) {
+          window.__demoEngine.goToPrevStep();
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          return;
+        }
 
         // Determine if we're already near the start of the current step
         let targetStep = currentStep; // Default: jump to start of current step
@@ -22909,7 +23426,13 @@ https://github.com/odeepllama/SolarSim/tree/main
 
         const serialState = window.__serialState || null;
         const isConnected = serialState && (serialState.port || serialState.bleDevice);
-        if (!isConnected) return;
+        if (!isConnected && !window.__demoRunning) return;
+        // Demo mode: use DemoEngine
+        if (window.__demoRunning && window.__demoEngine) {
+          window.__demoEngine.goToNextStep();
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          return;
+        }
 
         window.__currentStepIndex = nextStep;
         const programIndex = nextStep - 1;
@@ -22946,6 +23469,19 @@ https://github.com/odeepllama/SolarSim/tree/main
         // Check if device is connected
         const _ss4 = window.__serialState || null;
         const isConnected = _ss4 && (_ss4.port || _ss4.bleDevice);
+
+        // Demo mode: jump to step on target day
+        if (window.__demoRunning && window.__demoEngine && targetStepIndex !== null) {
+          window.__playheadCurrentDay = targetDay;
+          window.__dayWrapCount = targetDay - 1;
+          window.__demoEngine.goToStep(targetStepIndex);
+          window.__demoNavInProgress = true;
+          if (typeof renderTimelineStrip === 'function') try { renderTimelineStrip(); } catch (e) { }
+          window.__demoNavInProgress = false;
+          if (typeof window.__renderDeviceProgramStatusTimeline === 'function') try { window.__renderDeviceProgramStatusTimeline(); } catch (e) { }
+          if (typeof window.__updateProgramTitles === 'function') try { window.__updateProgramTitles(); } catch (e) { }
+          return;
+        }
 
         if (isConnected && targetStepIndex !== null) {
           const stepNumber = targetStepIndex + 1;
@@ -23331,9 +23867,22 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
 
-        // Check for sim time updates every second (gated behind connection state)
-        // (will only re-render when time actually changes, which is once per minute)
-        setInterval(() => { const ns = window.__solarSimMonitorState; if (ns && (ns.port || ns.transport === 'ble')) { updatePlayhead(); if (typeof window.renderClockTimePlayhead === 'function') window.renderClockTimePlayhead(); } }, 200);
+        // Check for sim time updates (gated behind connection state)
+        // Day-change and step-change detection runs at 200ms.
+        // Playhead DOM recreation removed — the 100ms interpolation loop at
+        // startPlayheadInterpolationLoop() already handles smooth CSS-only
+        // position updates.  This eliminates ~5 DOM create/destroy cycles
+        // per strip per second (major memory-leak vector over multi-day runs).
+        setInterval(() => {
+          const ns = window.__solarSimMonitorState;
+          if ((ns && (ns.port || ns.transport === 'ble')) || window.__demoRunning) {
+            updatePlayhead();
+            if (typeof window.renderClockTimePlayhead === 'function') window.renderClockTimePlayhead();
+            // NOTE: renderTimelinePlayhead calls removed here.
+            // Playhead position is now managed purely via CSS in the
+            // 100ms startPlayheadInterpolationLoop (line ~14614).
+          }
+        }, 200);
       })();
 
       // Background Color Chooser Logic
@@ -23892,7 +24441,31 @@ https://github.com/odeepllama/SolarSim/tree/main
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
             allowInteraction: true,
-            adjustTarget: (el) => el
+            adjustTarget: (el) => {
+              // Wrap both Connect and Demo buttons together
+              const demoBtn = document.getElementById('demoBtn');
+              if (!demoBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const demoRect = demoBtn.getBoundingClientRect();
+
+              const top = Math.min(elRect.top, demoRect.top);
+              const left = Math.min(elRect.left, demoRect.left);
+              const right = Math.max(elRect.right, demoRect.right);
+              const bottom = Math.max(elRect.bottom, demoRect.bottom);
+
+              wrapper.style.top = top + window.scrollY + 'px';
+              wrapper.style.left = left + window.scrollX + 'px';
+              wrapper.style.width = (right - left) + 'px';
+              wrapper.style.height = (bottom - top) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '.mini-sect-title[data-section="monitor-status-tiles"]',
@@ -24028,7 +24601,31 @@ https://github.com/odeepllama/SolarSim/tree/main
             contentKey: 'guideConnectDeviceDesc',
             position: 'bottom',
             tooltipMinWidth: 500,
-            adjustTarget: (el) => el
+            adjustTarget: (el) => {
+              // Wrap both Connect and Demo buttons together
+              const demoBtn = document.getElementById('demoBtn');
+              if (!demoBtn) return el;
+
+              const wrapper = document.createElement('div');
+              wrapper.style.cssText = 'position:absolute; pointer-events:none;';
+              wrapper.className = 'ftue-highlight-wrapper';
+
+              const elRect = el.getBoundingClientRect();
+              const demoRect = demoBtn.getBoundingClientRect();
+
+              const top = Math.min(elRect.top, demoRect.top);
+              const left = Math.min(elRect.left, demoRect.left);
+              const right = Math.max(elRect.right, demoRect.right);
+              const bottom = Math.max(elRect.bottom, demoRect.bottom);
+
+              wrapper.style.top = top + window.scrollY + 'px';
+              wrapper.style.left = left + window.scrollX + 'px';
+              wrapper.style.width = (right - left) + 'px';
+              wrapper.style.height = (bottom - top) + 'px';
+
+              document.body.appendChild(wrapper);
+              return wrapper;
+            }
           },
           {
             target: '.mini-sect-title[data-section="monitor-status-tiles"]',
@@ -25152,6 +25749,305 @@ https://github.com/odeepllama/SolarSim/tree/main
         } else {
           initFTUE();
         }
+
+      })();
+    </script>
+    <!-- ============================================================
+         DEMO MODE ENGINE — simulates device output from program steps
+         ============================================================ -->
+    <script>
+      (function () {
+        'use strict';
+
+        // ── DemoEngine ─────────────────────────────────────────────
+        // Steps through the user's PROGRAM_STEPS, feeds device-format
+        // text into processIncoming() so tiles/arc/playhead all work.
+
+        let running = false;
+        let timerId = null;
+        let lastTickMs = 0;
+        let simMinutes = 0;         // current sim time in minutes (0-1440)
+        let stepIdx = 0;            // 0-based index into steps
+        let holdElapsedMs = 0;      // elapsed ms during a speed=0 hold
+        let steps = [];
+        let formSnap = {};
+        const TICK_MS = 500;
+
+        function hhmm2min(hhmm) {
+          const n = parseInt(hhmm, 10); if (isNaN(n)) return 0;
+          return Math.floor(n / 100) * 60 + (n % 100);
+        }
+        function min2hhmm(m) {
+          m = ((m % 1440) + 1440) % 1440;
+          return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(Math.floor(m % 60)).padStart(2, '0');
+        }
+
+        function currentStep() { return steps[stepIdx] || {}; }
+        function totalSteps() { return steps.length; }
+
+        function emitLines() {
+          if (typeof processIncoming !== 'function') return;
+          const s = currentStep();
+          const speed = s.speed != null ? s.speed : (formSnap.TIME_SCALE ?? 1);
+          const intensity = s.intensity_scale != null ? s.intensity_scale : (formSnap.INTENSITY_SCALE ?? 1);
+          const day = s.day || 1;
+
+          // SimTime + Speed (matches reSimWithSpeed)
+          // Use signed speed so the speed tile reflects direction correctly.
+          // The 100ms interpolation loop reads the tile to decide which bar
+          // (forward vs reverse) gets the playhead — absSpeed would always say "forward".
+          processIncoming('Simulation time: ' + min2hhmm(simMinutes) + ' (Speed: ' + speed.toFixed(1) + 'x)\n');
+
+          // Step index (matches reProgramCurrentStep)
+          processIncoming('[PROGRAM] Step ' + (stepIdx + 1) + '/' + totalSteps() + '\n');
+
+          // Update banner step label
+          const bannerLabel = document.getElementById('demoBannerStepLabel');
+          if (bannerLabel) bannerLabel.textContent = 'Step ' + (stepIdx + 1) + '/' + totalSteps();
+
+          // Step applied with day (matches mStepApplied regex)
+          processIncoming('[PROGRAM] Step applied: step=' + (stepIdx + 1) + ' day=' + day + '\n');
+
+          // Intensity (matches reIntensity)
+          processIncoming('Intensity scale: ' + intensity + '\n');
+
+          // Sun color
+          if (s.sun_color_rgb && Array.isArray(s.sun_color_rgb)) {
+            processIncoming('Sun color mode: CUSTOM\n');
+            processIncoming('Sun color RGB: ' + s.sun_color_rgb.join(',') + '\n');
+          } else {
+            processIncoming('Sun color mode: ' + (formSnap.SUN_COLOR_MODE || 'BLUE') + '\n');
+          }
+
+          // Program enabled
+          processIncoming('Program enabled: True\n');
+
+          // Solar mode
+          processIncoming('Solar mode: ' + (formSnap.SOLAR_MODE || 'BASIC') + '\n');
+
+          // Dual sun
+          const dualSun = s.dual_sun != null ? s.dual_sun : (formSnap.DUAL_SUN_ENABLED || false);
+          processIncoming('Dual sun: ' + (dualSun ? 'True' : 'False') + '\n');
+        }
+
+        function advanceStep(newIdx) {
+          stepIdx = newIdx;
+          holdElapsedMs = 0;
+          const s = currentStep();
+          const targetMin = hhmm2min(s.sim_time_hhmm);
+
+          // Always snap simMinutes to the step's target time on any transition.
+          // Without this, RUN overshoot causes the next tick (with possibly
+          // reversed speed) to immediately cross another step boundary,
+          // creating a step-oscillation bug.
+          simMinutes = targetMin;
+
+          // Update playhead globals
+          window.__currentStepIndex = stepIdx + 1; // 1-based
+          if (s.day) {
+            window.__playheadCurrentDay = s.day;
+            window.__dayWrapCount = s.day - 1;
+          }
+        }
+
+        function tick() {
+          if (!running || steps.length === 0) return;
+          const now = performance.now();
+          const dtMs = Math.min(now - lastTickMs, 2000); // cap to avoid huge jumps
+          lastTickMs = now;
+
+          const s = currentStep();
+          const speed = s.speed != null ? s.speed : (formSnap.TIME_SCALE ?? 1);
+
+          if (speed === 0) {
+            // Hold mode: wait for hold_minutes (in real seconds for demo, accelerated 60x)
+            const holdMin = s.hold_minutes || 1;
+            holdElapsedMs += dtMs;
+            const holdTargetMs = holdMin * 1000; // 1 hold_minute = 1 real second in demo
+            if (holdElapsedMs >= holdTargetMs) {
+              // Move to next step
+              if (stepIdx + 1 < totalSteps()) {
+                advanceStep(stepIdx + 1);
+              } else {
+                advanceStep(0); // loop
+              }
+            }
+          } else {
+            // Advance sim time: speed minutes of sim per real second
+            const simDelta = speed * (dtMs / 60000); // speed=Nx means N sim-seconds per real second → /60 for minutes
+            simMinutes += simDelta;
+
+            // Wrap around midnight
+            simMinutes = ((simMinutes % 1440) + 1440) % 1440;
+
+            // Check if we've reached the next step's target time
+            if (stepIdx + 1 < totalSteps()) {
+              const nextTarget = hhmm2min(steps[stepIdx + 1].sim_time_hhmm);
+              const transition = String(steps[stepIdx + 1].transition || 'RUN').toUpperCase();
+
+              if (transition === 'JUMP') {
+                // For JUMP: advance when we'd naturally pass the next step's time
+                // Since JUMP means "skip to this time", trigger when current segment ends
+                // Use same logic as RUN for triggering, but JUMP will set time instantly
+                if (speed > 0 && simMinutes >= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                } else if (speed < 0 && simMinutes <= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                }
+              } else {
+                // RUN: time runs naturally to the target
+                if (speed > 0 && simMinutes >= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                } else if (speed < 0 && simMinutes <= nextTarget) {
+                  advanceStep(stepIdx + 1);
+                }
+              }
+            } else {
+              // Last step: check if we should loop
+              // Loop after completing a full simulated day from the last step
+              const firstTarget = hhmm2min(steps[0].sim_time_hhmm);
+              if (speed > 0 && simMinutes >= firstTarget && simMinutes < firstTarget + 5) {
+                // Close to loop point
+              }
+              // Simple: loop after 30 real seconds on last step
+              holdElapsedMs += dtMs;
+              if (holdElapsedMs > 30000) {
+                advanceStep(0);
+              }
+            }
+          }
+
+          emitLines();
+        }
+
+        function start() {
+          if (running) return;
+
+          // Read program steps
+          const ps = window.programSteps || (window.__profileBuilderState && window.__profileBuilderState.PROGRAM_STEPS) || [];
+          if (ps.length === 0) {
+            // No program — just run with form defaults as single step
+            const fs = window.__profileBuilderState || {};
+            steps = [{
+              sim_time_hhmm: fs.START_TIME_HHMM || 600,
+              speed: fs.TIME_SCALE ?? 1,
+              intensity_scale: fs.INTENSITY_SCALE ?? 1,
+              transition: 'RUN',
+              day: 1
+            }];
+          } else {
+            steps = JSON.parse(JSON.stringify(ps));
+          }
+
+          formSnap = Object.assign({}, window.__profileBuilderState || {});
+          stepIdx = 0;
+          holdElapsedMs = 0;
+          simMinutes = hhmm2min(steps[0].sim_time_hhmm);
+          lastTickMs = performance.now();
+          running = true;
+          window.__demoRunning = true;
+
+          // Set initial step
+          window.__currentStepIndex = 1;
+          if (steps[0].day) {
+            window.__playheadCurrentDay = steps[0].day;
+            window.__dayWrapCount = (steps[0].day || 1) - 1;
+          }
+
+          // Show banner
+          const banner = document.getElementById('demoModeBanner');
+          if (banner) banner.style.display = 'block';
+
+          // Update Demo button to show "Stop"
+          const demoBtn = document.getElementById('demoBtn');
+          if (demoBtn) {
+            demoBtn.textContent = '■ Stop Demo';
+            demoBtn.style.background = '#ffebee';
+            demoBtn.style.color = '#c62828';
+            demoBtn.style.borderColor = '#ef9a9a';
+          }
+
+          // Remove offline (grey) tile style
+          if (typeof window.__removeOfflineTileStyle === 'function') {
+            window.__removeOfflineTileStyle();
+          }
+
+          // Log entry
+          if (typeof log === 'function') {
+            log('-- demo mode --');
+          }
+
+          // Initial emit
+          emitLines();
+
+          // Trigger nav button creation (step/day jump buttons)
+          if (typeof window.__updateProgramTitles === 'function') {
+            try { window.__updateProgramTitles(); } catch (e) { }
+          }
+
+          timerId = setInterval(tick, TICK_MS);
+        }
+
+        function stop() {
+          if (!running) return;
+          running = false;
+          window.__demoRunning = false;
+          if (timerId) { clearInterval(timerId); timerId = null; }
+
+          // Skip UI cleanup if restarting (prevents flicker)
+          if (window.__demoRestarting) return;
+
+          // Hide banner
+          const banner = document.getElementById('demoModeBanner');
+          if (banner) banner.style.display = 'none';
+
+          // Reset step index
+          window.__currentStepIndex = 0;
+
+          // Restore Demo button
+          const demoBtn = document.getElementById('demoBtn');
+          if (demoBtn) {
+            demoBtn.textContent = '▶ Demo';
+            demoBtn.style.background = '#e3f2fd';
+            demoBtn.style.color = '#1565c0';
+            demoBtn.style.borderColor = '#90caf9';
+          }
+        }
+
+        function isRunning() { return running; }
+
+        function goToNextStep() {
+          if (!running || steps.length === 0) return;
+          const nextIdx = (stepIdx + 1) % steps.length;
+          advanceStep(nextIdx);
+          emitLines();
+        }
+
+        function goToPrevStep() {
+          if (!running || steps.length === 0) return;
+          const prevIdx = stepIdx > 0 ? stepIdx - 1 : steps.length - 1;
+          advanceStep(prevIdx);
+          emitLines();
+        }
+
+        function goToStep(n) {
+          if (!running || steps.length === 0) return;
+          const idx = Math.max(0, Math.min(steps.length - 1, n));
+          advanceStep(idx);
+          emitLines();
+        }
+
+        // Expose globally
+        window.__demoEngine = { start, stop, isRunning, goToNextStep, goToPrevStep, goToStep };
+
+        // Auto-stop when real device connects (poll connection state)
+        setInterval(function () {
+          if (!running) return;
+          var ms = window.__solarSimMonitorState;
+          if (ms && (ms.port || ms.transport === 'ble')) {
+            stop();
+          }
+        }, 1000);
 
       })();
     </script>
