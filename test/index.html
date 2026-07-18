@@ -3084,7 +3084,11 @@ https://github.com/odeepllama/SolarSim/tree/main
       cursor: pointer;
       transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
-    #frControls button:hover { background: #e8e8e8; }
+    #frControls button:hover:not(:disabled) { background: #e8e8e8; }
+    #frControls button:disabled {
+      opacity: 0.45 !important;
+      cursor: not-allowed;
+    }
     #frToggleBtn.on {
       background: #e05b5b;
       color: #fff;
@@ -4355,9 +4359,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               <span class="fr-bulb" data-bulb="4"></span>
             </div>
             <div id="frControls" style="position:absolute; left:50%; bottom:12%; transform:translateX(-50%); display:flex; gap:6px; pointer-events:auto;">
-              <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off"
+              <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off (requires a connected device)" disabled
                 onclick="if(window.__frToggle) window.__frToggle();">FR ON/OFF</button>
-              <button id="frPulseBtn" type="button" class="fr-pulse" title="Turn Far-Red array on for 5 minutes then auto-off"
+              <button id="frPulseBtn" type="button" class="fr-pulse" title="Turn Far-Red array on for 5 minutes then auto-off (requires a connected device)" disabled
                 onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR 5m</button>
             </div>
           </div>
@@ -19777,7 +19781,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (typeof window.__applyOfflineTileStyle === 'function') window.__applyOfflineTileStyle();
           }
           const loadFromDeviceBtn = document.getElementById('loadFromDeviceBtn');
-          [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b => { if (b) b.disabled = !c; }); // helpBtn removed from disabling logic
+          const frToggleBtn = document.getElementById('frToggleBtn');
+          const frPulseBtn = document.getElementById('frPulseBtn');
+          [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn, frToggleBtn, frPulseBtn].forEach(b => { if (b) b.disabled = !c; }); // helpBtn removed from disabling logic
           // When connected: disable both Connect buttons, enable Disconnect button
           // When disconnected: enable both Connect buttons, disable Disconnect button
           if (connectBtn) connectBtn.disabled = c;
@@ -19792,6 +19798,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.__deviceProfile = null;
               window.__loadedProfile = null;
               window.__simPlayheadInterp = null; // Reset stale interpolation state
+              // Reset FR overlay so bulbs don't display stale "on" state after the device is gone
+              if (typeof window.__setFrState === 'function') window.__setFrState(false);
               if (typeof window.__updateProgramTitles === 'function') {
                 window.__updateProgramTitles();
               }
@@ -19822,8 +19830,16 @@ https://github.com/odeepllama/SolarSim/tree/main
             return state.port;
           } catch (e) {
             state.port = null;
+            // Always reset the badge so it doesn't stay stuck on amber CONNECTING
+            badge('DISCONNECTED', 'red');
             const errMsg = (e.message || e.name || '').toLowerCase();
             const errName = (e.name || '').toLowerCase();
+            // NotFoundError from requestPort() means the user closed the browser port picker without selecting.
+            // Treat this as a silent cancellation — no toast, no misleading "No device found" message.
+            // (A real "device unplugged" error surfaces as NetworkError/InvalidStateError instead.)
+            if (errName === 'notfounderror') {
+              throw new Error('PICKER_CANCELLED');
+            }
             // Check for "port in use" errors - NotAllowedError is the standard for already-open ports
             if (errName === 'notallowederror' || errMsg.includes('notallowed') || errMsg.includes('in use') || errMsg.includes('already') || errMsg.includes('busy')) {
               throw new Error('PORT_IN_USE');
@@ -21448,13 +21464,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         function doSerialConnect() {
           ensurePort().catch(e => {
             const fullErr = (e.message || '').toLowerCase();
+            state.transport = null;
+            // Silent cancellation when the user closes the browser port picker — matches BLE behaviour
+            if (fullErr.includes('picker_cancelled')) return;
             let msg = 'Connection failure';
-            if (fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
+            if (fullErr.includes('port_in_use') || fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
               msg = 'The device port is already in use. Close any other tabs or apps (like Thonny) that might be connected, then try again.';
-            } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
+            } else if (fullErr.includes('port_not_found') || fullErr.includes('not found') || fullErr.includes('notfound')) {
               msg = 'No device found. Make sure the USB cable is plugged in and the board is powered on.';
             }
-            state.transport = null;
             log(msg, 'error');
           });
         }
