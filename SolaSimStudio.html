@@ -3052,6 +3052,48 @@ https://github.com/odeepllama/SolarSim/tree/main
       text-align: left;
     }
 
+    /* --- FR LED overlay (bulbs + buttons layered on top of the solar arc canvas) --- */
+    .fr-bulb {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid #b0b0b0;
+      background: #ffffff;
+      transform: translate(-50%, -50%);
+      transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      pointer-events: none;
+    }
+    .fr-bulb.on {
+      background: #e05b5b;
+      border-color: #8a1010;
+      box-shadow: 0 0 8px rgba(224, 91, 91, 0.75), 0 0 14px rgba(224, 91, 91, 0.4);
+    }
+    #frControls {
+      z-index: 10;
+    }
+    #frControls button {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #888;
+      background: #ffffff;
+      color: #111 !important;
+      opacity: 1 !important;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    #frControls button:hover { background: #e8e8e8; }
+    #frToggleBtn.on {
+      background: #e05b5b;
+      color: #fff;
+      border-color: #8a1010;
+    }
+    #frToggleBtn.on:hover {
+      background: #cc4a4a;
+    }
+
     @media (max-width: 900px) {
       .vislog-row {
         flex-direction: column;
@@ -4247,10 +4289,10 @@ https://github.com/odeepllama/SolarSim/tree/main
   <script>if (!('serial' in navigator)) document.getElementById('browserCompatBar').style.display = 'block';</script>
   <!-- Demo mode banner -->
   <div id="demoModeBanner"
-    style="display:none; background:#e3f2fd; color:#1565c0; padding:10px 16px; text-align:center; font-size:0.9rem; border-bottom:1px solid #90caf9; position:sticky; top:0; z-index:9999; transition: background 0.6s ease, color 0.6s ease, border-bottom-color 0.6s ease;">
+    style="display:none; background:#ffc107; color:#000; font-weight:600; padding:10px 16px; margin:8px 0 0 0; text-align:center; font-size:0.9rem; border:1px solid #b58a00; border-radius:8px; position:sticky; top:8px; z-index:9999; transition: background 0.6s ease, color 0.6s ease, border-color 0.6s ease;">
     🔄 <strong>Demo Mode</strong> — simulating your program. Connect a device to go live.
     <button onclick="if(window.__demoEngine) window.__demoEngine.stop();"
-      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#1565c0;"
+      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#000;"
       title="Stop demo">✕</button>
   </div>
   <h1 id="appTitle"></h1>
@@ -4299,23 +4341,32 @@ https://github.com/odeepllama/SolarSim/tree/main
     <div id="monitorVisLogRow" class="vislog-row">
       <div class="vis-col" data-section="monitor-solar-arc">
         <div class="mini-sect-title">Solar Arc Simulation</div>
-        <div id="sunArcWrapper" style="margin-top:2px; margin-bottom:-40px; display:none;">
+        <div id="sunArcWrapper" style="margin-top:2px; margin-bottom:-40px; display:none; position:relative;">
           <canvas id="sunArcCanvas" width="560" height="320" aria-label="Sun arc visualization" role="img"></canvas>
+          <!-- FR LED overlay: 5 bulbs on an inner arc + toggle + pulse button.
+               Positioned absolutely over the canvas. Bulb centres are computed dynamically in JS
+               (see initFrOverlay) so they scale with the canvas width. -->
+          <div id="frOverlay" aria-label="Far-Red LED controls" style="position:absolute; inset:0; pointer-events:none;">
+            <div id="frBulbs" style="position:absolute; inset:0; pointer-events:none;">
+              <span class="fr-bulb" data-bulb="0"></span>
+              <span class="fr-bulb" data-bulb="1"></span>
+              <span class="fr-bulb" data-bulb="2"></span>
+              <span class="fr-bulb" data-bulb="3"></span>
+              <span class="fr-bulb" data-bulb="4"></span>
+            </div>
+            <div id="frControls" style="position:absolute; left:50%; bottom:12%; transform:translateX(-50%); display:flex; gap:6px; pointer-events:auto;">
+              <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off"
+                onclick="if(window.__frToggle) window.__frToggle();">FR ON/OFF</button>
+              <button id="frPulseBtn" type="button" class="fr-pulse" title="Turn Far-Red array on for 5 minutes then auto-off"
+                onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR 5m</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="log-col" data-section="monitor-log">
         <div class="mini-sect-title">Log</div>
         <div id="monitorLog" aria-label="Monitor log" role="log"></div>
         <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
-        <div style="margin-top:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-          <span style="font-size:0.85em; color:#666;">Far Red LEDs:</span>
-          <button type="button" class="secondary" title="Turn Far-Red array on for 5 minutes then auto-off"
-            onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR Pulse 5m</button>
-          <button type="button" class="secondary" title="Turn Far-Red array on indefinitely (use FR Off to stop)"
-            onclick="if(window.__sendLine) window.__sendLine('fr on');">FR On</button>
-          <button type="button" class="secondary" title="Turn Far-Red array off"
-            onclick="if(window.__sendLine) window.__sendLine('fr off');">FR Off</button>
-        </div>
         <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
           <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger, fr)"
             autocomplete="off" autocapitalize="off" style="flex:1;" />
@@ -4332,7 +4383,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
   <body>
     <div id="topButtonBar"
-      style="position:absolute; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
+      style="position:fixed; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
       <span id="versionDate" style="font-size:0.7rem; color:#888; margin-right:2px; white-space:nowrap;"></span>
       <script>
         (function () {
@@ -4753,8 +4804,9 @@ https://github.com/odeepllama/SolarSim/tree/main
                   duration (default 5 min) before the program begins. Defaults to <strong>ON</strong> — uncheck if you
                   don't have the Far Red LED array installed (otherwise you will sit through a 5-minute dark wait every
                   run).</p>
-                <p><strong>Manual control</strong> via the FR Pulse / FR On / FR Off buttons above the command console,
-                  or the commands <code>fr on</code>, <code>fr off</code>, <code>fr pulse &lt;minutes&gt;</code>.</p>
+                <p><strong>Manual control</strong> via the FR ON/OFF and FR 5m buttons inside the Solar Arc panel
+                  (5 red bulbs light up on the inner arc when the array is on), or the commands
+                  <code>fr on</code>, <code>fr off</code>, <code>fr pulse &lt;minutes&gt;</code>.</p>
                 <p>Requires the Far Red LED array wired to <strong>GP13</strong> on the RP2040:bit
                   (micro:bit edge pin <strong>P16</strong> on a Keyestudio KS0360 or similar sensor shield;
                   see the <code>PlantSense/FR_Wiring_5LED_12V.md</code> build doc).</p>
@@ -5229,7 +5281,8 @@ https://github.com/odeepllama/SolarSim/tree/main
               <div class="help-detail" style="display:none;">
                 <p>フィトクロムをPfrからPrに変換し、光屈性実験のために植物を準備します。有効化すると、太陽パネルは消灯し、回転およびカメラサーボは一時停止し、Far Red LEDアレイが設定時間（デフォルト5分）動作した後にプログラムが開始されます。
                   デフォルトは<strong>ON</strong>です — Far Red LEDアレイが未接続の場合はチェックを外してください（そうしないと実験ごとに5分間の暗闇待機が発生します）。</p>
-                <p><strong>手動操作</strong>：コマンドコンソール上部の FR Pulse / FR On / FR Off ボタン、または
+                <p><strong>手動操作</strong>：Solar Arc パネル内の FR ON/OFF ・ FR 5m ボタン
+                  （アレイがオンのとき、内側アーク上の5つの赤いバルブが点灯）、または
                   <code>fr on</code>、<code>fr off</code>、<code>fr pulse &lt;分&gt;</code> コマンドを使用します。</p>
                 <p>Far Red LEDアレイをRP2040:bitの<strong>GP13</strong>（Keyestudio KS0360等のセンサーシールドで
                   micro:bit エッジピン<strong>P16</strong>）に配線する必要があります
@@ -12702,15 +12755,15 @@ https://github.com/odeepllama/SolarSim/tree/main
                 banner.style.transition = 'none';
                 banner.style.background = '#e8f5e9';
                 banner.style.color = '#2e7d32';
-                banner.style.borderBottomColor = '#81c784';
+                banner.style.borderColor = '#81c784';
                 // Force reflow so the instant color is applied
                 void banner.offsetWidth;
-                // Re-enable transition and fade back to blue
-                banner.style.transition = 'background 0.8s ease, color 0.8s ease, border-bottom-color 0.8s ease';
+                // Re-enable transition and fade back to amber
+                banner.style.transition = 'background 0.8s ease, color 0.8s ease, border-color 0.8s ease';
                 setTimeout(() => {
-                  banner.style.background = '#e3f2fd';
-                  banner.style.color = '#1565c0';
-                  banner.style.borderBottomColor = '#90caf9';
+                  banner.style.background = '#ffc107';
+                  banner.style.color = '#000';
+                  banner.style.borderColor = '#b58a00';
                   // Restore original text
                   banner.childNodes[0].textContent = origEmoji;
                   if (origStrong) origStrong.textContent = origStrongText;
@@ -20075,6 +20128,68 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
         window.processIncoming = processIncoming; // expose for DemoEngine
+
+        // --- Far-Red LED overlay: state, toggle, and bulb positioning ---
+        // The state is driven by [FR] STATE ON/OFF lines emitted by the firmware
+        // (see fr_led_on / fr_led_off in SolarSimulator.py). handlePlainTextLine parses those.
+        // Toggle is optimistic: user click sends fr on/off; the echo confirms and repaints.
+        (function () {
+          let frOn = false;
+          function setFrVisual(on) {
+            frOn = !!on;
+            const bulbs = document.querySelectorAll('#frBulbs .fr-bulb');
+            bulbs.forEach(b => b.classList.toggle('on', frOn));
+            const btn = document.getElementById('frToggleBtn');
+            if (btn) btn.classList.toggle('on', frOn);
+          }
+          window.__setFrState = setFrVisual;
+          window.__frToggle = function () {
+            if (!window.__sendLine) return;
+            // Optimistic flip; firmware echo will re-confirm via [FR] STATE ON/OFF
+            window.__sendLine(frOn ? 'fr off' : 'fr on');
+          };
+          // Position the 5 bulbs along an inner semicircle inside the sun arc.
+          // Recompute on canvas resize; wire an observer once DOM is ready.
+          function positionBulbs() {
+            const canvas = document.getElementById('sunArcCanvas');
+            const wrapper = document.getElementById('sunArcWrapper');
+            const bulbs = document.querySelectorAll('#frBulbs .fr-bulb');
+            if (!canvas || !wrapper || !bulbs.length) return;
+            // Canvas is 560x320 nominal. Use its rendered client size for correct scaling.
+            const w = canvas.clientWidth || canvas.width;
+            const h = canvas.clientHeight || canvas.height;
+            // Match drawArcBase geometry: padSide=36, arc R = (w - 72) / 2, center at (w/2, padTop + R)
+            const padTop = 18, padSide = 36;
+            const R = Math.max(6, (w - padSide * 2) / 2);
+            const centerX = w / 2;
+            const centerY = Math.min(h - 2, padTop + R);
+            // Place bulbs on an inner arc at ~80% of the sun arc radius (closer to the outer curve)
+            const innerR = R * 0.8;
+            // 5 bulbs evenly distributed from theta=15° to theta=165° (avoid clipping at the horizon)
+            const N = bulbs.length;
+            const thetaStart = Math.PI * (15 / 180);
+            const thetaEnd = Math.PI * (165 / 180);
+            for (let i = 0; i < N; i++) {
+              const t = (N === 1) ? 0.5 : i / (N - 1);
+              const theta = thetaStart + t * (thetaEnd - thetaStart);
+              const bx = centerX + innerR * Math.cos(theta);
+              const by = centerY - innerR * Math.sin(theta);
+              bulbs[i].style.left = bx + 'px';
+              bulbs[i].style.top = by + 'px';
+            }
+          }
+          window.__positionFrBulbs = positionBulbs;
+          // Observe wrapper resize to reflow bulbs
+          if (typeof ResizeObserver !== 'undefined') {
+            const canvas = document.getElementById('sunArcCanvas');
+            if (canvas) {
+              const ro = new ResizeObserver(() => positionBulbs());
+              ro.observe(canvas);
+            }
+          }
+          // Initial position (may need a rAF for layout to settle)
+          requestAnimationFrame(() => requestAnimationFrame(positionBulbs));
+        })();
         // Regex patterns for verbose text extraction
         const reSimTime = /sim(?:ulation)?\s*time\s*[:=]\s*(\d{1,2})[:h](\d{2})/i;
         // Simulation line that also includes a speed in parentheses e.g. "Simulation time: 07:54 (Speed: 100.0x)"
@@ -20154,6 +20269,13 @@ https://github.com/odeepllama/SolarSim/tree/main
         function handlePlainTextLine(line) {
           // Suppress BLE firmware diagnostics — not relevant when using serial connection
           if (/^\s*\[BLE\]/.test(line)) return;
+          // FR state events emitted by firmware (see fr_led_on/off in SolarSimulator.py).
+          // Update the arc overlay visual and let the line also flow through to the log for transparency.
+          if (/^\s*\[FR\]\s*STATE\s+ON\b/i.test(line)) { if (window.__setFrState) window.__setFrState(true); }
+          else if (/^\s*\[FR\]\s*STATE\s+OFF\b/i.test(line)) { if (window.__setFrState) window.__setFrState(false); }
+          // Also sync from `status` output line "FR LED State: ACTIVE" / "IDLE"
+          else if (/FR\s*LED\s*State\s*[:=]\s*ACTIVE/i.test(line)) { if (window.__setFrState) window.__setFrState(true); }
+          else if (/FR\s*LED\s*State\s*[:=]\s*IDLE/i.test(line)) { if (window.__setFrState) window.__setFrState(false); }
           // Suppress logging of full-length Simulation time lines
           if (reSimTime.test(line) || reSimWithSpeed.test(line)) {
             // Skip logging this line, but still parse it below for UI updates
@@ -22320,6 +22442,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (wasHidden && wrapper.style.display !== 'none' && ns.__sunArcAnimProgress === undefined) {
             ns.__sunArcAnimProgress = 0; // Initialize to 0 before animation starts
             startSunArcAnimation();
+          }
+          // Reposition FR overlay bulbs whenever the arc reappears (canvas dimensions are only valid when visible)
+          if (wasHidden && wrapper.style.display !== 'none' && window.__positionFrBulbs) {
+            requestAnimationFrame(() => requestAnimationFrame(window.__positionFrBulbs));
           }
         }
 
@@ -25957,9 +26083,16 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__dayWrapCount = (steps[0].day || 1) - 1;
           }
 
-          // Show banner
+          // Show banner and push the fixed top-button bar down so it doesn't hide under the banner
           const banner = document.getElementById('demoModeBanner');
-          if (banner) banner.style.display = 'block';
+          if (banner) {
+            banner.style.display = 'block';
+            const bar = document.getElementById('topButtonBar');
+            if (bar) {
+              const h = banner.getBoundingClientRect().height || 40;
+              bar.style.top = (26 + h) + 'px';
+            }
+          }
 
           // Update Demo button to show "Stop"
           const demoBtn = document.getElementById('demoBtn');
@@ -26000,9 +26133,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Skip UI cleanup if restarting (prevents flicker)
           if (window.__demoRestarting) return;
 
-          // Hide banner
+          // Hide banner and restore the top-button bar's original position
           const banner = document.getElementById('demoModeBanner');
           if (banner) banner.style.display = 'none';
+          const bar = document.getElementById('topButtonBar');
+          if (bar) bar.style.top = '26px';
 
           // Reset step index
           window.__currentStepIndex = 0;

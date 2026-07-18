@@ -610,19 +610,25 @@ update_rotation_parameters()
 def fr_led_on(duration_ms=0):
     """Turn the Far-Red LED array on. duration_ms=0 means indefinite ('fr off' to stop)."""
     global fr_led_state, fr_led_start_ms, fr_led_duration_ms
+    was_active = fr_led_state == 'ACTIVE'
     fr_led_pin.on()
     fr_led_state = 'ACTIVE'
     fr_led_start_ms = ticks_ms()
     fr_led_duration_ms = duration_ms
+    if not was_active:
+        print("[FR] STATE ON")   # machine-parseable event for the studio UI
 
 def fr_led_off():
     """Turn the Far-Red LED array off and clear pre-exposure gating.
     If pre-exposure was aborted mid-way (e.g. manual 'fr off'), also restores TIME_SCALE."""
     global fr_led_state, fr_led_duration_ms, fr_preexposure_active
     global TIME_SCALE, start_real_time_ms
+    was_active = fr_led_state == 'ACTIVE'
     fr_led_pin.off()
     fr_led_state = 'IDLE'
     fr_led_duration_ms = 0
+    if was_active:
+        print("[FR] STATE OFF")   # machine-parseable event for the studio UI
     if fr_preexposure_active:
         # Manual abort during pre-exposure: restore time scale so the sim doesn't stay frozen
         restore_scale = fr_preexposure_saved_time_scale if fr_preexposure_saved_time_scale != 0 else 1
@@ -3329,8 +3335,8 @@ def run_simulation():
             sim_minute_check = int(time_of_day_minutes % 60)
             current_sim_hhmm_check = (sim_hour_check * 100) + sim_minute_check
             if len(PROGRAM_STEPS) > 0 and current_sim_hhmm_check >= PROGRAM_STEPS[0].get("sim_time_hhmm", 9999):
-                start_program()
-                print(f"[PROGRAM] First program step activated at sim time {sim_hour_check:02d}:{sim_minute_check:02d}")
+                print(f"[PROGRAM] First step reached at sim time {sim_hour_check:02d}:{sim_minute_check:02d}")
+                start_program()  # may defer actual start if FR pre-exposure is enabled
 
         # If program is running, update its state
         if program_running:
