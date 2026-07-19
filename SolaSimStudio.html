@@ -4359,9 +4359,9 @@ https://github.com/odeepllama/SolarSim/tree/main
               <span class="fr-bulb" data-bulb="4"></span>
             </div>
             <div id="frControls" style="position:absolute; left:50%; bottom:12%; transform:translateX(-50%); display:flex; gap:6px; pointer-events:auto;">
-              <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off (requires a connected device)" disabled
+              <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off (bench test — no time freeze, no panel blank). Disabled while a program is running." disabled
                 onclick="if(window.__frToggle) window.__frToggle();">FR ON/OFF</button>
-              <button id="frPulseBtn" type="button" class="fr-pulse" title="Turn Far-Red array on for 5 minutes then auto-off (requires a connected device)" disabled
+              <button id="frPulseBtn" type="button" class="fr-pulse" title="Run a 5-minute dark FR pulse (freezes sim time, blanks sun panel, resumes when done)" disabled
                 onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR 5m</button>
             </div>
           </div>
@@ -4800,17 +4800,31 @@ https://github.com/odeepllama/SolarSim/tree/main
                   intensity 0.8–1.0, speed 1x–4x.</p>
               </div>
             </li>
-            <li><strong>Far-Red (FR) Pre-Exposure</strong>: Optional 730 nm pulse in darkness before program step 1.
+            <li><strong>Far-Red (FR) Pre-Exposure</strong>: Optional 730 nm pulse in darkness before an experiment.
               <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
               <div class="help-detail" style="display:none;">
-                <p>Drives phytochrome from Pfr to Pr, priming plants for phototropism experiments. When enabled, the sun
-                  panel stays dark, rotation and camera servos pause, and the Far Red LED array runs for the configured
-                  duration (default 5 min) before the program begins. Defaults to <strong>ON</strong> — uncheck if you
-                  don't have the Far Red LED array installed (otherwise you will sit through a 5-minute dark wait every
-                  run).</p>
-                <p><strong>Manual control</strong> via the FR ON/OFF and FR 5m buttons inside the Solar Arc panel
-                  (5 red bulbs light up on the inner arc when the array is on), or the commands
-                  <code>fr on</code>, <code>fr off</code>, <code>fr pulse &lt;minutes&gt;</code>.</p>
+                <p>Drives phytochrome from Pfr to Pr, priming plants for phototropism experiments. When active, the
+                  sun panel goes dark, rotation and camera servos pause, sim time is HELD, and the Far Red LED array
+                  runs for the configured duration (default 5 min). When the pulse completes, sim time resumes and
+                  the program continues.</p>
+                <p><strong>Trigger dropdown</strong> (in the <em>Far-Red Pre-Exposure</em> section of the profile):
+                  <ul>
+                    <li><code>OFF</code> — never fires. FR array stays off unless triggered manually.</li>
+                    <li><code>PROGRAM_START</code> (default) — fires when sim time reaches the first program step.</li>
+                    <li><code>BOOT</code> — fires immediately at device power-on, before the main loop begins.
+                      Useful for time-of-day-independent experiments (e.g. running in continuous darkness).</li>
+                  </ul>
+                </p>
+                <p><strong>Manual controls</strong> (in the Solar Arc panel):
+                  <ul>
+                    <li><strong>FR ON/OFF</strong> — bench test only: drives GP13 high/low with NO time freeze and NO
+                      panel blank. Sends <code>fr on</code> / <code>fr off</code>. Disabled while a program is running.</li>
+                    <li><strong>FR 5m</strong> — full dark treatment: freezes sim time, blanks the sun panel, pauses
+                      servos, runs FR for 5 minutes, then resumes the program at where it froze. Sends <code>fr pulse 5</code>.</li>
+                  </ul>
+                </p>
+                <p>The 5 red bulbs on the inner arc light up whenever the FR array is on (bench-debug or dark
+                  treatment). During a full dark treatment, the RP2040's matrix display also shows the HOLD indicator.</p>
                 <p>Requires the Far Red LED array wired to <strong>GP13</strong> on the RP2040:bit
                   (micro:bit edge pin <strong>P16</strong> on a Keyestudio KS0360 or similar sensor shield;
                   see the <code>PlantSense/FR_Wiring_5LED_12V.md</code> build doc).</p>
@@ -5280,14 +5294,30 @@ https://github.com/odeepllama/SolarSim/tree/main
                   Sunは過熱防止のためブロックされます。強度1.0以上は許可されません。研究での推奨範囲：強度0.8～1.0、速度1x～4x。</p>
               </div>
             </li>
-            <li><strong>Far-Red (FR) 事前照射</strong>: プログラム開始前に暗黒下で730 nm光をパルス照射（任意）。
+            <li><strong>Far-Red (FR) 事前照射</strong>: 実験前に暗黒下で730 nm光をパルス照射（任意）。
               <button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
               <div class="help-detail" style="display:none;">
-                <p>フィトクロムをPfrからPrに変換し、光屈性実験のために植物を準備します。有効化すると、太陽パネルは消灯し、回転およびカメラサーボは一時停止し、Far Red LEDアレイが設定時間（デフォルト5分）動作した後にプログラムが開始されます。
-                  デフォルトは<strong>ON</strong>です — Far Red LEDアレイが未接続の場合はチェックを外してください（そうしないと実験ごとに5分間の暗闇待機が発生します）。</p>
-                <p><strong>手動操作</strong>：Solar Arc パネル内の FR ON/OFF ・ FR 5m ボタン
-                  （アレイがオンのとき、内側アーク上の5つの赤いバルブが点灯）、または
-                  <code>fr on</code>、<code>fr off</code>、<code>fr pulse &lt;分&gt;</code> コマンドを使用します。</p>
+                <p>フィトクロムをPfrからPrに変換し、光屈性実験のために植物を準備します。動作中は太陽パネルが消灯し、
+                  回転とカメラサーボが一時停止、シミュレーション時刻が保持され、Far Red LEDアレイが設定時間
+                  （デフォルト5分）動作します。パルス完了後、シミュレーション時刻が再開しプログラムが継続します。</p>
+                <p><strong>トリガードロップダウン</strong>（プロファイルの<em>遠赤色前照射</em>セクション）:
+                  <ul>
+                    <li><code>OFF</code> — 自動発火しません。手動でのみ点灯可能。</li>
+                    <li><code>PROGRAM_START</code>（デフォルト）— シミュレーション時刻がプログラムの最初のステップに到達した時点で発火。</li>
+                    <li><code>BOOT</code> — デバイス起動直後（メインループ開始前）に即座に発火。連続暗黒下での実験など、
+                      時刻に依存しない用途に便利。</li>
+                  </ul>
+                </p>
+                <p><strong>手動操作</strong>（Solar Arc パネル内）:
+                  <ul>
+                    <li><strong>FR ON/OFF</strong> — ベンチテスト専用：GP13をHIGH/LOWに駆動するのみ。時刻凍結・パネル消灯なし。
+                      <code>fr on</code> / <code>fr off</code> を送信。プログラム実行中は無効化。</li>
+                    <li><strong>FR 5m</strong> — 完全な暗黒照射：シミュレーション時刻を凍結し太陽パネルを消灯、サーボを一時停止、
+                      FRを5分間動作させた後にプログラムを再開。<code>fr pulse 5</code> を送信。</li>
+                  </ul>
+                </p>
+                <p>FRアレイがオン（ベンチデバッグ・暗黒照射のいずれでも）のとき、内側アーク上の5つの赤いバルブが点灯します。
+                  完全な暗黒照射中はRP2040のマトリクスディスプレイにHOLDインジケータも表示されます。</p>
                 <p>Far Red LEDアレイをRP2040:bitの<strong>GP13</strong>（Keyestudio KS0360等のセンサーシールドで
                   micro:bit エッジピン<strong>P16</strong>）に配線する必要があります
                   （配線ドキュメント <code>PlantSense/FR_Wiring_5LED_12V.md</code> を参照）。</p>
@@ -6833,12 +6863,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // FIELD METADATA
       // ============================================================================
       const ORDERED_KEYS = [
-        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE', 'FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'
+        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE', 'FR_PREEXPOSURE_TRIGGER', 'FR_PREEXPOSURE_MINUTES'
       ];
 
       const FIELD_GROUPS = [
         { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
-        { name: 'Far-Red Pre-Exposure', i18nKey: 'sectionPreExposure', keys: ['FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'], collapsible: true },
+        { name: 'Far-Red Pre-Exposure', i18nKey: 'sectionPreExposure', keys: ['FR_PREEXPOSURE_TRIGGER', 'FR_PREEXPOSURE_MINUTES'], collapsible: true },
         { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
         { name: 'Imaging Servos & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
@@ -6885,8 +6915,8 @@ https://github.com/odeepllama/SolarSim/tree/main
         PROGRAM_ENABLED: { label: 'Program Enabled', tooltip: 'Enable scripted program steps block.', type: 'checkbox', default: true },
         PROGRAM_REPEATS: { label: 'Program Repeats (-1 = ∞)', tooltip: 'How many passes; -1 loops forever.', type: 'number', default: -1, showIf: s => s.PROGRAM_ENABLED },
         PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED },
-        FR_PREEXPOSURE_ENABLED: { label: 'FR Pre-Exposure Enabled', tooltip: 'Run a 730nm far-red pulse in darkness before program step 1 (drives Pfr→Pr photoconversion). Default ON.', type: 'checkbox', default: true },
-        FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure Duration (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_ENABLED }
+        FR_PREEXPOSURE_TRIGGER: { label: 'FR Pre-Exposure Trigger', tooltip: 'When to run the 730nm dark pre-exposure. OFF: never. PROGRAM_START: at first program step. BOOT: immediately at device power-on.', type: 'select', options: ['OFF', 'PROGRAM_START', 'BOOT'], default: 'PROGRAM_START' },
+        FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure Duration (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_TRIGGER && s.FR_PREEXPOSURE_TRIGGER !== 'OFF' }
       };
 
       // Keys to highlight (commonly changed)
@@ -7137,7 +7167,7 @@ https://github.com/odeepllama/SolarSim/tree/main
               banner.id = 'frPreExposureWarning';
               banner.textContent = '⚠ Sun panel will be dark for the pre-exposure duration before each program starts. Uncheck if you don\'t have the Far Red LED array installed.';
               banner.style.cssText = 'grid-column: 1 / -1; margin-top: 6px; padding: 6px 10px; background: #fff4d6; border: 1px solid #e0b040; border-radius: 4px; font-size: 0.85em; color: #6a4a00;';
-              banner.style.display = state.FR_PREEXPOSURE_ENABLED ? 'block' : 'none';
+              banner.style.display = (state.FR_PREEXPOSURE_TRIGGER && state.FR_PREEXPOSURE_TRIGGER !== 'OFF') ? 'block' : 'none';
               grid.appendChild(banner);
             }
           } else {
@@ -7220,12 +7250,20 @@ https://github.com/odeepllama/SolarSim/tree/main
           sunsetField.style.display = showCustomTimes ? '' : 'none';
         }
 
-        // FR Pre-Exposure: banner + duration field visibility follow the checkbox
-        const showFR = !!state.FR_PREEXPOSURE_ENABLED;
+        // FR Pre-Exposure: banner + duration field visibility follow the trigger enum
+        const trig = state.FR_PREEXPOSURE_TRIGGER;
+        const showFR = trig && trig !== 'OFF';
         const frMinutesField = document.getElementById('FR_PREEXPOSURE_MINUTES')?.closest('.field');
         if (frMinutesField) frMinutesField.style.display = showFR ? '' : 'none';
         const frBanner = document.getElementById('frPreExposureWarning');
-        if (frBanner) frBanner.style.display = showFR ? 'block' : 'none';
+        if (frBanner) {
+          frBanner.style.display = showFR ? 'block' : 'none';
+          if (showFR) {
+            frBanner.textContent = trig === 'BOOT'
+              ? '⚠ Sun panel will be dark for the pre-exposure duration at device power-on. Set to OFF if you don\'t have the Far Red LED array installed.'
+              : '⚠ Sun panel will be dark for the pre-exposure duration before each program starts. Set to OFF if you don\'t have the Far Red LED array installed.';
+          }
+        }
       }
 
       /**
@@ -7261,7 +7299,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (key === 'IMAGES_PER_ROTATION') { recomputeDegreesPerImage(); document.getElementById('DEGREES_PER_IMAGE').value = state.DEGREES_PER_IMAGE; }
         if (key === 'PROGRAM_ENABLED') { refreshConditionalVisibility(); if (typeof window.__updateFieldsetVisibility === 'function') window.__updateFieldsetVisibility(); }
         if (key === 'SOLAR_MODE') { refreshConditionalVisibility(); }
-        if (key === 'FR_PREEXPOSURE_ENABLED') { refreshConditionalVisibility(); }
+        if (key === 'FR_PREEXPOSURE_TRIGGER') { refreshConditionalVisibility(); }
         if (key === 'TIME_SCALE') {
           handleTimeScaleModeChange(value);
         }
@@ -10410,7 +10448,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Skip CUSTOM sunrise/sunset from output when not in CUSTOM mode
           else if ((k === 'CUSTOM_SUNRISE_HHMM' || k === 'CUSTOM_SUNSET_HHMM') && state.SOLAR_MODE !== 'CUSTOM') {
             return;
-          } else if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS'].includes(k)) {
+          } else if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS', 'FR_PREEXPOSURE_TRIGGER'].includes(k)) {
             // Strip any pre-existing quotes to avoid doubling, then quote once
             let sv = String(v).trim();
             sv = sv.replace(/^['"]+|['"]+$/g, '');
@@ -11019,7 +11057,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (val === '') return '(empty)';
 
         // Uppercase enum values for consistent display
-        if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET'].includes(key)) {
+        if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'FR_PREEXPOSURE_TRIGGER'].includes(key)) {
           return String(val).toUpperCase();
         }
 
@@ -11325,7 +11363,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           } else {
             // Remove quotes and normalize enum fields to uppercase
             let parsedValue = value.replace(/^['"]|['"]$/g, '');
-            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET'].includes(key)) {
+            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'FR_PREEXPOSURE_TRIGGER'].includes(key)) {
               parsedValue = parsedValue.toUpperCase();
             }
             obj[key] = parsedValue;
@@ -16220,10 +16258,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (hashIdx !== -1) rawVal = rawVal.slice(0, hashIdx).trim();
             rawVal = rawVal.trim();
             // Remove surrounding single/double quotes for known string enums and normalize to uppercase
-            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS'].includes(m[1])) {
+            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS', 'FR_PREEXPOSURE_TRIGGER'].includes(m[1])) {
               rawVal = rawVal.replace(/^['"]+|['"]+$/g, '').toUpperCase();
             }
-            obj[m[1]] = rawVal;
+            // v1.0 legacy: FR_PREEXPOSURE_ENABLED (bool) maps to FR_PREEXPOSURE_TRIGGER enum if the new key isn't already present
+            if (m[1] === 'FR_PREEXPOSURE_ENABLED' && obj.FR_PREEXPOSURE_TRIGGER === undefined) {
+              obj.FR_PREEXPOSURE_TRIGGER = /^(true|1)$/i.test(rawVal) ? 'PROGRAM_START' : 'OFF';
+            } else {
+              obj[m[1]] = rawVal;
+            }
           }
 
           // Parse PROGRAM_STEPS with Python-to-JSON conversion
@@ -17701,6 +17744,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Raw REPL Upload (Stopgap Implementation)
       // -----------------------------
       async function uploadProfileToBoard(options = {}) {
+        // Warn if pre-exposure is currently running — upload triggers a device reboot which
+        // aborts the pulse silently. See Q6 in v1.1 design (SolarSimulator.py [FR] PREEXPOSURE events).
+        if (window.__frPreExposureActive && !options._skipPreExposureWarning) {
+          const ok = window.confirm('Pre-exposure is currently running on the device. Uploading a profile will reboot the device and abort the pre-exposure. Continue?');
+          if (!ok) return;
+        }
         // Route to writeprofile for BLE (both devices) or serial ESP32
         // RP2040 uses paste-mode upload, so don't shortcircuit for it
         const monitorState = window.__solarSimMonitorState;
@@ -19783,9 +19832,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (typeof window.__applyOfflineTileStyle === 'function') window.__applyOfflineTileStyle();
           }
           const loadFromDeviceBtn = document.getElementById('loadFromDeviceBtn');
-          const frToggleBtn = document.getElementById('frToggleBtn');
-          const frPulseBtn = document.getElementById('frPulseBtn');
-          [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn, frToggleBtn, frPulseBtn].forEach(b => { if (b) b.disabled = !c; }); // helpBtn removed from disabling logic
+          [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b => { if (b) b.disabled = !c; }); // helpBtn removed from disabling logic
+          // FR toggle + pulse buttons: connection-aware AND program-state-aware (see refreshFrControls)
+          if (typeof window.__refreshFrControls === 'function') window.__refreshFrControls();
           // When connected: disable both Connect buttons, enable Disconnect button
           // When disconnected: enable both Connect buttons, disable Disconnect button
           if (connectBtn) connectBtn.disabled = c;
@@ -19802,6 +19851,10 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.__simPlayheadInterp = null; // Reset stale interpolation state
               // Reset FR overlay so bulbs don't display stale "on" state after the device is gone
               if (typeof window.__setFrState === 'function') window.__setFrState(false);
+              // Reset state flags that track live device conditions (pre-exposure + program running)
+              window.__frPreExposureActive = false;
+              window.__programRunning = false;
+              if (typeof window.__refreshFrControls === 'function') window.__refreshFrControls();
               if (typeof window.__updateProgramTitles === 'function') {
                 window.__updateProgramTitles();
               }
@@ -20148,9 +20201,11 @@ https://github.com/odeepllama/SolarSim/tree/main
         window.processIncoming = processIncoming; // expose for DemoEngine
 
         // --- Far-Red LED overlay: state, toggle, and bulb positioning ---
-        // The state is driven by [FR] STATE ON/OFF lines emitted by the firmware
-        // (see fr_led_on / fr_led_off in SolarSimulator.py). handlePlainTextLine parses those.
-        // Toggle is optimistic: user click sends fr on/off; the echo confirms and repaints.
+        // The state is driven by [FR] STATE ON/OFF and [FR] PREEXPOSURE ON/OFF lines emitted by
+        // the firmware (see fr_led_on / fr_start_pulse / fr_led_off in SolarSimulator.py).
+        // [PROGRAM] STATE RUNNING/IDLE gates the toggle button so users can't fire a bare
+        // pin drive mid-experiment (Q7). Toggle is optimistic: user click sends fr on/off;
+        // the echo confirms and repaints via handlePlainTextLine.
         (function () {
           let frOn = false;
           function setFrVisual(on) {
@@ -20166,6 +20221,31 @@ https://github.com/odeepllama/SolarSim/tree/main
             // Optimistic flip; firmware echo will re-confirm via [FR] STATE ON/OFF
             window.__sendLine(frOn ? 'fr off' : 'fr on');
           };
+
+          // Enable/disable the FR buttons based on connection state and program-running state (Q7).
+          // Called from setConnected() and from handlePlainTextLine on [PROGRAM] STATE events.
+          function refreshFrControls() {
+            const toggleBtn = document.getElementById('frToggleBtn');
+            const pulseBtn = document.getElementById('frPulseBtn');
+            const ns = window.__solarSimMonitorState;
+            const connected = !!(ns && (ns.port || ns.bleDevice));
+            const running = !!window.__programRunning;
+            if (toggleBtn) {
+              // Bench-test button: disabled during program (Q7) so users can't accidentally
+              // fire a bare pin drive that skips the darkness/freeze semantics
+              toggleBtn.disabled = !connected || running;
+              toggleBtn.title = running
+                ? 'Disabled during program — use FR 5m for a mid-program dark pulse'
+                : (connected ? 'Toggle Far-Red array on/off (bench test — no time freeze, no panel blank)' : 'Connect a device first');
+            }
+            if (pulseBtn) {
+              pulseBtn.disabled = !connected;
+              pulseBtn.title = connected
+                ? 'Run a 5-minute dark FR pulse (freezes sim time, blanks sun panel, resumes when done)'
+                : 'Connect a device first';
+            }
+          }
+          window.__refreshFrControls = refreshFrControls;
           // Position the 5 bulbs along an inner semicircle inside the sun arc.
           // Recompute on canvas resize; wire an observer once DOM is ready.
           function positionBulbs() {
@@ -20294,6 +20374,12 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Also sync from `status` output line "FR LED State: ACTIVE" / "IDLE"
           else if (/FR\s*LED\s*State\s*[:=]\s*ACTIVE/i.test(line)) { if (window.__setFrState) window.__setFrState(true); }
           else if (/FR\s*LED\s*State\s*[:=]\s*IDLE/i.test(line)) { if (window.__setFrState) window.__setFrState(false); }
+          // Pre-exposure tracking: used to gate profile uploads (Q6) so users don't silently abort a dark treatment
+          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+ON\b/i.test(line)) { window.__frPreExposureActive = true; }
+          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+OFF\b/i.test(line)) { window.__frPreExposureActive = false; }
+          // Program-running tracking: gates the FR toggle button (Q7)
+          else if (/^\s*\[PROGRAM\]\s*STATE\s+RUNNING\b/i.test(line)) { window.__programRunning = true; if (window.__refreshFrControls) window.__refreshFrControls(); }
+          else if (/^\s*\[PROGRAM\]\s*STATE\s+IDLE\b/i.test(line)) { window.__programRunning = false; if (window.__refreshFrControls) window.__refreshFrControls(); }
           // Suppress logging of full-length Simulation time lines
           if (reSimTime.test(line) || reSimWithSpeed.test(line)) {
             // Skip logging this line, but still parse it below for UI updates

@@ -110,8 +110,8 @@ ROTATION_LIGHT_G = 30              # Green component (0-255) for rotation lighti
 ROTATION_LIGHT_B = 30              # Blue component (0-255) for rotation lighting
 
 # --- Far-Red (FR) Pre-Exposure ---
-FR_PREEXPOSURE_ENABLED = True      # Default ON: run FR pulse in darkness before program step 1
-FR_PREEXPOSURE_MINUTES = 5         # Duration of pre-exposure pulse (standard phytochrome depletion)
+FR_PREEXPOSURE_TRIGGER = "PROGRAM_START"  # "OFF" | "PROGRAM_START" | "BOOT" — when auto pre-exposure fires
+FR_PREEXPOSURE_MINUTES = 5                # Duration of pre-exposure pulse (standard phytochrome depletion)
 
 # This option allows unwanted reflections to be minimized.
 # ======================================================
@@ -219,9 +219,10 @@ servo3_using_lighting = False         # Track if servo3 is using lighting
 # --- Far-Red LED State Variables ---
 fr_led_state = 'IDLE'                 # 'IDLE' or 'ACTIVE'
 fr_led_start_ms = 0                   # When the current FR activation started
-fr_led_duration_ms = 0                # 0 = indefinite (manual on); >0 = auto-off after N ms
-fr_preexposure_active = False         # True while pre-exposure blocks program start
-fr_preexposure_saved_time_scale = 1   # Saved TIME_SCALE to restore after pre-exposure ends
+fr_led_duration_ms = 0                # 0 = indefinite (manual `fr on`); >0 = auto-off after N ms
+fr_preexposure_active = False         # True during auto pre-exposure (boot or program-start)
+fr_pulse_freeze_active = False        # True during manual `fr pulse` (bench dark treatment)
+fr_freeze_saved_time_scale = 1        # Saved TIME_SCALE to restore after any freeze ends
 
 # ======================================================
 # VI. HARDWARE CONFIGURATION
@@ -607,8 +608,32 @@ def update_rotation_parameters():
 update_rotation_parameters()
 
 # --- Far-Red LED helpers ---
+def fr_darkness_mode():
+    """True if the plant should be kept in darkness (auto pre-exposure OR manual `fr pulse`).
+    Used by servo/rotation/sun-display code to know when to pause and stay dark."""
+    return fr_preexposure_active or fr_pulse_freeze_active
+
+def _restore_time_scale_after_freeze():
+    """Restore TIME_SCALE after any FR freeze ends.
+    Honours PROGRAM_STEPS[0]['speed'] if declared, otherwise falls back to the pre-freeze scale.
+    Also re-anchors start_real_time_ms so sim time resumes exactly where it was frozen."""
+    global TIME_SCALE, start_real_time_ms
+    step_speed = None
+    if PROGRAM_STEPS and isinstance(PROGRAM_STEPS[0], dict):
+        step_speed = PROGRAM_STEPS[0].get("speed")
+    if step_speed is not None and step_speed != 0:
+        TIME_SCALE = float(step_speed)
+    else:
+        TIME_SCALE = fr_freeze_saved_time_scale if fr_freeze_saved_time_scale != 0 else 1
+    start_real_time_ms = _reanchor_start_time(frozen_sim_time_minutes, TIME_SCALE, ticks_ms(), START_TIME_HHMM, start_real_time_ms)
+    update_speed_indicator(TIME_SCALE)
+    return TIME_SCALE
+
 def fr_led_on(duration_ms=0):
-    """Turn the Far-Red LED array on. duration_ms=0 means indefinite ('fr off' to stop)."""
+    """Bare pin drive — turn GP13 HIGH. NO panel blank, NO time freeze.
+    For bench wiring debug via `fr on`. duration_ms=0 means indefinite; >0 sets auto-off timer.
+    Note: does NOT set fr_preexposure_active or fr_pulse_freeze_active — those are for the
+    experimental treatment paths (start_program and fr_start_pulse) only."""
     global fr_led_state, fr_led_start_ms, fr_led_duration_ms
     was_active = fr_led_state == 'ACTIVE'
     fr_led_pin.on()
@@ -616,38 +641,83 @@ def fr_led_on(duration_ms=0):
     fr_led_start_ms = ticks_ms()
     fr_led_duration_ms = duration_ms
     if not was_active:
-        print("[FR] STATE ON")   # machine-parseable event for the studio UI
+        print("[FR] STATE ON")
+
+def fr_start_pulse(duration_ms, is_preexposure=False):
+    """Full dark treatment: blank panel, freeze sim time, drive GP13 HIGH, auto-off timer.
+    is_preexposure=True flags this as an auto pre-exposure (boot or program-start).
+    is_preexposure=False flags this as a manual `fr pulse` (bench dark treatment).
+    Both paths look identical to servos/rotation/sun-display via fr_darkness_mode()."""
+    global fr_preexposure_active, fr_pulse_freeze_active
+    global fr_freeze_saved_time_scale
+    global TIME_SCALE, frozen_sim_time_minutes, frozen_abs_sim_time
+    # Blank the sun panel — dark treatment
+    pixels.fill((0, 0, 0))
+    pixels.write()
+    # Freeze sim time (unless already frozen from HOLD mode)
+    now_ms = ticks_ms()
+    abs_sim_time, current_time_minutes = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)
+    fr_freeze_saved_time_scale = TIME_SCALE if TIME_SCALE != 0 else 1
+    if TIME_SCALE != 0:
+        frozen_sim_time_minutes = current_time_minutes
+        frozen_abs_sim_time = abs_sim_time
+        TIME_SCALE = 0
+        update_speed_indicator(TIME_SCALE)
+    # Set the mode flag BEFORE emitting [FR] STATE ON so the studio can classify correctly
+    if is_preexposure:
+        fr_preexposure_active = True
+        print("[FR] PREEXPOSURE ON")
+    else:
+        fr_pulse_freeze_active = True
+    # Drive pin + arm timer + emit STATE ON
+    fr_led_on(duration_ms=duration_ms)
 
 def fr_led_off():
-    """Turn the Far-Red LED array off and clear pre-exposure gating.
-    If pre-exposure was aborted mid-way (e.g. manual 'fr off'), also restores TIME_SCALE."""
-    global fr_led_state, fr_led_duration_ms, fr_preexposure_active
-    global TIME_SCALE, start_real_time_ms
+    """Turn the Far-Red LED array off. If either freeze flag was set (auto pre-exposure or
+    manual pulse), also restores TIME_SCALE and re-anchors sim time."""
+    global fr_led_state, fr_led_duration_ms, fr_preexposure_active, fr_pulse_freeze_active
     was_active = fr_led_state == 'ACTIVE'
+    was_preexposure = fr_preexposure_active
+    was_pulse_freeze = fr_pulse_freeze_active
     fr_led_pin.off()
     fr_led_state = 'IDLE'
     fr_led_duration_ms = 0
     if was_active:
-        print("[FR] STATE OFF")   # machine-parseable event for the studio UI
-    if fr_preexposure_active:
-        # Manual abort during pre-exposure: restore time scale so the sim doesn't stay frozen
-        restore_scale = fr_preexposure_saved_time_scale if fr_preexposure_saved_time_scale != 0 else 1
-        TIME_SCALE = restore_scale
-        start_real_time_ms = _reanchor_start_time(frozen_sim_time_minutes, TIME_SCALE, ticks_ms(), START_TIME_HHMM, start_real_time_ms)
-        update_speed_indicator(TIME_SCALE)
-        print(f"[FR] Pre-exposure aborted — time scale restored to {restore_scale}x")
-    fr_preexposure_active = False
+        print("[FR] STATE OFF")
+    if was_preexposure or was_pulse_freeze:
+        restored = _restore_time_scale_after_freeze()
+        fr_preexposure_active = False
+        fr_pulse_freeze_active = False
+        if was_preexposure:
+            print("[FR] PREEXPOSURE OFF")
+            print(f"[FR] Pre-exposure aborted — time scale restored to {restored}x")
+        else:
+            print(f"[FR] Pulse aborted — time scale restored to {restored}x")
 
 def update_fr_led(now_ms):
-    """Auto-off timer for FR LED. Called each main-loop iteration."""
+    """Auto-off timer for FR LED. Called each main-loop iteration.
+    On natural expiry: turn off pin, restore time scale if in freeze mode, emit events."""
+    global fr_led_state, fr_led_duration_ms, fr_preexposure_active, fr_pulse_freeze_active
     if fr_led_state == 'ACTIVE' and fr_led_duration_ms > 0:
         if ticks_diff(now_ms, fr_led_start_ms) >= fr_led_duration_ms:
             was_preexposure = fr_preexposure_active
-            fr_led_off()   # also restores TIME_SCALE if we were pre-exposing
-            print("[FR] Pulse complete")
-            if was_preexposure:
-                _start_program_body()
-                print("[PROGRAM] FR pre-exposure complete — program starting")
+            was_pulse_freeze = fr_pulse_freeze_active
+            fr_led_pin.off()
+            fr_led_state = 'IDLE'
+            fr_led_duration_ms = 0
+            print("[FR] STATE OFF")
+            if was_preexposure or was_pulse_freeze:
+                restored = _restore_time_scale_after_freeze()
+                fr_preexposure_active = False
+                fr_pulse_freeze_active = False
+                if was_preexposure:
+                    print("[FR] PREEXPOSURE OFF")
+                    print(f"[PROGRAM] FR pre-exposure complete — program starting (time scale {restored}x)")
+                    _start_program_body()
+                else:
+                    print(f"[FR] Pulse complete — time scale restored to {restored}x")
+            else:
+                print("[FR] Pulse complete")
 
 def _start_program_body():
     """Actual program-start bookkeeping (extracted so pre-exposure hook can defer it)."""
@@ -663,43 +733,30 @@ def _start_program_body():
     cross_day_has_left = False
     cross_day_prev_sim = -1
     print("[PROGRAM] Started")
+    print("[PROGRAM] STATE RUNNING")
 
 def start_program():
-    """Start the program. If FR pre-exposure is enabled, run it first (in darkness, sim time frozen)."""
-    global fr_preexposure_active, fr_preexposure_saved_time_scale
-    global TIME_SCALE, frozen_sim_time_minutes, frozen_abs_sim_time
+    """Start the program. If FR_PREEXPOSURE_TRIGGER=PROGRAM_START, run pre-exposure first (in darkness, sim time frozen)."""
     if not PROGRAM_STEPS:
         print("[PROGRAM] No program steps defined — cannot start")
         return
-    if FR_PREEXPOSURE_ENABLED and FR_PREEXPOSURE_MINUTES > 0 and not fr_preexposure_active:
-        # Blank the sun panel — pre-exposure must be delivered in darkness
-        pixels.fill((0, 0, 0))
-        pixels.write()
-        # Freeze sim time so step 1 starts at its intended sim_time_hhmm, not (start + pre-exposure duration)
-        now_ms = ticks_ms()
-        abs_sim_time, current_time_minutes = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)
-        fr_preexposure_saved_time_scale = TIME_SCALE if TIME_SCALE != 0 else 1
-        if TIME_SCALE != 0:
-            frozen_sim_time_minutes = current_time_minutes
-            frozen_abs_sim_time = abs_sim_time
-            TIME_SCALE = 0
-            update_speed_indicator(TIME_SCALE)
-        fr_preexposure_active = True
+    if FR_PREEXPOSURE_TRIGGER == "PROGRAM_START" and FR_PREEXPOSURE_MINUTES > 0 and not fr_preexposure_active:
         duration_ms = int(FR_PREEXPOSURE_MINUTES * 60000)
-        fr_led_on(duration_ms=duration_ms)
+        fr_start_pulse(duration_ms, is_preexposure=True)
         print(f"[PROGRAM] FR pre-exposure started ({FR_PREEXPOSURE_MINUTES} min, sun panel dark, sim time HELD, servos paused)")
         return
     _start_program_body()
 
 def stop_program():
-    """Stop the program execution. Also aborts any in-progress FR pre-exposure (which restores time scale)."""
+    """Stop the program execution. Also aborts any in-progress FR freeze (auto or manual)."""
     global program_running
 
     program_running = False
-    if fr_preexposure_active:
-        fr_led_off()   # handles time scale restore + prints its own status
-        print("[PROGRAM] FR pre-exposure aborted by stop_program")
+    if fr_preexposure_active or fr_pulse_freeze_active:
+        fr_led_off()   # restores time scale + prints its own status
+        print("[PROGRAM] FR freeze aborted by stop_program")
     print("[PROGRAM] Stopped")
+    print("[PROGRAM] STATE IDLE")
 
 def apply_step_settings(step_arg):
     """Apply settings for current program step (supports negative speed)."""
@@ -1219,8 +1276,8 @@ def update_rotation_cycle(now_ms, abs_sim_time, sim_time_scale):
     if not ROTATION_ENABLED and rotation_state == 'IDLE' and not manual_rotation_triggered:
         return
 
-    # Skip during FR pre-exposure — plant must stay still & in darkness
-    if fr_preexposure_active and rotation_state == 'IDLE':
+    # Skip during any FR dark treatment (auto pre-exposure OR manual `fr pulse`) — plant must stay still & in darkness
+    if fr_darkness_mode() and rotation_state == 'IDLE':
         return
     
 
@@ -1456,8 +1513,8 @@ def update_standalone_servo2(now_ms):
     if servo2_controlled_by_rotation:
         return
 
-    # Skip during FR pre-exposure — plant must stay in darkness
-    if fr_preexposure_active:
+    # Skip during any FR dark treatment (auto pre-exposure OR manual `fr pulse`) — plant must stay in darkness
+    if fr_darkness_mode():
         return
 
     # Determine if sun is currently visible on the display
@@ -1505,8 +1562,8 @@ def update_standalone_servo3(now_ms):
     global servo3_state, last_servo3_trigger_ms, servo3_trigger_start_ms
     global servo3_using_lighting, camera_lighting_active, servo2_using_lighting, camera_light_hold_until_ms, rotation_lighting_active
 
-    # Skip during FR pre-exposure — plant must stay in darkness
-    if fr_preexposure_active:
+    # Skip during any FR dark treatment (auto pre-exposure OR manual `fr pulse`) — plant must stay in darkness
+    if fr_darkness_mode():
         return
 
     # Determine if it's nighttime
@@ -2589,17 +2646,20 @@ def handle_command(command_str):
         elif command == "fr" and len(parts) >= 2:
             action = parts[1]
             if action == "on":
+                # Bare pin drive — bench wiring debug. No panel blank, no time freeze.
                 fr_led_on(duration_ms=0)
-                print("[SERIAL CMD] FR LED ON (indefinite)")
+                print("[SERIAL CMD] FR LED ON (bare pin — no time freeze, no panel blank)")
             elif action == "off":
+                # Also aborts any freeze (auto pre-exposure or manual pulse) and restores time scale.
                 fr_led_off()
                 print("[SERIAL CMD] FR LED OFF")
             elif action == "pulse" and len(parts) >= 3:
                 try:
                     mins = float(parts[2])
                     if 0 < mins <= 60:
-                        fr_led_on(duration_ms=int(mins * 60000))
-                        print(f"[SERIAL CMD] FR LED pulse started ({mins} min)")
+                        # Dark treatment: freezes sim time, blanks sun panel, pauses servos, auto-off + resume.
+                        fr_start_pulse(int(mins * 60000), is_preexposure=False)
+                        print(f"[SERIAL CMD] FR pulse started ({mins} min) — sun panel dark, sim time HELD, servos paused")
                     else:
                         print("[SERIAL CMD] Error: fr pulse duration must be >0 and <=60 minutes")
                 except ValueError:
@@ -2709,7 +2769,7 @@ def handle_command(command_str):
                             f.write(f"ROTATION_INCREMENT_DEGREES = {ROTATION_INCREMENT_DEGREES}\n")
                             f.write(f"ROTATION_STEP_INTERVAL_MS = {ROTATION_STEP_INTERVAL_MS}\n")
                             f.write(f"ROTATION_AT_NIGHT = {ROTATION_AT_NIGHT}\n")
-                            f.write(f"FR_PREEXPOSURE_ENABLED = {FR_PREEXPOSURE_ENABLED}\n")
+                            f.write(f'FR_PREEXPOSURE_TRIGGER = "{FR_PREEXPOSURE_TRIGGER}"\n')
                             f.write(f"FR_PREEXPOSURE_MINUTES = {FR_PREEXPOSURE_MINUTES}\n")
                             f.write("-" * 20 + "\n\n")
                         print(f"[SERIAL CMD] Settings appended to log {filename}")
@@ -2770,7 +2830,7 @@ def handle_command(command_str):
                         f.write(f"ROTATION_LIGHT_R = {ROTATION_LIGHT_R}\n")
                         f.write(f"ROTATION_LIGHT_G = {ROTATION_LIGHT_G}\n")
                         f.write(f"ROTATION_LIGHT_B = {ROTATION_LIGHT_B}\n")
-                        f.write(f"FR_PREEXPOSURE_ENABLED = {FR_PREEXPOSURE_ENABLED}\n")
+                        f.write(f'FR_PREEXPOSURE_TRIGGER = "{FR_PREEXPOSURE_TRIGGER}"\n')
                         f.write(f"FR_PREEXPOSURE_MINUTES = {FR_PREEXPOSURE_MINUTES}\n")
                         # Save program state (always include steps for profile completeness)
                         import ujson as json
@@ -2829,9 +2889,20 @@ def handle_command(command_str):
                                 if not (0 <= v <= 2359 and v % 100 < 60):
                                     raise ValueError("invalid HHMM format")
                                 validated_settings[key] = v
-                            elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD", "FR_PREEXPOSURE_ENABLED"):
+                            elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD"):
                                 if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
                                 validated_settings[key] = value_str.lower() == 'true'
+                            elif key == "FR_PREEXPOSURE_ENABLED":
+                                # v1.0 legacy field — map to FR_PREEXPOSURE_TRIGGER only if the new key isn't already set
+                                if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
+                                if "FR_PREEXPOSURE_TRIGGER" not in validated_settings:
+                                    validated_settings["FR_PREEXPOSURE_TRIGGER"] = "PROGRAM_START" if value_str.lower() == 'true' else "OFF"
+                                    print("[LOAD] Legacy FR_PREEXPOSURE_ENABLED found — mapped to FR_PREEXPOSURE_TRIGGER")
+                            elif key == "FR_PREEXPOSURE_TRIGGER":
+                                v = value_str.strip('"').upper()
+                                if v not in ("OFF", "PROGRAM_START", "BOOT"):
+                                    raise ValueError("FR_PREEXPOSURE_TRIGGER must be OFF, PROGRAM_START, or BOOT")
+                                validated_settings[key] = v
                             elif key == "FR_PREEXPOSURE_MINUTES":
                                 v = float(value_str)
                                 if not (0 < v <= 60): raise ValueError("FR_PREEXPOSURE_MINUTES must be >0 and <=60")
@@ -2989,7 +3060,7 @@ def handle_command(command_str):
                 speed_name = "Unknown"
             print(f"  Speed Name: {speed_name}")
             print(f"  Program Enabled: {PROGRAM_ENABLED}")
-            print(f"  FR Pre-Exposure Enabled: {FR_PREEXPOSURE_ENABLED}")
+            print(f"  FR Pre-Exposure Trigger: {FR_PREEXPOSURE_TRIGGER}")
             print(f"  FR Pre-Exposure Minutes: {FR_PREEXPOSURE_MINUTES}")
             print(f"  FR LED State: {fr_led_state}")
             print(f"  Restart After Profile Load: {RESTART_AFTER_LOAD}")
@@ -3374,8 +3445,8 @@ def run_simulation():
                 manual_panel_override_active = False
                 print("[INFO] fillpanel override ended, resuming normal display.")
 
-            # Only update sun display if no special lighting is active (and not during FR pre-exposure)
-            if not camera_lighting_active and not rotation_lighting_active and not manual_panel_override_active and not fr_preexposure_active:
+            # Only update sun display if no special lighting is active (and not during any FR dark treatment)
+            if not camera_lighting_active and not rotation_lighting_active and not manual_panel_override_active and not fr_darkness_mode():
                 # Update sun display using the new flicker-free method
                 update_sun_display(time_of_day_minutes)
     
@@ -3703,6 +3774,29 @@ def _load_autoload_pref():
 
 _load_autoload_pref()
 _attempt_autoload()
+
+def _boot_pre_exposure():
+    """Fire FR pre-exposure immediately at boot if FR_PREEXPOSURE_TRIGGER == 'BOOT'.
+    Runs before run_simulation()'s main loop, so sim time hasn't started ticking yet;
+    we set start_real_time_ms + freeze sim time at START_TIME_HHMM up front."""
+    global fr_preexposure_active, fr_freeze_saved_time_scale
+    global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes, frozen_abs_sim_time
+    if FR_PREEXPOSURE_TRIGGER == "BOOT" and FR_PREEXPOSURE_MINUTES > 0:
+        # Set sim-time anchor + freeze at the configured start-of-day
+        start_real_time_ms = ticks_ms()
+        start_hhmm_minutes = (START_TIME_HHMM // 100) * 60 + (START_TIME_HHMM % 100)
+        frozen_sim_time_minutes = start_hhmm_minutes
+        frozen_abs_sim_time = start_hhmm_minutes
+        pixels.fill((0, 0, 0)); pixels.write()
+        fr_freeze_saved_time_scale = TIME_SCALE if TIME_SCALE != 0 else 1
+        TIME_SCALE = 0
+        fr_preexposure_active = True
+        fr_led_on(duration_ms=int(FR_PREEXPOSURE_MINUTES * 60000))
+        print(f"[PROGRAM] BOOT FR pre-exposure started ({FR_PREEXPOSURE_MINUTES} min, sim time HELD at {START_TIME_HHMM:04d}, sun panel dark, servos paused)")
+        print("[FR] PREEXPOSURE ON")
+
+_boot_pre_exposure()
+
 print("Solar Simulator Starting!      ****   Type \"help\" for available commands.   ****")
 sleep_ms(500)
 
