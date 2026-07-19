@@ -3073,10 +3073,10 @@ https://github.com/odeepllama/SolarSim/tree/main
       z-index: 10;
     }
     #frControls button {
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 4px;
+      font-size: 1.04rem;   /* +30% vs original 0.8rem */
+      font-weight: 700;     /* bolder */
+      padding: 6px 14px;    /* +~30% padding to scale button footprint with text */
+      border-radius: 5px;
       border: 1px solid #888;
       background: #ffffff;
       color: #111 !important;
@@ -6409,6 +6409,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideUploadToDevice: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
           // --- Section title translations ---
           sectionTimeDate: 'Time & Date',
+          sectionPreExposure: 'Far-Red Pre-Exposure',
           sectionSolarMode: 'Solar Mode & Sun Color',
           sectionImagingIllum: 'Imaging Illumination',
           sectionImagingServo: 'Imaging Servos & Timing',
@@ -6575,6 +6576,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           errorBanner: '', // Will be set dynamically
           // --- Section title translations ---
           sectionTimeDate: '時刻と日付',
+          sectionPreExposure: '遠赤色前照射',
           sectionSolarMode: 'ソーラーモードと太陽色',
           sectionImagingIllum: '撮像照明',
           sectionImagingServo: '撮像サーボ＆タイミング',
@@ -6836,7 +6838,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       const FIELD_GROUPS = [
         { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
-        { name: 'Pre-Exposure', i18nKey: 'sectionPreExposure', keys: ['FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'], collapsible: true },
+        { name: 'Far-Red Pre-Exposure', i18nKey: 'sectionPreExposure', keys: ['FR_PREEXPOSURE_ENABLED', 'FR_PREEXPOSURE_MINUTES'], collapsible: true },
         { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
         { name: 'Imaging Servos & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
@@ -7130,7 +7132,7 @@ https://github.com/odeepllama/SolarSim/tree/main
             fs.appendChild(grid);
 
             // FR pre-exposure: append an always-visible dark-period warning banner
-            if (group.name === 'Pre-Exposure') {
+            if (group.name === 'Far-Red Pre-Exposure') {
               const banner = document.createElement('div');
               banner.id = 'frPreExposureWarning';
               banner.textContent = '⚠ Sun panel will be dark for the pre-exposure duration before each program starts. Uncheck if you don\'t have the Far Red LED array installed.';
