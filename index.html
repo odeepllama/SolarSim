@@ -213,6 +213,19 @@ https://github.com/odeepllama/SolarSim/tree/main
       gap: 14px;
     }
 
+    /* Far-Red Pre-Exposure section: keep the two fields at the same narrow width as
+       neighbouring sections (Time & Date etc.) instead of stretching to half-row each.
+       Cap each field's max-width so the banner can occupy the remaining flex space. */
+    .group-grid.pre-exposure .field {
+      max-width: 220px;
+    }
+    /* The warning banner sits alongside the two fields as a flex item, filling
+       whatever room remains on the row. Wraps to below the fields on narrow viewports. */
+    .group-grid.pre-exposure #frPreExposureWarning {
+      flex: 1 1 300px;
+      min-width: 0;
+    }
+
     /*  Rotation Imaging section: force 3-column grid layout */
     .group-grid.rotation-imaging {
       display: grid;
@@ -3052,6 +3065,52 @@ https://github.com/odeepllama/SolarSim/tree/main
       text-align: left;
     }
 
+    /* --- FR LED overlay (bulbs + buttons layered on top of the solar arc canvas) --- */
+    .fr-bulb {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid #b0b0b0;
+      background: #ffffff;
+      transform: translate(-50%, -50%);
+      transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      pointer-events: none;
+    }
+    .fr-bulb.on {
+      background: #e05b5b;
+      border-color: #8a1010;
+      box-shadow: 0 0 8px rgba(224, 91, 91, 0.75), 0 0 14px rgba(224, 91, 91, 0.4);
+    }
+    #frControls {
+      z-index: 10;
+    }
+    #frControls button {
+      font-size: 1.04rem;   /* +30% vs original 0.8rem */
+      font-weight: 700;     /* bolder */
+      padding: 6px 14px;    /* +~30% padding to scale button footprint with text */
+      border-radius: 5px;
+      border: 1px solid #888;
+      background: #ffffff;
+      color: #111 !important;
+      opacity: 1 !important;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    #frControls button:hover:not(:disabled) { background: #e8e8e8; }
+    #frControls button:disabled {
+      opacity: 0.45 !important;
+      cursor: not-allowed;
+    }
+    #frToggleBtn.on {
+      background: #e05b5b;
+      color: #fff;
+      border-color: #8a1010;
+    }
+    #frToggleBtn.on:hover {
+      background: #cc4a4a;
+    }
+
     @media (max-width: 900px) {
       .vislog-row {
         flex-direction: column;
@@ -4247,10 +4306,10 @@ https://github.com/odeepllama/SolarSim/tree/main
   <script>if (!('serial' in navigator)) document.getElementById('browserCompatBar').style.display = 'block';</script>
   <!-- Demo mode banner -->
   <div id="demoModeBanner"
-    style="display:none; background:#e3f2fd; color:#1565c0; padding:10px 16px; text-align:center; font-size:0.9rem; border-bottom:1px solid #90caf9; position:sticky; top:0; z-index:9999; transition: background 0.6s ease, color 0.6s ease, border-bottom-color 0.6s ease;">
+    style="display:none; background:#ffc107; color:#000; font-weight:600; padding:10px 16px; margin:8px 0 0 0; text-align:center; font-size:0.9rem; border:1px solid #b58a00; border-radius:8px; position:sticky; top:8px; z-index:9999; transition: background 0.6s ease, color 0.6s ease, border-color 0.6s ease;">
     🔄 <strong>Demo Mode</strong> — simulating your program. Connect a device to go live.
     <button onclick="if(window.__demoEngine) window.__demoEngine.stop();"
-      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#1565c0;"
+      style="background:none; border:none; font-size:1.1rem; cursor:pointer; margin-left:12px; color:#000;"
       title="Stop demo">✕</button>
   </div>
   <h1 id="appTitle"></h1>
@@ -4299,8 +4358,29 @@ https://github.com/odeepllama/SolarSim/tree/main
     <div id="monitorVisLogRow" class="vislog-row">
       <div class="vis-col" data-section="monitor-solar-arc">
         <div class="mini-sect-title">Solar Arc Simulation</div>
-        <div id="sunArcWrapper" style="margin-top:2px; margin-bottom:-40px; display:none;">
+        <div id="sunArcWrapper" style="margin-top:2px; margin-bottom:-40px; display:none; position:relative;">
           <canvas id="sunArcCanvas" width="560" height="320" aria-label="Sun arc visualization" role="img"></canvas>
+          <!-- FR LED overlay: 5 bulbs on an inner arc + toggle + pulse button.
+               Positioned absolutely over the canvas. Bulb centres are computed dynamically in JS
+               (see initFrOverlay) so they scale with the canvas width. -->
+          <div id="frOverlay" aria-label="Far-Red LED controls" style="position:absolute; inset:0; pointer-events:none;">
+            <div id="frBulbs" style="position:absolute; inset:0; pointer-events:none;">
+              <span class="fr-bulb" data-bulb="0"></span>
+              <span class="fr-bulb" data-bulb="1"></span>
+              <span class="fr-bulb" data-bulb="2"></span>
+              <span class="fr-bulb" data-bulb="3"></span>
+              <span class="fr-bulb" data-bulb="4"></span>
+            </div>
+            <div id="frControls" style="position:absolute; left:50%; bottom:12%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:4px; pointer-events:auto;">
+              <div style="display:flex; gap:6px;">
+                <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off (bench test — no time freeze, no panel blank). Disabled while a program is running." disabled
+                  onclick="if(window.__frToggle) window.__frToggle();">FR ON/OFF</button>
+                <button id="frPulseBtn" type="button" class="fr-pulse" title="Run a 5-minute dark FR pulse (freezes sim time, blanks sun panel, resumes when done)" disabled
+                  onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR 5m</button>
+              </div>
+              <div id="frCountdown" style="display:none; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:0.85rem; color:#8a1010; font-weight:600; letter-spacing:0.02em;"></div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="log-col" data-section="monitor-log">
@@ -4308,7 +4388,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         <div id="monitorLog" aria-label="Monitor log" role="log"></div>
         <div id="monitorLogResizeGrip" title="Drag to resize log"></div>
         <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-          <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger)"
+          <input id="monitorCmdInput" type="text" placeholder="Type command (e.g. set, toggle, jump, trigger, fr)"
             autocomplete="off" autocapitalize="off" style="flex:1;" />
           <button id="monitorSendBtn" type="button" class="secondary" disabled>Send</button>
           <button id="monitorExportLogBtn" type="button" class="secondary">Export Command Log</button>
@@ -4323,7 +4403,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
   <body>
     <div id="topButtonBar"
-      style="position:absolute; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
+      style="position:fixed; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
       <span id="versionDate" style="font-size:0.7rem; color:#888; margin-right:2px; white-space:nowrap;"></span>
       <script>
         (function () {
@@ -4734,6 +4814,36 @@ https://github.com/odeepllama/SolarSim/tree/main
                 <p>Errors are shown inline in red; exports are disabled until resolved. Dual Sun with high intensity is
                   blocked to prevent overheating. Intensity above 1.0 is not permitted. Recommended ranges for research:
                   intensity 0.8–1.0, speed 1x–4x.</p>
+              </div>
+            </li>
+            <li><strong>Far-Red (FR) Pre-Exposure</strong>: Optional 730 nm pulse in darkness before an experiment.
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">Learn more ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>Drives phytochrome from Pfr to Pr, priming plants for phototropism experiments. When active, the
+                  sun panel goes dark, rotation and camera servos pause, sim time is HELD, and the Far Red LED array
+                  runs for the configured duration (default 5 min). When the pulse completes, sim time resumes and
+                  the program continues.</p>
+                <p><strong>Trigger dropdown</strong> (in the <em>Far-Red Pre-Exposure</em> section of the profile):
+                  <ul>
+                    <li><code>OFF</code> — never fires. FR array stays off unless triggered manually.</li>
+                    <li><code>PROGRAM_START</code> (default) — fires when sim time reaches the first program step.</li>
+                    <li><code>BOOT</code> — fires immediately at device power-on, before the main loop begins.
+                      Useful for time-of-day-independent experiments (e.g. running in continuous darkness).</li>
+                  </ul>
+                </p>
+                <p><strong>Manual controls</strong> (in the Solar Arc panel):
+                  <ul>
+                    <li><strong>FR ON/OFF</strong> — bench test only: drives GP13 high/low with NO time freeze and NO
+                      panel blank. Sends <code>fr on</code> / <code>fr off</code>. Disabled while a program is running.</li>
+                    <li><strong>FR 5m</strong> — full dark treatment: freezes sim time, blanks the sun panel, pauses
+                      servos, runs FR for 5 minutes, then resumes the program at where it froze. Sends <code>fr pulse 5</code>.</li>
+                  </ul>
+                </p>
+                <p>The 5 red bulbs on the inner arc light up whenever the FR array is on (bench-debug or dark
+                  treatment). During a full dark treatment, the RP2040's matrix display also shows the HOLD indicator.</p>
+                <p>Requires the Far Red LED array wired to <strong>GP13</strong> on the RP2040:bit
+                  (micro:bit edge pin <strong>P16</strong> on a Keyestudio KS0360 or similar sensor shield;
+                  see the <code>PlantSense/FR_Wiring_5LED_12V.md</code> build doc).</p>
               </div>
             </li>
           </ul>
@@ -5198,6 +5308,35 @@ https://github.com/odeepllama/SolarSim/tree/main
               <div class="help-detail" style="display:none;">
                 <p>エラーはインラインで赤色表示され、解決するまでエクスポートが無効になります。高強度でのDual
                   Sunは過熱防止のためブロックされます。強度1.0以上は許可されません。研究での推奨範囲：強度0.8～1.0、速度1x～4x。</p>
+              </div>
+            </li>
+            <li><strong>Far-Red (FR) 事前照射</strong>: 実験前に暗黒下で730 nm光をパルス照射（任意）。
+              <button class="help-expand-btn" onclick="toggleHelpDetail(this)">詳細を表示 ▼</button>
+              <div class="help-detail" style="display:none;">
+                <p>フィトクロムをPfrからPrに変換し、光屈性実験のために植物を準備します。動作中は太陽パネルが消灯し、
+                  回転とカメラサーボが一時停止、シミュレーション時刻が保持され、Far Red LEDアレイが設定時間
+                  （デフォルト5分）動作します。パルス完了後、シミュレーション時刻が再開しプログラムが継続します。</p>
+                <p><strong>トリガードロップダウン</strong>（プロファイルの<em>遠赤色前照射</em>セクション）:
+                  <ul>
+                    <li><code>OFF</code> — 自動発火しません。手動でのみ点灯可能。</li>
+                    <li><code>PROGRAM_START</code>（デフォルト）— シミュレーション時刻がプログラムの最初のステップに到達した時点で発火。</li>
+                    <li><code>BOOT</code> — デバイス起動直後（メインループ開始前）に即座に発火。連続暗黒下での実験など、
+                      時刻に依存しない用途に便利。</li>
+                  </ul>
+                </p>
+                <p><strong>手動操作</strong>（Solar Arc パネル内）:
+                  <ul>
+                    <li><strong>FR ON/OFF</strong> — ベンチテスト専用：GP13をHIGH/LOWに駆動するのみ。時刻凍結・パネル消灯なし。
+                      <code>fr on</code> / <code>fr off</code> を送信。プログラム実行中は無効化。</li>
+                    <li><strong>FR 5m</strong> — 完全な暗黒照射：シミュレーション時刻を凍結し太陽パネルを消灯、サーボを一時停止、
+                      FRを5分間動作させた後にプログラムを再開。<code>fr pulse 5</code> を送信。</li>
+                  </ul>
+                </p>
+                <p>FRアレイがオン（ベンチデバッグ・暗黒照射のいずれでも）のとき、内側アーク上の5つの赤いバルブが点灯します。
+                  完全な暗黒照射中はRP2040のマトリクスディスプレイにHOLDインジケータも表示されます。</p>
+                <p>Far Red LEDアレイをRP2040:bitの<strong>GP13</strong>（Keyestudio KS0360等のセンサーシールドで
+                  micro:bit エッジピン<strong>P16</strong>）に配線する必要があります
+                  （配線ドキュメント <code>PlantSense/FR_Wiring_5LED_12V.md</code> を参照）。</p>
               </div>
             </li>
           </ul>
@@ -6316,6 +6455,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           guideUploadToDevice: '<strong>Important:</strong> This button uploads your settings to the device. The uploaded profile becomes the "newest" file and will auto-load on device startup if auto-load is enabled.',
           // --- Section title translations ---
           sectionTimeDate: 'Time & Date',
+          sectionPreExposure: 'Far-Red Pre-Exposure',
           sectionSolarMode: 'Solar Mode & Sun Color',
           sectionImagingIllum: 'Imaging Illumination',
           sectionImagingServo: 'Imaging Servos & Timing',
@@ -6482,6 +6622,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           errorBanner: '', // Will be set dynamically
           // --- Section title translations ---
           sectionTimeDate: '時刻と日付',
+          sectionPreExposure: '遠赤色前照射',
           sectionSolarMode: 'ソーラーモードと太陽色',
           sectionImagingIllum: '撮像照明',
           sectionImagingServo: '撮像サーボ＆タイミング',
@@ -6738,11 +6879,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // FIELD METADATA
       // ============================================================================
       const ORDERED_KEYS = [
-        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE'
+        'START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B', 'STILLS_IMAGING_INTERVAL_SEC', 'SERVO2_STANDALONE_ENABLED', 'SERVO2_INTERVAL_SEC', 'SERVO3_STANDALONE_ENABLED', 'SERVO3_INTERVAL_SEC', 'IMAGE_AT_NIGHT', 'ROTATION_ENABLED', 'ROTATION_CAMERA_SERVO', 'ROTATION_CAPTURE_MODE', 'ROTATION_CYCLE_INTERVAL_MINUTES', 'ROTATION_AT_NIGHT', 'CAMERA_TRIGGER_HOLD_MS', 'ROTATION_SPEED_PRESET', 'IMAGES_PER_ROTATION', 'DEGREES_PER_IMAGE', 'ROTATION_INCREMENT_DEGREES', 'ROTATION_STEP_INTERVAL_MS', 'CAMERA_LIGHTING_PANELS', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B', 'DUAL_SUN_ENABLED', 'SIMULATION_DATE', 'LATITUDE', 'FR_PREEXPOSURE_TRIGGER', 'FR_PREEXPOSURE_MINUTES'
       ];
 
       const FIELD_GROUPS = [
         { name: 'Time & Date', i18nKey: 'sectionTimeDate', keys: ['START_TIME_HHMM', 'TIME_SCALE', 'INTENSITY_SCALE', 'SIMULATION_DATE', 'LATITUDE'], collapsible: true },
+        { name: 'Far-Red Pre-Exposure', i18nKey: 'sectionPreExposure', keys: ['FR_PREEXPOSURE_TRIGGER', 'FR_PREEXPOSURE_MINUTES'], collapsible: true },
         { name: 'Solar Mode & Sun Color', i18nKey: 'sectionSolarMode', keys: ['SOLAR_MODE', 'CUSTOM_SUNRISE_HHMM', 'CUSTOM_SUNSET_HHMM', 'SUN_COLOR_MODE', 'DUAL_SUN_ENABLED', 'CUSTOM_SUN_R', 'CUSTOM_SUN_G', 'CUSTOM_SUN_B'], collapsible: true },
         { name: 'Imaging Illumination', i18nKey: 'sectionImagingIllum', keys: ['CAMERA_LIGHTING_PANELS', '_SPACER_1', '_SPACER_2', 'CAMERA_LIGHT_R', 'CAMERA_LIGHT_G', 'CAMERA_LIGHT_B', 'ROTATION_LIGHT_R', 'ROTATION_LIGHT_G', 'ROTATION_LIGHT_B'], collapsible: true },
         { name: 'Imaging Servos & Timing', i18nKey: 'sectionImagingServo', keys: ['SERVO2_INTERVAL_DAY_SEC', 'SERVO2_INTERVAL_NIGHT_SEC', 'SERVO3_INTERVAL_DAY_SEC', 'SERVO3_INTERVAL_NIGHT_SEC'], collapsible: true },
@@ -6788,7 +6930,9 @@ https://github.com/odeepllama/SolarSim/tree/main
         CUSTOM_SUN_B: { label: 'Custom Sun Blue', tooltip: 'Custom blue channel (0-255).', type: 'number', min: 0, max: 255, default: 0 },
         PROGRAM_ENABLED: { label: 'Program Enabled', tooltip: 'Enable scripted program steps block.', type: 'checkbox', default: true },
         PROGRAM_REPEATS: { label: 'Program Repeats (-1 = ∞)', tooltip: 'How many passes; -1 loops forever.', type: 'number', default: -1, showIf: s => s.PROGRAM_ENABLED },
-        PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED }
+        PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED },
+        FR_PREEXPOSURE_TRIGGER: { label: 'FR Pre-Exposure Trigger', tooltip: 'When to run the 730nm dark pre-exposure. OFF: never. PROGRAM_START: at first program step. BOOT: immediately at device power-on.', type: 'select', options: ['OFF', 'PROGRAM_START', 'BOOT'], default: 'PROGRAM_START' },
+        FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_TRIGGER && s.FR_PREEXPOSURE_TRIGGER !== 'OFF' }
       };
 
       // Keys to highlight (commonly changed)
@@ -6991,10 +7135,13 @@ https://github.com/odeepllama/SolarSim/tree/main
               grid.className = 'group-grid imaging-illumination';
             } else if (group.name === 'Imaging Servos & Timing') {
               grid.className = 'group-grid imaging-servo-timing';
+            } else if (group.name === 'Far-Red Pre-Exposure') {
+              grid.className = 'group-grid pre-exposure';
             }
             grid.id = sectionId;
 
-            // Determine correct display value based on whether section uses CSS grid or flex
+            // Determine correct display value based on whether section uses CSS grid or flex.
+            // Pre-exposure stays flex (like Time & Date) so it can host the warning banner as a flex item.
             const isGridBased = grid.classList.contains('rotation-imaging')
               || grid.classList.contains('imaging-illumination')
               || grid.classList.contains('imaging-servo-timing')
@@ -7032,6 +7179,18 @@ https://github.com/odeepllama/SolarSim/tree/main
             group.keys.forEach(k => { grid.appendChild(createInput(k)); });
             fs.appendChild(legend);
             fs.appendChild(grid);
+
+            // FR pre-exposure: append an always-visible dark-period warning banner as a flex item
+            // alongside the two input fields. The .group-grid.pre-exposure CSS rule handles sizing
+            // (fields capped at 220px, banner takes remaining row space via flex-grow).
+            if (group.name === 'Far-Red Pre-Exposure') {
+              const banner = document.createElement('div');
+              banner.id = 'frPreExposureWarning';
+              banner.textContent = '⚠ By default, the panel array will be off for the FR pre-exposure duration before the program starts. Set to OFF if you don\'t have the Far Red LED array installed or do not want FR pre-exposure.';
+              banner.style.cssText = 'padding: 6px 10px; background: #fff4d6; border: 1px solid #e0b040; border-radius: 4px; font-size: 0.85em; line-height: 1.4; color: #6a4a00; align-self: end;';
+              banner.style.display = (state.FR_PREEXPOSURE_TRIGGER && state.FR_PREEXPOSURE_TRIGGER !== 'OFF') ? 'block' : 'none';
+              grid.appendChild(banner);
+            }
           } else {
             // Regular sections (no collapsible behavior)
             legend.textContent = getSectionTitle(group.i18nKey, group.name);
@@ -7111,6 +7270,21 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (sunsetField) {
           sunsetField.style.display = showCustomTimes ? '' : 'none';
         }
+
+        // FR Pre-Exposure: banner + duration field visibility follow the trigger enum
+        const trig = state.FR_PREEXPOSURE_TRIGGER;
+        const showFR = trig && trig !== 'OFF';
+        const frMinutesField = document.getElementById('FR_PREEXPOSURE_MINUTES')?.closest('.field');
+        if (frMinutesField) frMinutesField.style.display = showFR ? '' : 'none';
+        const frBanner = document.getElementById('frPreExposureWarning');
+        if (frBanner) {
+          frBanner.style.display = showFR ? 'block' : 'none';
+          if (showFR) {
+            frBanner.textContent = trig === 'BOOT'
+              ? '⚠ By default, the panel array will be off for the FR pre-exposure duration at device power-on. Set to OFF if you don\'t have the Far Red LED array installed or do not want FR pre-exposure.'
+              : '⚠ By default, the panel array will be off for the FR pre-exposure duration before the program starts. Set to OFF if you don\'t have the Far Red LED array installed or do not want FR pre-exposure.';
+          }
+        }
       }
 
       /**
@@ -7146,6 +7320,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (key === 'IMAGES_PER_ROTATION') { recomputeDegreesPerImage(); document.getElementById('DEGREES_PER_IMAGE').value = state.DEGREES_PER_IMAGE; }
         if (key === 'PROGRAM_ENABLED') { refreshConditionalVisibility(); if (typeof window.__updateFieldsetVisibility === 'function') window.__updateFieldsetVisibility(); }
         if (key === 'SOLAR_MODE') { refreshConditionalVisibility(); }
+        if (key === 'FR_PREEXPOSURE_TRIGGER') { refreshConditionalVisibility(); }
         if (key === 'TIME_SCALE') {
           handleTimeScaleModeChange(value);
         }
@@ -10294,7 +10469,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Skip CUSTOM sunrise/sunset from output when not in CUSTOM mode
           else if ((k === 'CUSTOM_SUNRISE_HHMM' || k === 'CUSTOM_SUNSET_HHMM') && state.SOLAR_MODE !== 'CUSTOM') {
             return;
-          } else if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS'].includes(k)) {
+          } else if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS', 'FR_PREEXPOSURE_TRIGGER'].includes(k)) {
             // Strip any pre-existing quotes to avoid doubling, then quote once
             let sv = String(v).trim();
             sv = sv.replace(/^['"]+|['"]+$/g, '');
@@ -10903,7 +11078,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (val === '') return '(empty)';
 
         // Uppercase enum values for consistent display
-        if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET'].includes(key)) {
+        if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'FR_PREEXPOSURE_TRIGGER'].includes(key)) {
           return String(val).toUpperCase();
         }
 
@@ -11209,7 +11384,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           } else {
             // Remove quotes and normalize enum fields to uppercase
             let parsedValue = value.replace(/^['"]|['"]$/g, '');
-            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET'].includes(key)) {
+            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'FR_PREEXPOSURE_TRIGGER'].includes(key)) {
               parsedValue = parsedValue.toUpperCase();
             }
             obj[key] = parsedValue;
@@ -12645,15 +12820,15 @@ https://github.com/odeepllama/SolarSim/tree/main
                 banner.style.transition = 'none';
                 banner.style.background = '#e8f5e9';
                 banner.style.color = '#2e7d32';
-                banner.style.borderBottomColor = '#81c784';
+                banner.style.borderColor = '#81c784';
                 // Force reflow so the instant color is applied
                 void banner.offsetWidth;
-                // Re-enable transition and fade back to blue
-                banner.style.transition = 'background 0.8s ease, color 0.8s ease, border-bottom-color 0.8s ease';
+                // Re-enable transition and fade back to amber
+                banner.style.transition = 'background 0.8s ease, color 0.8s ease, border-color 0.8s ease';
                 setTimeout(() => {
-                  banner.style.background = '#e3f2fd';
-                  banner.style.color = '#1565c0';
-                  banner.style.borderBottomColor = '#90caf9';
+                  banner.style.background = '#ffc107';
+                  banner.style.color = '#000';
+                  banner.style.borderColor = '#b58a00';
                   // Restore original text
                   banner.childNodes[0].textContent = origEmoji;
                   if (origStrong) origStrong.textContent = origStrongText;
@@ -16104,10 +16279,15 @@ https://github.com/odeepllama/SolarSim/tree/main
             if (hashIdx !== -1) rawVal = rawVal.slice(0, hashIdx).trim();
             rawVal = rawVal.trim();
             // Remove surrounding single/double quotes for known string enums and normalize to uppercase
-            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS'].includes(m[1])) {
+            if (['SOLAR_MODE', 'SUN_COLOR_MODE', 'ROTATION_CAPTURE_MODE', 'ROTATION_SPEED_PRESET', 'CAMERA_LIGHTING_PANELS', 'FR_PREEXPOSURE_TRIGGER'].includes(m[1])) {
               rawVal = rawVal.replace(/^['"]+|['"]+$/g, '').toUpperCase();
             }
-            obj[m[1]] = rawVal;
+            // v1.0 legacy: FR_PREEXPOSURE_ENABLED (bool) maps to FR_PREEXPOSURE_TRIGGER enum if the new key isn't already present
+            if (m[1] === 'FR_PREEXPOSURE_ENABLED' && obj.FR_PREEXPOSURE_TRIGGER === undefined) {
+              obj.FR_PREEXPOSURE_TRIGGER = /^(true|1)$/i.test(rawVal) ? 'PROGRAM_START' : 'OFF';
+            } else {
+              obj[m[1]] = rawVal;
+            }
           }
 
           // Parse PROGRAM_STEPS with Python-to-JSON conversion
@@ -17585,6 +17765,12 @@ https://github.com/odeepllama/SolarSim/tree/main
       // Raw REPL Upload (Stopgap Implementation)
       // -----------------------------
       async function uploadProfileToBoard(options = {}) {
+        // Warn if pre-exposure is currently running — upload triggers a device reboot which
+        // aborts the pulse silently. See Q6 in v1.1 design (SolarSimulator.py [FR] PREEXPOSURE events).
+        if (window.__frPreExposureActive && !options._skipPreExposureWarning) {
+          const ok = window.confirm('Pre-exposure is currently running on the device. Uploading a profile will reboot the device and abort the pre-exposure. Continue?');
+          if (!ok) return;
+        }
         // Route to writeprofile for BLE (both devices) or serial ESP32
         // RP2040 uses paste-mode upload, so don't shortcircuit for it
         const monitorState = window.__solarSimMonitorState;
@@ -18294,6 +18480,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           'trigger servo3',
           'trigger rotation',
           'program status',
+          // Far-Red LED
+          'fr on',
+          'fr off',
+          'fr pulse <minutes>',
           // Utility
           'status',
           'listprofiles',
@@ -19664,6 +19854,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
           const loadFromDeviceBtn = document.getElementById('loadFromDeviceBtn');
           [startBtn, stopBtn, rateSelect, sendBtn, scrollLockBtn, showStatusBtn, loadFromDeviceBtn].forEach(b => { if (b) b.disabled = !c; }); // helpBtn removed from disabling logic
+          // FR toggle + pulse buttons: connection-aware AND program-state-aware (see refreshFrControls)
+          if (typeof window.__refreshFrControls === 'function') window.__refreshFrControls();
           // When connected: disable both Connect buttons, enable Disconnect button
           // When disconnected: enable both Connect buttons, disable Disconnect button
           if (connectBtn) connectBtn.disabled = c;
@@ -19678,6 +19870,12 @@ https://github.com/odeepllama/SolarSim/tree/main
               window.__deviceProfile = null;
               window.__loadedProfile = null;
               window.__simPlayheadInterp = null; // Reset stale interpolation state
+              // Reset FR overlay so bulbs don't display stale "on" state after the device is gone
+              if (typeof window.__setFrState === 'function') window.__setFrState(false);
+              // Reset state flags that track live device conditions (pre-exposure + program running)
+              window.__frPreExposureActive = false;
+              window.__programRunning = false;
+              if (typeof window.__refreshFrControls === 'function') window.__refreshFrControls();
               if (typeof window.__updateProgramTitles === 'function') {
                 window.__updateProgramTitles();
               }
@@ -19700,14 +19898,24 @@ https://github.com/odeepllama/SolarSim/tree/main
             state.port = await navigator.serial.requestPort({ filters });
             await state.port.open({ baudRate: 115200 });
             state.connStartTs = performance.now();
-            setConnected(true); startReader(); log('Port opened');
+            // Infer device type from USB vendor ID so upload routing knows whether to use paste-mode (RP2040) or WP:/PS: line stream (ESP32).
+            try { state.deviceType = getDeviceType(state.port); } catch (_) { state.deviceType = 'unknown'; }
+            setConnected(true); startReader(); log('Port opened' + (state.deviceType && state.deviceType !== 'unknown' ? ' (' + state.deviceType.toUpperCase() + ')' : ''));
             // Sync browser time to RTC if device has one (command is silently ignored if no RTC)
             setTimeout(() => { try { const d = new Date(); const rtcCmd = `syncrtc ${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`; sendLine(rtcCmd, { silentEcho: true }); } catch (_) { } }, 300);
             return state.port;
           } catch (e) {
             state.port = null;
+            // Always reset the badge so it doesn't stay stuck on amber CONNECTING
+            badge('DISCONNECTED', 'red');
             const errMsg = (e.message || e.name || '').toLowerCase();
             const errName = (e.name || '').toLowerCase();
+            // NotFoundError from requestPort() means the user closed the browser port picker without selecting.
+            // Treat this as a silent cancellation — no toast, no misleading "No device found" message.
+            // (A real "device unplugged" error surfaces as NetworkError/InvalidStateError instead.)
+            if (errName === 'notfounderror') {
+              throw new Error('PICKER_CANCELLED');
+            }
             // Check for "port in use" errors - NotAllowedError is the standard for already-open ports
             if (errName === 'notallowederror' || errMsg.includes('notallowed') || errMsg.includes('in use') || errMsg.includes('already') || errMsg.includes('busy')) {
               throw new Error('PORT_IN_USE');
@@ -20012,6 +20220,150 @@ https://github.com/odeepllama/SolarSim/tree/main
           }
         }
         window.processIncoming = processIncoming; // expose for DemoEngine
+
+        // --- Far-Red LED overlay: state, toggle, and bulb positioning ---
+        // The state is driven by [FR] STATE ON/OFF and [FR] PREEXPOSURE ON/OFF lines emitted by
+        // the firmware (see fr_led_on / fr_start_pulse / fr_led_off in SolarSimulator.py).
+        // [PROGRAM] STATE RUNNING/IDLE gates the toggle button so users can't fire a bare
+        // pin drive mid-experiment (Q7). Toggle is optimistic: user click sends fr on/off;
+        // the echo confirms and repaints via handlePlainTextLine.
+        (function () {
+          let frOn = false;
+          function setFrVisual(on) {
+            frOn = !!on;
+            const bulbs = document.querySelectorAll('#frBulbs .fr-bulb');
+            bulbs.forEach(b => b.classList.toggle('on', frOn));
+            const btn = document.getElementById('frToggleBtn');
+            if (btn) btn.classList.toggle('on', frOn);
+          }
+          window.__setFrState = setFrVisual;
+          window.__frToggle = function () {
+            if (!window.__sendLine) return;
+            // Optimistic flip; firmware echo will re-confirm via [FR] STATE ON/OFF
+            window.__sendLine(frOn ? 'fr off' : 'fr on');
+          };
+
+          // --- Countdown timer for FR pulses + auto pre-exposure ---
+          // Client-side timer: started when we know a duration (user clicks FR 5m, or firmware emits
+          // [FR] PREEXPOSURE ON with a duration inferrable from FR_PREEXPOSURE_MINUTES).
+          // Stopped by [FR] STATE OFF or by hitting zero. Format: mm:ss.
+          let frCountdownEndMs = 0;
+          let frCountdownMode = ''; // 'pulse' | 'preexposure' | ''
+          let frCountdownTimerId = null;
+          function fmtMmss(sec) {
+            sec = Math.max(0, Math.round(sec));
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return m + ':' + (s < 10 ? '0' : '') + s;
+          }
+          function tickCountdown() {
+            const el = document.getElementById('frCountdown');
+            if (!el) return;
+            const remainMs = frCountdownEndMs - Date.now();
+            if (remainMs <= 0) {
+              stopFrCountdown();
+              return;
+            }
+            const label = frCountdownMode === 'preexposure' ? 'FR pre-exposure' : 'FR pulse';
+            el.textContent = label + ': ' + fmtMmss(remainMs / 1000) + ' remaining';
+            el.style.display = 'block';
+          }
+          function startFrCountdown(mode, durationSec) {
+            if (!durationSec || durationSec <= 0) return;
+            frCountdownMode = mode;
+            frCountdownEndMs = Date.now() + durationSec * 1000;
+            if (frCountdownTimerId) clearInterval(frCountdownTimerId);
+            frCountdownTimerId = setInterval(tickCountdown, 500);
+            tickCountdown();  // render immediately without waiting 500ms
+          }
+          function stopFrCountdown() {
+            if (frCountdownTimerId) { clearInterval(frCountdownTimerId); frCountdownTimerId = null; }
+            frCountdownMode = '';
+            frCountdownEndMs = 0;
+            const el = document.getElementById('frCountdown');
+            if (el) { el.textContent = ''; el.style.display = 'none'; }
+          }
+          window.__startFrCountdown = startFrCountdown;
+          window.__stopFrCountdown = stopFrCountdown;
+
+          // Intercept the FR 5m button so we can start the client-side countdown at the moment the
+          // command is sent (before firmware echo comes back). If we waited for the echo, the timer
+          // would already be 100-200 ms behind, and if the studio missed the echo entirely (busy
+          // reader, dropped bytes), the user would see no feedback at all.
+          const pulseBtn = document.getElementById('frPulseBtn');
+          if (pulseBtn) {
+            pulseBtn.addEventListener('click', function () {
+              // The button's onclick sends 'fr pulse 5'; keep the duration in sync with that literal.
+              startFrCountdown('pulse', 5 * 60);
+            });
+          }
+
+          // Enable/disable the FR buttons based on connection state and program-running state (Q7).
+          // Called from setConnected() and from handlePlainTextLine on [PROGRAM] STATE events.
+          function refreshFrControls() {
+            const toggleBtn = document.getElementById('frToggleBtn');
+            const pulseBtn = document.getElementById('frPulseBtn');
+            const ns = window.__solarSimMonitorState;
+            const connected = !!(ns && (ns.port || ns.bleDevice));
+            const running = !!window.__programRunning;
+            if (toggleBtn) {
+              // Bench-test button: disabled during program (Q7) so users can't accidentally
+              // fire a bare pin drive that skips the darkness/freeze semantics
+              toggleBtn.disabled = !connected || running;
+              toggleBtn.title = running
+                ? 'Disabled during program — use FR 5m for a mid-program dark pulse'
+                : (connected ? 'Toggle Far-Red array on/off (bench test — no time freeze, no panel blank)' : 'Connect a device first');
+            }
+            if (pulseBtn) {
+              pulseBtn.disabled = !connected;
+              pulseBtn.title = connected
+                ? 'Run a 5-minute dark FR pulse (freezes sim time, blanks sun panel, resumes when done)'
+                : 'Connect a device first';
+            }
+          }
+          window.__refreshFrControls = refreshFrControls;
+          // Position the 5 bulbs along an inner semicircle inside the sun arc.
+          // Recompute on canvas resize; wire an observer once DOM is ready.
+          function positionBulbs() {
+            const canvas = document.getElementById('sunArcCanvas');
+            const wrapper = document.getElementById('sunArcWrapper');
+            const bulbs = document.querySelectorAll('#frBulbs .fr-bulb');
+            if (!canvas || !wrapper || !bulbs.length) return;
+            // Canvas is 560x320 nominal. Use its rendered client size for correct scaling.
+            const w = canvas.clientWidth || canvas.width;
+            const h = canvas.clientHeight || canvas.height;
+            // Match drawArcBase geometry: padSide=36, arc R = (w - 72) / 2, center at (w/2, padTop + R)
+            const padTop = 18, padSide = 36;
+            const R = Math.max(6, (w - padSide * 2) / 2);
+            const centerX = w / 2;
+            const centerY = Math.min(h - 2, padTop + R);
+            // Place bulbs on an inner arc at ~80% of the sun arc radius (closer to the outer curve)
+            const innerR = R * 0.8;
+            // 5 bulbs evenly distributed from theta=15° to theta=165° (avoid clipping at the horizon)
+            const N = bulbs.length;
+            const thetaStart = Math.PI * (15 / 180);
+            const thetaEnd = Math.PI * (165 / 180);
+            for (let i = 0; i < N; i++) {
+              const t = (N === 1) ? 0.5 : i / (N - 1);
+              const theta = thetaStart + t * (thetaEnd - thetaStart);
+              const bx = centerX + innerR * Math.cos(theta);
+              const by = centerY - innerR * Math.sin(theta);
+              bulbs[i].style.left = bx + 'px';
+              bulbs[i].style.top = by + 'px';
+            }
+          }
+          window.__positionFrBulbs = positionBulbs;
+          // Observe wrapper resize to reflow bulbs
+          if (typeof ResizeObserver !== 'undefined') {
+            const canvas = document.getElementById('sunArcCanvas');
+            if (canvas) {
+              const ro = new ResizeObserver(() => positionBulbs());
+              ro.observe(canvas);
+            }
+          }
+          // Initial position (may need a rAF for layout to settle)
+          requestAnimationFrame(() => requestAnimationFrame(positionBulbs));
+        })();
         // Regex patterns for verbose text extraction
         const reSimTime = /sim(?:ulation)?\s*time\s*[:=]\s*(\d{1,2})[:h](\d{2})/i;
         // Simulation line that also includes a speed in parentheses e.g. "Simulation time: 07:54 (Speed: 100.0x)"
@@ -20091,6 +20443,34 @@ https://github.com/odeepllama/SolarSim/tree/main
         function handlePlainTextLine(line) {
           // Suppress BLE firmware diagnostics — not relevant when using serial connection
           if (/^\s*\[BLE\]/.test(line)) return;
+          // FR state events emitted by firmware (see fr_led_on/off in SolarSimulator.py).
+          // Update the arc overlay visual and let the line also flow through to the log for transparency.
+          if (/^\s*\[FR\]\s*STATE\s+ON\b/i.test(line)) { if (window.__setFrState) window.__setFrState(true); }
+          else if (/^\s*\[FR\]\s*STATE\s+OFF\b/i.test(line)) {
+            if (window.__setFrState) window.__setFrState(false);
+            // Stop any running countdown — pulse ended (naturally or via abort) before its timer expired
+            if (window.__stopFrCountdown) window.__stopFrCountdown();
+          }
+          // Also sync from `status` output line "FR LED State: ACTIVE" / "IDLE"
+          else if (/FR\s*LED\s*State\s*[:=]\s*ACTIVE/i.test(line)) { if (window.__setFrState) window.__setFrState(true); }
+          else if (/FR\s*LED\s*State\s*[:=]\s*IDLE/i.test(line)) { if (window.__setFrState) window.__setFrState(false); }
+          // Pre-exposure tracking: used to gate profile uploads (Q6) so users don't silently abort a dark treatment
+          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+ON\b/i.test(line)) {
+            window.__frPreExposureActive = true;
+            // Start countdown using FR_PREEXPOSURE_MINUTES from the form state (fallback to 5 if unknown)
+            if (window.__startFrCountdown) {
+              const fs = window.__profileBuilderState || {};
+              const mins = parseFloat(fs.FR_PREEXPOSURE_MINUTES) || 5;
+              window.__startFrCountdown('preexposure', mins * 60);
+            }
+          }
+          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+OFF\b/i.test(line)) {
+            window.__frPreExposureActive = false;
+            if (window.__stopFrCountdown) window.__stopFrCountdown();
+          }
+          // Program-running tracking: gates the FR toggle button (Q7)
+          else if (/^\s*\[PROGRAM\]\s*STATE\s+RUNNING\b/i.test(line)) { window.__programRunning = true; if (window.__refreshFrControls) window.__refreshFrControls(); }
+          else if (/^\s*\[PROGRAM\]\s*STATE\s+IDLE\b/i.test(line)) { window.__programRunning = false; if (window.__refreshFrControls) window.__refreshFrControls(); }
           // Suppress logging of full-length Simulation time lines
           if (reSimTime.test(line) || reSimWithSpeed.test(line)) {
             // Skip logging this line, but still parse it below for UI updates
@@ -21263,13 +21643,15 @@ https://github.com/odeepllama/SolarSim/tree/main
         function doSerialConnect() {
           ensurePort().catch(e => {
             const fullErr = (e.message || '').toLowerCase();
+            state.transport = null;
+            // Silent cancellation when the user closes the browser port picker — matches BLE behaviour
+            if (fullErr.includes('picker_cancelled')) return;
             let msg = 'Connection failure';
-            if (fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
+            if (fullErr.includes('port_in_use') || fullErr.includes('port already open') || fullErr.includes('already open') || fullErr.includes('in use') || fullErr.includes('notallowed')) {
               msg = 'The device port is already in use. Close any other tabs or apps (like Thonny) that might be connected, then try again.';
-            } else if (fullErr.includes('not found') || fullErr.includes('notfound')) {
+            } else if (fullErr.includes('port_not_found') || fullErr.includes('not found') || fullErr.includes('notfound')) {
               msg = 'No device found. Make sure the USB cable is plugged in and the board is powered on.';
             }
-            state.transport = null;
             log(msg, 'error');
           });
         }
@@ -21527,6 +21909,9 @@ https://github.com/odeepllama/SolarSim/tree/main
             {
               group: 'Utility Commands', commands: [
                 'fillpanel <r> <g> <b> [sec]       - Fill panel with RGB color for specified seconds',
+                'fr on                             - Turn Far-Red LED array on indefinitely',
+                'fr off                            - Turn Far-Red LED array off',
+                'fr pulse <minutes>                - Timed Far-Red pulse (auto-off after N minutes, max 60)',
                 'help all                          - Display this command summary',
                 'light camera <on|off>             - Turn camera lighting on or off',
                 'light rotation <on|off>           - Turn rotation lighting on or off',
@@ -21673,9 +22058,10 @@ https://github.com/odeepllama/SolarSim/tree/main
             await chosen.open({ baudRate: 115200 });
             state.port = chosen;
             state.connStartTs = performance.now();
+            try { state.deviceType = getDeviceType(state.port); } catch (_) { state.deviceType = 'unknown'; }
             setConnected(true);
             startReader();
-            log('Reconnected to previously granted serial port');
+            log('Reconnected to previously granted serial port' + (state.deviceType && state.deviceType !== 'unknown' ? ' (' + state.deviceType.toUpperCase() + ')' : ''));
           } catch (e) {
             // Don’t surface as error—just skip if not available/blocked
             console.warn('Auto-reconnect skipped:', e);
@@ -22253,6 +22639,10 @@ https://github.com/odeepllama/SolarSim/tree/main
           if (wasHidden && wrapper.style.display !== 'none' && ns.__sunArcAnimProgress === undefined) {
             ns.__sunArcAnimProgress = 0; // Initialize to 0 before animation starts
             startSunArcAnimation();
+          }
+          // Reposition FR overlay bulbs whenever the arc reappears (canvas dimensions are only valid when visible)
+          if (wasHidden && wrapper.style.display !== 'none' && window.__positionFrBulbs) {
+            requestAnimationFrame(() => requestAnimationFrame(window.__positionFrBulbs));
           }
         }
 
@@ -25890,9 +26280,16 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__dayWrapCount = (steps[0].day || 1) - 1;
           }
 
-          // Show banner
+          // Show banner and push the fixed top-button bar down so it doesn't hide under the banner
           const banner = document.getElementById('demoModeBanner');
-          if (banner) banner.style.display = 'block';
+          if (banner) {
+            banner.style.display = 'block';
+            const bar = document.getElementById('topButtonBar');
+            if (bar) {
+              const h = banner.getBoundingClientRect().height || 40;
+              bar.style.top = (26 + h) + 'px';
+            }
+          }
 
           // Update Demo button to show "Stop"
           const demoBtn = document.getElementById('demoBtn');
@@ -25933,9 +26330,11 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Skip UI cleanup if restarting (prevents flicker)
           if (window.__demoRestarting) return;
 
-          // Hide banner
+          // Hide banner and restore the top-button bar's original position
           const banner = document.getElementById('demoModeBanner');
           if (banner) banner.style.display = 'none';
+          const bar = document.getElementById('topButtonBar');
+          if (bar) bar.style.top = '26px';
 
           // Reset step index
           window.__currentStepIndex = 0;
