@@ -649,11 +649,17 @@ def fr_start_pulse(duration_ms, is_preexposure=False):
     is_preexposure=False flags this as a manual `fr pulse` (bench dark treatment).
     Both paths look identical to servos/rotation/sun-display via fr_darkness_mode()."""
     global fr_preexposure_active, fr_pulse_freeze_active
-    global fr_freeze_saved_time_scale
+    global fr_freeze_saved_time_scale, panel_buffer
     global TIME_SCALE, frozen_sim_time_minutes, frozen_abs_sim_time
-    # Blank the sun panel — dark treatment
-    pixels.fill((0, 0, 0))
+    # Blank the sun panel — dark treatment.
+    # CRITICAL: sync panel_buffer to (0,0,0) so update_sun_display's delta compare treats
+    # the pixels as truly black. Otherwise panel_buffer still holds the pre-freeze sun frame
+    # and, after the freeze ends, the delta loop sees "nothing changed" and leaves the panel
+    # dark until some other event (e.g. a camera trigger) mutates the pixels.
+    black = (0, 0, 0)
+    pixels.fill(black)
     pixels.write()
+    panel_buffer = [black] * len(pixels)
     # Freeze sim time (unless already frozen from HOLD mode)
     now_ms = ticks_ms()
     abs_sim_time, current_time_minutes = get_sim_time(START_TIME_HHMM, ticks_diff(now_ms, start_real_time_ms), TIME_SCALE)
@@ -3779,7 +3785,7 @@ def _boot_pre_exposure():
     """Fire FR pre-exposure immediately at boot if FR_PREEXPOSURE_TRIGGER == 'BOOT'.
     Runs before run_simulation()'s main loop, so sim time hasn't started ticking yet;
     we set start_real_time_ms + freeze sim time at START_TIME_HHMM up front."""
-    global fr_preexposure_active, fr_freeze_saved_time_scale
+    global fr_preexposure_active, fr_freeze_saved_time_scale, panel_buffer
     global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes, frozen_abs_sim_time
     if FR_PREEXPOSURE_TRIGGER == "BOOT" and FR_PREEXPOSURE_MINUTES > 0:
         # Set sim-time anchor + freeze at the configured start-of-day
@@ -3787,7 +3793,10 @@ def _boot_pre_exposure():
         start_hhmm_minutes = (START_TIME_HHMM // 100) * 60 + (START_TIME_HHMM % 100)
         frozen_sim_time_minutes = start_hhmm_minutes
         frozen_abs_sim_time = start_hhmm_minutes
-        pixels.fill((0, 0, 0)); pixels.write()
+        # Blank panel and sync panel_buffer so delta redraw resumes cleanly after freeze ends
+        black = (0, 0, 0)
+        pixels.fill(black); pixels.write()
+        panel_buffer = [black] * len(pixels)
         fr_freeze_saved_time_scale = TIME_SCALE if TIME_SCALE != 0 else 1
         TIME_SCALE = 0
         fr_preexposure_active = True
