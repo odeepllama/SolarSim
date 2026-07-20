@@ -213,6 +213,19 @@ https://github.com/odeepllama/SolarSim/tree/main
       gap: 14px;
     }
 
+    /* Far-Red Pre-Exposure section: keep the two fields at the same narrow width as
+       neighbouring sections (Time & Date etc.) instead of stretching to half-row each.
+       Cap each field's max-width so the banner can occupy the remaining flex space. */
+    .group-grid.pre-exposure .field {
+      max-width: 220px;
+    }
+    /* The warning banner sits alongside the two fields as a flex item, filling
+       whatever room remains on the row. Wraps to below the fields on narrow viewports. */
+    .group-grid.pre-exposure #frPreExposureWarning {
+      flex: 1 1 300px;
+      min-width: 0;
+    }
+
     /*  Rotation Imaging section: force 3-column grid layout */
     .group-grid.rotation-imaging {
       display: grid;
@@ -7122,10 +7135,13 @@ https://github.com/odeepllama/SolarSim/tree/main
               grid.className = 'group-grid imaging-illumination';
             } else if (group.name === 'Imaging Servos & Timing') {
               grid.className = 'group-grid imaging-servo-timing';
+            } else if (group.name === 'Far-Red Pre-Exposure') {
+              grid.className = 'group-grid pre-exposure';
             }
             grid.id = sectionId;
 
-            // Determine correct display value based on whether section uses CSS grid or flex
+            // Determine correct display value based on whether section uses CSS grid or flex.
+            // Pre-exposure stays flex (like Time & Date) so it can host the warning banner as a flex item.
             const isGridBased = grid.classList.contains('rotation-imaging')
               || grid.classList.contains('imaging-illumination')
               || grid.classList.contains('imaging-servo-timing')
@@ -7164,12 +7180,14 @@ https://github.com/odeepllama/SolarSim/tree/main
             fs.appendChild(legend);
             fs.appendChild(grid);
 
-            // FR pre-exposure: append an always-visible dark-period warning banner
+            // FR pre-exposure: append an always-visible dark-period warning banner as a flex item
+            // alongside the two input fields. The .group-grid.pre-exposure CSS rule handles sizing
+            // (fields capped at 220px, banner takes remaining row space via flex-grow).
             if (group.name === 'Far-Red Pre-Exposure') {
               const banner = document.createElement('div');
               banner.id = 'frPreExposureWarning';
-              banner.textContent = '⚠ Sun panel will be dark for the pre-exposure duration before each program starts. Uncheck if you don\'t have the Far Red LED array installed.';
-              banner.style.cssText = 'grid-column: 1 / -1; margin-top: 6px; padding: 6px 10px; background: #fff4d6; border: 1px solid #e0b040; border-radius: 4px; font-size: 0.85em; color: #6a4a00;';
+              banner.textContent = '⚠ By default, the panel array will be off for the FR pre-exposure duration before the program starts. Set to OFF if you don\'t have the Far Red LED array installed or do not want FR pre-exposure.';
+              banner.style.cssText = 'padding: 6px 10px; background: #fff4d6; border: 1px solid #e0b040; border-radius: 4px; font-size: 0.85em; line-height: 1.4; color: #6a4a00; align-self: end;';
               banner.style.display = (state.FR_PREEXPOSURE_TRIGGER && state.FR_PREEXPOSURE_TRIGGER !== 'OFF') ? 'block' : 'none';
               grid.appendChild(banner);
             }
@@ -7263,8 +7281,8 @@ https://github.com/odeepllama/SolarSim/tree/main
           frBanner.style.display = showFR ? 'block' : 'none';
           if (showFR) {
             frBanner.textContent = trig === 'BOOT'
-              ? '⚠ Sun panel will be dark for the pre-exposure duration at device power-on. Set to OFF if you don\'t have the Far Red LED array installed.'
-              : '⚠ Sun panel will be dark for the pre-exposure duration before each program starts. Set to OFF if you don\'t have the Far Red LED array installed.';
+              ? '⚠ By default, the panel array will be off for the FR pre-exposure duration at device power-on. Set to OFF if you don\'t have the Far Red LED array installed or do not want FR pre-exposure.'
+              : '⚠ By default, the panel array will be off for the FR pre-exposure duration before the program starts. Set to OFF if you don\'t have the Far Red LED array installed or do not want FR pre-exposure.';
           }
         }
       }
