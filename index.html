@@ -1003,6 +1003,118 @@ https://github.com/odeepllama/SolarSim/tree/main
       border-radius: 3px;
     }
 
+    /* RP2040 LED Display Guide */
+    .led-guide-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 6px;
+      padding: 4px 10px 4px 4px;
+      background: #f4f6f8;
+      border: 1px solid #cfd8dc;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: #0d47a1;
+      font-weight: 500;
+      vertical-align: middle;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .led-guide-toggle:hover,
+    .led-guide-toggle:focus-visible {
+      background: #e3f2fd;
+      border-color: #90caf9;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      outline: none;
+    }
+
+    .led-guide-toggle svg {
+      display: block;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .led-guide {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin: 8px 0 16px;
+    }
+
+    .led-guide svg {
+      flex: 0 0 320px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .led-legend {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.9rem;
+      max-width: 340px;
+    }
+
+    .led-legend li {
+      margin: 6px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .led-legend .sw {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      margin-top: 3px;
+      flex-shrink: 0;
+      border: 2px solid;
+      background: #2a0000;
+    }
+
+    .led-legend .sw.hold {
+      border-color: #ffb300;
+    }
+
+    .led-legend .sw.autoload {
+      border-color: #ff6f00;
+    }
+
+    .led-legend .sw.speed {
+      border-color: #ff1744;
+    }
+
+    .led-legend .sw.mode {
+      border-color: #d500f9;
+    }
+
+    .led-legend .sw.time {
+      border-color: #888;
+      background: #1a1a1a;
+    }
+
+    .btn-table {
+      border-collapse: collapse;
+      margin: 8px 0 16px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    .btn-table th,
+    .btn-table td {
+      border: 1px solid #d0d7de;
+      padding: 6px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .btn-table th {
+      background: #f4f6f8;
+    }
+
     @media (max-width:680px) {
       #helpPanel {
         width: 100%;
@@ -4547,6 +4659,151 @@ https://github.com/odeepllama/SolarSim/tree/main
               <a href="#" id="helpRestartGuide" style="color:#2196f3; text-decoration:underline; font-weight:500;">Click
                 here to restart the guide</a> and get a guided walkthrough of all features.
             </p>
+            <p style="margin:8px 0 0; font-size:0.9rem; color:#1565c0;">
+              💡 <a href="#ledDisplayGuide" style="color:#2196f3; text-decoration:underline; font-weight:500;">Jump
+                to the RP2040 LED Display guide</a> to decode the 5×5 pixels and button actions on the device.
+            </p>
+          </div>
+
+          <h4 id="ledDisplayGuide">RP2040 LED Display (5×5)</h4>
+          <p>The Spotpear <strong>RP2040:bit</strong> board's 5×5 red LED matrix and two buttons show live device state.
+            <button class="led-guide-toggle" onclick="toggleLedGuide(this)" aria-label="Show the LED display guide">
+              <svg viewBox="0 0 100 100" width="52" height="52" aria-hidden="true">
+                <rect x="0" y="0" width="100" height="100" rx="6" fill="#0a0a0a" />
+                <!-- Row 0: 3 grey, orange, amber -->
+                <circle cx="20" cy="20" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="20" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="20" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="20" r="6" fill="#2a0000" stroke="#ff6f00" stroke-width="1.5" />
+                <circle cx="80" cy="20" r="6" fill="#2a0000" stroke="#ffb300" stroke-width="1.5" />
+                <!-- Rows 1-4: 3 grey, magenta, red -->
+                <circle cx="20" cy="35" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="35" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="35" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="35" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="35" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+                <circle cx="20" cy="50" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="50" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="50" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="50" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="50" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+                <circle cx="20" cy="65" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="65" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="65" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="65" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="65" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+                <circle cx="20" cy="80" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="80" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="80" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="80" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="80" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+              </svg>
+              <span>Click to learn more ▼</span>
+            </button>
+          </p>
+          <div class="help-detail" style="display:none;">
+            <p style="margin:0 0 8px;">Active pixels glow red; inactive pixels are off. The diagram below is oriented
+              <strong>as viewed from the front of the board</strong>, with <strong>Button A</strong> on the left and
+              <strong>Button B</strong> on the right.</p>
+            <div class="led-guide">
+              <svg viewBox="0 0 320 240" width="320" height="240" role="img"
+                aria-label="Spotpear RP2040:bit board with 5 by 5 red LED matrix and A/B buttons">
+                <!-- Black PCB body -->
+                <rect x="0" y="0" width="320" height="240" rx="14" fill="#0a0a0a" stroke="#333" stroke-width="1" />
+                <!-- Faint silkscreen border around the matrix zone (60% pixel size, tighter spacing) -->
+                <rect x="96" y="44" width="128" height="128" rx="4" fill="none" stroke="#1a1a1a" stroke-width="1" />
+                <!-- Button A (left) -->
+                <circle cx="30" cy="108" r="16" fill="#222" stroke="#555" stroke-width="1" />
+                <text x="30" y="113" text-anchor="middle" font-size="13" fill="#bbb" font-family="sans-serif"
+                  font-weight="bold">A</text>
+                <!-- Button B (right) -->
+                <circle cx="290" cy="108" r="16" fill="#222" stroke="#555" stroke-width="1" />
+                <text x="290" y="113" text-anchor="middle" font-size="13" fill="#bbb" font-family="sans-serif"
+                  font-weight="bold">B</text>
+                <!-- LEDs: r=8, spacing 24, centered at x=160,y=108. Cols: 112,136,160,184,208. Rows: 60,84,108,132,156 -->
+                <!-- Row 0 -->
+                <circle cx="112" cy="60" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="60" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="60" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="60" r="8" fill="#2a0000" stroke="#ff6f00" stroke-width="2" />
+                <circle cx="208" cy="60" r="8" fill="#2a0000" stroke="#ffb300" stroke-width="2" />
+                <!-- Row 1 -->
+                <circle cx="112" cy="84" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="84" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="84" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="84" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="84" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <!-- Row 2 -->
+                <circle cx="112" cy="108" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="108" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="108" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="108" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="108" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <!-- Row 3 -->
+                <circle cx="112" cy="132" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="132" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="132" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="132" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="132" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <!-- Row 4 -->
+                <circle cx="112" cy="156" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="156" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="156" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="156" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="156" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <!-- Bottom edge labels — single row, spread across width -->
+                <text x="80" y="210" text-anchor="middle" font-size="18" font-weight="bold" fill="#888"
+                  font-family="sans-serif">TIME</text>
+                <text x="160" y="210" text-anchor="middle" font-size="18" font-weight="bold" fill="#d500f9"
+                  font-family="sans-serif">MODE</text>
+                <text x="240" y="210" text-anchor="middle" font-size="18" font-weight="bold" fill="#ff1744"
+                  font-family="sans-serif">SPEED</text>
+              </svg>
+              <ul class="led-legend">
+                <li><span class="sw hold"></span> <strong>Top-RIGHT pixel</strong> — flashes red (~1 Hz) when the
+                  simulation is in HOLD (paused, speed 0).</li>
+                <li><span class="sw autoload"></span> <strong>Top row, 4th pixel from left</strong> — lit when
+                  <em>auto-load latest profile</em> is DISABLED. Off when auto-load is enabled (the default).</li>
+                <li><span class="sw speed"></span> <strong>Rightmost column</strong> — speed, counting up from bottom:
+                  1 LED = 1×, 2 = 6×, 3 = 60×, 4 = 600×. Only the middle pixel lit = CUSTOM speed. All off = HOLD.</li>
+                <li><span class="sw mode"></span> <strong>4th column from left</strong> — solar mode, counting up from
+                  bottom: 1 LED = BASIC, 2 = SCIENTIFIC, 3 = CUSTOM.</li>
+                <li><span class="sw time"></span> <strong>Left 3 columns</strong> — cycle through the current simulation
+                  time, one 3×5 character at a time: <code>H</code> → <code>H</code> → <code>:</code> →
+                  <code>M</code> → <code>M</code> → pause, then repeat.</li>
+              </ul>
+            </div>
+            <h5 style="margin:12px 0 4px; font-size:0.95rem;">Button Actions</h5>
+            <table class="btn-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Button A</strong> — short press</td>
+                  <td>Cycle solar mode: BASIC → SCIENTIFIC → CUSTOM → BASIC</td>
+                </tr>
+                <tr>
+                  <td><strong>Button A</strong> — long press (≥1 s)</td>
+                  <td>Jump simulation time to solar noon</td>
+                </tr>
+                <tr>
+                  <td><strong>Button B</strong> — short press</td>
+                  <td>Cycle speed: HOLD → 1× → CUSTOM → 6× → 60× → 600× → HOLD</td>
+                </tr>
+                <tr>
+                  <td><strong>Button B</strong> — long press (≥1 s)</td>
+                  <td>Jump simulation time to the configured start time</td>
+                </tr>
+                <tr>
+                  <td><strong>A + B</strong> — held together (≥1 s)</td>
+                  <td>Toggle auto-load of latest profile (persisted to <code>autoload.cfg</code>)</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <h4>Interface Controls</h4>
@@ -5099,6 +5356,143 @@ https://github.com/odeepllama/SolarSim/tree/main
               <a href="#" id="helpRestartGuideJa"
                 style="color:#2196f3; text-decoration:underline; font-weight:500;">ここをクリックしてガイドを再開</a>し、すべての機能のガイドを参照してください。
             </p>
+            <p style="margin:8px 0 0; font-size:0.9rem; color:#1565c0;">
+              💡 <a href="#ledDisplayGuideJa" style="color:#2196f3; text-decoration:underline; font-weight:500;">RP2040
+                LEDディスプレイガイドへ移動</a>して、デバイス上の5×5ピクセルとボタン操作を確認できます。
+            </p>
+          </div>
+
+          <h4 id="ledDisplayGuideJa">RP2040 LED ディスプレイ (5×5)</h4>
+          <p>Spotpear <strong>RP2040:bit</strong> ボードの5×5赤色LEDマトリクスと2つのボタンは、デバイスの状態をリアルタイムで表示します。
+            <button class="led-guide-toggle" onclick="toggleLedGuide(this)" aria-label="LEDディスプレイガイドを表示">
+              <svg viewBox="0 0 100 100" width="52" height="52" aria-hidden="true">
+                <rect x="0" y="0" width="100" height="100" rx="6" fill="#0a0a0a" />
+                <circle cx="20" cy="20" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="20" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="20" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="20" r="6" fill="#2a0000" stroke="#ff6f00" stroke-width="1.5" />
+                <circle cx="80" cy="20" r="6" fill="#2a0000" stroke="#ffb300" stroke-width="1.5" />
+                <circle cx="20" cy="35" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="35" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="35" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="35" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="35" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+                <circle cx="20" cy="50" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="50" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="50" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="50" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="50" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+                <circle cx="20" cy="65" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="65" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="65" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="65" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="65" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+                <circle cx="20" cy="80" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="35" cy="80" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="50" cy="80" r="6" fill="#2a0000" stroke="#888" stroke-width="1.5" />
+                <circle cx="65" cy="80" r="6" fill="#2a0000" stroke="#d500f9" stroke-width="1.5" />
+                <circle cx="80" cy="80" r="6" fill="#2a0000" stroke="#ff1744" stroke-width="1.5" />
+              </svg>
+              <span>詳細を表示 ▼</span>
+            </button>
+          </p>
+          <div class="help-detail" style="display:none;">
+            <p style="margin:0 0 8px;">点灯しているピクセルは赤く光り、消灯しているピクセルは黒（消灯）です。以下の図は<strong>ボードを正面から見た状態</strong>で、<strong>ボタンA</strong>が左、<strong>ボタンB</strong>が右にあります。
+            </p>
+            <div class="led-guide">
+              <svg viewBox="0 0 320 240" width="320" height="240" role="img"
+                aria-label="Spotpear RP2040:bit ボードと5×5赤色LEDマトリクス、A/Bボタン">
+                <rect x="0" y="0" width="320" height="240" rx="14" fill="#0a0a0a" stroke="#333" stroke-width="1" />
+                <rect x="96" y="44" width="128" height="128" rx="4" fill="none" stroke="#1a1a1a" stroke-width="1" />
+                <circle cx="30" cy="108" r="16" fill="#222" stroke="#555" stroke-width="1" />
+                <text x="30" y="113" text-anchor="middle" font-size="13" fill="#bbb" font-family="sans-serif"
+                  font-weight="bold">A</text>
+                <circle cx="290" cy="108" r="16" fill="#222" stroke="#555" stroke-width="1" />
+                <text x="290" y="113" text-anchor="middle" font-size="13" fill="#bbb" font-family="sans-serif"
+                  font-weight="bold">B</text>
+                <!-- Row 0 -->
+                <circle cx="112" cy="60" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="60" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="60" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="60" r="8" fill="#2a0000" stroke="#ff6f00" stroke-width="2" />
+                <circle cx="208" cy="60" r="8" fill="#2a0000" stroke="#ffb300" stroke-width="2" />
+                <!-- Row 1 -->
+                <circle cx="112" cy="84" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="84" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="84" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="84" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="84" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <!-- Row 2 -->
+                <circle cx="112" cy="108" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="108" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="108" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="108" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="108" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <!-- Row 3 -->
+                <circle cx="112" cy="132" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="132" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="132" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="132" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="132" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <!-- Row 4 -->
+                <circle cx="112" cy="156" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="136" cy="156" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="160" cy="156" r="8" fill="#2a0000" stroke="#888" stroke-width="2" />
+                <circle cx="184" cy="156" r="8" fill="#2a0000" stroke="#d500f9" stroke-width="2" />
+                <circle cx="208" cy="156" r="8" fill="#2a0000" stroke="#ff1744" stroke-width="2" />
+                <text x="80" y="210" text-anchor="middle" font-size="18" font-weight="bold" fill="#888"
+                  font-family="sans-serif">時刻</text>
+                <text x="160" y="210" text-anchor="middle" font-size="18" font-weight="bold" fill="#d500f9"
+                  font-family="sans-serif">モード</text>
+                <text x="240" y="210" text-anchor="middle" font-size="18" font-weight="bold" fill="#ff1744"
+                  font-family="sans-serif">速度</text>
+              </svg>
+              <ul class="led-legend">
+                <li><span class="sw hold"></span> <strong>右上のピクセル</strong> —
+                  シミュレーションがHOLD（一時停止、速度0）の時、約1Hzで赤く点滅します。</li>
+                <li><span class="sw autoload"></span> <strong>上段の左から4番目のピクセル</strong> —
+                  <em>最新プロファイル自動読み込み</em>が<strong>無効</strong>の時に点灯します。有効時（デフォルト）は消灯します。
+                </li>
+                <li><span class="sw speed"></span> <strong>一番右の列</strong> —
+                  速度インジケータ（下から順に）：1個 = 1×、2個 = 6×、3個 = 60×、4個 = 600×。中央のみ点灯 = CUSTOM速度。すべて消灯 = HOLD。</li>
+                <li><span class="sw mode"></span> <strong>左から4列目</strong> —
+                  ソーラーモード（下から順に）：1個 = BASIC、2個 = SCIENTIFIC、3個 = CUSTOM。</li>
+                <li><span class="sw time"></span> <strong>左側の3列</strong> —
+                  現在のシミュレーション時刻を3×5の文字で1文字ずつ順に表示します：<code>H</code> → <code>H</code> → <code>:</code> →
+                  <code>M</code> → <code>M</code> → 一時停止、繰り返し。</li>
+              </ul>
+            </div>
+            <h5 style="margin:12px 0 4px; font-size:0.95rem;">ボタン操作</h5>
+            <table class="btn-table">
+              <thead>
+                <tr>
+                  <th>操作</th>
+                  <th>動作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>ボタンA</strong> — 短押し</td>
+                  <td>ソーラーモード切替: BASIC → SCIENTIFIC → CUSTOM → BASIC</td>
+                </tr>
+                <tr>
+                  <td><strong>ボタンA</strong> — 長押し（1秒以上）</td>
+                  <td>シミュレーション時刻をソーラー正午へジャンプ</td>
+                </tr>
+                <tr>
+                  <td><strong>ボタンB</strong> — 短押し</td>
+                  <td>速度切替: HOLD → 1× → CUSTOM → 6× → 60× → 600× → HOLD</td>
+                </tr>
+                <tr>
+                  <td><strong>ボタンB</strong> — 長押し（1秒以上）</td>
+                  <td>シミュレーション時刻を設定した開始時刻へジャンプ</td>
+                </tr>
+                <tr>
+                  <td><strong>A + B</strong> — 同時長押し（1秒以上）</td>
+                  <td>最新プロファイルの自動読み込みを切替（<code>autoload.cfg</code>に保存）</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <h4>インターフェース操作</h4>
@@ -17443,9 +17837,28 @@ https://github.com/odeepllama/SolarSim/tree/main
           detail.style.display = isVisible ? 'none' : 'block';
           const isJa = (currentLang === 'ja');
           const moreText = isJa ? '詳細を表示 ▼' : 'Learn more ▼';
-          const lessText = isJa ? '詳細を非表示 ▲' : 'Learn less ▲';
+          const lessText = isJa ? '閉じる ▲' : 'Hide ▲';
           button.textContent = isVisible ? moreText : lessText;
         }
+      }
+
+      // LED display guide toggle — button contains both an <svg> and a <span> label,
+      // so we can't use toggleHelpDetail (which overwrites textContent and would wipe
+      // the SVG). This variant only rewrites the trailing <span>.
+      function toggleLedGuide(button) {
+        // Find the next .help-detail sibling of the button's parent <p>
+        let detail = button.parentElement ? button.parentElement.nextElementSibling : null;
+        while (detail && !detail.classList.contains('help-detail')) {
+          detail = detail.nextElementSibling;
+        }
+        if (!detail) return;
+        const isVisible = detail.style.display !== 'none';
+        detail.style.display = isVisible ? 'none' : 'block';
+        const isJa = (typeof currentLang !== 'undefined' && currentLang === 'ja');
+        const moreText = isJa ? '詳細を表示 ▼' : 'Click to learn more ▼';
+        const lessText = isJa ? '閉じる ▲' : 'Hide ▲';
+        const label = button.querySelector('span');
+        if (label) label.textContent = isVisible ? moreText : lessText;
       }
 
       // Event buttons
