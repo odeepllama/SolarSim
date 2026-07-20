@@ -6916,7 +6916,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         PROGRAM_REPEATS: { label: 'Program Repeats (-1 = ∞)', tooltip: 'How many passes; -1 loops forever.', type: 'number', default: -1, showIf: s => s.PROGRAM_ENABLED },
         PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED },
         FR_PREEXPOSURE_TRIGGER: { label: 'FR Pre-Exposure Trigger', tooltip: 'When to run the 730nm dark pre-exposure. OFF: never. PROGRAM_START: at first program step. BOOT: immediately at device power-on.', type: 'select', options: ['OFF', 'PROGRAM_START', 'BOOT'], default: 'PROGRAM_START' },
-        FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure Duration (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_TRIGGER && s.FR_PREEXPOSURE_TRIGGER !== 'OFF' }
+        FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_TRIGGER && s.FR_PREEXPOSURE_TRIGGER !== 'OFF' }
       };
 
       // Keys to highlight (commonly changed)
