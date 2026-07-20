@@ -1058,21 +1058,22 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .led-legend li {
-      margin: 6px 0;
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
+      margin: 8px 0;
+      padding-left: 34px;
+      position: relative;
+      line-height: 1.45;
     }
 
     .led-legend .sw {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
+      position: absolute;
+      left: 4px;
+      top: 3px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      margin-top: 3px;
-      flex-shrink: 0;
-      border: 2px solid;
-      background: #2a0000;
+      border: 3px solid;
+      background: #0a0a0a;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
     }
 
     .led-legend .sw.hold {
@@ -1092,23 +1093,31 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     .led-legend .sw.time {
-      border-color: #888;
-      background: #1a1a1a;
+      border-color: #bbb;
     }
 
     .btn-table {
       border-collapse: collapse;
       margin: 8px 0 16px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       width: 100%;
+      table-layout: fixed;
     }
 
     .btn-table th,
     .btn-table td {
       border: 1px solid #d0d7de;
-      padding: 6px 10px;
+      padding: 6px 8px;
       text-align: left;
       vertical-align: top;
+      line-height: 1.4;
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
+
+    .btn-table th:first-child,
+    .btn-table td:first-child {
+      width: 46%;
     }
 
     .btn-table th {
@@ -4783,23 +4792,23 @@ https://github.com/odeepllama/SolarSim/tree/main
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>Button A</strong> — short press</td>
+                  <td><strong>Button&nbsp;A</strong><br>short press</td>
                   <td>Cycle solar mode: BASIC → SCIENTIFIC → CUSTOM → BASIC</td>
                 </tr>
                 <tr>
-                  <td><strong>Button A</strong> — long press (≥1 s)</td>
+                  <td><strong>Button&nbsp;A</strong><br>long press (≥1&nbsp;s)</td>
                   <td>Jump simulation time to solar noon</td>
                 </tr>
                 <tr>
-                  <td><strong>Button B</strong> — short press</td>
+                  <td><strong>Button&nbsp;B</strong><br>short press</td>
                   <td>Cycle speed: HOLD → 1× → CUSTOM → 6× → 60× → 600× → HOLD</td>
                 </tr>
                 <tr>
-                  <td><strong>Button B</strong> — long press (≥1 s)</td>
+                  <td><strong>Button&nbsp;B</strong><br>long press (≥1&nbsp;s)</td>
                   <td>Jump simulation time to the configured start time</td>
                 </tr>
                 <tr>
-                  <td><strong>A + B</strong> — held together (≥1 s)</td>
+                  <td><strong>A&nbsp;+&nbsp;B</strong><br>held together (≥1&nbsp;s)</td>
                   <td>Toggle auto-load of latest profile (persisted to <code>autoload.cfg</code>)</td>
                 </tr>
               </tbody>
@@ -5472,23 +5481,23 @@ https://github.com/odeepllama/SolarSim/tree/main
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>ボタンA</strong> — 短押し</td>
+                  <td><strong>ボタンA</strong><br>短押し</td>
                   <td>ソーラーモード切替: BASIC → SCIENTIFIC → CUSTOM → BASIC</td>
                 </tr>
                 <tr>
-                  <td><strong>ボタンA</strong> — 長押し（1秒以上）</td>
+                  <td><strong>ボタンA</strong><br>長押し（1秒以上）</td>
                   <td>シミュレーション時刻をソーラー正午へジャンプ</td>
                 </tr>
                 <tr>
-                  <td><strong>ボタンB</strong> — 短押し</td>
+                  <td><strong>ボタンB</strong><br>短押し</td>
                   <td>速度切替: HOLD → 1× → CUSTOM → 6× → 60× → 600× → HOLD</td>
                 </tr>
                 <tr>
-                  <td><strong>ボタンB</strong> — 長押し（1秒以上）</td>
+                  <td><strong>ボタンB</strong><br>長押し（1秒以上）</td>
                   <td>シミュレーション時刻を設定した開始時刻へジャンプ</td>
                 </tr>
                 <tr>
-                  <td><strong>A + B</strong> — 同時長押し（1秒以上）</td>
+                  <td><strong>A&nbsp;+&nbsp;B</strong><br>同時長押し（1秒以上）</td>
                   <td>最新プロファイルの自動読み込みを切替（<code>autoload.cfg</code>に保存）</td>
                 </tr>
               </tbody>
