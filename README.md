@@ -84,6 +84,7 @@ The web interface is hosted on GitHub Pages — no installation required:
 - **OLED Display**: SSD1306 128×64 for on-device status with ESP32-S3 (optional)
 - **Camera Trigger**: Optional Bluetooth camera trigger for use with smartphones
 - **RTC Module**: Optional DS3231 real-time clock for automatic time sync (SDA → pin 20, SCL → pin 19 via a micro:bit breakout board)
+- **Far-Red LED Array**: Optional 730 nm pulse for phytochrome / phototropism experiments — 5× 3W FR LEDs driven by a Mean Well LDD-700H off a 12 V supply. Wired to GP13 (micro:bit edge P16). See [Far-Red LED wiring](docs/far_red_wiring.md).
 - **3D-Printed Parts**: Housing and mounting components ([Printable STL files](https://www.printables.com/model/1632518-solarsim-an-inexpensive-open-source-benchtop-solar))
 
 <p align="center">
