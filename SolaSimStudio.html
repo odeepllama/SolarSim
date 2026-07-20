@@ -4358,11 +4358,14 @@ https://github.com/odeepllama/SolarSim/tree/main
               <span class="fr-bulb" data-bulb="3"></span>
               <span class="fr-bulb" data-bulb="4"></span>
             </div>
-            <div id="frControls" style="position:absolute; left:50%; bottom:12%; transform:translateX(-50%); display:flex; gap:6px; pointer-events:auto;">
-              <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off (bench test — no time freeze, no panel blank). Disabled while a program is running." disabled
-                onclick="if(window.__frToggle) window.__frToggle();">FR ON/OFF</button>
-              <button id="frPulseBtn" type="button" class="fr-pulse" title="Run a 5-minute dark FR pulse (freezes sim time, blanks sun panel, resumes when done)" disabled
-                onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR 5m</button>
+            <div id="frControls" style="position:absolute; left:50%; bottom:12%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:4px; pointer-events:auto;">
+              <div style="display:flex; gap:6px;">
+                <button id="frToggleBtn" type="button" class="fr-toggle" title="Toggle Far-Red array on/off (bench test — no time freeze, no panel blank). Disabled while a program is running." disabled
+                  onclick="if(window.__frToggle) window.__frToggle();">FR ON/OFF</button>
+                <button id="frPulseBtn" type="button" class="fr-pulse" title="Run a 5-minute dark FR pulse (freezes sim time, blanks sun panel, resumes when done)" disabled
+                  onclick="if(window.__sendLine) window.__sendLine('fr pulse 5');">FR 5m</button>
+              </div>
+              <div id="frCountdown" style="display:none; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:0.85rem; color:#8a1010; font-weight:600; letter-spacing:0.02em;"></div>
             </div>
           </div>
         </div>
@@ -20222,6 +20225,61 @@ https://github.com/odeepllama/SolarSim/tree/main
             window.__sendLine(frOn ? 'fr off' : 'fr on');
           };
 
+          // --- Countdown timer for FR pulses + auto pre-exposure ---
+          // Client-side timer: started when we know a duration (user clicks FR 5m, or firmware emits
+          // [FR] PREEXPOSURE ON with a duration inferrable from FR_PREEXPOSURE_MINUTES).
+          // Stopped by [FR] STATE OFF or by hitting zero. Format: mm:ss.
+          let frCountdownEndMs = 0;
+          let frCountdownMode = ''; // 'pulse' | 'preexposure' | ''
+          let frCountdownTimerId = null;
+          function fmtMmss(sec) {
+            sec = Math.max(0, Math.round(sec));
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return m + ':' + (s < 10 ? '0' : '') + s;
+          }
+          function tickCountdown() {
+            const el = document.getElementById('frCountdown');
+            if (!el) return;
+            const remainMs = frCountdownEndMs - Date.now();
+            if (remainMs <= 0) {
+              stopFrCountdown();
+              return;
+            }
+            const label = frCountdownMode === 'preexposure' ? 'FR pre-exposure' : 'FR pulse';
+            el.textContent = label + ': ' + fmtMmss(remainMs / 1000) + ' remaining';
+            el.style.display = 'block';
+          }
+          function startFrCountdown(mode, durationSec) {
+            if (!durationSec || durationSec <= 0) return;
+            frCountdownMode = mode;
+            frCountdownEndMs = Date.now() + durationSec * 1000;
+            if (frCountdownTimerId) clearInterval(frCountdownTimerId);
+            frCountdownTimerId = setInterval(tickCountdown, 500);
+            tickCountdown();  // render immediately without waiting 500ms
+          }
+          function stopFrCountdown() {
+            if (frCountdownTimerId) { clearInterval(frCountdownTimerId); frCountdownTimerId = null; }
+            frCountdownMode = '';
+            frCountdownEndMs = 0;
+            const el = document.getElementById('frCountdown');
+            if (el) { el.textContent = ''; el.style.display = 'none'; }
+          }
+          window.__startFrCountdown = startFrCountdown;
+          window.__stopFrCountdown = stopFrCountdown;
+
+          // Intercept the FR 5m button so we can start the client-side countdown at the moment the
+          // command is sent (before firmware echo comes back). If we waited for the echo, the timer
+          // would already be 100-200 ms behind, and if the studio missed the echo entirely (busy
+          // reader, dropped bytes), the user would see no feedback at all.
+          const pulseBtn = document.getElementById('frPulseBtn');
+          if (pulseBtn) {
+            pulseBtn.addEventListener('click', function () {
+              // The button's onclick sends 'fr pulse 5'; keep the duration in sync with that literal.
+              startFrCountdown('pulse', 5 * 60);
+            });
+          }
+
           // Enable/disable the FR buttons based on connection state and program-running state (Q7).
           // Called from setConnected() and from handlePlainTextLine on [PROGRAM] STATE events.
           function refreshFrControls() {
@@ -20370,13 +20428,28 @@ https://github.com/odeepllama/SolarSim/tree/main
           // FR state events emitted by firmware (see fr_led_on/off in SolarSimulator.py).
           // Update the arc overlay visual and let the line also flow through to the log for transparency.
           if (/^\s*\[FR\]\s*STATE\s+ON\b/i.test(line)) { if (window.__setFrState) window.__setFrState(true); }
-          else if (/^\s*\[FR\]\s*STATE\s+OFF\b/i.test(line)) { if (window.__setFrState) window.__setFrState(false); }
+          else if (/^\s*\[FR\]\s*STATE\s+OFF\b/i.test(line)) {
+            if (window.__setFrState) window.__setFrState(false);
+            // Stop any running countdown — pulse ended (naturally or via abort) before its timer expired
+            if (window.__stopFrCountdown) window.__stopFrCountdown();
+          }
           // Also sync from `status` output line "FR LED State: ACTIVE" / "IDLE"
           else if (/FR\s*LED\s*State\s*[:=]\s*ACTIVE/i.test(line)) { if (window.__setFrState) window.__setFrState(true); }
           else if (/FR\s*LED\s*State\s*[:=]\s*IDLE/i.test(line)) { if (window.__setFrState) window.__setFrState(false); }
           // Pre-exposure tracking: used to gate profile uploads (Q6) so users don't silently abort a dark treatment
-          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+ON\b/i.test(line)) { window.__frPreExposureActive = true; }
-          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+OFF\b/i.test(line)) { window.__frPreExposureActive = false; }
+          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+ON\b/i.test(line)) {
+            window.__frPreExposureActive = true;
+            // Start countdown using FR_PREEXPOSURE_MINUTES from the form state (fallback to 5 if unknown)
+            if (window.__startFrCountdown) {
+              const fs = window.__profileBuilderState || {};
+              const mins = parseFloat(fs.FR_PREEXPOSURE_MINUTES) || 5;
+              window.__startFrCountdown('preexposure', mins * 60);
+            }
+          }
+          else if (/^\s*\[FR\]\s*PREEXPOSURE\s+OFF\b/i.test(line)) {
+            window.__frPreExposureActive = false;
+            if (window.__stopFrCountdown) window.__stopFrCountdown();
+          }
           // Program-running tracking: gates the FR toggle button (Q7)
           else if (/^\s*\[PROGRAM\]\s*STATE\s+RUNNING\b/i.test(line)) { window.__programRunning = true; if (window.__refreshFrControls) window.__refreshFrControls(); }
           else if (/^\s*\[PROGRAM\]\s*STATE\s+IDLE\b/i.test(line)) { window.__programRunning = false; if (window.__refreshFrControls) window.__refreshFrControls(); }
