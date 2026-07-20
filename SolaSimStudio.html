@@ -115,7 +115,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     body {
-      font-family: system-ui, Arial, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
       margin: 0;
       padding: 0 1rem 3rem;
       background: #abbea6;
@@ -158,7 +158,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-weight: 600;
       font-size: 1.1rem;
       padding: 4px 12px;
-      background: #dcdcdc;
+      background: #e8e8e8;
+      border: 1px solid #bbb;
       border-radius: 4px;
     }
 
@@ -166,6 +167,17 @@ https://github.com/odeepllama/SolarSim/tree/main
     .jp-heading {
       font-size: 1.25rem !important;
       letter-spacing: 0.01em;
+    }
+
+    /* Japanese tracking: CJK glyphs benefit from a hair-thin letter-spacing in dense UI.
+       Applied to buttons, labels, table cells, and legends — NOT body prose (avoids the
+       stretched look on longer help copy). Triggered by document.documentElement.lang. */
+    :lang(ja) button,
+    :lang(ja) label,
+    :lang(ja) th,
+    :lang(ja) td,
+    :lang(ja) legend {
+      letter-spacing: 0.02em;
     }
 
     #appTitle {
@@ -855,8 +867,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       z-index: 900;
       background: #FFD700;
       color: #111;
-      border: 1px solid #b58a00;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+      border: 2px solid #8a6a00;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
       font-size: 1rem;
       padding: 8px 12px;
       height: auto;
@@ -922,7 +934,7 @@ https://github.com/odeepllama/SolarSim/tree/main
     }
 
     #helpPanel header {
-      padding: 12px 16px;
+      padding: 14px 18px;
       background: #1f2933;
       color: #fff;
       display: flex;
@@ -933,13 +945,14 @@ https://github.com/odeepllama/SolarSim/tree/main
     #helpPanel header h3 {
       margin: 0;
       font-size: 1.2rem;
+      line-height: 1.3;
     }
 
     #helpPanel .help-body {
       padding: 12px 18px 32px;
       overflow-y: auto;
-      font-size: .9rem;
-      line-height: 1.5;
+      font-size: 0.95rem;
+      line-height: 1.6;
     }
 
     #helpPanel .help-body h4 {
@@ -986,13 +999,18 @@ https://github.com/odeepllama/SolarSim/tree/main
       color: #0066cc;
       cursor: pointer;
       font-size: .85rem;
-      padding: 0 4px;
+      padding: 1px 6px;
       text-decoration: underline;
       font-weight: 500;
+      border-radius: 3px;
+      transition: background 0.15s;
     }
 
-    .help-expand-btn:hover {
+    .help-expand-btn:hover,
+    .help-expand-btn:focus-visible {
       color: #0052a3;
+      background: #e3f2fd;
+      outline: none;
     }
 
     .help-detail {
@@ -1033,6 +1051,48 @@ https://github.com/odeepllama/SolarSim/tree/main
       display: block;
       border-radius: 4px;
       flex-shrink: 0;
+    }
+
+    /* Restart-guide pill link (green, sits inside the "New to SolaSim Studio?" callout) */
+    .restart-guide-btn {
+      display: inline-block;
+      background: #28a745;
+      color: #fff !important;
+      text-decoration: none !important;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: background 0.15s, box-shadow 0.15s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .restart-guide-btn:hover,
+    .restart-guide-btn:focus-visible {
+      background: #218838;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      outline: none;
+    }
+
+    /* Demo mode button — distinct blue-tinted variant of .secondary */
+    .btn-demo {
+      background: #e3f2fd;
+      color: #1565c0;
+      border: 1px solid #90caf9;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-demo:hover:not(:disabled),
+    .btn-demo:focus-visible {
+      background: #d1e6fb;
+      border-color: #64b5f6;
+      outline: none;
+    }
+
+    .btn-demo:active:not(:disabled) {
+      background: #bbdcf7;
+      border-color: #42a5f5;
     }
 
     .led-guide {
@@ -1560,7 +1620,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
     #ftueSpotlight .spotlight-hole {
       position: absolute;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 40px 8px rgba(255, 215, 0, 0.9), 0 0 80px 16px rgba(255, 215, 0, 0.5);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 40px 8px rgba(255, 215, 0, 0.9), 0 0 80px 16px rgba(255, 215, 0, 0.5);
       border-radius: 8px;
       transition: all 0.6s ease;
       pointer-events: none;
@@ -2527,6 +2587,8 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-size: .8rem;
       line-height: 1.3;
       text-align: center;
+      word-break: break-word;
+      overflow-wrap: break-word;
       transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
 
@@ -3967,6 +4029,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     }
 
     .mode-btn:first-child {
@@ -4439,8 +4502,7 @@ https://github.com/odeepllama/SolarSim/tree/main
       title=""><span class="icon open">▶</span><span class="icon close">✕</span><span class="txt"></span></button>
     <span id="monitorConnBadge" class="pill red" title=""></span>
     <button id="monitorConnectBtn" type="button" class="secondary" title=""></button>
-    <button id="demoBtn" type="button" class="secondary"
-      style="background:#e3f2fd; color:#1565c0; border:1px solid #90caf9; font-weight:600;"
+    <button id="demoBtn" type="button" class="secondary btn-demo"
       title="Run a simulated demo of your program without a connected device"
       onclick="if(window.__demoEngine){if(window.__demoEngine.isRunning()){window.__demoEngine.stop();}else{window.__demoEngine.start();}}">▶
       Demo</button>
@@ -4525,7 +4587,7 @@ https://github.com/odeepllama/SolarSim/tree/main
   <body>
     <div id="topButtonBar"
       style="position:fixed; top:26px; right:24px; z-index:2000; display:flex; flex-direction:row; gap:8px; align-items:center;">
-      <span id="versionDate" style="font-size:0.7rem; color:#888; margin-right:2px; white-space:nowrap;"></span>
+      <span id="versionDate" style="font-size:0.7rem; color:#3a3a3a; font-weight:600; margin-right:2px; white-space:nowrap;"></span>
       <script>
         (function () {
           try {
@@ -4664,9 +4726,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
             <strong style="color:#0d47a1;">🎓 New to SolaSim Studio?</strong>
-            <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
-              <a href="#" id="helpRestartGuide" style="color:#2196f3; text-decoration:underline; font-weight:500;">Click
-                here to restart the guide</a> and get a guided walkthrough of all features.
+            <p style="margin:8px 0 0; font-size:0.9rem; color:#1565c0;">
+              <a href="#" id="helpRestartGuide" class="restart-guide-btn">▶ Restart the guide</a>
+              <span style="margin-left:6px;">for a guided walkthrough of all features.</span>
             </p>
             <p style="margin:8px 0 0; font-size:0.9rem; color:#1565c0;">
               💡 <a href="#ledDisplayGuide" style="color:#2196f3; text-decoration:underline; font-weight:500;">Jump
@@ -5361,9 +5423,9 @@ https://github.com/odeepllama/SolarSim/tree/main
 
           <div style="background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:12px; margin:0 0 16px;">
             <strong style="color:#0d47a1;">🎓 SolaSim Studio が初めてですか？</strong>
-            <p style="margin:6px 0 0; font-size:0.9rem; color:#1565c0;">
-              <a href="#" id="helpRestartGuideJa"
-                style="color:#2196f3; text-decoration:underline; font-weight:500;">ここをクリックしてガイドを再開</a>し、すべての機能のガイドを参照してください。
+            <p style="margin:8px 0 0; font-size:0.9rem; color:#1565c0;">
+              <a href="#" id="helpRestartGuideJa" class="restart-guide-btn">▶ ガイドを再開</a>
+              <span style="margin-left:6px;">すべての機能のガイドを参照してください。</span>
             </p>
             <p style="margin:8px 0 0; font-size:0.9rem; color:#1565c0;">
               💡 <a href="#ledDisplayGuideJa" style="color:#2196f3; text-decoration:underline; font-weight:500;">RP2040
@@ -7042,6 +7104,7 @@ https://github.com/odeepllama/SolarSim/tree/main
 
       function setLanguage(lang) {
         currentLang = lang;
+        document.documentElement.lang = lang;
         localStorage.setItem(LANG_STORAGE_KEY, lang);
         // Main navigation and monitor controls (legacy direct mapping)
         document.getElementById('appTitle').innerHTML = '<img class="logo-img" src="data:image/jpeg;base64,' + SOLASIM_LOGO_B64 + '" alt="SolaSim"> Studio - Benchtop Solar Simulator';
