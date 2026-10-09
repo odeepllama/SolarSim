@@ -41,6 +41,83 @@ https://github.com/odeepllama/SolarSim/tree/main
 <html lang="en">
 
 <head>
+  <script>
+    if (window.location.search.includes('ws=true')) {
+      console.log('Injecting WebSocket shim for navigator.serial');
+      class MockSerialPort {
+        constructor() {
+          this.ws = null;
+          this.readable = null;
+          this.writable = null;
+          this._readerController = null;
+        }
+        async open(options) {
+          return new Promise((resolve, reject) => {
+            let wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            let wsUrl = wsProtocol + '//' + window.location.host + '/ws/solarsim';
+            this.ws = new WebSocket(wsUrl);
+            this.ws.binaryType = 'arraybuffer';
+            this.ws.onopen = () => {
+              this.readable = new ReadableStream({
+                start: (controller) => { this._readerController = controller; }
+              });
+              this.writable = new WritableStream({
+                write: (chunk) => {
+                  if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(chunk);
+                  }
+                }
+              });
+              resolve();
+            };
+            this.ws.onerror = (err) => reject(err);
+            this.ws.onclose = () => {
+              if (this._readerController) {
+                try { this._readerController.close(); } catch(e){}
+              }
+            };
+            this.ws.onmessage = async (evt) => {
+              if (this._readerController) {
+                if (evt.data instanceof ArrayBuffer) {
+                  this._readerController.enqueue(new Uint8Array(evt.data));
+                } else if (evt.data instanceof Blob) {
+                  const buf = await evt.data.arrayBuffer();
+                  this._readerController.enqueue(new Uint8Array(buf));
+                } else if (typeof evt.data === 'string') {
+                  const encoder = new TextEncoder();
+                  this._readerController.enqueue(encoder.encode(evt.data));
+                }
+              }
+            };
+          });
+        }
+        async close() {
+          if (this.ws) this.ws.close();
+        }
+        getInfo() { return { usbVendorId: 0x2E8A }; }
+      }
+      const mockPort = new MockSerialPort();
+      const mockSerial = {
+        requestPort: async () => mockPort,
+        getPorts: async () => [mockPort]
+      };
+      
+      try {
+        Object.defineProperty(Navigator.prototype, 'serial', {
+          get: () => mockSerial,
+          configurable: true
+        });
+      } catch (e) { console.error('Failed to patch Navigator.prototype', e); }
+      
+      try {
+        Object.defineProperty(navigator, 'serial', {
+          value: mockSerial,
+          writable: true,
+          configurable: true
+        });
+      } catch (e) {}
+    }
+  </script>
   <meta charset="UTF-8" />
   <title>SolarSimStudio</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
