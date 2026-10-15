@@ -36,6 +36,43 @@ from time import ticks_ms, sleep_ms, sleep_us, ticks_diff
 # Buffer for accumulating serial input before processing
 serial_command_buffer = ""
 
+# Self-Driving Plant module (optional overlay)
+_HAS_SDP = False
+_sdp_instance = None
+_sdp_car = None
+try:
+    from car_driver import CarDriver
+    from self_driving import SelfDrivingPlant
+    _HAS_SDP = True
+except ImportError:
+    pass
+
+CONFIG_FILE = "solarsim_config.json"
+DEFAULT_SYSTEM_CONFIG = {
+    "servo3_role": "camera",
+    "table_zero_offset": 0.0,
+    "car_speed": 0.3,
+    "car_move_duration_ms": 2000
+}
+
+def load_system_config():
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return DEFAULT_SYSTEM_CONFIG.copy()
+
+def save_system_config(cfg_updates):
+    try:
+        cfg = load_system_config()
+        cfg.update(cfg_updates)
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(cfg, f)
+        return True
+    except Exception as e:
+        print(f"[CONFIG] Error saving {CONFIG_FILE}: {e}")
+        return False
+
 # ======================================================
 # I. CORE SIMULATION PARAMETERS
 # ======================================================
@@ -397,14 +434,16 @@ servo_pin_2 = machine.Pin(SERVO_2_PIN_NUM)
 servo_pwm_2 = PWM(servo_pin_2)
 servo_pwm_2.freq(PWM_FREQ)
 
-# Secondary camera trigger servo 3 (Can always physically duplicate the servo2 signal)
-servo_pin_3 = machine.Pin(SERVO_3_PIN_NUM)
-servo_pwm_3 = PWM(servo_pin_3)
-servo_pwm_3.freq(PWM_FREQ)
+# Dynamic recruitment for GP11 (Servo 3 vs. SDP Car)
+SERVO3_ROLE = "CAMERA"
+servo_pin_3 = None
+servo_pwm_3 = None
 
 # Set initial servo positions
 def set_servo_angle(pwm_obj, angle):
     """Set servo to specific angle (0-270 degrees)."""
+    if pwm_obj is None:
+        return False
     # Constrain angle to valid range
     angle = max(0, min(SERVO_ANGLE_RANGE, angle))
    
@@ -420,10 +459,72 @@ def set_servo_angle(pwm_obj, angle):
         print(f"Error setting servo angle: {e}")
         return False
 
-# Initialize servo positions
+def _sdp_jump_time(target_minutes):
+    global start_real_time_ms, frozen_sim_time_minutes
+    now = ticks_ms()
+    if TIME_SCALE == 0:
+        frozen_sim_time_minutes = target_minutes
+    else:
+        start_real_time_ms = _reanchor_start_time(
+            target_minutes, TIME_SCALE, now, START_TIME_HHMM, start_real_time_ms)
+    print(f"[SDP] Sim time -> {int(target_minutes)//60:02d}:{int(target_minutes)%60:02d}")
+
+def init_servo3_role(role):
+    """Dynamically recruit GP11 as CAMERA shutter servo or SDP continuous CAR motor."""
+    global SERVO3_ROLE, servo_pwm_3, servo_pin_3, _sdp_car, _sdp_instance
+    role_clean = str(role).strip().upper()
+    if role_clean not in ("CAMERA", "CAR"):
+        role_clean = "CAMERA"
+    
+    if role_clean == "CAR":
+        if not _HAS_SDP:
+            print("[CONFIG] SDP modules (car_driver/self_driving) not found; staying CAMERA")
+            role_clean = "CAMERA"
+        else:
+            if servo_pwm_3 is not None:
+                try:
+                    servo_pwm_3.deinit()
+                except Exception:
+                    pass
+                servo_pwm_3 = None
+            if _sdp_car is None:
+                cfg = load_system_config()
+                _sdp_car = CarDriver(pin=SERVO_3_PIN_NUM,
+                                     reed_west_pin=12,
+                                     reed_east_pin=13,
+                                     output_fn=print)
+                _sdp_instance = SelfDrivingPlant(_sdp_car, output_fn=print, jump_time_fn=_sdp_jump_time, config=cfg)
+            SERVO3_ROLE = "CAR"
+            print("[CONFIG] GP11 recruited as SDP CAR (Continuous PWM, West=GP12, East=GP13)")
+            return "CAR"
+    
+    # Otherwise role is CAMERA
+    if _sdp_car is not None:
+        try:
+            _sdp_car.stop()
+            _sdp_car.deinit()
+        except Exception:
+            pass
+        _sdp_car = None
+        _sdp_instance = None
+    if servo_pwm_3 is None:
+        try:
+            servo_pin_3 = machine.Pin(SERVO_3_PIN_NUM)
+            servo_pwm_3 = PWM(servo_pin_3)
+            servo_pwm_3.freq(PWM_FREQ)
+            set_servo_angle(servo_pwm_3, CAMERA_SERVO_REST_ANGLE)
+        except Exception as e:
+            print(f"[CONFIG] Error setting up servo3 as CAMERA: {e}")
+    else:
+        set_servo_angle(servo_pwm_3, CAMERA_SERVO_REST_ANGLE)
+    SERVO3_ROLE = "CAMERA"
+    print("[CONFIG] GP11 configured as CAMERA 2 shutter servo")
+    return "CAMERA"
+
+# Initialize table and camera 1 servos
 set_servo_angle(servo_pwm_1, TABLE_SERVO_START_ANGLE)
 set_servo_angle(servo_pwm_2, CAMERA_SERVO_REST_ANGLE)
-set_servo_angle(servo_pwm_3, CAMERA_SERVO_REST_ANGLE)
+# Note: servo3 is initialized via init_servo3_role during startup sequence below
 
 # --- Servo1 Nonlinear PWM Calibration Table ---
 SERVO1_PWM_CALIBRATION_3TO4= {
@@ -467,7 +568,87 @@ def set_servo1_angle(angle):
         return False
 
 def get_rotation_camera_pwm():
-    return servo_pwm_2 if ROTATION_CAMERA_SERVO == 2 else servo_pwm_3
+    if ROTATION_CAMERA_SERVO == 3 and SERVO3_ROLE == "CAMERA" and servo_pwm_3 is not None:
+        return servo_pwm_3
+    return servo_pwm_2
+
+# --- Turntable Angle Control (Servo 1, 3:4 gear ratio, 0-360° platform) ---
+current_table_angle = 0.0          # Current table angle in degrees (0.0 to 360.0)
+target_table_angle = 0.0           # Commanded target table angle in degrees
+table_slew_active = False          # True while slewing between angles
+table_slew_direction = 1           # +1 for CW, -1 for CCW
+last_table_step_time_ms = 0        # Timestamp of last fine slew step
+
+def command_rotate_table(target_deg):
+    """Slew turntable directly to an absolute angle (0.0 - 360.0)."""
+    global target_table_angle, table_slew_direction, table_slew_active, last_table_step_time_ms
+    target_deg = float(target_deg) % 360.0
+    if abs(target_deg - current_table_angle) < 0.05:
+        print(f"[TURNTABLE] Already at {current_table_angle:.1f} deg")
+        return
+    
+    target_table_angle = target_deg
+    table_slew_direction = 1 if target_table_angle > current_table_angle else -1
+    table_slew_active = True
+    last_table_step_time_ms = ticks_ms()
+    print(f"[TURNTABLE] Slew started: {current_table_angle:.1f}° -> {target_table_angle:.1f}° ({'CW' if table_slew_direction > 0 else 'CCW'})")
+
+def command_rotate_relative(delta_deg):
+    """Slew turntable additively (+/- delta) with bidirectional auto-rewind unwinding."""
+    global target_table_angle, table_slew_direction, table_slew_active, last_table_step_time_ms
+    delta = float(delta_deg)
+    if abs(delta) < 0.05:
+        return
+    
+    raw_target = current_table_angle + delta
+    if 0.0 <= raw_target <= 360.0:
+        target_table_angle = raw_target
+        table_slew_direction = 1 if delta >= 0 else -1
+        print(f"[TURNTABLE] Relative move {delta:+.1f}° -> {target_table_angle:.1f}° ({'CW' if table_slew_direction > 0 else 'CCW'})")
+    elif raw_target > 360.0:
+        # Wrap past 360°: Unwind backwards CCW to final target without hitting 270° servo endstop
+        target_table_angle = raw_target % 360.0
+        table_slew_direction = -1
+        print(f"[TURNTABLE] Angle wraps past 360° -> auto-rewinding CCW to {target_table_angle:.1f}°")
+    else: # raw_target < 0.0
+        # Wrap below 0°: Turn forward CW to final target without hitting 0° servo endstop
+        target_table_angle = (raw_target % 360.0 + 360.0) % 360.0
+        table_slew_direction = 1
+        print(f"[TURNTABLE] Angle wraps below 0° -> turning CW to {target_table_angle:.1f}°")
+    
+    table_slew_active = True
+    last_table_step_time_ms = ticks_ms()
+
+def command_rotate_home():
+    """Return turntable to 0.0° home."""
+    command_rotate_table(0.0)
+
+def update_table_slew(now_ms):
+    """Called in main loop: smoothly steps current_table_angle towards target_table_angle."""
+    global current_table_angle, table_slew_active, last_table_step_time_ms
+    if not table_slew_active:
+        return
+    
+    if ticks_diff(now_ms, last_table_step_time_ms) >= FINE_ROTATION_STEP_INTERVAL_MS:
+        step = FINE_ROTATION_INCREMENT_DEGREES * table_slew_direction
+        next_angle = current_table_angle + step
+        
+        arrived = False
+        if table_slew_direction > 0 and next_angle >= target_table_angle:
+            current_table_angle = target_table_angle
+            arrived = True
+        elif table_slew_direction < 0 and next_angle <= target_table_angle:
+            current_table_angle = target_table_angle
+            arrived = True
+        else:
+            current_table_angle = next_angle
+        
+        set_servo1_angle(current_table_angle)
+        last_table_step_time_ms = now_ms
+        
+        if arrived:
+            table_slew_active = False
+            print(f"[TURNTABLE] Arrived at {current_table_angle:.1f} deg")
 
 # --- Matrix Display Functions ---
 # matrix_display_columns[0] (buffer col 0) = GP25 = rightmost column (as viewed from the front)
@@ -1568,6 +1749,10 @@ def update_standalone_servo3(now_ms):
     global servo3_state, last_servo3_trigger_ms, servo3_trigger_start_ms
     global servo3_using_lighting, camera_lighting_active, servo2_using_lighting, camera_light_hold_until_ms, rotation_lighting_active
 
+    # Skip if GP11 is recruited as SDP CAR or not initialized as CAMERA servo
+    if SERVO3_ROLE != "CAMERA" or servo_pwm_3 is None:
+        return
+
     # Skip during any FR dark treatment (auto pre-exposure OR manual `fr pulse`) — plant must stay in darkness
     if fr_darkness_mode():
         return
@@ -2154,6 +2339,41 @@ def deactivate_rotation_lighting():
 
 def handle_command(command_str):
     """Parses and executes a command received over serial."""
+    global SERVO3_ROLE, current_table_angle, target_table_angle, table_slew_active
+    # Self-Driving Plant commands — intercept before normal parsing
+    if command_str.startswith('SDP:'):
+        subcmd = command_str[4:].strip()
+        if SERVO3_ROLE == "CAR" and _HAS_SDP and _sdp_instance:
+            if subcmd == 'START':
+                _sdp_instance.start()
+            elif subcmd == 'STOP':
+                _sdp_instance.stop()
+            elif subcmd == 'TRIGGER':
+                _sdp_instance.trigger()
+            elif subcmd == 'STATUS?':
+                print(_sdp_instance.get_status_compact())
+            elif subcmd == 'STATUS':
+                print(_sdp_instance.get_status_str())
+            elif subcmd == 'CONFIG?':
+                print(_sdp_instance.get_config_str())
+            elif subcmd.startswith('CONFIG '):
+                _sdp_instance.configure(subcmd[7:])
+            elif subcmd.startswith('ROTATE DEG='):
+                try:
+                    ang = float(subcmd[11:].strip())
+                    command_rotate_table(ang)
+                except ValueError:
+                    print(f"[SDP] Invalid ROTATE DEG: {subcmd}")
+            elif subcmd == 'ROTATE?':
+                print(f"[SDP] Current commanded rotation angle: {current_table_angle:.1f}°")
+            else:
+                print(f"[SDP] Unknown: {subcmd}")
+        else:
+            if subcmd in ('STATUS?', 'STATUS'):
+                print("[SDP] Ignored: servo3 configured for CAMERA mode")
+            else:
+                print(f"[SDP] Ignored ({subcmd}): servo3 configured for CAMERA mode")
+        return
     global TIME_SCALE, start_real_time_ms, frozen_sim_time_minutes, frozen_abs_sim_time
     global program_running, current_program_step, PROGRAM_STEPS, START_TIME_HHMM
     global servo2_state, servo2_controlled_by_rotation, servo2_trigger_start_ms, last_servo2_trigger_ms
@@ -2176,6 +2396,46 @@ def handle_command(command_str):
     command = parts[0]
     
     try:
+        if command == "rot" and len(parts) >= 2:
+            try:
+                deg = float(parts[1])
+                command_rotate_table(deg)
+            except ValueError:
+                print("[SERIAL CMD] Error: rot requires float degrees (0-360)")
+            return
+        elif command == "rot_rel" and len(parts) >= 2:
+            try:
+                delta = float(parts[1])
+                command_rotate_relative(delta)
+            except ValueError:
+                print("[SERIAL CMD] Error: rot_rel requires float delta degrees")
+            return
+        elif command in ("rot_home", "rothex", "home_turntable"):
+            command_rotate_home()
+            return
+        elif command == "rot_status":
+            print(f"[TURNTABLE] current={current_table_angle:.1f} target={target_table_angle:.1f} slewing={table_slew_active} speed={ROTATION_SPEED_PRESET}")
+            return
+        elif command == "config":
+            if len(parts) >= 3 and parts[1] == "servo3":
+                new_role = parts[2].lower()
+                if new_role in ("camera", "car"):
+                    actual_role = init_servo3_role(new_role)
+                    save_system_config({"servo3_role": actual_role.lower()})
+                    print(f"[CONFIG] servo3 role set and saved as {actual_role}")
+                else:
+                    print("[CONFIG] Error: config servo3 must be 'camera' or 'car'")
+                return
+            elif len(parts) == 1:
+                cfg = load_system_config()
+                cfg["servo3_role"] = SERVO3_ROLE.lower()
+                cfg["current_table_angle"] = current_table_angle
+                print(f"[CONFIG] {json.dumps(cfg)}")
+                return
+        elif command in ("ident", "device:info?", "device:info", "*idn?"):
+            print(f'[DEVICE:INFO] {{"name":"SolarSim","version":"2.1","servo3_role":"{SERVO3_ROLE.lower()}","table_angle":{current_table_angle:.1f},"fr_led":true}}')
+            return
+
         if command == "set" and len(parts) >= 3:
             param = parts[1]
             value = parts[2]
@@ -3517,11 +3777,18 @@ def run_simulation():
         # Update the 360° imaging rotation cycle (servos operate independently now)
         update_rotation_cycle(now_ms, abs_sim_time, TIME_SCALE)
         
+        # Update table slew (arbitrary angle commanding: rot, rot_rel, rot_home)
+        update_table_slew(now_ms)
+        
         # Update the standalone servo2 (camera trigger) at regular intervals
         update_standalone_servo2(now_ms)
         
         # Update the standalone servo3 (second camera trigger) at regular intervals
         update_standalone_servo3(now_ms)
+
+        # Self-Driving Plant tick (when GP11 is recruited as CAR)
+        if _HAS_SDP and _sdp_instance and SERVO3_ROLE == "CAR" and _sdp_instance.state != 'IDLE':
+            _sdp_instance.tick()
 
         # Update FR LED auto-off timer (and trigger deferred program start when pre-exposure completes)
         update_fr_led(now_ms)
@@ -3763,6 +4030,11 @@ def _attempt_autoload():
 gc.collect()
 free_mem = gc.mem_free(); alloc_mem = gc.mem_alloc(); total_mem = free_mem + alloc_mem
 print(f"Memory utilization: {alloc_mem/total_mem*100:.1f}%")
+
+# Initialize persistent configuration (including GP11 role)
+_sys_cfg = load_system_config()
+init_servo3_role(_sys_cfg.get("servo3_role", "camera"))
+
 # Load persisted autoload preference (if present) BEFORE attempting autoload
 def _load_autoload_pref():
     global AUTO_LOAD_LATEST_PROFILE
@@ -3805,6 +4077,9 @@ def _boot_pre_exposure():
         print("[FR] PREEXPOSURE ON")
 
 _boot_pre_exposure()
+
+# Announce device identity and capability handshake for host software (SolarSimCV)
+print(f'[DEVICE:INFO] {{"name":"SolarSim","version":"2.1","servo3_role":"{SERVO3_ROLE.lower()}","table_angle":{current_table_angle:.1f},"fr_led":true}}')
 
 print("Solar Simulator Starting!      ****   Type \"help\" for available commands.   ****")
 sleep_ms(500)
