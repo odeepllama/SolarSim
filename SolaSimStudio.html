@@ -22549,6 +22549,7 @@ https://github.com/odeepllama/SolarSim/tree/main
           // Request an immediate arc refresh in case day/night boundary just changed
           try { const ns = window.__solarSimMonitorState; if (ns && ns.__sunArc && ns.__sunArc.refresh) { ns.__sunArc.refresh(); ns.__sunArc.updateVisibility && ns.__sunArc.updateVisibility(); } } catch (_) { }
         }
+        window.sendStatusSilent = sendStatusSilent;
         // Manual visible status is provided by Show Status button; no separate refresh icon button
 
         // Visible status output with smooth scrolling
@@ -23354,7 +23355,13 @@ https://github.com/odeepllama/SolarSim/tree/main
             return;
           }
           // Online mode: send via serial/BLE
-          try { await window.__sendLine(line, { silentEcho: true }); setTimeout(() => sendStatusSilent(), 300); } catch (e) { try { } catch (_) { } }
+          try {
+            await window.__sendLine(line, { silentEcho: true });
+            setTimeout(() => {
+              if (typeof sendStatusSilent === 'function') sendStatusSilent();
+              else if (typeof window.sendStatusSilent === 'function') window.sendStatusSilent();
+            }, 300);
+          } catch (e) { try { } catch (_) { } }
         }
         // Touch device detection — prompt() for custom input on touch, inline inputs on desktop
         const _isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
