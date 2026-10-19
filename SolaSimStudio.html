@@ -7470,7 +7470,7 @@ https://github.com/odeepllama/SolarSim/tree/main
         PROGRAM_ENABLED: { label: 'Program Enabled', tooltip: 'Enable scripted program steps block.', type: 'checkbox', default: true },
         PROGRAM_REPEATS: { label: 'Program Repeats (-1 = ∞)', tooltip: 'How many passes; -1 loops forever.', type: 'number', default: -1, showIf: s => s.PROGRAM_ENABLED },
         PROGRAM_STEPS: { label: 'Program Steps', tooltip: 'Table of scheduled simulation actions.', type: 'special', showIf: s => s.PROGRAM_ENABLED },
-        FR_PREEXPOSURE_TRIGGER: { label: 'FR Pre-Exposure Trigger', tooltip: 'When to run the 730nm dark pre-exposure. OFF: never. PROGRAM_START: at first program step. BOOT: immediately at device power-on.', type: 'select', options: ['OFF', 'PROGRAM_START', 'BOOT'], default: 'PROGRAM_START' },
+        FR_PREEXPOSURE_TRIGGER: { label: 'FR Pre-Exposure Trigger', tooltip: 'When to run the 730nm dark pre-exposure. OFF: never. PROGRAM_START: at first program step. BOOT: immediately at device power-on.', type: 'select', options: ['OFF', 'PROGRAM_START', 'BOOT'], default: 'OFF' },
         FR_PREEXPOSURE_MINUTES: { label: 'FR Pre-Exposure (min)', tooltip: 'Duration of the far-red pulse (1–30 min). 5 minutes is the standard for phytochrome depletion.', type: 'number', min: 1, max: 30, default: 5, showIf: s => s.FR_PREEXPOSURE_TRIGGER && s.FR_PREEXPOSURE_TRIGGER !== 'OFF' }
       };
 
@@ -7859,7 +7859,17 @@ https://github.com/odeepllama/SolarSim/tree/main
         if (key === 'IMAGES_PER_ROTATION') { recomputeDegreesPerImage(); document.getElementById('DEGREES_PER_IMAGE').value = state.DEGREES_PER_IMAGE; }
         if (key === 'PROGRAM_ENABLED') { refreshConditionalVisibility(); if (typeof window.__updateFieldsetVisibility === 'function') window.__updateFieldsetVisibility(); }
         if (key === 'SOLAR_MODE') { refreshConditionalVisibility(); }
-        if (key === 'FR_PREEXPOSURE_TRIGGER') { refreshConditionalVisibility(); }
+        if (key === 'FR_PREEXPOSURE_TRIGGER') {
+          refreshConditionalVisibility();
+          if (typeof window.__sendLine === 'function') {
+            window.__sendLine('set fr_trigger ' + value, { silentEcho: true });
+          }
+        }
+        if (key === 'FR_PREEXPOSURE_MINUTES') {
+          if (typeof window.__sendLine === 'function' && value) {
+            window.__sendLine('set fr_minutes ' + value, { silentEcho: true });
+          }
+        }
         if (key === 'TIME_SCALE') {
           handleTimeScaleModeChange(value);
         }
@@ -21613,6 +21623,16 @@ https://github.com/odeepllama/SolarSim/tree/main
           const mRotTriggerHold = trimmedLine.match(reRotationTriggerHold);
           if (mRotTriggerHold) {
             window.__deviceConfig.CAMERA_TRIGGER_HOLD_MS = parseInt(mRotTriggerHold[1], 10);
+          }
+
+          // Parse FR pre-exposure trigger and minutes
+          const mFrTrigger = trimmedLine.match(/fr\s*pre-exposure\s*trigger\s*[:=]\s*(off|program_start|boot)/i);
+          if (mFrTrigger) {
+            window.__deviceConfig.FR_PREEXPOSURE_TRIGGER = mFrTrigger[1].toUpperCase();
+          }
+          const mFrMinutes = trimmedLine.match(/fr\s*pre-exposure\s*minutes\s*[:=]\s*([\d.]+)/i);
+          if (mFrMinutes) {
+            window.__deviceConfig.FR_PREEXPOSURE_MINUTES = parseFloat(mFrMinutes[1]);
           }
 
           // Parse number of steps (used to know when all chunks are received)

@@ -147,7 +147,7 @@ ROTATION_LIGHT_G = 30              # Green component (0-255) for rotation lighti
 ROTATION_LIGHT_B = 30              # Blue component (0-255) for rotation lighting
 
 # --- Far-Red (FR) Pre-Exposure ---
-FR_PREEXPOSURE_TRIGGER = "PROGRAM_START"  # "OFF" | "PROGRAM_START" | "BOOT" — when auto pre-exposure fires
+FR_PREEXPOSURE_TRIGGER = "OFF"  # "OFF" | "PROGRAM_START" | "BOOT" — when auto pre-exposure fires
 FR_PREEXPOSURE_MINUTES = 5                # Duration of pre-exposure pulse (standard phytochrome depletion)
 
 # This option allows unwanted reflections to be minimized.
@@ -2391,6 +2391,7 @@ def handle_command(command_str):
     global ROTATION_SPEED_PRESET, ROTATION_SPEED_PRESET_TABLE
     global FINE_ROTATION_INCREMENT_DEGREES, FINE_ROTATION_STEP_INTERVAL_MS, SERVO_1TO1_RATIO
     global PROGRAM_ENABLED, PROGRAM_STEPS, PROGRAM_REPEATS, ROTATION_CAMERA_SERVO
+    global FR_PREEXPOSURE_TRIGGER, FR_PREEXPOSURE_MINUTES
     parts = command_str.lower().strip().split()
     if not parts:
         return
@@ -2815,6 +2816,25 @@ def handle_command(command_str):
                         print("[SERIAL CMD] Error: Step interval must be > 0.")
                 except ValueError:
                     print(f"[SERIAL CMD] Error: Invalid value '{value}'. Must be an integer.")
+            elif param in ("fr_trigger", "fr_preexposure_trigger"):
+                v = value.strip('\'"').upper()
+                if v in ("OFF", "PROGRAM_START", "BOOT"):
+                    FR_PREEXPOSURE_TRIGGER = v
+                    print(f"[SERIAL CMD] FR Pre-Exposure Trigger set to {FR_PREEXPOSURE_TRIGGER}")
+                else:
+                    print(f"[SERIAL CMD] Error: fr_trigger must be OFF, PROGRAM_START, or BOOT (received '{value}')")
+                return
+            elif param in ("fr_minutes", "fr_preexposure_minutes"):
+                try:
+                    mins = float(value.strip('\'"'))
+                    if 1 <= mins <= 60:
+                        FR_PREEXPOSURE_MINUTES = mins
+                        print(f"[SERIAL CMD] FR Pre-Exposure duration set to {FR_PREEXPOSURE_MINUTES} minutes")
+                    else:
+                        print("[SERIAL CMD] Error: fr_minutes must be between 1 and 60")
+                except ValueError:
+                    print(f"[SERIAL CMD] Error: Invalid fr_minutes value '{value}'. Must be a number.")
+                return
             else:
                 print(f"[SERIAL CMD] Error: Unknown parameter '{param}' for 'set' command.")
                 return
@@ -2905,6 +2925,9 @@ def handle_command(command_str):
             elif target == "1to1ratio":
                 SERVO_1TO1_RATIO = not SERVO_1TO1_RATIO
                 print(f"[SERIAL CMD] Servo-to-table 1:1 ratio set to: {SERVO_1TO1_RATIO}")
+            elif target in ("fr", "fr_trigger", "fr_preexposure"):
+                FR_PREEXPOSURE_TRIGGER = "OFF" if FR_PREEXPOSURE_TRIGGER != "OFF" else "PROGRAM_START"
+                print(f"[SERIAL CMD] FR Pre-Exposure Trigger toggled to: {FR_PREEXPOSURE_TRIGGER}")
             else:
                 if target == "autoload":
                     print("[SERIAL CMD] Error: 'toggle autoload' removed. Use 'set autoload on|off'.")
@@ -2932,8 +2955,33 @@ def handle_command(command_str):
                         print("[SERIAL CMD] Error: fr pulse duration must be >0 and <=60 minutes")
                 except ValueError:
                     print("[SERIAL CMD] Error: fr pulse requires numeric minutes")
+            elif action in ("trigger", "preexposure_trigger"):
+                if len(parts) >= 3:
+                    v = parts[2].strip('\'"').upper()
+                    if v in ("OFF", "PROGRAM_START", "BOOT"):
+                        FR_PREEXPOSURE_TRIGGER = v
+                        print(f"[SERIAL CMD] FR Pre-Exposure Trigger set to {FR_PREEXPOSURE_TRIGGER}")
+                    else:
+                        print(f"[SERIAL CMD] Error: FR trigger must be OFF, PROGRAM_START, or BOOT (received '{parts[2]}')")
+                else:
+                    print(f"[SERIAL CMD] FR Pre-Exposure Trigger is {FR_PREEXPOSURE_TRIGGER}")
+                return
+            elif action in ("minutes", "preexposure_minutes"):
+                if len(parts) >= 3:
+                    try:
+                        mins = float(parts[2].strip('\'"'))
+                        if 1 <= mins <= 60:
+                            FR_PREEXPOSURE_MINUTES = mins
+                            print(f"[SERIAL CMD] FR Pre-Exposure duration set to {FR_PREEXPOSURE_MINUTES} minutes")
+                        else:
+                            print("[SERIAL CMD] Error: FR minutes must be between 1 and 60")
+                    except ValueError:
+                        print(f"[SERIAL CMD] Error: Invalid FR minutes value '{parts[2]}'. Must be a number.")
+                else:
+                    print(f"[SERIAL CMD] FR Pre-Exposure duration is {FR_PREEXPOSURE_MINUTES} minutes")
+                return
             else:
-                print("[SERIAL CMD] Usage: fr on | fr off | fr pulse <minutes>")
+                print("[SERIAL CMD] Usage: fr on | fr off | fr pulse <minutes> | fr trigger <OFF|PROGRAM_START|BOOT> | fr minutes <1-60>")
             return
 
         elif command == "program" and len(parts) == 2 and parts[1] == "status":
@@ -3151,28 +3199,28 @@ def handle_command(command_str):
                                 if not (-90 <= v <= 90): raise ValueError("must be -90 to 90")
                                 validated_settings[key] = v
                             elif key in ("SOLAR_MODE", "SUN_COLOR_MODE", "ROTATION_CAPTURE_MODE"):
-                                validated_settings[key] = value_str.strip('"')
+                                validated_settings[key] = value_str.strip('\'"')
                             elif key in ("CUSTOM_SUNRISE_HHMM", "CUSTOM_SUNSET_HHMM"):
                                 v = int(value_str)
                                 if not (0 <= v <= 2359 and v % 100 < 60):
                                     raise ValueError("invalid HHMM format")
                                 validated_settings[key] = v
                             elif key in ("DUAL_SUN_ENABLED", "PROGRAM_ENABLED", "ROTATION_ENABLED", "RESTART_AFTER_LOAD"):
-                                if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
-                                validated_settings[key] = value_str.lower() == 'true'
+                                if value_str.strip('\'"').lower() not in ('true', 'false'): raise ValueError("must be True or False")
+                                validated_settings[key] = value_str.strip('\'"').lower() == 'true'
                             elif key == "FR_PREEXPOSURE_ENABLED":
                                 # v1.0 legacy field — map to FR_PREEXPOSURE_TRIGGER only if the new key isn't already set
-                                if value_str.lower() not in ('true', 'false'): raise ValueError("must be True or False")
+                                if value_str.strip('\'"').lower() not in ('true', 'false'): raise ValueError("must be True or False")
                                 if "FR_PREEXPOSURE_TRIGGER" not in validated_settings:
-                                    validated_settings["FR_PREEXPOSURE_TRIGGER"] = "PROGRAM_START" if value_str.lower() == 'true' else "OFF"
+                                    validated_settings["FR_PREEXPOSURE_TRIGGER"] = "PROGRAM_START" if value_str.strip('\'"').lower() == 'true' else "OFF"
                                     print("[LOAD] Legacy FR_PREEXPOSURE_ENABLED found — mapped to FR_PREEXPOSURE_TRIGGER")
                             elif key == "FR_PREEXPOSURE_TRIGGER":
-                                v = value_str.strip('"').upper()
+                                v = value_str.strip('\'"').upper()
                                 if v not in ("OFF", "PROGRAM_START", "BOOT"):
                                     raise ValueError("FR_PREEXPOSURE_TRIGGER must be OFF, PROGRAM_START, or BOOT")
                                 validated_settings[key] = v
                             elif key == "FR_PREEXPOSURE_MINUTES":
-                                v = float(value_str)
+                                v = float(value_str.strip('\'"'))
                                 if not (0 < v <= 60): raise ValueError("FR_PREEXPOSURE_MINUTES must be >0 and <=60")
                                 validated_settings[key] = v
                             elif key == "ROTATION_CYCLE_INTERVAL_MINUTES":
@@ -3290,6 +3338,10 @@ def handle_command(command_str):
                     ROTATION_AT_NIGHT = validated_settings["ROTATION_AT_NIGHT"]
                 if "ROTATION_CAMERA_SERVO" in validated_settings:
                     ROTATION_CAMERA_SERVO = validated_settings["ROTATION_CAMERA_SERVO"]
+                if "FR_PREEXPOSURE_TRIGGER" in validated_settings:
+                    FR_PREEXPOSURE_TRIGGER = validated_settings["FR_PREEXPOSURE_TRIGGER"]
+                if "FR_PREEXPOSURE_MINUTES" in validated_settings:
+                    FR_PREEXPOSURE_MINUTES = validated_settings["FR_PREEXPOSURE_MINUTES"]
                 update_rotation_parameters()
                 print("[SERIAL CMD] Settings applied.")
                 
