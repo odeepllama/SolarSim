@@ -600,12 +600,10 @@ def command_rotate_relative(delta_deg):
     if abs(delta) < 0.05:
         return
     
-    # Base the relative move on target_table_angle if already slewing so rapid clicks accumulate
-    base_angle = target_table_angle if table_slew_active else current_table_angle
-    raw_target = base_angle + delta
+    raw_target = current_table_angle + delta
     if 0.0 <= raw_target <= 360.0:
         target_table_angle = raw_target
-        table_slew_direction = 1 if target_table_angle >= current_table_angle else -1
+        table_slew_direction = 1 if delta >= 0 else -1
         print(f"[TURNTABLE] Relative move {delta:+.1f}° -> {target_table_angle:.1f}° ({'CW' if table_slew_direction > 0 else 'CCW'})")
     elif raw_target > 360.0:
         # Wrap past 360°: Unwind backwards CCW to final target without hitting 270° servo endstop
